@@ -38,6 +38,7 @@ class KPIBlock(BaseBlock):
     def __init__(self, block_id: str, datasource: Any, kpi_definitions: List[Dict[str, str]], subscribes_to: str):
         self.kpi_definitions = kpi_definitions
         super().__init__(block_id, datasource, subscribes={subscribes_to: self._update_kpi_cards})
+        self.logger.debug(f"KPI block {block_id} with {len(kpi_definitions)} KPIs")
 
     def _update_kpi_cards(self, *args) -> Component:
         try:
@@ -57,5 +58,7 @@ class KPIBlock(BaseBlock):
             return dbc.Alert(f"Ошибка загрузки KPI: {str(e)}", color="danger")
 
     def layout(self) -> Component:
+        # Initialize with current data instead of empty container
+        initial_content = self._update_kpi_cards()
         return dcc.Loading(id=self._generate_id("loading"), type="default",
-                           children=html.Div(id=self._generate_id("container")))
+                           children=html.Div(id=self._generate_id("container"), children=initial_content))

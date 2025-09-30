@@ -6,6 +6,8 @@ from typing import Any, Dict, List, Optional
 import pandas as pd
 
 from core.datasource import BaseDataSource
+from utils.logger import get_logger
+from utils.exceptions import DataLoadError
 
 try:
     from sqlalchemy import create_engine, text
@@ -32,21 +34,28 @@ class SqlDataSource(BaseDataSource):
           - post: "The instance holds a pandas DataFrame with the query results."
 
     """
-    def __init__(self, connection_uri: str, query: str):
+    def __init__(self, connection_uri: str, query: str, **kwargs):
         """
         Initializes the SqlDataSource.
 
         Args:
             connection_uri: A SQLAlchemy-compatible database URI.
-                            (e.g., 'sqlite:///mydatabase.db', 'postgresql://user:pass@host/db')
+                            (e.g., 'sqlite:///mydatabase.db', 
+                            'postgresql://user:pass@host/db')
             query: The SQL query to execute to retrieve the data.
+            **kwargs: Keyword arguments for the parent BaseDataSource
+                     (e.g., cache_ttl).
 
         """
+        super().__init__(**kwargs)
+        self.logger = get_logger(__name__, SqlDataSource)
         self.connection_uri = connection_uri
         self.query = query
-        self._data: Optional[pd.DataFrame] = None
+        
+        self.logger.info(f"SQL datasource initialized for URI: {connection_uri}")
+        self.logger.debug(f"Query: {query[:100]}..." if len(query) > 100 else f"Query: {query}")
 
-    def init_data(self, params: Optional[Dict[str, Any]] = None) -> bool:
+    def _load_data(self, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
         """
         Loads data from the database by executing the query.
 
@@ -54,32 +63,35 @@ class SqlDataSource(BaseDataSource):
             params: Optional dictionary of parameters to bind to the SQL query.
 
         Returns:
-            True if data was loaded successfully, False otherwise.
+            A pandas DataFrame with the query results.
 
         """
+        self.logger.debug(f"Executing SQL query with params: {params}")
+        
         try:
             engine = create_engine(self.connection_uri)
+            self.logger.debug("Database engine created successfully")
+            
             with engine.connect() as connection:
-                self._data = pd.read_sql(text(self.query), connection, params=params)
-            return True
+                self.logger.debug("Database connection established")
+                df = pd.read_sql(text(self.query), connection, params=params)
+                
+                self.logger.info(
+                    f"SQL query executed successfully: {len(df)} rows, "
+                    f"{len(df.columns)} columns"
+                )
+                
+                if df.empty:
+                    self.logger.warning("SQL query returned empty result set")
+                
+                return df
+                
         except SQLAlchemyError as e:
-            print(f"An error occurred while connecting to the database or executing the query: {e}")
-            self._data = pd.DataFrame()
-            return False
+            self.logger.error(f"SQLAlchemy error: {e}", exc_info=True)
+            raise DataLoadError(f"Database error: {e}") from e
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
-            self._data = pd.DataFrame()
-            return False
-
-    def get_processed_data(self) -> pd.DataFrame:
-        """
-        Returns the loaded DataFrame.
-
-        """
-        if self._data is None:
-            if not self.init_data():
-                return pd.DataFrame()
-        return self._data
+            self.logger.error(f"Error executing SQL query: {e}", exc_info=True)
+            raise DataLoadError(f"Failed to execute SQL query: {e}") from e
 
     def get_kpis(self) -> Dict[str, Any]:
         """
@@ -101,5 +113,8 @@ class SqlDataSource(BaseDataSource):
 
         """
         if self._data is not None and not self._data.empty:
-            return f"SQL data loaded via query. Shape: {self._data.shape}"
+            summary = f"SQL data loaded via query. Shape: {self._data.shape}"
+            self.logger.debug(f"Generated summary: {summary}")
+            return summary
+        self.logger.debug("No data loaded for summary")
         return "No data loaded."

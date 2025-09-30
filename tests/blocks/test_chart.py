@@ -37,7 +37,11 @@ class TestStaticChartBlock:
 
         figure = block._update_chart()
 
-        mock_plot_fn.assert_called_once_with(df)
+        # Check that the function was called with ChartContext
+        mock_plot_fn.assert_called_once()
+        call_args = mock_plot_fn.call_args
+        assert call_args[0][0].equals(df)  # First argument should be DataFrame
+        assert hasattr(call_args[0][1], 'datasource')  # Second argument should be ChartContext
         assert isinstance(figure, go.Figure)
         assert len(figure.data) == 1 # From mock_plot_fn
 
@@ -88,7 +92,12 @@ class TestInteractiveChartBlock:
             "interactive-slider": 5
         })
 
-        mock_plot_fn.assert_called_once_with(df, mock_ds, dropdown="a", slider=5)
+        # Check that the function was called with ChartContext
+        mock_plot_fn.assert_called_once()
+        call_args = mock_plot_fn.call_args
+        assert call_args[0][0].equals(df)  # First argument should be DataFrame
+        assert hasattr(call_args[0][1], 'datasource')  # Second argument should be ChartContext
+        assert call_args[0][1].controls == {'dropdown': 'a', 'slider': 5}
         assert isinstance(figure, go.Figure)
 
     def test_state_registration(self, datasource_factory, controls):

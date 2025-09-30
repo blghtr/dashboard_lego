@@ -5,6 +5,7 @@ This module provides preset blocks for machine learning visualization.
 """
 import pandas as pd
 import plotly.graph_objects as go
+import plotly.express as px
 from dash import html
 import dash_bootstrap_components as dbc
 from sklearn.metrics import confusion_matrix
@@ -145,7 +146,7 @@ class ConfusionMatrixPreset(StaticChartBlock):
             **kwargs
         )
 
-    def _generate_chart(self, df: pd.DataFrame) -> go.Figure:
+    def _generate_chart(self, df: pd.DataFrame, ctx) -> go.Figure:
         """
         Generates the confusion matrix heatmap.
 
@@ -195,7 +196,7 @@ class RocAucCurvePreset(StaticChartBlock):
             **kwargs
         )
 
-    def _generate_chart(self, df: pd.DataFrame) -> go.Figure:
+    def _generate_chart(self, df: pd.DataFrame, ctx) -> go.Figure:
         """
         Generates the ROC curve plot.
 
@@ -264,7 +265,7 @@ class FeatureImportancePreset(StaticChartBlock):
             **kwargs
         )
 
-    def _generate_chart(self, df: pd.DataFrame) -> go.Figure:
+    def _generate_chart(self, df: pd.DataFrame, ctx) -> go.Figure:
         """
         Generates the feature importance bar chart.
 

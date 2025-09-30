@@ -42,7 +42,7 @@ class CorrelationHeatmapPreset(StaticChartBlock):
             subscribes_to=subscribes_to
         )
 
-    def _create_heatmap(self, df: pd.DataFrame) -> go.Figure:
+    def _create_heatmap(self, df: pd.DataFrame, ctx) -> go.Figure:
         """
         Calculates the correlation matrix and generates a heatmap figure.
 
@@ -97,11 +97,21 @@ class GroupedHistogramPreset(InteractiveChartBlock):
         controls = {
             "x_col": Control(
                 component=dcc.Dropdown,
-                props={"options": numerical_cols, "value": numerical_cols[0], "clearable": False}
+                props={
+                    "options": numerical_cols, 
+                    "value": numerical_cols[0], 
+                    "clearable": False,
+                    "style": {"minWidth": "150px"}
+                }
             ),
             "group_by": Control(
                 component=dcc.Dropdown,
-                props={"options": categorical_cols, "value": categorical_cols[0], "clearable": False}
+                props={
+                    "options": categorical_cols, 
+                    "value": categorical_cols[0], 
+                    "clearable": False,
+                    "style": {"minWidth": "150px"}
+                }
             )
         }
 
@@ -113,13 +123,13 @@ class GroupedHistogramPreset(InteractiveChartBlock):
             controls=controls
         )
 
-    def _create_histogram(self, df: pd.DataFrame, datasource: BaseDataSource, **control_values) -> go.Figure:
+    def _create_histogram(self, df: pd.DataFrame, ctx) -> go.Figure:
         """
         Generates a histogram based on the selected control values.
 
         """
-        x_col = control_values.get('x_col')
-        group_by = control_values.get('group_by')
+        x_col = ctx.controls.get('x_col')
+        group_by = ctx.controls.get('group_by')
 
         if not x_col:
             return go.Figure().update_layout(title="Please select a column to display.")
@@ -170,7 +180,7 @@ class MissingValuesPreset(StaticChartBlock):
             subscribes_to=subscribes_to
         )
 
-    def _create_missing_values_chart(self, df: pd.DataFrame) -> go.Figure:
+    def _create_missing_values_chart(self, df: pd.DataFrame, ctx) -> go.Figure:
         """
         Calculates missing values and generates a bar chart.
 
@@ -230,13 +240,21 @@ class BoxPlotPreset(InteractiveChartBlock):
         controls = {
             "y_col": Control(
                 component=dcc.Dropdown,
-                props={"options": numerical_cols, "value": numerical_cols[0], "clearable": False},
-                label="Numerical Column (Y-Axis)"
+                props={
+                    "options": numerical_cols, 
+                    "value": numerical_cols[0], 
+                    "clearable": False,
+                    "style": {"minWidth": "150px"}
+                }
             ),
             "x_col": Control(
                 component=dcc.Dropdown,
-                props={"options": categorical_cols, "value": categorical_cols[0], "clearable": False},
-                label="Categorical Column (X-Axis)"
+                props={
+                    "options": categorical_cols, 
+                    "value": categorical_cols[0], 
+                    "clearable": False,
+                    "style": {"minWidth": "150px"}
+                }
             )
         }
 
@@ -248,13 +266,13 @@ class BoxPlotPreset(InteractiveChartBlock):
             controls=controls
         )
 
-    def _create_box_plot(self, df: pd.DataFrame, datasource: BaseDataSource, **control_values) -> go.Figure:
+    def _create_box_plot(self, df: pd.DataFrame, ctx) -> go.Figure:
         """
         Generates a box plot based on the selected control values.
 
         """
-        y_col = control_values.get('y_col')
-        x_col = control_values.get('x_col')
+        y_col = ctx.controls.get('y_col')
+        x_col = ctx.controls.get('x_col')
 
         if not y_col or not x_col:
             return go.Figure().update_layout(title="Please select columns to display.")

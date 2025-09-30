@@ -84,11 +84,13 @@ class TextBlock(BaseBlock):
         Defines the initial layout of the block, including a loading wrapper.
 
         """
+        # Initialize with current content instead of empty container
+        initial_content = self._update_content()
         return dbc.Card(
             dcc.Loading(
                 id=self._generate_id("loading"),
                 type="default",
-                children=html.Div(id=self._generate_id("container"))
+                children=html.Div(id=self._generate_id("container"), children=initial_content)
             ),
             className="mb-4"
         )

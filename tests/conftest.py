@@ -42,3 +42,27 @@ def datasource_factory():
         return mock_ds
 
     return _factory
+
+
+@pytest.fixture
+def sample_csv_data():
+    """
+    Sample CSV data for integration tests.
+
+    :hierarchy: [Testing | Fixtures | Sample Data]
+    :relates-to:
+     - motivated_by: "Integration tests need realistic data for E2E testing"
+     - implements: "fixture: 'sample_csv_data'"
+
+    :rationale: "Provides consistent test data across integration tests"
+    :contract:
+     - pre: "Test environment is set up"
+     - post: "Returns DataFrame with sample sales data"
+
+    """
+    return pd.DataFrame({
+        'Fruit': ['Apple', 'Banana', 'Orange', 'Apple', 'Banana', 'Orange', 'Apple', 'Banana'],
+        'Sales': [100, 150, 120, 110, 160, 130, 105, 155],
+        'UnitsSold': [10, 15, 12, 11, 16, 13, 10, 15],
+        'Price': [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.5, 9.7]
+    })

@@ -10,6 +10,7 @@ from dash import html
 from core.page import DashboardPage
 from blocks.base import BaseBlock
 from core.datasource import BaseDataSource
+from utils.exceptions import ConfigurationError
 
 # Mock BaseBlock for testing purposes
 class MockBlock(BaseBlock):
@@ -94,7 +95,8 @@ def test_page_build_layout_structure(mock_datasource):
     row1_cols = rows[0].children
     assert len(row1_cols) == 1
     assert row1_cols[0].children.children == "b1"
-    assert row1_cols[0].width == 12  # Auto-assigned width
+    # Back-compat auto assignment uses 'width'
+    assert getattr(row1_cols[0], 'width', None) == 12
 
     # Check second row
     row2_cols = rows[1].children
@@ -130,5 +132,5 @@ def test_page_init_raises_error_for_invalid_block_type(mock_datasource):
     block1 = MockBlock(block_id="b1", datasource=mock_datasource)
     invalid_object = html.Div("I am not a block")
 
-    with pytest.raises(TypeError, match="All layout items must be of type BaseBlock"):
+    with pytest.raises(ConfigurationError, match="All layout items must be of type BaseBlock"):
         DashboardPage(title="Test", blocks=[[block1, invalid_object]])

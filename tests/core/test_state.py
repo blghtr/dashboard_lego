@@ -81,22 +81,27 @@ class TestStateManager:
         assert subscribers[0]['component_id'] == 'test_subscriber'
         assert subscribers[0]['callback_fn'] == dummy_callback
 
-    def test_register_subscriber_fails_without_publisher(self, state_manager: StateManager):
+    def test_register_subscriber_auto_creates_dummy_state(self, state_manager: StateManager):
         """
-            :scenario: Verifies that registering a subscriber for a non-existent state raises an error.
-            :strategy: Use pytest.raises to assert that a KeyError is thrown.
+            :scenario: Verifies that registering a subscriber without publisher auto-creates dummy state.
+            :strategy: Register subscriber without publisher and validate state creation.
             :contract:
             :pre: No publisher is registered for 'test_state'.
-            :post: A KeyError is raised when trying to register a subscriber.
+            :post: State is auto-created and subscriber is registered successfully.
 
         """
-        with pytest.raises(KeyError, match="State 'test_state' has no publisher."):
-            state_manager.register_subscriber(
-                state_id='test_state',
-                component_id='test_subscriber',
-                component_prop='figure',
-                callback_fn=lambda x: x
-            )
+        # Should not raise an error, but auto-create dummy state
+        state_manager.register_subscriber(
+            state_id='test_state',
+            component_id='test_subscriber',
+            component_prop='figure',
+            callback_fn=lambda x: x
+        )
+        
+        # Verify state was auto-created
+        assert 'test_state' in state_manager.dependency_graph
+        assert state_manager.dependency_graph['test_state']['publisher'] is None
+        assert len(state_manager.dependency_graph['test_state']['subscribers']) == 1
 
     def test_generate_callbacks_single_subscriber(self, state_manager: StateManager, mock_app):
         """

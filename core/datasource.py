@@ -9,10 +9,15 @@ from typing import Any, Dict, List, Optional
 import pandas as pd
 from diskcache import Cache
 
+from utils.logger import get_logger
+from utils.exceptions import DataLoadError, CacheError
+
+
 class BaseDataSource(ABC):
     """
     An abstract base class that defines the contract for data sources.
-    This base class includes a transparent caching layer to prevent re-loading data.
+    This base class includes a transparent caching layer to prevent
+    re-loading data.
 
         :hierarchy: [Core | DataSources | BaseDataSource]
         :relates-to:
@@ -20,22 +25,38 @@ class BaseDataSource(ABC):
           - implements: "interface: 'BaseDataSource'"
           - uses: ["library: 'diskcache'"]
 
-        :rationale: "Replaced cachetools with diskcache to support both in-memory and persistent disk-based caching, configured via constructor arguments."
+        :rationale: "Replaced cachetools with diskcache to support both
+         in-memory and persistent disk-based caching, configured via
+         constructor arguments."
         :contract:
           - pre: "A concrete implementation of this class must be provided."
-          - post: "Dashboard blocks can reliably request data, benefiting from a configurable caching layer."
+          - post: "Dashboard blocks can reliably request data,
+           benefiting from a configurable caching layer."
 
     """
-    def __init__(self, cache_dir: Optional[str] = None, cache_ttl: int = 300, **kwargs):
+    def __init__(
+        self, cache_dir: Optional[str] = None, cache_ttl: int = 300, **kwargs
+    ):
         """
         Initializes the BaseDataSource with a configurable cache.
 
         Args:
-            cache_dir: Directory for the disk cache. If None, an in-memory cache is used.
+            cache_dir: Directory for the disk cache. If None, an in-memory
+                       cache is used.
             cache_ttl: The time-to-live for each item in seconds.
 
         """
-        self.cache = Cache(directory=cache_dir, expire=cache_ttl)
+        self.logger = get_logger(__name__, BaseDataSource)
+        self.logger.info(
+            f"Initializing datasource with cache_dir={cache_dir}, "
+            f"ttl={cache_ttl}s"
+        )
+        try:
+            self.cache = Cache(directory=cache_dir, expire=cache_ttl)
+            self.logger.debug("Cache initialized successfully")
+        except Exception as e:
+            self.logger.error(f"Failed to initialize cache: {e}")
+            raise CacheError(f"Cache initialization failed: {e}") from e
         self._data: Optional[pd.DataFrame] = None
 
     def _get_cache_key(self, params: Dict[str, Any]) -> str:
@@ -53,7 +74,8 @@ class BaseDataSource(ABC):
         This method acts as a caching wrapper around the `_load_data` method.
 
         Args:
-            params: A dictionary containing all necessary parameters for data processing.
+            params: A dictionary containing all necessary parameters for
+                    data processing.
 
         Returns:
             True if initialization was successful, False otherwise.
@@ -61,22 +83,48 @@ class BaseDataSource(ABC):
         """
         params = params or {}
         cache_key = self._get_cache_key(params)
+        self.logger.debug(f"init_data called with cache_key={cache_key}")
 
-        if cache_key in self.cache:
-            # Cache Hit
-            self._data = self.cache[cache_key]
-            return True
-        else:
-            # Cache Miss
-            try:
+        try:
+            if cache_key in self.cache:
+                # Cache Hit
+                self.logger.info(f"Cache hit for key={cache_key}")
+                self._data = self.cache[cache_key]
+                self.logger.debug(
+                    f"Loaded {len(self._data)} rows from cache"
+                )
+                return True
+            else:
+                # Cache Miss
+                self.logger.info(
+                    f"Cache miss for key={cache_key}, loading data"
+                )
                 loaded_data = self._load_data(params)
+                if not isinstance(loaded_data, pd.DataFrame):
+                    raise DataLoadError(
+                        f"_load_data must return a DataFrame, got "
+                        f"{type(loaded_data)}"
+                    )
                 self._data = loaded_data
                 self.cache[cache_key] = loaded_data
+                self.logger.info(
+                    f"Data loaded successfully: {len(loaded_data)} rows, "
+                    f"{len(loaded_data.columns)} columns"
+                )
+                self.logger.debug(f"Data cached with key={cache_key}")
                 return True
-            except Exception as e:
-                print(f"Error loading data for key {cache_key}: {e}")
-                self._data = pd.DataFrame() # Ensure data is empty on error
-                return False
+        except DataLoadError:
+            # Re-raise DataLoadError as-is
+            raise
+        except Exception as e:
+            self.logger.error(
+                f"Error loading data for key {cache_key}: {e}",
+                exc_info=True
+            )
+            self._data = pd.DataFrame()  # Ensure data is empty on error
+            raise DataLoadError(
+                f"Failed to load data with key {cache_key}: {e}"
+            ) from e
 
     @abstractmethod
     def _load_data(self, params: Dict[str, Any]) -> pd.DataFrame:
@@ -84,7 +132,8 @@ class BaseDataSource(ABC):
         The method that concrete subclasses must implement to load data.
 
         Args:
-            params: A dictionary containing all necessary parameters for data processing.
+            params: A dictionary containing all necessary parameters for
+                     data processing.
 
         Returns:
             A pandas DataFrame with the loaded data.
@@ -98,9 +147,12 @@ class BaseDataSource(ABC):
 
         """
         if self._data is None:
-            # This case handles when get_processed_data is called before init_data
-            # We can attempt a default load, but it might be better to enforce init_data first.
-            # For now, we return an empty DataFrame to avoid errors.
+            # This case handles when get_processed_data is called before
+            # init_data. For now, we return an empty DataFrame to avoid errors.
+            self.logger.warning(
+                "get_processed_data called before init_data, "
+                "returning empty DataFrame"
+            )
             return pd.DataFrame()
         return self._data
 
