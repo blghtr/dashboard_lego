@@ -193,7 +193,7 @@ def test_parquet_placeholder_methods(sample_parquet_path):
     # Act & Assert
     assert source.get_kpis() == {}
     assert source.get_filter_options('any_filter') == []
-    assert source.get_summary() == ""
+    assert source.get_summary() == "No data loaded."
 
 def test_parquet_source_empty_file(tmp_path):
     """

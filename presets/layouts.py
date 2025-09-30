@@ -136,3 +136,4 @@ def kpi_row_top(kpi_blocks: Sequence[BaseBlock], content_rows: List[List[BaseBlo
     return kpi_row + [row for row in content_rows]
 
 
+

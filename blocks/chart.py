@@ -14,7 +14,6 @@ from blocks.base import BaseBlock
 from core.datasource import BaseDataSource
 from core.chart_context import ChartContext
 from core.state import StateManager
-from utils.exceptions import BlockError
 
 
 @dataclass
@@ -224,48 +223,22 @@ class InteractiveChartBlock(BaseBlock):
 
     def _register_state_interactions(self, state_manager: StateManager):
         """
-        Registers only publishers for controls, not subscribers.
-        Subscribers are handled by the new block-centric callback system.
+        Registers publishers and subscribers for interactive chart controls.
+        Uses the base class implementation to handle both publishers and subscribers.
         
-        :hierarchy: [Architecture | Block-centric Callbacks | InteractiveChartBlock]
+        :hierarchy: [Architecture | State Management | InteractiveChartBlock]
         :relates-to:
-         - motivated_by: "ARCHITECTURE_REFACTOR_PLAN Step 4: Prevent duplicate callbacks"
+         - motivated_by: "PRD: Interactive charts need to respond to their own controls"
          - implements: "method: '_register_state_interactions' override"
-         - uses: ["method: '_generate_id'"]
+         - uses: ["method: 'BaseBlock._register_state_interactions'"]
          
-        :rationale: "Only register publishers for controls, let bind_callbacks() handle subscribers."
+        :rationale: "Use base class implementation to register both publishers and subscribers."
         :contract:
          - pre: "StateManager is initialized and ready to accept registrations."
-         - post: "Control publishers are registered, no duplicate subscribers."
+         - post: "Both control publishers and subscribers are registered."
         """
-        self.logger.debug(f"Registering control publishers for {self.block_id}")
-        
-        try:
-            # Register publishers for each control
-            for key in self.controls.keys():
-                state_id = self._generate_id(key)
-                component_id = self._generate_id(key)
-                component_prop = 'value'  # Most controls use 'value' property
-                
-                self.logger.debug(
-                    f"Registering control publisher: {state_id} -> "
-                    f"{component_id}.{component_prop}"
-                )
-                state_manager.register_publisher(
-                    state_id, component_id, component_prop
-                )
-            
-            self.logger.info(
-                f"Control publishers registered successfully for {self.block_id}"
-            )
-        except Exception as e:
-            self.logger.error(
-                f"Error registering control publishers for {self.block_id}: {e}",
-                exc_info=True
-            )
-            raise BlockError(
-                f"Failed to register control publishers for {self.block_id}: {e}"
-            ) from e
+        # Use the base class implementation which handles both publishers and subscribers
+        super()._register_state_interactions(state_manager)
 
     def list_control_inputs(self) -> list[tuple[str, str]]:
         """

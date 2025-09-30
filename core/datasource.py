@@ -113,18 +113,20 @@ class BaseDataSource(ABC):
                 )
                 self.logger.debug(f"Data cached with key={cache_key}")
                 return True
-        except DataLoadError:
-            # Re-raise DataLoadError as-is
-            raise
+        except DataLoadError as e:
+            # Log the error and set empty data
+            self.logger.error(
+                f"DataLoadError loading data for key {cache_key}: {e}"
+            )
+            self._data = pd.DataFrame()  # Ensure data is empty on error
+            return False
         except Exception as e:
             self.logger.error(
                 f"Error loading data for key {cache_key}: {e}",
                 exc_info=True
             )
             self._data = pd.DataFrame()  # Ensure data is empty on error
-            raise DataLoadError(
-                f"Failed to load data with key {cache_key}: {e}"
-            ) from e
+            return False
 
     @abstractmethod
     def _load_data(self, params: Dict[str, Any]) -> pd.DataFrame:
