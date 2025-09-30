@@ -27,11 +27,7 @@ jobs:
       run: curl -LsSf https://astral.sh/uv/install.sh | sh
 
     - name: Install dependencies
-      run: |
-        source $HOME/.cargo/env
-        uv pip install -e .[dev,docs,ml,sql]
+      run: uv pip install -e .[dev,docs,ml,sql]
 
     - name: Run tests
-      run: |
-        source $HOME/.cargo/env
-        uv run pytest
+      run: uv run pytest
