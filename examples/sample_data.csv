@@ -1,0 +1,14 @@
+Date,Fruit,Category,Sales,UnitsSold
+2023-01-01,Apple,Pome,150.50,100
+2023-01-01,Banana,Tropical,80.00,150
+2023-01-01,Orange,Citrus,120.75,120
+2023-01-02,Apple,Pome,155.25,105
+2023-01-02,Banana,Tropical,82.50,155
+2023-01-02,Orange,Citrus,125.00,125
+2023-01-03,Apple,Pome,160.00,108
+2023-01-03,Banana,Tropical,85.00,160
+2023-01-03,Orange,Citrus,130.25,130
+2023-01-04,Grape,Berry,200.00,250
+2023-01-04,Strawberry,Berry,180.00,300
+2023-01-05,Grape,Berry,210.50,260
+2023-01-05,Strawberry,Berry,185.75,310
