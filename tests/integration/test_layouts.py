@@ -18,10 +18,10 @@ from typing import Any
 
 from dash import html
 
-from blocks.base import BaseBlock
-from core.datasource import BaseDataSource
-from core.page import DashboardPage
-from presets.layouts import (
+from dashboard_lego.blocks.base import BaseBlock
+from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.page import DashboardPage
+from dashboard_lego.presets.layouts import (
     kpi_row_top,
     one_column,
     sidebar_main_3_9,

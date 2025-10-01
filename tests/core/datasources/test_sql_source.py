@@ -22,8 +22,8 @@ import pytest
 from sqlalchemy import create_engine
 
 # Import the module so we can reload it
-from core.datasources import sql_source
-from core.datasources.sql_source import SqlDataSource
+from dashboard_lego.core.datasources import sql_source
+from dashboard_lego.core.datasources.sql_source import SqlDataSource
 
 
 @pytest.fixture

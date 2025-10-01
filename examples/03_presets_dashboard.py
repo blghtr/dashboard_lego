@@ -3,15 +3,15 @@
 import dash
 import dash_bootstrap_components as dbc
 
-from core.datasources.csv_source import CsvDataSource
-from core.page import DashboardPage
-from presets.eda_presets import (
+from dashboard_lego.core.datasources.csv_source import CsvDataSource
+from dashboard_lego.core.page import DashboardPage
+from dashboard_lego.presets.eda_presets import (
     BoxPlotPreset,
     CorrelationHeatmapPreset,
     GroupedHistogramPreset,
     MissingValuesPreset,
 )
-from presets.layouts import kpi_row_top, two_column_8_4
+from dashboard_lego.presets.layouts import kpi_row_top, two_column_8_4
 
 # 1. Use the library's CsvDataSource - no magic needed!
 datasource = CsvDataSource(file_path="examples/sample_data.csv")

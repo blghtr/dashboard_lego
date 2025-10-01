@@ -8,10 +8,10 @@ from unittest.mock import MagicMock, call
 import pytest
 from dash import html
 
-from blocks.base import BaseBlock
-from core.datasource import BaseDataSource
-from core.page import DashboardPage
-from utils.exceptions import ConfigurationError
+from dashboard_lego.blocks.base import BaseBlock
+from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.page import DashboardPage
+from dashboard_lego.utils.exceptions import ConfigurationError
 
 
 # Mock BaseBlock for testing purposes

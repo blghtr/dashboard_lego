@@ -5,9 +5,9 @@ This module defines the ParquetDataSource for loading data from Parquet files.
 
 import pandas as pd
 
-from core.datasource import BaseDataSource
-from utils.exceptions import DataLoadError
-from utils.logger import get_logger
+from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.utils.exceptions import DataLoadError
+from dashboard_lego.utils.logger import get_logger
 
 
 class ParquetDataSource(BaseDataSource):

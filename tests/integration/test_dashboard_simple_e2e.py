@@ -21,13 +21,13 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
-from blocks.chart import StaticChartBlock
-from blocks.kpi import KPIBlock
-from blocks.text import TextBlock
-from core.datasource import BaseDataSource
-from core.page import DashboardPage
-from presets.eda_presets import CorrelationHeatmapPreset
-from presets.ml_presets import MetricCardBlock, ModelSummaryBlock
+from dashboard_lego.blocks.chart import StaticChartBlock
+from dashboard_lego.blocks.kpi import KPIBlock
+from dashboard_lego.blocks.text import TextBlock
+from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.page import DashboardPage
+from dashboard_lego.presets.eda_presets import CorrelationHeatmapPreset
+from dashboard_lego.presets.ml_presets import MetricCardBlock, ModelSummaryBlock
 
 
 class TestSimpleDashboardE2E:

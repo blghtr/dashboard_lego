@@ -26,9 +26,9 @@ import pytest
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from core.chart_context import ChartContext
-from core.datasource import BaseDataSource
-from presets.eda_presets import (
+from dashboard_lego.core.chart_context import ChartContext
+from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.presets.eda_presets import (
     BoxPlotPreset,
     CorrelationHeatmapPreset,
     GroupedHistogramPreset,

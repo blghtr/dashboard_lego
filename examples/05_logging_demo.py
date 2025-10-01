@@ -14,11 +14,11 @@ import os
 
 import pandas as pd
 
-from blocks.kpi import KPIBlock
-from core.datasource import BaseDataSource
-from core.datasources.csv_source import CsvDataSource
-from core.page import DashboardPage
-from utils.logger import get_logger, setup_logging
+from dashboard_lego.blocks.kpi import KPIBlock
+from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.datasources.csv_source import CsvDataSource
+from dashboard_lego.core.page import DashboardPage
+from dashboard_lego.utils.logger import get_logger, setup_logging
 
 
 def demonstrate_logging():

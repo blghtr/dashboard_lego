@@ -9,10 +9,10 @@ from typing import Any, Callable, Dict, List, Optional
 from dash.development.base_component import Component
 
 # Use forward references for type hints to avoid circular imports
-from core.datasource import BaseDataSource
-from core.state import StateManager
-from utils.exceptions import BlockError, ConfigurationError
-from utils.logger import get_logger
+from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.state import StateManager
+from dashboard_lego.utils.exceptions import BlockError, ConfigurationError
+from dashboard_lego.utils.logger import get_logger
 
 
 class BaseBlock(ABC):

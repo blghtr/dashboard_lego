@@ -7,7 +7,7 @@ import dash_bootstrap_components as dbc
 import pytest
 from dash import dcc, html
 
-from blocks.text import TextBlock
+from dashboard_lego.blocks.text import TextBlock
 
 
 def test_text_block_layout(datasource_factory):

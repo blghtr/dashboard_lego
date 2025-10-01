@@ -205,9 +205,9 @@ class TestExamplesFunctionality:
 
         try:
             # Test that we can create basic components like in the example
-            from blocks.chart import StaticChartBlock
-            from blocks.kpi import KPIBlock
-            from core.datasources.csv_source import CsvDataSource
+            from dashboard_lego.blocks.chart import StaticChartBlock
+            from dashboard_lego.blocks.kpi import KPIBlock
+            from dashboard_lego.core.datasources.csv_source import CsvDataSource
 
             # Create data source
             datasource = CsvDataSource(csv_path)
@@ -280,8 +280,8 @@ class TestExamplesFunctionality:
             csv_path = f.name
 
         try:
-            from blocks.chart import InteractiveChartBlock
-            from core.datasources.csv_source import CsvDataSource
+            from dashboard_lego.blocks.chart import InteractiveChartBlock
+            from dashboard_lego.core.datasources.csv_source import CsvDataSource
 
             # Create data source
             datasource = CsvDataSource(csv_path)
@@ -296,7 +296,7 @@ class TestExamplesFunctionality:
             # Mock controls for testing
             from dash import dcc
 
-            from blocks.chart import Control
+            from dashboard_lego.blocks.chart import Control
 
             controls = {
                 "fruit_filter": Control(
@@ -356,8 +356,8 @@ class TestExamplesFunctionality:
             csv_path = f.name
 
         try:
-            from core.datasources.csv_source import CsvDataSource
-            from presets.eda_presets import CorrelationHeatmapPreset
+            from dashboard_lego.core.datasources.csv_source import CsvDataSource
+            from dashboard_lego.presets.eda_presets import CorrelationHeatmapPreset
 
             # Create data source
             datasource = CsvDataSource(csv_path)
@@ -408,8 +408,11 @@ class TestExamplesFunctionality:
             csv_path = f.name
 
         try:
-            from core.datasources.csv_source import CsvDataSource
-            from presets.ml_presets import MetricCardBlock, ModelSummaryBlock
+            from dashboard_lego.core.datasources.csv_source import CsvDataSource
+            from dashboard_lego.presets.ml_presets import (
+                MetricCardBlock,
+                ModelSummaryBlock,
+            )
 
             # Create data source with ML methods
             class MLDataSource(CsvDataSource):

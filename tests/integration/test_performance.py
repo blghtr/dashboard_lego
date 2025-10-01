@@ -22,11 +22,11 @@ from unittest.mock import MagicMock
 import pandas as pd
 import pytest
 
-from blocks.chart import StaticChartBlock
-from blocks.kpi import KPIBlock
-from core.datasource import BaseDataSource
-from core.page import DashboardPage
-from presets.ml_presets import MetricCardBlock
+from dashboard_lego.blocks.chart import StaticChartBlock
+from dashboard_lego.blocks.kpi import KPIBlock
+from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.page import DashboardPage
+from dashboard_lego.presets.ml_presets import MetricCardBlock
 
 
 class TestLargeDatasetPerformance:

@@ -19,7 +19,7 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 
-from core.datasources.parquet_source import ParquetDataSource
+from dashboard_lego.core.datasources.parquet_source import ParquetDataSource
 
 
 @pytest.fixture

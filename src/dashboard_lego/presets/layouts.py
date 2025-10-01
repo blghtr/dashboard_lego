@@ -16,7 +16,7 @@ Layout presets for `DashboardPage` using the extended layout API.
 
 from typing import List, Sequence
 
-from blocks.base import BaseBlock
+from dashboard_lego.blocks.base import BaseBlock
 
 
 def one_column(blocks: Sequence[BaseBlock]):

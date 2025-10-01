@@ -10,7 +10,7 @@ import pandas as pd
 from dash import dcc, html
 from dash.development.base_component import Component
 
-from blocks.base import BaseBlock
+from dashboard_lego.blocks.base import BaseBlock
 
 
 class TextBlock(BaseBlock):

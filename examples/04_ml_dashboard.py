@@ -2,9 +2,9 @@ import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
 
-from core.datasource import BaseDataSource
-from core.page import DashboardPage
-from presets.ml_presets import (
+from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.page import DashboardPage
+from dashboard_lego.presets.ml_presets import (
     ConfusionMatrixPreset,
     FeatureImportancePreset,
     MetricCardBlock,

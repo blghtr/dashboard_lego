@@ -24,9 +24,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Install uv
-      uses: astral-sh/setup-uv@v2
-      with:
-        version: "latest"
+      uses: astral-sh/setup-uv@v4
 
     - name: Install dependencies
       run: |
@@ -34,24 +32,24 @@ jobs:
 
     - name: Check code formatting with Black
       run: |
-        uv run black --check --diff blocks/ core/ presets/ utils/ tests/ examples/
+        uv run black --check --diff src/dashboard_lego/ tests/ examples/
 
     - name: Check import sorting with isort
       run: |
-        uv run isort --check-only --diff blocks/ core/ presets/ utils/ tests/ examples/
+        uv run isort --check-only --diff src/dashboard_lego/ tests/ examples/
 
     - name: Run linting checks
       run: |
-        uv run flake8 blocks/ core/ presets/ utils/ --max-line-length=88 --extend-ignore=E203,W503,E501
+        uv run flake8 src/dashboard_lego/ --max-line-length=88 --extend-ignore=E203,W503,E501
 
     - name: Run type checking with mypy
       run: |
-        uv run mypy blocks/ core/ presets/ utils/ --ignore-missing-imports --no-strict-optional --explicit-package-bases
+        uv run mypy src/dashboard_lego/ --ignore-missing-imports --no-strict-optional --explicit-package-bases
       continue-on-error: true
 
     - name: Run tests with coverage
       run: |
-        uv run pytest --cov=. --cov-report=xml --cov-report=term-missing
+        uv run pytest --cov=dashboard_lego --cov-report=xml --cov-report=term-missing
 
     - name: Upload coverage to Codecov
       if: matrix.python-version == '3.11'

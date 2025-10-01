@@ -12,7 +12,7 @@ import pytest
 from diskcache import Cache
 from pandas.testing import assert_frame_equal
 
-from core.datasource import BaseDataSource
+from dashboard_lego.core.datasource import BaseDataSource
 
 
 @pytest.fixture

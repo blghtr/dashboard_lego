@@ -7,7 +7,7 @@ import dash_bootstrap_components as dbc
 import pytest
 from dash import dcc, html
 
-from blocks.kpi import KPIBlock
+from dashboard_lego.blocks.kpi import KPIBlock
 
 
 @pytest.fixture

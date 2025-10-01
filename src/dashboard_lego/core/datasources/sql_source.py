@@ -7,9 +7,9 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-from core.datasource import BaseDataSource
-from utils.exceptions import DataLoadError
-from utils.logger import get_logger
+from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.utils.exceptions import DataLoadError
+from dashboard_lego.utils.logger import get_logger
 
 try:
     from sqlalchemy import create_engine, text

@@ -19,7 +19,7 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 
-from core.datasources.csv_source import CsvDataSource
+from dashboard_lego.core.datasources.csv_source import CsvDataSource
 
 
 @pytest.fixture

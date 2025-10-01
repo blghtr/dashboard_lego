@@ -5,8 +5,8 @@ This module defines the StateManager for handling interactivity between blocks.
 
 from typing import Any, Callable, Dict, List
 
-from utils.exceptions import StateError
-from utils.logger import get_logger
+from dashboard_lego.utils.exceptions import StateError
+from dashboard_lego.utils.logger import get_logger
 
 
 class StateManager:

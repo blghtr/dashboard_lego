@@ -7,12 +7,12 @@ import plotly.express as px
 import plotly.graph_objects as go
 from dash import html
 
-from blocks.chart import StaticChartBlock
-from blocks.kpi import KPIBlock
-from blocks.text import TextBlock
-from core.datasources.csv_source import CsvDataSource
-from core.page import DashboardPage
-from utils.logger import get_logger, setup_logging
+from dashboard_lego.blocks.chart import StaticChartBlock
+from dashboard_lego.blocks.kpi import KPIBlock
+from dashboard_lego.blocks.text import TextBlock
+from dashboard_lego.core.datasources.csv_source import CsvDataSource
+from dashboard_lego.core.page import DashboardPage
+from dashboard_lego.utils.logger import get_logger, setup_logging
 
 setup_logging()
 logger = get_logger(__name__)

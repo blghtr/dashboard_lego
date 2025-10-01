@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 import pandas as pd
 import pytest
 
-from core.datasource import BaseDataSource
+from dashboard_lego.core.datasource import BaseDataSource
 
 
 @pytest.fixture

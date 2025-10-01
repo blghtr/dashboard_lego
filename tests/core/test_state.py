@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, call
 import pytest
 from dash import Input, Output
 
-from core.state import StateManager
+from dashboard_lego.core.state import StateManager
 
 
 @pytest.fixture

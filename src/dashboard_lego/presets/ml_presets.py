@@ -10,10 +10,10 @@ import plotly.graph_objects as go
 from dash import html
 from sklearn.metrics import confusion_matrix
 
-from blocks.base import BaseBlock
-from blocks.chart import StaticChartBlock
-from blocks.kpi import KPIBlock
-from core.datasource import BaseDataSource
+from dashboard_lego.blocks.base import BaseBlock
+from dashboard_lego.blocks.chart import StaticChartBlock
+from dashboard_lego.blocks.kpi import KPIBlock
+from dashboard_lego.core.datasource import BaseDataSource
 
 
 class MetricCardBlock(KPIBlock):

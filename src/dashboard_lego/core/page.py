@@ -9,10 +9,10 @@ import dash_bootstrap_components as dbc
 from dash import html
 from dash.development.base_component import Component
 
-from blocks.base import BaseBlock
-from core.state import StateManager
-from utils.exceptions import ConfigurationError
-from utils.logger import get_logger
+from dashboard_lego.blocks.base import BaseBlock
+from dashboard_lego.core.state import StateManager
+from dashboard_lego.utils.exceptions import ConfigurationError
+from dashboard_lego.utils.logger import get_logger
 
 
 class DashboardPage:

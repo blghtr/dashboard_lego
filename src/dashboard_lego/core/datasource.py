@@ -10,8 +10,8 @@ from typing import Any, Dict, List, Optional
 import pandas as pd
 from diskcache import Cache
 
-from utils.exceptions import CacheError, DataLoadError
-from utils.logger import get_logger
+from dashboard_lego.utils.exceptions import CacheError, DataLoadError
+from dashboard_lego.utils.logger import get_logger
 
 
 class BaseDataSource(ABC):

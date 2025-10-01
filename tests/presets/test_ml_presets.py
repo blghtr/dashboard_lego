@@ -26,8 +26,8 @@ from dash import html
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from core.chart_context import ChartContext
-from presets.ml_presets import (
+from dashboard_lego.core.chart_context import ChartContext
+from dashboard_lego.presets.ml_presets import (
     ConfusionMatrixPreset,
     FeatureImportancePreset,
     MetricCardBlock,
@@ -344,7 +344,7 @@ class TestConfusionMatrixPreset:
         # Create test data
         df = pd.DataFrame({"y_true": [0, 1, 0, 1, 0, 1], "y_pred": [0, 1, 1, 1, 0, 0]})
 
-        with patch("presets.ml_presets.px") as mock_px:
+        with patch("dashboard_lego.presets.ml_presets.px") as mock_px:
             mock_fig = MagicMock()
             mock_px.imshow.return_value = mock_fig
 
@@ -431,7 +431,7 @@ class TestRocAucCurvePreset:
             {"y_true": [0, 1, 0, 1, 0, 1], "score": [0.1, 0.8, 0.3, 0.9, 0.2, 0.7]}
         )
 
-        with patch("presets.ml_presets.go") as mock_go:
+        with patch("dashboard_lego.presets.ml_presets.go") as mock_go:
             mock_fig = MagicMock()
             mock_go.Figure.return_value = mock_fig
 
@@ -475,7 +475,7 @@ class TestRocAucCurvePreset:
             }
         )
 
-        with patch("presets.ml_presets.go") as mock_go:
+        with patch("dashboard_lego.presets.ml_presets.go") as mock_go:
             mock_fig = MagicMock()
             mock_go.Figure.return_value = mock_fig
 
@@ -564,7 +564,7 @@ class TestFeatureImportancePreset:
             }
         )
 
-        with patch("presets.ml_presets.px") as mock_px:
+        with patch("dashboard_lego.presets.ml_presets.px") as mock_px:
             mock_fig = MagicMock()
             mock_px.bar.return_value = mock_fig
 

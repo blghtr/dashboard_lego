@@ -8,8 +8,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from dash import dcc
 
-from blocks.chart import Control, InteractiveChartBlock, StaticChartBlock
-from core.datasource import BaseDataSource
+from dashboard_lego.blocks.chart import Control, InteractiveChartBlock, StaticChartBlock
+from dashboard_lego.core.datasource import BaseDataSource
 
 
 class CorrelationHeatmapPreset(StaticChartBlock):

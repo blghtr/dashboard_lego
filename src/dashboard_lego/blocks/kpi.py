@@ -9,8 +9,8 @@ import dash_bootstrap_components as dbc
 from dash import dcc, html
 from dash.development.base_component import Component
 
-from blocks.base import BaseBlock
-from utils.formatting import format_number
+from dashboard_lego.blocks.base import BaseBlock
+from dashboard_lego.utils.formatting import format_number
 
 
 def _create_kpi_card(

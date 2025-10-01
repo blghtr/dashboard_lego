@@ -19,10 +19,10 @@ from unittest.mock import MagicMock, call
 import pytest
 from dash import html
 
-from blocks.base import BaseBlock
-from core.datasource import BaseDataSource
-from core.state import StateManager
-from utils.exceptions import ConfigurationError
+from dashboard_lego.blocks.base import BaseBlock
+from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.state import StateManager
+from dashboard_lego.utils.exceptions import ConfigurationError
 
 
 # A concrete implementation of BaseBlock for testing purposes

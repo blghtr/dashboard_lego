@@ -7,11 +7,11 @@ import plotly.express as px
 import plotly.graph_objects as go
 from dash import dcc
 
-from blocks.chart import Control, InteractiveChartBlock
-from blocks.kpi import KPIBlock
-from core.datasource import BaseDataSource
-from core.page import DashboardPage
-from utils.logger import get_logger, setup_logging
+from dashboard_lego.blocks.chart import Control, InteractiveChartBlock
+from dashboard_lego.blocks.kpi import KPIBlock
+from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.page import DashboardPage
+from dashboard_lego.utils.logger import get_logger, setup_logging
 
 # 1. Setup logging for demonstration
 setup_logging(level="DEBUG")  # Enable DEBUG level to see hierarchy
@@ -107,7 +107,7 @@ kpi_block = KPIBlock(
 )
 
 # 5. Create the Dashboard Page using layout presets
-from presets.layouts import two_column_8_4
+from dashboard_lego.presets.layouts import two_column_8_4
 
 logger.info("Creating dashboard page")
 dashboard_page = DashboardPage(

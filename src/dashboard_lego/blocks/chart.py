@@ -11,10 +11,10 @@ import plotly.graph_objects as go
 from dash import dcc, html
 from dash.development.base_component import Component
 
-from blocks.base import BaseBlock
-from core.chart_context import ChartContext
-from core.datasource import BaseDataSource
-from core.state import StateManager
+from dashboard_lego.blocks.base import BaseBlock
+from dashboard_lego.core.chart_context import ChartContext
+from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.state import StateManager
 
 
 @dataclass

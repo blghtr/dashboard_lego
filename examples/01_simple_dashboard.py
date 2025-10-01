@@ -6,11 +6,11 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-from blocks.chart import StaticChartBlock
-from blocks.kpi import KPIBlock
-from core.datasource import BaseDataSource
-from core.page import DashboardPage
-from utils.logger import get_logger, setup_logging
+from dashboard_lego.blocks.chart import StaticChartBlock
+from dashboard_lego.blocks.kpi import KPIBlock
+from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.page import DashboardPage
+from dashboard_lego.utils.logger import get_logger, setup_logging
 
 setup_logging()
 logger = get_logger(__name__)
@@ -80,7 +80,7 @@ chart_block = StaticChartBlock(
 )
 
 # 5. Create the Dashboard Page using layout presets
-from presets.layouts import one_column
+from dashboard_lego.presets.layouts import one_column
 
 dashboard_page = DashboardPage(
     title="Simple Sales Dashboard",

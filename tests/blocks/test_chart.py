@@ -11,8 +11,8 @@ import plotly.graph_objects as go
 import pytest
 from dash import dcc, html
 
-from blocks.chart import Control, InteractiveChartBlock, StaticChartBlock
-from core.state import StateManager
+from dashboard_lego.blocks.chart import Control, InteractiveChartBlock, StaticChartBlock
+from dashboard_lego.core.state import StateManager
 
 
 @pytest.fixture
