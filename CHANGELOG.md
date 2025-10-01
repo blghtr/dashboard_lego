@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2025-10-01
+
+### Added
+- **NEW FEATURE**: Navigation Panel System
+  - `NavigationConfig` and `NavigationSection` classes for multi-section dashboards
+  - Lazy loading of dashboard sections with factory functions
+  - Fixed sidebar navigation with dynamic width calculation
+  - Section caching to prevent recreation on revisit
+  - Support for Font Awesome icons and Bootstrap styling
+  - Example: `examples/08_navigation_dashboard.py`
+
+### Changed
+- Enhanced `DashboardPage` to support both standard and navigation modes
+- Improved visual styling with custom CSS and responsive design
+- Updated validation to require either `blocks` or `navigation` parameter
+
+### Technical Details
+- Added 12 comprehensive tests for navigation functionality
+- Maintained 85% test coverage across all modules
+- All 124 tests pass without regressions
+
 ## [0.9.2] - 2025-10-01
 
 ### Changed

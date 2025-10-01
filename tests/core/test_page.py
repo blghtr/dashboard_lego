@@ -115,13 +115,16 @@ def test_page_build_layout_structure(mock_datasource):
     assert row2_cols[1].lg == 4
 
 
-def test_page_register_callbacks_delegates_to_state_manager(mocker, mock_app):
+def test_page_register_callbacks_delegates_to_state_manager(
+    mocker, mock_app, mock_datasource
+):
     """
     Tests that register_callbacks correctly delegates the call to the state manager.
 
     """
-    # We don't need real blocks for this test
-    page = DashboardPage(title="Test", blocks=[])
+    # Need at least one block to satisfy validation
+    block = MockBlock(block_id="test_block", datasource=mock_datasource)
+    page = DashboardPage(title="Test", blocks=[[block]])
 
     # Spy on the state manager's method
     spy_generate = mocker.spy(page.state_manager, "generate_callbacks")

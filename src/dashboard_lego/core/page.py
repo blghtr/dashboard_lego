@@ -3,16 +3,64 @@ This module defines the DashboardPage class, which orchestrates blocks on a page
 
 """
 
-from typing import Any, Dict, Iterable, List, Tuple
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 import dash_bootstrap_components as dbc
-from dash import html
+from dash import dcc, html
+from dash.dependencies import Input, Output
 from dash.development.base_component import Component
 
 from dashboard_lego.blocks.base import BaseBlock
 from dashboard_lego.core.state import StateManager
 from dashboard_lego.utils.exceptions import ConfigurationError
 from dashboard_lego.utils.logger import get_logger
+
+
+@dataclass
+class NavigationSection:
+    """
+    Defines a single navigation section with a title and lazy block factory.
+
+        :hierarchy: [Feature | Navigation System | NavigationSection]
+        :relates-to:
+         - motivated_by: "Architectural Conclusion: Lazy loading of dashboard sections improves performance"
+         - implements: "dataclass: 'NavigationSection'"
+         - uses: ["interface: 'BaseBlock'"]
+
+        :rationale: "Uses factory pattern to defer block creation until section is activated."
+        :contract:
+         - pre: "title is a non-empty string, block_factory is a callable returning List[List[Any]]"
+         - post: "Section can be rendered on demand via factory invocation"
+
+    """
+
+    title: str
+    block_factory: Callable[[], List[List[Any]]]
+
+
+@dataclass
+class NavigationConfig:
+    """
+    Configuration for navigation panel in DashboardPage.
+
+        :hierarchy: [Feature | Navigation System | NavigationConfig]
+        :relates-to:
+         - motivated_by: "PRD: Simplify creation of dashboards with navigation sidebar"
+         - implements: "dataclass: 'NavigationConfig'"
+         - uses: ["dataclass: 'NavigationSection'"]
+
+        :rationale: "Encapsulates all navigation settings in a typed, immutable config object."
+        :contract:
+         - pre: "sections is a non-empty list of NavigationSection instances"
+         - post: "Config provides all data needed to render navigation UI"
+
+    """
+
+    sections: List[NavigationSection]
+    position: str = "left"  # "left" or "top"
+    sidebar_width: int = 3  # Bootstrap columns (1-12)
+    default_section: int = 0  # Index of initially active section
 
 
 class DashboardPage:
@@ -33,7 +81,11 @@ class DashboardPage:
     """
 
     def __init__(
-        self, title: str, blocks: List[List[Any]], theme: str = dbc.themes.BOOTSTRAP
+        self,
+        title: str,
+        blocks: Optional[List[List[Any]]] = None,
+        theme: str = dbc.themes.BOOTSTRAP,
+        navigation: Optional[NavigationConfig] = None,
     ):
         """
         Initializes the DashboardPage, creates a StateManager, and
@@ -46,8 +98,11 @@ class DashboardPage:
                     (BaseBlock, dict_of_col_props).
                     Example: [[block1], [(block2, {'width': 8}),
                                         (block3, {'width': 4})]]
+                    If navigation is provided, this parameter is optional.
             theme: An optional URL to a dash-bootstrap-components theme
                    (e.g., dbc.themes.CYBORG).
+            navigation: Optional NavigationConfig for multi-section dashboard
+                       with lazy-loaded content.
 
         """
         self.logger = get_logger(__name__, DashboardPage)
@@ -55,49 +110,67 @@ class DashboardPage:
 
         self.title = title
         self.theme = theme
-        self.layout_structure = blocks
+        self.navigation = navigation
+        self.layout_structure = blocks or []
         self.state_manager = StateManager()
 
-        # Flatten the structure to get all block instances for registration
-        self.blocks: List[BaseBlock] = []
-        try:
-            for row_idx, row in enumerate(self.layout_structure):
-                # Handle both old format (list of blocks) and new format (tuple of (list, dict))
-                if isinstance(row, tuple) and len(row) == 2:
-                    # New format: (list_of_blocks, row_options)
-                    blocks_list = row[0]
-                else:
-                    # Old format: list of blocks
-                    blocks_list = row
-
-                self.logger.debug(
-                    f"Processing row {row_idx} with {len(blocks_list)} blocks"
-                )
-                for item in blocks_list:
-                    block = item[0] if isinstance(item, tuple) else item
-                    if not isinstance(block, BaseBlock):
-                        error_msg = (
-                            f"All layout items must be of type BaseBlock. "
-                            f"Got {type(block)} in row {row_idx}"
-                        )
-                        self.logger.error(error_msg)
-                        raise ConfigurationError(error_msg)
-                    self.blocks.append(block)
-
-            self.logger.info(
-                f"Page structure validated: {len(self.layout_structure)} rows, "
-                f"{len(self.blocks)} blocks total"
+        # Validate that either blocks or navigation is provided
+        if not blocks and not navigation:
+            raise ConfigurationError(
+                "Either 'blocks' or 'navigation' must be provided to DashboardPage"
             )
-        except Exception as e:
-            self.logger.error(f"Failed to process page structure: {e}")
-            raise
 
-        # Register all blocks with the state manager
-        self.logger.debug("Registering blocks with state manager")
-        self.logger.debug(f"Registering {len(self.blocks)} blocks with state manager")
-        for block in self.blocks:
-            self.logger.debug(f"Registering block: {block.block_id}")
-            block._register_state_interactions(self.state_manager)
+        # Flatten the structure to get all block instances for registration
+        # (Only for non-navigation mode; navigation uses lazy loading)
+        self.blocks: List[BaseBlock] = []
+
+        if not self.navigation:
+            # Standard mode: register all blocks immediately
+            try:
+                for row_idx, row in enumerate(self.layout_structure):
+                    # Handle both old format (list of blocks) and new format (tuple of (list, dict))
+                    if isinstance(row, tuple) and len(row) == 2:
+                        # New format: (list_of_blocks, row_options)
+                        blocks_list = row[0]
+                    else:
+                        # Old format: list of blocks
+                        blocks_list = row
+
+                    self.logger.debug(
+                        f"Processing row {row_idx} with {len(blocks_list)} blocks"
+                    )
+                    for item in blocks_list:
+                        block = item[0] if isinstance(item, tuple) else item
+                        if not isinstance(block, BaseBlock):
+                            error_msg = (
+                                f"All layout items must be of type BaseBlock. "
+                                f"Got {type(block)} in row {row_idx}"
+                            )
+                            self.logger.error(error_msg)
+                            raise ConfigurationError(error_msg)
+                        self.blocks.append(block)
+
+                self.logger.info(
+                    f"Page structure validated: {len(self.layout_structure)} rows, "
+                    f"{len(self.blocks)} blocks total"
+                )
+            except Exception as e:
+                self.logger.error(f"Failed to process page structure: {e}")
+                raise
+
+            # Register all blocks with the state manager
+            self.logger.debug("Registering blocks with state manager")
+            self.logger.debug(f"Registering {len(self.blocks)} blocks with state manager")
+            for block in self.blocks:
+                self.logger.debug(f"Registering block: {block.block_id}")
+                block._register_state_interactions(self.state_manager)
+        else:
+            # Navigation mode: blocks will be created and registered lazily
+            self.logger.info(
+                f"Navigation mode enabled with {len(self.navigation.sections)} sections"
+            )
+            # Cache for lazily loaded sections: {section_index: List[BaseBlock]}
+            self._section_blocks_cache: Dict[int, List[BaseBlock]] = {}
 
     # --- Layout v2: helper constants ---
     _CELL_ALLOWED_KEYS: set = {
@@ -345,6 +418,127 @@ class DashboardPage:
         )
         return dbc.Col(col_content, **col_kwargs)
 
+    def _build_navigation_layout(self) -> Component:
+        """
+        Builds the navigation-based layout with fixed sidebar and dynamic content.
+
+            :hierarchy: [Feature | Navigation System | Build Navigation Layout]
+            :relates-to:
+             - motivated_by: "PRD: User-friendly navigation panel for multi-section dashboards"
+             - implements: "method: '_build_navigation_layout'"
+             - uses: ["dataclass: 'NavigationConfig'", "library: 'dash_bootstrap_components'"]
+
+            :rationale: "Uses fixed sidebar with dbc.Nav and dcc.Store for state tracking."
+            :contract:
+             - pre: "self.navigation is not None and contains valid sections"
+             - post: "Returns layout with fixed sidebar and dynamic content area"
+
+        """
+        if not self.navigation:
+            raise ConfigurationError(
+                "Navigation config is required for navigation layout"
+            )
+
+        # Dynamic sidebar width based on content
+        max_title_length = max(len(section.title) for section in self.navigation.sections)
+        sidebar_width = max(16, min(24, max_title_length * 0.8 + 8))  # Dynamic width
+
+        # Fixed sidebar style with better colors and spacing
+        sidebar_style = {
+            "position": "fixed",
+            "top": 0,
+            "left": 0,
+            "bottom": 0,
+            "width": f"{sidebar_width}rem",
+            "padding": "2rem 1.5rem",
+            "background-color": "#2c3e50",  # Dark blue-gray
+            "color": "#ecf0f1",  # Light text
+            "overflow-y": "auto",
+            "box-shadow": "2px 0 5px rgba(0,0,0,0.1)",
+            "z-index": 1000,
+        }
+
+        # Content area style with margin to avoid sidebar overlap
+        content_style = {
+            "margin-left": f"{sidebar_width + 1}rem",
+            "margin-right": "2rem",
+            "padding": "2rem 1rem",
+            "min-height": "100vh",
+            "background-color": "#ffffff",
+        }
+
+        # Create navigation links with better styling
+        nav_links = []
+        for idx, section in enumerate(self.navigation.sections):
+            nav_links.append(
+                dbc.NavLink(
+                    [
+                        html.I(className="fas fa-chart-bar me-2"),  # Icon
+                        section.title,
+                    ],
+                    id=f"nav-item-{idx}",
+                    href=f"#section-{idx}",
+                    active=idx == self.navigation.default_section,
+                    n_clicks=0,
+                    className="mb-2",
+                    style={
+                        "color": "#ecf0f1",
+                        "border-radius": "8px",
+                        "padding": "0.75rem 1rem",
+                        "transition": "all 0.3s ease",
+                    },
+                )
+            )
+
+        # Sidebar with navigation
+        sidebar = html.Div(
+            [
+                html.Div(
+                    [
+                        html.I(className="fas fa-tachometer-alt me-2"),
+                        html.H4(self.title, className="mb-0 d-inline"),
+                    ],
+                    className="mb-4",
+                ),
+                html.Hr(style={"border-color": "#34495e", "margin": "1.5rem 0"}),
+                html.P(
+                    "Navigate between sections",
+                    className="text-muted small mb-3",
+                ),
+                dbc.Nav(
+                    nav_links,
+                    vertical=True,
+                    pills=True,
+                    id="nav-list",
+                    className="nav-pills-custom",
+                ),
+            ],
+            style=sidebar_style,
+        )
+
+        # Content area for dynamic content
+        content_area = html.Div(
+            id="nav-content-area",
+            children=[],
+            style=content_style,
+        )
+
+        # Store to track the currently active section index
+        active_section_store = dcc.Store(
+            id="active-section-store", data=self.navigation.default_section
+        )
+
+        # Custom CSS will be added via external stylesheets in the app
+        # No inline CSS needed here
+
+        if self.navigation.position == "left":
+            return html.Div([active_section_store, sidebar, content_area])
+        else:
+            # Top navigation - not yet implemented
+            raise NotImplementedError(
+                "Top navigation position is not yet implemented. Use 'left'."
+            )
+
     def build_layout(self) -> Component:
         """
         Assembles the layouts from all blocks into a grid-based page layout.
@@ -354,6 +548,13 @@ class DashboardPage:
 
         """
         self.logger.info("Building page layout")
+
+        # Navigation mode: use navigation layout
+        if self.navigation:
+            self.logger.info("Building navigation-based layout")
+            return self._build_navigation_layout()
+
+        # Standard mode: use grid layout
         self.logger.debug(
             f"Building layout: {len(self.layout_structure)} rows, {len(self.blocks)} blocks"
         )
@@ -376,6 +577,83 @@ class DashboardPage:
         except Exception as e:
             self.logger.error(f"Error building layout: {e}", exc_info=True)
             raise
+
+    def _create_section_content(self, section_index: int) -> List[Component]:
+        """
+        Lazily creates and caches blocks for a given section.
+
+            :hierarchy: [Feature | Navigation System | Create Section Content]
+            :relates-to:
+             - motivated_by: "Architectural Conclusion: Lazy loading improves initial page load performance"
+             - implements: "method: '_create_section_content'"
+             - uses: ["dataclass: 'NavigationSection'", "class: 'StateManager'"]
+
+            :rationale: "Cache blocks per section to avoid recreating on revisit, but create only on demand."
+            :contract:
+             - pre: "section_index is valid, navigation config exists"
+             - post: "Returns list of rendered rows for the section; blocks are cached and registered"
+
+        """
+        if section_index in self._section_blocks_cache:
+            # Return cached content
+            self.logger.debug(
+                f"Using cached content for section {section_index}"
+            )
+            # Re-render from cached blocks
+            rows = []
+            for row_spec in self._section_layout_cache[section_index]:
+                normalized_cells, row_options = self._validate_row(row_spec)
+                rows.append(self._render_row(normalized_cells, row_options))
+            return rows
+
+        # Create new blocks via factory
+        self.logger.info(f"Lazily loading section {section_index}")
+        section = self.navigation.sections[section_index]
+
+        try:
+            layout_structure = section.block_factory()
+            self.logger.debug(f"Factory returned {len(layout_structure)} rows")
+        except Exception as e:
+            self.logger.error(f"Error in block factory for section {section_index}: {e}")
+            raise ConfigurationError(
+                f"Block factory for section '{section.title}' failed: {e}"
+            ) from e
+
+        # Extract and register blocks
+        section_blocks: List[BaseBlock] = []
+        for row in layout_structure:
+            if isinstance(row, tuple) and len(row) == 2:
+                blocks_list = row[0]
+            else:
+                blocks_list = row
+
+            for item in blocks_list:
+                block = item[0] if isinstance(item, tuple) else item
+                if not isinstance(block, BaseBlock):
+                    raise ConfigurationError(
+                        f"All layout items must be of type BaseBlock in section '{section.title}'"
+                    )
+                section_blocks.append(block)
+                # Register block with state manager
+                block._register_state_interactions(self.state_manager)
+
+        # Cache blocks and layout
+        self._section_blocks_cache[section_index] = section_blocks
+        if not hasattr(self, '_section_layout_cache'):
+            self._section_layout_cache: Dict[int, List[List[Any]]] = {}
+        self._section_layout_cache[section_index] = layout_structure
+
+        self.logger.info(
+            f"Section {section_index} loaded: {len(section_blocks)} blocks registered"
+        )
+
+        # Render rows
+        rows = []
+        for row_spec in layout_structure:
+            normalized_cells, row_options = self._validate_row(row_spec)
+            rows.append(self._render_row(normalized_cells, row_options))
+
+        return rows
 
     def register_callbacks(self, app: Any):
         """
@@ -400,13 +678,103 @@ class DashboardPage:
         """
         self.logger.info("Registering callbacks with Dash app")
         try:
+            # Navigation-specific callbacks
+            if self.navigation:
+                self._register_navigation_callbacks(app)
+
             # OLD MECHANISM: State-based callbacks for StaticChartBlock
             self.state_manager.generate_callbacks(app)
 
             # NEW MECHANISM: Block-centric callbacks for InteractiveChartBlock
-            self.state_manager.bind_callbacks(app, self.blocks)
+            # For navigation mode, we need to handle dynamic blocks
+            if self.navigation:
+                # Bind callbacks for any already-loaded sections
+                all_section_blocks = []
+                for blocks in self._section_blocks_cache.values():
+                    all_section_blocks.extend(blocks)
+                if all_section_blocks:
+                    self.state_manager.bind_callbacks(app, all_section_blocks)
+            else:
+                self.state_manager.bind_callbacks(app, self.blocks)
 
             self.logger.info("Callbacks registered successfully")
         except Exception as e:
             self.logger.error(f"Error registering callbacks: {e}", exc_info=True)
             raise
+
+    def _register_navigation_callbacks(self, app: Any):
+        """
+        Registers navigation-specific callbacks for section switching.
+
+            :hierarchy: [Feature | Navigation System | Register Navigation Callbacks]
+            :relates-to:
+             - motivated_by: "Navigation panel requires interactive section switching"
+             - implements: "method: '_register_navigation_callbacks'"
+             - uses: ["library: 'dash'", "method: '_create_section_content'"]
+
+            :rationale: "Dynamic callback responds to nav clicks and loads content lazily."
+            :contract:
+             - pre: "Navigation config exists, app is valid Dash instance"
+             - post: "Callback registered to update content area and nav states"
+
+        """
+        from dash import callback_context
+
+        @app.callback(
+            [
+                Output("nav-content-area", "children"),
+                Output("active-section-store", "data"),
+            ]
+            + [
+                Output(f"nav-item-{i}", "active")
+                for i in range(len(self.navigation.sections))
+            ],
+            [
+                Input(f"nav-item-{i}", "n_clicks")
+                for i in range(len(self.navigation.sections))
+            ],
+            prevent_initial_call=False,
+        )
+        def update_navigation(*args):
+            """
+            Updates content area and navigation link states on user clicks.
+
+            """
+            ctx = callback_context
+
+            # On initial call, load default section
+            if not ctx.triggered or ctx.triggered[0]["prop_id"] == ".":
+                section_idx = self.navigation.default_section
+                self.logger.debug(f"Initial load: section {section_idx}")
+            else:
+                # Extract clicked item index from triggered id
+                triggered_id = ctx.triggered[0]["prop_id"].split(".")[0]
+                section_idx = int(triggered_id.split("-")[-1])
+                self.logger.info(
+                    f"Navigation click: switching to section {section_idx}"
+                )
+
+            # Load section content
+            try:
+                content = self._create_section_content(section_idx)
+            except Exception as e:
+                self.logger.error(f"Failed to load section {section_idx}: {e}")
+                content = [
+                    dbc.Alert(
+                        [
+                            html.H4("Error Loading Section", className="alert-heading"),
+                            html.P(f"Failed to load section: {e}"),
+                        ],
+                        color="danger",
+                        className="m-3",
+                    )
+                ]
+
+            # Update active states for nav items
+            active_states = [
+                i == section_idx for i in range(len(self.navigation.sections))
+            ]
+
+            return [content, section_idx] + active_states
+
+        self.logger.info("Navigation callbacks registered")
