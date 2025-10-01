@@ -236,10 +236,7 @@ make check
 
 ```bash
 # Clone and setup
-git clone https://github.com/your-username/dashboard-lego.git
-cd dashboard-lego
-uv venv
-uv pip install -e .[dev,docs,ml,sql]
+[uv] pip install dashboard-lego
 
 # Run pre-commit hooks
 pre-commit install
