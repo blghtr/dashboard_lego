@@ -1,7 +1,0 @@
-blocks.chart module
-===================
-
-.. automodule:: blocks.chart
-   :members:
-   :show-inheritance:
-   :undoc-members:

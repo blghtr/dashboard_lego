@@ -47,7 +47,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../api/modules.html">dashboard_lego</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/modules.html">API Reference</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Development</span></p>
 <ul>
@@ -111,7 +111,7 @@
 
 
 <div class="viewcode-block" id="KPIBlock">
-<a class="viewcode-back" href="../../api/blocks.kpi.html#blocks.kpi.KPIBlock">[docs]</a>
+<a class="viewcode-back" href="../../api/blocks.html#blocks.kpi.KPIBlock">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">KPIBlock</span><span class="p">(</span><span class="n">BaseBlock</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A block for displaying a row of Key Performance Indicators (KPIs).</span>
@@ -131,7 +131,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="KPIBlock.__init__">
-<a class="viewcode-back" href="../../api/blocks.kpi.html#blocks.kpi.KPIBlock.__init__">[docs]</a>
+<a class="viewcode-back" href="../../api/blocks.html#blocks.kpi.KPIBlock.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -169,7 +169,7 @@
             <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Alert</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка загрузки KPI: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;danger&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="KPIBlock.layout">
-<a class="viewcode-back" href="../../api/blocks.kpi.html#blocks.kpi.KPIBlock.layout">[docs]</a>
+<a class="viewcode-back" href="../../api/blocks.html#blocks.kpi.KPIBlock.layout">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">layout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
         <span class="c1"># Initialize with current data instead of empty container</span>
         <span class="n">initial_content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_kpi_cards</span><span class="p">()</span>

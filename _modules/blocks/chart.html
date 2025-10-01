@@ -47,7 +47,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../api/modules.html">dashboard_lego</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/modules.html">API Reference</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Development</span></p>
 <ul>
@@ -99,7 +99,7 @@
 
 
 <div class="viewcode-block" id="Control">
-<a class="viewcode-back" href="../../api/blocks.chart.html#blocks.chart.Control">[docs]</a>
+<a class="viewcode-back" href="../../api/blocks.html#blocks.chart.Control">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Control</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -113,7 +113,7 @@
 
 
 <div class="viewcode-block" id="StaticChartBlock">
-<a class="viewcode-back" href="../../api/blocks.chart.html#blocks.chart.StaticChartBlock">[docs]</a>
+<a class="viewcode-back" href="../../api/blocks.html#blocks.chart.StaticChartBlock">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">StaticChartBlock</span><span class="p">(</span><span class="n">BaseBlock</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A block for displaying a single chart that is updated by external state</span>
@@ -135,7 +135,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="StaticChartBlock.__init__">
-<a class="viewcode-back" href="../../api/blocks.chart.html#blocks.chart.StaticChartBlock.__init__">[docs]</a>
+<a class="viewcode-back" href="../../api/blocks.html#blocks.chart.StaticChartBlock.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -157,7 +157,7 @@
         <span class="k">return</span> <span class="s2">&quot;figure&quot;</span>
 
 <div class="viewcode-block" id="StaticChartBlock.output_target">
-<a class="viewcode-back" href="../../api/blocks.chart.html#blocks.chart.StaticChartBlock.output_target">[docs]</a>
+<a class="viewcode-back" href="../../api/blocks.html#blocks.chart.StaticChartBlock.output_target">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">output_target</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the output target for chart blocks.</span>
@@ -206,7 +206,7 @@
             <span class="k">return</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
 
 <div class="viewcode-block" id="StaticChartBlock.layout">
-<a class="viewcode-back" href="../../api/blocks.chart.html#blocks.chart.StaticChartBlock.layout">[docs]</a>
+<a class="viewcode-back" href="../../api/blocks.html#blocks.chart.StaticChartBlock.layout">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">layout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
         <span class="c1"># Initialize with current chart instead of empty container</span>
         <span class="n">initial_chart</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_chart</span><span class="p">()</span>
@@ -230,7 +230,7 @@
 
 
 <div class="viewcode-block" id="InteractiveChartBlock">
-<a class="viewcode-back" href="../../api/blocks.chart.html#blocks.chart.InteractiveChartBlock">[docs]</a>
+<a class="viewcode-back" href="../../api/blocks.html#blocks.chart.InteractiveChartBlock">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">InteractiveChartBlock</span><span class="p">(</span><span class="n">BaseBlock</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A block for a chart that has its own interactive controls and can react</span>
@@ -255,7 +255,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="InteractiveChartBlock.__init__">
-<a class="viewcode-back" href="../../api/blocks.chart.html#blocks.chart.InteractiveChartBlock.__init__">[docs]</a>
+<a class="viewcode-back" href="../../api/blocks.html#blocks.chart.InteractiveChartBlock.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -292,7 +292,7 @@
         <span class="k">return</span> <span class="s2">&quot;figure&quot;</span>
 
 <div class="viewcode-block" id="InteractiveChartBlock.output_target">
-<a class="viewcode-back" href="../../api/blocks.chart.html#blocks.chart.InteractiveChartBlock.output_target">[docs]</a>
+<a class="viewcode-back" href="../../api/blocks.html#blocks.chart.InteractiveChartBlock.output_target">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">output_target</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the output target for interactive chart blocks.</span>
@@ -368,7 +368,7 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_register_state_interactions</span><span class="p">(</span><span class="n">state_manager</span><span class="p">)</span>
 
 <div class="viewcode-block" id="InteractiveChartBlock.list_control_inputs">
-<a class="viewcode-back" href="../../api/blocks.chart.html#blocks.chart.InteractiveChartBlock.list_control_inputs">[docs]</a>
+<a class="viewcode-back" href="../../api/blocks.html#blocks.chart.InteractiveChartBlock.list_control_inputs">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">list_control_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns list of (component_id, property) tuples for all controls.</span>
@@ -398,7 +398,7 @@
 
 
 <div class="viewcode-block" id="InteractiveChartBlock.update_from_controls">
-<a class="viewcode-back" href="../../api/blocks.chart.html#blocks.chart.InteractiveChartBlock.update_from_controls">[docs]</a>
+<a class="viewcode-back" href="../../api/blocks.html#blocks.chart.InteractiveChartBlock.update_from_controls">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update_from_controls</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">control_values</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Updates the chart based on control values.</span>
@@ -429,7 +429,7 @@
 
 
 <div class="viewcode-block" id="InteractiveChartBlock.layout">
-<a class="viewcode-back" href="../../api/blocks.chart.html#blocks.chart.InteractiveChartBlock.layout">[docs]</a>
+<a class="viewcode-back" href="../../api/blocks.html#blocks.chart.InteractiveChartBlock.layout">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">layout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
         <span class="c1"># Initialize with current chart data using default control values</span>
         <span class="n">initial_control_values</span> <span class="o">=</span> <span class="p">{}</span>

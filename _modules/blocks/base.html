@@ -47,7 +47,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../api/modules.html">dashboard_lego</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/modules.html">API Reference</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Development</span></p>
 <ul>
@@ -97,7 +97,7 @@
 
 
 <div class="viewcode-block" id="BaseBlock">
-<a class="viewcode-back" href="../../api/blocks.base.html#blocks.base.BaseBlock">[docs]</a>
+<a class="viewcode-back" href="../../api/blocks.html#blocks.base.BaseBlock">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseBlock</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    An abstract base class that defines the contract for all dashboard blocks.</span>
@@ -121,7 +121,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="BaseBlock.__init__">
-<a class="viewcode-back" href="../../api/blocks.base.html#blocks.base.BaseBlock.__init__">[docs]</a>
+<a class="viewcode-back" href="../../api/blocks.html#blocks.base.BaseBlock.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initializes the BaseBlock.</span>
@@ -244,7 +244,7 @@
         <span class="k">return</span> <span class="s2">&quot;children&quot;</span>
 
 <div class="viewcode-block" id="BaseBlock.output_target">
-<a class="viewcode-back" href="../../api/blocks.base.html#blocks.base.BaseBlock.output_target">[docs]</a>
+<a class="viewcode-back" href="../../api/blocks.html#blocks.base.BaseBlock.output_target">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">output_target</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the output target for this block&#39;s callback.</span>
@@ -270,7 +270,7 @@
 
 
 <div class="viewcode-block" id="BaseBlock.list_control_inputs">
-<a class="viewcode-back" href="../../api/blocks.base.html#blocks.base.BaseBlock.list_control_inputs">[docs]</a>
+<a class="viewcode-back" href="../../api/blocks.html#blocks.base.BaseBlock.list_control_inputs">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">list_control_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns list of control inputs for this block.</span>
@@ -297,7 +297,7 @@
 
 
 <div class="viewcode-block" id="BaseBlock.update_from_controls">
-<a class="viewcode-back" href="../../api/blocks.base.html#blocks.base.BaseBlock.update_from_controls">[docs]</a>
+<a class="viewcode-back" href="../../api/blocks.html#blocks.base.BaseBlock.update_from_controls">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update_from_controls</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">control_values</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Updates the block based on control values.</span>
@@ -337,7 +337,7 @@
 
 
 <div class="viewcode-block" id="BaseBlock.layout">
-<a class="viewcode-back" href="../../api/blocks.base.html#blocks.base.BaseBlock.layout">[docs]</a>
+<a class="viewcode-back" href="../../api/blocks.html#blocks.base.BaseBlock.layout">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">layout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -349,7 +349,7 @@
 
 
 <div class="viewcode-block" id="BaseBlock.register_callbacks">
-<a class="viewcode-back" href="../../api/blocks.base.html#blocks.base.BaseBlock.register_callbacks">[docs]</a>
+<a class="viewcode-back" href="../../api/blocks.html#blocks.base.BaseBlock.register_callbacks">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">register_callbacks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method&#39;s role is now handled by the StateManager.</span>
