@@ -1,0 +1,1225 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Presets Module &mdash; Dashboard Lego 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Dashboard Lego
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../concepts.html">Core Concepts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">dashboard_lego</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing to Dashboard Lego</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Dashboard Lego</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Presets Module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/presets.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="presets-module">
+<h1>Presets Module<a class="headerlink" href="#presets-module" title="Link to this heading"></a></h1>
+<p>The presets module contains pre-built blocks for common data analysis and visualization tasks.</p>
+<section id="eda-presets">
+<h2>EDA Presets<a class="headerlink" href="#eda-presets" title="Link to this heading"></a></h2>
+<p>Exploratory Data Analysis presets for common data visualization patterns.</p>
+<p id="module-presets.eda_presets">This module contains pre-built blocks for common Exploratory Data Analysis (EDA) tasks.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="presets.eda_presets.CorrelationHeatmapPreset">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">presets.eda_presets.</span></span><span class="sig-name descname"><span class="pre">CorrelationHeatmapPreset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">subscribes_to</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Correlation</span> <span class="pre">Heatmap'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/eda_presets.html#CorrelationHeatmapPreset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#presets.eda_presets.CorrelationHeatmapPreset" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="blocks.html#id7" title="blocks.chart.StaticChartBlock"><code class="xref py py-class docutils literal notranslate"><span class="pre">StaticChartBlock</span></code></a></p>
+<p>A preset block that displays a correlation matrix heatmap for the numerical columns of a DataFrame.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Presets | EDA | CorrelationHeatmap]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Provide pre-built EDA components
+for common data analysis patterns to reduce boilerplate”</p></li>
+<li><p>implements: “preset: ‘CorrelationHeatmapPreset’”</p></li>
+<li><p>uses: [“block: ‘StaticChartBlock’”]</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="presets.eda_presets.CorrelationHeatmapPreset.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">subscribes_to</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Correlation</span> <span class="pre">Heatmap'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/eda_presets.html#CorrelationHeatmapPreset.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#presets.eda_presets.CorrelationHeatmapPreset.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes the CorrelationHeatmapPreset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>block_id</strong> – A unique identifier for this block instance.</p></li>
+<li><p><strong>datasource</strong> – An instance of a class that implements the BaseDataSource interface.</p></li>
+<li><p><strong>subscribes_to</strong> – The state ID to which this block subscribes to receive updates.</p></li>
+<li><p><strong>title</strong> – The title to be displayed on the chart card.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="presets.eda_presets.GroupedHistogramPreset">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">presets.eda_presets.</span></span><span class="sig-name descname"><span class="pre">GroupedHistogramPreset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Distribution</span> <span class="pre">Analysis'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/eda_presets.html#GroupedHistogramPreset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#presets.eda_presets.GroupedHistogramPreset" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="blocks.html#id11" title="blocks.chart.InteractiveChartBlock"><code class="xref py py-class docutils literal notranslate"><span class="pre">InteractiveChartBlock</span></code></a></p>
+<p>A preset block that displays an interactive histogram.</p>
+<p>Provides controls to select the numerical column for the histogram and an
+optional categorical column for grouping.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Presets | EDA | GroupedHistogram]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Provide pre-built EDA components
+for common data analysis patterns to reduce boilerplate”</p></li>
+<li><p>implements: “preset: ‘GroupedHistogramPreset’”</p></li>
+<li><p>uses: [“block: ‘InteractiveChartBlock’”]</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="presets.eda_presets.GroupedHistogramPreset.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Distribution</span> <span class="pre">Analysis'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/eda_presets.html#GroupedHistogramPreset.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#presets.eda_presets.GroupedHistogramPreset.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes the BaseBlock.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>block_id</strong> – A unique identifier for this block instance.</p></li>
+<li><p><strong>datasource</strong> – An instance of a class that implements the
+BaseDataSource interface.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="presets.eda_presets.MissingValuesPreset">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">presets.eda_presets.</span></span><span class="sig-name descname"><span class="pre">MissingValuesPreset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">subscribes_to</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Missing</span> <span class="pre">Values</span> <span class="pre">Analysis'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/eda_presets.html#MissingValuesPreset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#presets.eda_presets.MissingValuesPreset" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="blocks.html#id7" title="blocks.chart.StaticChartBlock"><code class="xref py py-class docutils literal notranslate"><span class="pre">StaticChartBlock</span></code></a></p>
+<p>A preset block that displays the percentage of missing values for each column in a bar chart.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Presets | EDA | MissingValues]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Missing value analysis is a
+fundamental EDA requirement for data quality assessment”</p></li>
+<li><p>implements: “preset: ‘MissingValuesPreset’”</p></li>
+<li><p>uses: [“block: ‘StaticChartBlock’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Chosen as a high-value, simple-to-implement preset for initial data quality assessment.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “A DataFrame is available from the data source.”</p></li>
+<li><p>post: “A bar chart is rendered showing the percentage of missing values per column.”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="presets.eda_presets.MissingValuesPreset.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">subscribes_to</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Missing</span> <span class="pre">Values</span> <span class="pre">Analysis'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/eda_presets.html#MissingValuesPreset.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#presets.eda_presets.MissingValuesPreset.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes the MissingValuesPreset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>block_id</strong> – A unique identifier for this block instance.</p></li>
+<li><p><strong>datasource</strong> – An instance of a class that implements the BaseDataSource interface.</p></li>
+<li><p><strong>subscribes_to</strong> – The state ID to which this block subscribes to receive updates.</p></li>
+<li><p><strong>title</strong> – The title to be displayed on the chart card.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="presets.eda_presets.BoxPlotPreset">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">presets.eda_presets.</span></span><span class="sig-name descname"><span class="pre">BoxPlotPreset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Distribution</span> <span class="pre">Comparison</span> <span class="pre">(Box</span> <span class="pre">Plot)'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/eda_presets.html#BoxPlotPreset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#presets.eda_presets.BoxPlotPreset" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="blocks.html#id11" title="blocks.chart.InteractiveChartBlock"><code class="xref py py-class docutils literal notranslate"><span class="pre">InteractiveChartBlock</span></code></a></p>
+<p>A preset block that displays an interactive box plot.</p>
+<p>Provides controls to select a numerical column and a categorical column
+to compare distributions.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Presets | EDA | BoxPlot]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Box plots are essential for
+understanding data distribution and identifying outliers”</p></li>
+<li><p>implements: “preset: ‘BoxPlotPreset’”</p></li>
+<li><p>uses: [“block: ‘InteractiveChartBlock’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Chosen as a standard and effective way to compare distributions across categories.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “User selects a numerical and a categorical column.”</p></li>
+<li><p>post: “A box plot is rendered showing the distribution of the numerical column grouped by the categorical column.”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="presets.eda_presets.BoxPlotPreset.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Distribution</span> <span class="pre">Comparison</span> <span class="pre">(Box</span> <span class="pre">Plot)'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/eda_presets.html#BoxPlotPreset.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#presets.eda_presets.BoxPlotPreset.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes the BaseBlock.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>block_id</strong> – A unique identifier for this block instance.</p></li>
+<li><p><strong>datasource</strong> – An instance of a class that implements the
+BaseDataSource interface.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<section id="correlation-heatmap-preset">
+<h3>Correlation Heatmap Preset<a class="headerlink" href="#correlation-heatmap-preset" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="id0">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">presets.eda_presets.</span></span><span class="sig-name descname"><span class="pre">CorrelationHeatmapPreset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">subscribes_to</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Correlation</span> <span class="pre">Heatmap'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/eda_presets.html#CorrelationHeatmapPreset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="blocks.html#id7" title="blocks.chart.StaticChartBlock"><code class="xref py py-class docutils literal notranslate"><span class="pre">StaticChartBlock</span></code></a></p>
+<p>A preset block that displays a correlation matrix heatmap for the numerical columns of a DataFrame.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Presets | EDA | CorrelationHeatmap]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Provide pre-built EDA components
+for common data analysis patterns to reduce boilerplate”</p></li>
+<li><p>implements: “preset: ‘CorrelationHeatmapPreset’”</p></li>
+<li><p>uses: [“block: ‘StaticChartBlock’”]</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">subscribes_to</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Correlation</span> <span class="pre">Heatmap'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/eda_presets.html#CorrelationHeatmapPreset.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<dd><p>Initializes the CorrelationHeatmapPreset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>block_id</strong> – A unique identifier for this block instance.</p></li>
+<li><p><strong>datasource</strong> – An instance of a class that implements the BaseDataSource interface.</p></li>
+<li><p><strong>subscribes_to</strong> – The state ID to which this block subscribes to receive updates.</p></li>
+<li><p><strong>title</strong> – The title to be displayed on the chart card.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="grouped-histogram-preset">
+<h3>Grouped Histogram Preset<a class="headerlink" href="#grouped-histogram-preset" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="id2">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">presets.eda_presets.</span></span><span class="sig-name descname"><span class="pre">GroupedHistogramPreset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Distribution</span> <span class="pre">Analysis'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/eda_presets.html#GroupedHistogramPreset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="blocks.html#id11" title="blocks.chart.InteractiveChartBlock"><code class="xref py py-class docutils literal notranslate"><span class="pre">InteractiveChartBlock</span></code></a></p>
+<p>A preset block that displays an interactive histogram.</p>
+<p>Provides controls to select the numerical column for the histogram and an
+optional categorical column for grouping.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Presets | EDA | GroupedHistogram]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Provide pre-built EDA components
+for common data analysis patterns to reduce boilerplate”</p></li>
+<li><p>implements: “preset: ‘GroupedHistogramPreset’”</p></li>
+<li><p>uses: [“block: ‘InteractiveChartBlock’”]</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Distribution</span> <span class="pre">Analysis'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/eda_presets.html#GroupedHistogramPreset.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
+<dd><p>Initializes the BaseBlock.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>block_id</strong> – A unique identifier for this block instance.</p></li>
+<li><p><strong>datasource</strong> – An instance of a class that implements the
+BaseDataSource interface.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="missing-values-preset">
+<h3>Missing Values Preset<a class="headerlink" href="#missing-values-preset" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="id4">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">presets.eda_presets.</span></span><span class="sig-name descname"><span class="pre">MissingValuesPreset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">subscribes_to</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Missing</span> <span class="pre">Values</span> <span class="pre">Analysis'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/eda_presets.html#MissingValuesPreset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="blocks.html#id7" title="blocks.chart.StaticChartBlock"><code class="xref py py-class docutils literal notranslate"><span class="pre">StaticChartBlock</span></code></a></p>
+<p>A preset block that displays the percentage of missing values for each column in a bar chart.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Presets | EDA | MissingValues]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Missing value analysis is a
+fundamental EDA requirement for data quality assessment”</p></li>
+<li><p>implements: “preset: ‘MissingValuesPreset’”</p></li>
+<li><p>uses: [“block: ‘StaticChartBlock’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Chosen as a high-value, simple-to-implement preset for initial data quality assessment.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “A DataFrame is available from the data source.”</p></li>
+<li><p>post: “A bar chart is rendered showing the percentage of missing values per column.”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">subscribes_to</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Missing</span> <span class="pre">Values</span> <span class="pre">Analysis'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/eda_presets.html#MissingValuesPreset.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
+<dd><p>Initializes the MissingValuesPreset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>block_id</strong> – A unique identifier for this block instance.</p></li>
+<li><p><strong>datasource</strong> – An instance of a class that implements the BaseDataSource interface.</p></li>
+<li><p><strong>subscribes_to</strong> – The state ID to which this block subscribes to receive updates.</p></li>
+<li><p><strong>title</strong> – The title to be displayed on the chart card.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="box-plot-preset">
+<h3>Box Plot Preset<a class="headerlink" href="#box-plot-preset" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="id6">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">presets.eda_presets.</span></span><span class="sig-name descname"><span class="pre">BoxPlotPreset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Distribution</span> <span class="pre">Comparison</span> <span class="pre">(Box</span> <span class="pre">Plot)'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/eda_presets.html#BoxPlotPreset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="blocks.html#id11" title="blocks.chart.InteractiveChartBlock"><code class="xref py py-class docutils literal notranslate"><span class="pre">InteractiveChartBlock</span></code></a></p>
+<p>A preset block that displays an interactive box plot.</p>
+<p>Provides controls to select a numerical column and a categorical column
+to compare distributions.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Presets | EDA | BoxPlot]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Box plots are essential for
+understanding data distribution and identifying outliers”</p></li>
+<li><p>implements: “preset: ‘BoxPlotPreset’”</p></li>
+<li><p>uses: [“block: ‘InteractiveChartBlock’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Chosen as a standard and effective way to compare distributions across categories.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “User selects a numerical and a categorical column.”</p></li>
+<li><p>post: “A box plot is rendered showing the distribution of the numerical column grouped by the categorical column.”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="id7">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Distribution</span> <span class="pre">Comparison</span> <span class="pre">(Box</span> <span class="pre">Plot)'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/eda_presets.html#BoxPlotPreset.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
+<dd><p>Initializes the BaseBlock.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>block_id</strong> – A unique identifier for this block instance.</p></li>
+<li><p><strong>datasource</strong> – An instance of a class that implements the
+BaseDataSource interface.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+<section id="ml-presets">
+<h2>ML Presets<a class="headerlink" href="#ml-presets" title="Link to this heading"></a></h2>
+<p>Machine Learning visualization presets for common ML workflows.</p>
+<p id="module-presets.ml_presets">This module provides preset blocks for machine learning visualization.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="presets.ml_presets.MetricCardBlock">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">presets.ml_presets.</span></span><span class="sig-name descname"><span class="pre">MetricCardBlock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">kpi_definitions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subscribes_to</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Metrics'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/ml_presets.html#MetricCardBlock"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#presets.ml_presets.MetricCardBlock" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="blocks.html#id21" title="blocks.kpi.KPIBlock"><code class="xref py py-class docutils literal notranslate"><span class="pre">KPIBlock</span></code></a></p>
+<p>An extension of KPIBlock for displaying ML metrics in a compact list.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Presets | ML | MetricCardBlock]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Metric cards provide a standardized
+way to display key performance indicators in ML dashboards”</p></li>
+<li><p>implements: “block: ‘MetricCardBlock’”</p></li>
+<li><p>uses: [“block: ‘KPIBlock’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Subclassed KPIBlock to reuse its data-handling logic while providing a more compact, list-based layout suitable for displaying multiple ML metrics.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “Inherits the contract from KPIBlock.”</p></li>
+<li><p>post: “The block renders a card with a list of metrics.”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="presets.ml_presets.MetricCardBlock.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">kpi_definitions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subscribes_to</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Metrics'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/ml_presets.html#MetricCardBlock.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#presets.ml_presets.MetricCardBlock.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes the BaseBlock.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>block_id</strong> – A unique identifier for this block instance.</p></li>
+<li><p><strong>datasource</strong> – An instance of a class that implements the
+BaseDataSource interface.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="presets.ml_presets.ModelSummaryBlock">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">presets.ml_presets.</span></span><span class="sig-name descname"><span class="pre">ModelSummaryBlock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Model</span> <span class="pre">Summary'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/ml_presets.html#ModelSummaryBlock"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#presets.ml_presets.ModelSummaryBlock" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="blocks.html#id0" title="blocks.base.BaseBlock"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseBlock</span></code></a></p>
+<p>A block for displaying a summary of model hyperparameters.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Presets | ML | ModelSummaryBlock]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Model summary blocks are essential
+for displaying comprehensive model information and statistics”</p></li>
+<li><p>implements: “block: ‘ModelSummaryBlock’”</p></li>
+<li><p>uses: [“block: ‘BaseBlock’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Implemented as a custom block inheriting from BaseBlock to provide a flexible layout for displaying key-value data.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “Datasource must implement get_summary_data() returning a dict.”</p></li>
+<li><p>post: “The block renders a card with the model’s summary data.”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="presets.ml_presets.ModelSummaryBlock.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Model</span> <span class="pre">Summary'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/ml_presets.html#ModelSummaryBlock.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#presets.ml_presets.ModelSummaryBlock.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes the BaseBlock.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>block_id</strong> – A unique identifier for this block instance.</p></li>
+<li><p><strong>datasource</strong> – An instance of a class that implements the
+BaseDataSource interface.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="presets.ml_presets.ModelSummaryBlock.layout">
+<span class="sig-name descname"><span class="pre">layout</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Div</span></span></span><a class="reference internal" href="../_modules/presets/ml_presets.html#ModelSummaryBlock.layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#presets.ml_presets.ModelSummaryBlock.layout" title="Link to this definition"></a></dt>
+<dd><p>Returns the Dash component layout for the block.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="presets.ml_presets.ConfusionMatrixPreset">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">presets.ml_presets.</span></span><span class="sig-name descname"><span class="pre">ConfusionMatrixPreset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_true_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_pred_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Confusion</span> <span class="pre">Matrix'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/ml_presets.html#ConfusionMatrixPreset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#presets.ml_presets.ConfusionMatrixPreset" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="blocks.html#id7" title="blocks.chart.StaticChartBlock"><code class="xref py py-class docutils literal notranslate"><span class="pre">StaticChartBlock</span></code></a></p>
+<p>A preset block for displaying a confusion matrix.</p>
+<p>This block automatically calculates and displays a confusion matrix from
+true and predicted labels.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Presets | ML | ConfusionMatrixPreset]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Confusion matrices are fundamental
+for evaluating classification model performance”</p></li>
+<li><p>implements: “preset: ‘ConfusionMatrixPreset’”</p></li>
+<li><p>uses: [“block: ‘StaticChartBlock’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Implemented as a subclass of StaticChartBlock with internal plotting logic to provide a simple user experience.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “Datasource must contain columns specified by y_true_col and y_pred_col.”</p></li>
+<li><p>post: “The block renders a heatmap of the confusion matrix.”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="presets.ml_presets.ConfusionMatrixPreset.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_true_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_pred_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Confusion</span> <span class="pre">Matrix'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/ml_presets.html#ConfusionMatrixPreset.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#presets.ml_presets.ConfusionMatrixPreset.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes the BaseBlock.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>block_id</strong> – A unique identifier for this block instance.</p></li>
+<li><p><strong>datasource</strong> – An instance of a class that implements the
+BaseDataSource interface.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="presets.ml_presets.RocAucCurvePreset">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">presets.ml_presets.</span></span><span class="sig-name descname"><span class="pre">RocAucCurvePreset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_true_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_score_cols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'ROC</span> <span class="pre">Curve'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/ml_presets.html#RocAucCurvePreset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#presets.ml_presets.RocAucCurvePreset" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="blocks.html#id7" title="blocks.chart.StaticChartBlock"><code class="xref py py-class docutils literal notranslate"><span class="pre">StaticChartBlock</span></code></a></p>
+<p>A preset block for displaying a Receiver Operating Characteristic (ROC) curve.</p>
+<p>This block automatically calculates and displays an ROC curve and AUC score.
+It supports both binary and multi-class classification (using One-vs-Rest).</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Presets | ML | RocAucCurvePreset]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: ROC curves are essential for
+evaluating binary classification model performance and thresholds”</p></li>
+<li><p>implements: “preset: ‘RocAucCurvePreset’”</p></li>
+<li><p>uses: [“block: ‘StaticChartBlock’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Implemented as a subclass of StaticChartBlock with internal plotting logic for simplicity. Uses a One-vs-Rest approach for multi-class problems as a robust default.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “Datasource must contain columns specified by y_true_col and y_score_cols.”</p></li>
+<li><p>post: “The block renders a plot of the ROC curve(s).”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="presets.ml_presets.RocAucCurvePreset.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_true_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_score_cols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'ROC</span> <span class="pre">Curve'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/ml_presets.html#RocAucCurvePreset.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#presets.ml_presets.RocAucCurvePreset.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes the BaseBlock.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>block_id</strong> – A unique identifier for this block instance.</p></li>
+<li><p><strong>datasource</strong> – An instance of a class that implements the
+BaseDataSource interface.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="presets.ml_presets.FeatureImportancePreset">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">presets.ml_presets.</span></span><span class="sig-name descname"><span class="pre">FeatureImportancePreset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">importance_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Feature</span> <span class="pre">Importance'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/ml_presets.html#FeatureImportancePreset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#presets.ml_presets.FeatureImportancePreset" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="blocks.html#id7" title="blocks.chart.StaticChartBlock"><code class="xref py py-class docutils literal notranslate"><span class="pre">StaticChartBlock</span></code></a></p>
+<p>A preset block for displaying feature importances.</p>
+<p>This block creates a sorted, horizontal bar chart of feature importances.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Presets | ML | FeatureImportancePreset]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Feature importance visualization
+is crucial for understanding model interpretability and feature relevance”</p></li>
+<li><p>implements: “preset: ‘FeatureImportancePreset’”</p></li>
+<li><p>uses: [“block: ‘StaticChartBlock’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Implemented as a subclass of StaticChartBlock that expects a datasource with feature and importance columns. This is a clean, decoupled approach.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “Datasource must contain columns specified by feature_col and importance_col.”</p></li>
+<li><p>post: “The block renders a sorted horizontal bar chart.”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="presets.ml_presets.FeatureImportancePreset.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">importance_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Feature</span> <span class="pre">Importance'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/ml_presets.html#FeatureImportancePreset.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#presets.ml_presets.FeatureImportancePreset.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes the BaseBlock.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>block_id</strong> – A unique identifier for this block instance.</p></li>
+<li><p><strong>datasource</strong> – An instance of a class that implements the
+BaseDataSource interface.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<section id="metric-card-block">
+<h3>Metric Card Block<a class="headerlink" href="#metric-card-block" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="id8">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">presets.ml_presets.</span></span><span class="sig-name descname"><span class="pre">MetricCardBlock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">kpi_definitions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subscribes_to</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Metrics'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/ml_presets.html#MetricCardBlock"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="blocks.html#id21" title="blocks.kpi.KPIBlock"><code class="xref py py-class docutils literal notranslate"><span class="pre">KPIBlock</span></code></a></p>
+<p>An extension of KPIBlock for displaying ML metrics in a compact list.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Presets | ML | MetricCardBlock]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Metric cards provide a standardized
+way to display key performance indicators in ML dashboards”</p></li>
+<li><p>implements: “block: ‘MetricCardBlock’”</p></li>
+<li><p>uses: [“block: ‘KPIBlock’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Subclassed KPIBlock to reuse its data-handling logic while providing a more compact, list-based layout suitable for displaying multiple ML metrics.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “Inherits the contract from KPIBlock.”</p></li>
+<li><p>post: “The block renders a card with a list of metrics.”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="id9">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">kpi_definitions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subscribes_to</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Metrics'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/ml_presets.html#MetricCardBlock.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
+<dd><p>Initializes the BaseBlock.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>block_id</strong> – A unique identifier for this block instance.</p></li>
+<li><p><strong>datasource</strong> – An instance of a class that implements the
+BaseDataSource interface.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="confusion-matrix-preset">
+<h3>Confusion Matrix Preset<a class="headerlink" href="#confusion-matrix-preset" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="id10">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">presets.ml_presets.</span></span><span class="sig-name descname"><span class="pre">ConfusionMatrixPreset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_true_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_pred_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Confusion</span> <span class="pre">Matrix'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/ml_presets.html#ConfusionMatrixPreset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="blocks.html#id7" title="blocks.chart.StaticChartBlock"><code class="xref py py-class docutils literal notranslate"><span class="pre">StaticChartBlock</span></code></a></p>
+<p>A preset block for displaying a confusion matrix.</p>
+<p>This block automatically calculates and displays a confusion matrix from
+true and predicted labels.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Presets | ML | ConfusionMatrixPreset]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Confusion matrices are fundamental
+for evaluating classification model performance”</p></li>
+<li><p>implements: “preset: ‘ConfusionMatrixPreset’”</p></li>
+<li><p>uses: [“block: ‘StaticChartBlock’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Implemented as a subclass of StaticChartBlock with internal plotting logic to provide a simple user experience.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “Datasource must contain columns specified by y_true_col and y_pred_col.”</p></li>
+<li><p>post: “The block renders a heatmap of the confusion matrix.”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="id11">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_true_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_pred_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Confusion</span> <span class="pre">Matrix'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/ml_presets.html#ConfusionMatrixPreset.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id11" title="Link to this definition"></a></dt>
+<dd><p>Initializes the BaseBlock.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>block_id</strong> – A unique identifier for this block instance.</p></li>
+<li><p><strong>datasource</strong> – An instance of a class that implements the
+BaseDataSource interface.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="feature-importance-preset">
+<h3>Feature Importance Preset<a class="headerlink" href="#feature-importance-preset" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="id12">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">presets.ml_presets.</span></span><span class="sig-name descname"><span class="pre">FeatureImportancePreset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">importance_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Feature</span> <span class="pre">Importance'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/ml_presets.html#FeatureImportancePreset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id12" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="blocks.html#id7" title="blocks.chart.StaticChartBlock"><code class="xref py py-class docutils literal notranslate"><span class="pre">StaticChartBlock</span></code></a></p>
+<p>A preset block for displaying feature importances.</p>
+<p>This block creates a sorted, horizontal bar chart of feature importances.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Presets | ML | FeatureImportancePreset]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Feature importance visualization
+is crucial for understanding model interpretability and feature relevance”</p></li>
+<li><p>implements: “preset: ‘FeatureImportancePreset’”</p></li>
+<li><p>uses: [“block: ‘StaticChartBlock’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Implemented as a subclass of StaticChartBlock that expects a datasource with feature and importance columns. This is a clean, decoupled approach.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “Datasource must contain columns specified by feature_col and importance_col.”</p></li>
+<li><p>post: “The block renders a sorted horizontal bar chart.”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="id13">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="core.html#id0" title="core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">importance_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Feature</span> <span class="pre">Importance'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/ml_presets.html#FeatureImportancePreset.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id13" title="Link to this definition"></a></dt>
+<dd><p>Initializes the BaseBlock.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>block_id</strong> – A unique identifier for this block instance.</p></li>
+<li><p><strong>datasource</strong> – An instance of a class that implements the
+BaseDataSource interface.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="roc-curve-preset">
+<h3>ROC Curve Preset<a class="headerlink" href="#roc-curve-preset" title="Link to this heading"></a></h3>
+</section>
+</section>
+<section id="layout-presets">
+<h2>Layout Presets<a class="headerlink" href="#layout-presets" title="Link to this heading"></a></h2>
+<p>Pre-built layout patterns for common dashboard arrangements.</p>
+<p id="module-presets.layouts">Layout presets for <cite>DashboardPage</cite> using the extended layout API.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Feature | Layout System | Presets]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Provide reusable, ergonomic layouts for common dashboard patterns”</p></li>
+<li><p>implements: [“module: ‘presets.layouts’”]</p></li>
+<li><p>uses: [“class: ‘BaseBlock’”, “class: ‘DashboardPage’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Encapsulate frequently used grid structures to speed up page assembly.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “Functions receive blocks (BaseBlock instances)”</p></li>
+<li><p>post: “Functions return a list-of-rows compatible with DashboardPage layout API”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py function">
+<dt class="sig sig-object py" id="presets.layouts.one_column">
+<span class="sig-prename descclassname"><span class="pre">presets.layouts.</span></span><span class="sig-name descname"><span class="pre">one_column</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">blocks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Sequence" title="(in Python v3.13)"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="blocks.html#id0" title="blocks.base.BaseBlock"><span class="pre">BaseBlock</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/layouts.html#one_column"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#presets.layouts.one_column" title="Link to this definition"></a></dt>
+<dd><p>Single full-width column per row.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Feature | Layout System | Presets | one_column]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Common pattern for stacked content”</p></li>
+<li><p>implements: “function: ‘one_column’”</p></li>
+<li><p>uses: [“interface: ‘BaseBlock’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Keeps content vertically stacked with consistent spacing.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “blocks is a non-empty sequence of BaseBlock”</p></li>
+<li><p>post: “Returns rows where each row contains a single full-width column”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="presets.layouts.two_column_6_6">
+<span class="sig-prename descclassname"><span class="pre">presets.layouts.</span></span><span class="sig-name descname"><span class="pre">two_column_6_6</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">left</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="blocks.html#id0" title="blocks.base.BaseBlock"><span class="pre">BaseBlock</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">right</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="blocks.html#id0" title="blocks.base.BaseBlock"><span class="pre">BaseBlock</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/layouts.html#two_column_6_6"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#presets.layouts.two_column_6_6" title="Link to this definition"></a></dt>
+<dd><p>Two equal columns on medium+ screens.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Feature | Layout System | Presets | two_column_6_6]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Balanced two-column layouts”</p></li>
+<li><p>implements: “function: ‘two_column_6_6’”</p></li>
+<li><p>uses: [“interface: ‘BaseBlock’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Even split for symmetric content presentation.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “left and right are BaseBlock”</p></li>
+<li><p>post: “Returns a single row with two 6-unit columns”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="presets.layouts.two_column_8_4">
+<span class="sig-prename descclassname"><span class="pre">presets.layouts.</span></span><span class="sig-name descname"><span class="pre">two_column_8_4</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="blocks.html#id0" title="blocks.base.BaseBlock"><span class="pre">BaseBlock</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">side</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="blocks.html#id0" title="blocks.base.BaseBlock"><span class="pre">BaseBlock</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/layouts.html#two_column_8_4"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#presets.layouts.two_column_8_4" title="Link to this definition"></a></dt>
+<dd><p>Main content with a narrower sidebar.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Feature | Layout System | Presets | two_column_8_4]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Content-first pages with secondary sidebar”</p></li>
+<li><p>implements: “function: ‘two_column_8_4’”</p></li>
+<li><p>uses: [“interface: ‘BaseBlock’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Allocates more space to primary content.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “main and side are BaseBlock”</p></li>
+<li><p>post: “Returns a single row with 8/4 split”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="presets.layouts.three_column_4_4_4">
+<span class="sig-prename descclassname"><span class="pre">presets.layouts.</span></span><span class="sig-name descname"><span class="pre">three_column_4_4_4</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="blocks.html#id0" title="blocks.base.BaseBlock"><span class="pre">BaseBlock</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="blocks.html#id0" title="blocks.base.BaseBlock"><span class="pre">BaseBlock</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="blocks.html#id0" title="blocks.base.BaseBlock"><span class="pre">BaseBlock</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/layouts.html#three_column_4_4_4"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#presets.layouts.three_column_4_4_4" title="Link to this definition"></a></dt>
+<dd><p>Three equal columns on medium+ screens.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Feature | Layout System | Presets | three_column_4_4_4]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Cards in a 3-up grid”</p></li>
+<li><p>implements: “function: ‘three_column_4_4_4’”</p></li>
+<li><p>uses: [“interface: ‘BaseBlock’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Common gallery and card layout.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “a, b, c are BaseBlock”</p></li>
+<li><p>post: “Returns a single row with 4/4/4 split”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="presets.layouts.sidebar_main_3_9">
+<span class="sig-prename descclassname"><span class="pre">presets.layouts.</span></span><span class="sig-name descname"><span class="pre">sidebar_main_3_9</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">side</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="blocks.html#id0" title="blocks.base.BaseBlock"><span class="pre">BaseBlock</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">main</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="blocks.html#id0" title="blocks.base.BaseBlock"><span class="pre">BaseBlock</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/layouts.html#sidebar_main_3_9"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#presets.layouts.sidebar_main_3_9" title="Link to this definition"></a></dt>
+<dd><p>Narrow sidebar with wide main area.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Feature | Layout System | Presets | sidebar_main_3_9]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Classic dashboard layout”</p></li>
+<li><p>implements: “function: ‘sidebar_main_3_9’”</p></li>
+<li><p>uses: [“interface: ‘BaseBlock’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Emphasizes content while providing space for filters or summaries.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “side and main are BaseBlock”</p></li>
+<li><p>post: “Returns a single row with 3/9 split”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="presets.layouts.kpi_row_top">
+<span class="sig-prename descclassname"><span class="pre">presets.layouts.</span></span><span class="sig-name descname"><span class="pre">kpi_row_top</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kpi_blocks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Sequence" title="(in Python v3.13)"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="blocks.html#id0" title="blocks.base.BaseBlock"><span class="pre">BaseBlock</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content_rows</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="blocks.html#id0" title="blocks.base.BaseBlock"><span class="pre">BaseBlock</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/layouts.html#kpi_row_top"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#presets.layouts.kpi_row_top" title="Link to this definition"></a></dt>
+<dd><p>KPIs in a tight top row, with content rows below.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Feature | Layout System | Presets | kpi_row_top]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Dashboards commonly present KPIs on top”</p></li>
+<li><p>implements: “function: ‘kpi_row_top’”</p></li>
+<li><p>uses: [“interface: ‘BaseBlock’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Provides a compact summary before detailed content.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “kpi_blocks is a sequence, content_rows is a list of rows”</p></li>
+<li><p>post: “Returns a layout with KPI row and appended content rows”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<section id="layout-functions">
+<h3>Layout Functions<a class="headerlink" href="#layout-functions" title="Link to this heading"></a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="id14">
+<span class="sig-prename descclassname"><span class="pre">presets.layouts.</span></span><span class="sig-name descname"><span class="pre">one_column</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">blocks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Sequence" title="(in Python v3.13)"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="blocks.html#id0" title="blocks.base.BaseBlock"><span class="pre">BaseBlock</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/layouts.html#one_column"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id14" title="Link to this definition"></a></dt>
+<dd><p>Single full-width column per row.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Feature | Layout System | Presets | one_column]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Common pattern for stacked content”</p></li>
+<li><p>implements: “function: ‘one_column’”</p></li>
+<li><p>uses: [“interface: ‘BaseBlock’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Keeps content vertically stacked with consistent spacing.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “blocks is a non-empty sequence of BaseBlock”</p></li>
+<li><p>post: “Returns rows where each row contains a single full-width column”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="id15">
+<span class="sig-prename descclassname"><span class="pre">presets.layouts.</span></span><span class="sig-name descname"><span class="pre">two_column_6_6</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">left</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="blocks.html#id0" title="blocks.base.BaseBlock"><span class="pre">BaseBlock</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">right</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="blocks.html#id0" title="blocks.base.BaseBlock"><span class="pre">BaseBlock</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/layouts.html#two_column_6_6"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id15" title="Link to this definition"></a></dt>
+<dd><p>Two equal columns on medium+ screens.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Feature | Layout System | Presets | two_column_6_6]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Balanced two-column layouts”</p></li>
+<li><p>implements: “function: ‘two_column_6_6’”</p></li>
+<li><p>uses: [“interface: ‘BaseBlock’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Even split for symmetric content presentation.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “left and right are BaseBlock”</p></li>
+<li><p>post: “Returns a single row with two 6-unit columns”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="id16">
+<span class="sig-prename descclassname"><span class="pre">presets.layouts.</span></span><span class="sig-name descname"><span class="pre">two_column_8_4</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="blocks.html#id0" title="blocks.base.BaseBlock"><span class="pre">BaseBlock</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">side</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="blocks.html#id0" title="blocks.base.BaseBlock"><span class="pre">BaseBlock</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/layouts.html#two_column_8_4"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id16" title="Link to this definition"></a></dt>
+<dd><p>Main content with a narrower sidebar.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Feature | Layout System | Presets | two_column_8_4]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Content-first pages with secondary sidebar”</p></li>
+<li><p>implements: “function: ‘two_column_8_4’”</p></li>
+<li><p>uses: [“interface: ‘BaseBlock’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Allocates more space to primary content.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “main and side are BaseBlock”</p></li>
+<li><p>post: “Returns a single row with 8/4 split”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="id17">
+<span class="sig-prename descclassname"><span class="pre">presets.layouts.</span></span><span class="sig-name descname"><span class="pre">three_column_4_4_4</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="blocks.html#id0" title="blocks.base.BaseBlock"><span class="pre">BaseBlock</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="blocks.html#id0" title="blocks.base.BaseBlock"><span class="pre">BaseBlock</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="blocks.html#id0" title="blocks.base.BaseBlock"><span class="pre">BaseBlock</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/layouts.html#three_column_4_4_4"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id17" title="Link to this definition"></a></dt>
+<dd><p>Three equal columns on medium+ screens.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Feature | Layout System | Presets | three_column_4_4_4]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Cards in a 3-up grid”</p></li>
+<li><p>implements: “function: ‘three_column_4_4_4’”</p></li>
+<li><p>uses: [“interface: ‘BaseBlock’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Common gallery and card layout.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “a, b, c are BaseBlock”</p></li>
+<li><p>post: “Returns a single row with 4/4/4 split”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="id18">
+<span class="sig-prename descclassname"><span class="pre">presets.layouts.</span></span><span class="sig-name descname"><span class="pre">kpi_row_top</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kpi_blocks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Sequence" title="(in Python v3.13)"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="blocks.html#id0" title="blocks.base.BaseBlock"><span class="pre">BaseBlock</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content_rows</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="blocks.html#id0" title="blocks.base.BaseBlock"><span class="pre">BaseBlock</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/presets/layouts.html#kpi_row_top"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id18" title="Link to this definition"></a></dt>
+<dd><p>KPIs in a tight top row, with content rows below.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Feature | Layout System | Presets | kpi_row_top]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Dashboards commonly present KPIs on top”</p></li>
+<li><p>implements: “function: ‘kpi_row_top’”</p></li>
+<li><p>uses: [“interface: ‘BaseBlock’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Provides a compact summary before detailed content.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “kpi_blocks is a sequence, content_rows is a list of rows”</p></li>
+<li><p>post: “Returns a layout with KPI row and appended content rows”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Dashboard Lego Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,36 @@
+Utils Module
+=============
+
+The utils module contains utility functions and helpers for Dashboard Lego.
+
+Formatting Utilities
+--------------------
+
+.. automodule:: utils.formatting
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Logging Utilities
+-----------------
+
+.. automodule:: utils.logger
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Data Utilities
+--------------
+
+.. automodule:: utils.data_utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Validation Utilities
+--------------------
+
+.. automodule:: utils.validation
+   :members:
+   :undoc-members:
+   :show-inheritance:

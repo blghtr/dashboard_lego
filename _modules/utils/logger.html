@@ -1,0 +1,396 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>utils.logger &mdash; Dashboard Lego 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Dashboard Lego
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../concepts.html">Core Concepts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/modules.html">dashboard_lego</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing to Dashboard Lego</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Dashboard Lego</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">utils.logger</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for utils.logger</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Centralized logging configuration for dashboard_lego.</span>
+
+<span class="sd">This module provides a smart logging system with automatic hierarchy extraction</span>
+<span class="sd">from docstrings and dual output (console + rotating file).</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">logging.handlers</span><span class="w"> </span><span class="kn">import</span> <span class="n">RotatingFileHandler</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span>
+
+
+<span class="c1"># Global logging configuration</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_log_level</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get log level from environment variable.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DASHBOARD_LEGO_LOG_LEVEL&quot;</span><span class="p">,</span> <span class="s2">&quot;INFO&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_log_dir</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get log directory from environment variable.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DASHBOARD_LEGO_LOG_DIR&quot;</span><span class="p">,</span> <span class="s2">&quot;./logs&quot;</span><span class="p">)</span>
+
+<span class="n">LOG_FILE</span> <span class="o">=</span> <span class="s2">&quot;dashboard_lego.log&quot;</span>
+<span class="n">MAX_LOG_SIZE</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">*</span> <span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span>  <span class="c1"># 10 MB</span>
+<span class="n">BACKUP_COUNT</span> <span class="o">=</span> <span class="mi">5</span>
+
+<span class="c1"># Ensure log directory exists</span>
+<span class="n">Path</span><span class="p">(</span><span class="n">_get_log_dir</span><span class="p">())</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="HierarchyLoggerAdapter">
+<a class="viewcode-back" href="../../api/utils.html#utils.logger.HierarchyLoggerAdapter">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">HierarchyLoggerAdapter</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">LoggerAdapter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A custom LoggerAdapter that prepends hierarchy to DEBUG logs.</span>
+
+<span class="sd">        :hierarchy: [Core | Logging | HierarchyLoggerAdapter]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;User requirement: Debug logs must display</span>
+<span class="sd">           hierarchy from docstrings&quot;</span>
+<span class="sd">         - implements: &quot;class: &#39;HierarchyLoggerAdapter&#39;&quot;</span>
+<span class="sd">         - uses: [&quot;library: &#39;logging&#39;&quot;]</span>
+
+<span class="sd">        :rationale: &quot;Chose LoggerAdapter to transparently inject</span>
+<span class="sd">         hierarchy context without modifying call sites.&quot;</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;A standard logger and optional hierarchy string are</span>
+<span class="sd">           provided.&quot;</span>
+<span class="sd">         - post: &quot;All DEBUG messages are automatically prefixed with</span>
+<span class="sd">           [Hierarchy] if available.&quot;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="HierarchyLoggerAdapter.__init__">
+<a class="viewcode-back" href="../../api/utils.html#utils.logger.HierarchyLoggerAdapter.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span><span class="p">,</span> <span class="n">hierarchy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the adapter with hierarchy context.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            logger: The base logger instance.</span>
+<span class="sd">            hierarchy: The hierarchy string extracted from docstrings.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">logger</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;hierarchy&quot;</span><span class="p">:</span> <span class="n">hierarchy</span> <span class="ow">or</span> <span class="s2">&quot;Unknown&quot;</span><span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="HierarchyLoggerAdapter.process">
+<a class="viewcode-back" href="../../api/utils.html#utils.logger.HierarchyLoggerAdapter.process">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Process the log message to inject hierarchy for DEBUG level.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            msg: The original log message.</span>
+<span class="sd">            kwargs: Additional keyword arguments.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A tuple of (modified_message, kwargs).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if this is a DEBUG level log</span>
+        <span class="c1"># Note: kwargs.get(&#39;level&#39;) doesn&#39;t work,</span>
+        <span class="c1"># we check logger&#39;s effective level</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">isEnabledFor</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">):</span>
+            <span class="n">hierarchy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extra</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;hierarchy&quot;</span><span class="p">,</span> <span class="s2">&quot;Unknown&quot;</span><span class="p">)</span>
+            <span class="c1"># Prepend hierarchy only if not already in message</span>
+            <span class="k">if</span> <span class="n">hierarchy</span> <span class="o">!=</span> <span class="s2">&quot;Unknown&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">msg</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;[&quot;</span><span class="p">):</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">hierarchy</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="n">msg</span><span class="p">,</span> <span class="n">kwargs</span></div>
+</div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_extract_hierarchy_from_docstring</span><span class="p">(</span><span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract the :hierarchy: field from an object&#39;s docstring.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        obj: A class, function, or module object.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The hierarchy string if found, None otherwise.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">docstring</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getdoc</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">docstring</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># Look for :hierarchy: [Some | Hierarchy | Path]</span>
+    <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;:hierarchy:\s*\[(.*?)\]&quot;</span><span class="p">,</span> <span class="n">docstring</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+<div class="viewcode-block" id="get_logger">
+<a class="viewcode-back" href="../../api/utils.html#utils.logger.get_logger">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_logger</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HierarchyLoggerAdapter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Factory function to create a logger with automatic hierarchy extraction.</span>
+
+<span class="sd">        :hierarchy: [Core | Logging | Logger Factory]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;User requirement: Centralized logger</span>
+<span class="sd">           creation with hierarchy support&quot;</span>
+<span class="sd">         - implements: &quot;function: &#39;get_logger&#39;&quot;</span>
+<span class="sd">         - uses: [&quot;class: &#39;HierarchyLoggerAdapter&#39;&quot;,</span>
+<span class="sd">           &quot;function: &#39;_extract_hierarchy_from_docstring&#39;&quot;]</span>
+
+<span class="sd">        :rationale: &quot;Factory pattern allows centralized configuration</span>
+<span class="sd">         and automatic docstring parsing.&quot;</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;A logger name is provided; optionally, an object for</span>
+<span class="sd">           hierarchy extraction.&quot;</span>
+<span class="sd">         - post: &quot;Returns a configured HierarchyLoggerAdapter ready</span>
+<span class="sd">           for use.&quot;</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name: The name for the logger (typically __name__).</span>
+<span class="sd">        obj: Optional object (class, function) to extract hierarchy from.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A configured HierarchyLoggerAdapter instance.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; logger = get_logger(__name__, MyClass)</span>
+<span class="sd">        &gt;&gt;&gt; logger.debug(&quot;This will include hierarchy&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; logger.info(&quot;This is for users&quot;)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Ensure logger name starts with dashboard_lego for proper inheritance</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;dashboard_lego&quot;</span><span class="p">):</span>
+        <span class="n">logger_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;dashboard_lego.</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logger_name</span> <span class="o">=</span> <span class="n">name</span>
+    
+    <span class="n">base_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">logger_name</span><span class="p">)</span>
+
+    <span class="c1"># Extract hierarchy if obj is provided</span>
+    <span class="n">hierarchy</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">obj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">hierarchy</span> <span class="o">=</span> <span class="n">_extract_hierarchy_from_docstring</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">HierarchyLoggerAdapter</span><span class="p">(</span><span class="n">base_logger</span><span class="p">,</span> <span class="n">hierarchy</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="setup_logging">
+<a class="viewcode-back" href="../../api/utils.html#utils.logger.setup_logging">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_logging</span><span class="p">(</span>
+    <span class="n">level</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">log_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Configure global logging with dual output (console + rotating file).</span>
+
+<span class="sd">        :hierarchy: [Core | Logging | Setup]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;User requirement: Dual logging to console</span>
+<span class="sd">           and file with rotation&quot;</span>
+<span class="sd">         - implements: &quot;function: &#39;setup_logging&#39;&quot;</span>
+<span class="sd">         - uses: [&quot;library: &#39;logging&#39;&quot;, &quot;class: &#39;RotatingFileHandler&#39;&quot;]</span>
+
+<span class="sd">        :rationale: &quot;Centralized setup ensures consistent formatting</span>
+<span class="sd">         and handlers across the application.&quot;</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;Function is called once at application startup.&quot;</span>
+<span class="sd">         - post: &quot;All loggers use configured handlers with appropriate</span>
+<span class="sd">           formatters.&quot;</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        level: Log level as string (DEBUG, INFO, WARNING, ERROR,</span>
+<span class="sd">               CRITICAL). Defaults to environment variable or INFO.</span>
+<span class="sd">        log_dir: Directory for log files. Defaults to ./logs.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">level</span> <span class="o">=</span> <span class="n">level</span> <span class="ow">or</span> <span class="n">_get_log_level</span><span class="p">()</span>
+    <span class="n">log_dir</span> <span class="o">=</span> <span class="n">log_dir</span> <span class="ow">or</span> <span class="n">_get_log_dir</span><span class="p">()</span>
+
+    <span class="c1"># Ensure directory exists</span>
+    <span class="n">Path</span><span class="p">(</span><span class="n">log_dir</span><span class="p">)</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Get root logger for dashboard_lego</span>
+    <span class="n">root_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;dashboard_lego&quot;</span><span class="p">)</span>
+    <span class="n">root_logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">logging</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">))</span>
+    
+    <span class="c1"># Also set the root logger to ensure proper propagation</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">logging</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">))</span>
+
+    <span class="c1"># Check if logging is already configured to prevent double initialization</span>
+    <span class="k">if</span> <span class="n">root_logger</span><span class="o">.</span><span class="n">handlers</span><span class="p">:</span>
+        <span class="n">root_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Logging already configured, skipping re-initialization&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+    
+    <span class="c1"># Mark as configured</span>
+    <span class="k">global</span> <span class="n">_logging_configured</span>
+    <span class="n">_logging_configured</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1"># Console Handler</span>
+    <span class="n">console_handler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">()</span>
+    <span class="c1"># Console shows the same level as configured</span>
+    <span class="n">console_handler</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">logging</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">))</span>
+    <span class="n">console_formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span>
+        <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(asctime)s</span><span class="s2"> - </span><span class="si">%(name)s</span><span class="s2"> - </span><span class="si">%(levelname)s</span><span class="s2"> - </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">datefmt</span><span class="o">=</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span>
+    <span class="p">)</span>
+    <span class="n">console_handler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">console_formatter</span><span class="p">)</span>
+
+    <span class="c1"># File Handler (with rotation)</span>
+    <span class="n">log_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">log_dir</span><span class="p">,</span> <span class="n">LOG_FILE</span><span class="p">)</span>
+    <span class="n">file_handler</span> <span class="o">=</span> <span class="n">RotatingFileHandler</span><span class="p">(</span>
+        <span class="n">log_file_path</span><span class="p">,</span>
+        <span class="n">maxBytes</span><span class="o">=</span><span class="n">MAX_LOG_SIZE</span><span class="p">,</span>
+        <span class="n">backupCount</span><span class="o">=</span><span class="n">BACKUP_COUNT</span><span class="p">,</span>
+        <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span>
+    <span class="p">)</span>
+    <span class="c1"># File captures everything</span>
+    <span class="n">file_handler</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+    <span class="n">file_formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span>
+        <span class="n">fmt</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%(asctime)s</span><span class="s2"> - </span><span class="si">%(name)s</span><span class="s2"> - </span><span class="si">%(levelname)s</span><span class="s2"> - &quot;</span>
+             <span class="s2">&quot;</span><span class="si">%(funcName)s</span><span class="s2">:</span><span class="si">%(lineno)d</span><span class="s2"> - </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">),</span>
+        <span class="n">datefmt</span><span class="o">=</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span>
+    <span class="p">)</span>
+    <span class="n">file_handler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">file_formatter</span><span class="p">)</span>
+
+    <span class="c1"># Add handlers to root logger</span>
+    <span class="n">root_logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">console_handler</span><span class="p">)</span>
+    <span class="n">root_logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">file_handler</span><span class="p">)</span>
+    
+    <span class="c1"># Ensure propagation to child loggers</span>
+    <span class="n">root_logger</span><span class="o">.</span><span class="n">propagate</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1"># Force immediate output</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+    <span class="c1"># Log the initialization only when not in reloader subprocess</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;WERKZEUG_RUN_MAIN&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;true&quot;</span><span class="p">:</span>
+        <span class="n">root_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Logging initialized: level=</span><span class="si">{</span><span class="n">level</span><span class="si">}</span><span class="s2">, log_dir=</span><span class="si">{</span><span class="n">log_dir</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span></div>
+
+
+
+<span class="c1"># Auto-setup on import (can be disabled by setting env var)</span>
+<span class="c1"># Only auto-setup if not already configured</span>
+<span class="n">_logging_configured</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_auto_setup_logging</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Auto-setup logging if not already configured.&quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">_logging_configured</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">_logging_configured</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DASHBOARD_LEGO_NO_AUTO_LOG_SETUP&quot;</span><span class="p">):</span>
+        <span class="n">setup_logging</span><span class="p">()</span>
+        <span class="n">_logging_configured</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="c1"># Auto-setup on import only if not explicitly disabled</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DASHBOARD_LEGO_NO_AUTO_LOG_SETUP&quot;</span><span class="p">):</span>
+    <span class="n">_auto_setup_logging</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Dashboard Lego Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

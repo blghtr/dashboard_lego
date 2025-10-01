@@ -1,0 +1,278 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quick Start Guide &mdash; Dashboard Lego 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Core Concepts" href="concepts.html" />
+    <link rel="prev" title="Installation" href="installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Dashboard Lego
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Quick Start Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#creating-your-first-dashboard">Creating Your First Dashboard</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#step-1-define-a-data-source">Step 1: Define a Data Source</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-2-create-dashboard-blocks">Step 2: Create Dashboard Blocks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-3-create-dashboard-page">Step 3: Create Dashboard Page</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-4-run-the-application">Step 4: Run the Application</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#complete-example">Complete Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#next-steps">Next Steps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#running-the-example">Running the Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="concepts.html">Core Concepts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">dashboard_lego</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to Dashboard Lego</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Dashboard Lego</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Quick Start Guide</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/quickstart.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="quick-start-guide">
+<h1>Quick Start Guide<a class="headerlink" href="#quick-start-guide" title="Link to this heading"></a></h1>
+<p>This guide will help you create your first dashboard using Dashboard Lego.</p>
+<section id="creating-your-first-dashboard">
+<h2>Creating Your First Dashboard<a class="headerlink" href="#creating-your-first-dashboard" title="Link to this heading"></a></h2>
+<p>Let’s create a simple sales dashboard step by step.</p>
+<section id="step-1-define-a-data-source">
+<h3>Step 1: Define a Data Source<a class="headerlink" href="#step-1-define-a-data-source" title="Link to this heading"></a></h3>
+<p>First, create a data source by inheriting from <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDataSource</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.datasource</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseDataSource</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">SalesDataSource</span><span class="p">(</span><span class="n">BaseDataSource</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_path</span> <span class="o">=</span> <span class="n">file_path</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_load_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load data from CSV file.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_kpis</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate key performance indicators.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{}</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;total_sales&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="s2">&quot;Sales&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span>
+            <span class="s2">&quot;total_units&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="s2">&quot;UnitsSold&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_filter_options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Provide filter options (not used in this example).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Provide data summary (not used in this example).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="step-2-create-dashboard-blocks">
+<h3>Step 2: Create Dashboard Blocks<a class="headerlink" href="#step-2-create-dashboard-blocks" title="Link to this heading"></a></h3>
+<p>Create blocks for displaying your data:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">plotly.express</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">px</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.graph_objects</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">go</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.kpi</span><span class="w"> </span><span class="kn">import</span> <span class="n">KPIBlock</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.chart</span><span class="w"> </span><span class="kn">import</span> <span class="n">StaticChartBlock</span>
+
+<span class="c1"># Initialize data source</span>
+<span class="n">datasource</span> <span class="o">=</span> <span class="n">SalesDataSource</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="s2">&quot;sample_data.csv&quot;</span><span class="p">)</span>
+<span class="n">datasource</span><span class="o">.</span><span class="n">init_data</span><span class="p">()</span>
+
+<span class="c1"># Create KPI block</span>
+<span class="n">kpi_block</span> <span class="o">=</span> <span class="n">KPIBlock</span><span class="p">(</span>
+    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;sales_kpis&quot;</span><span class="p">,</span>
+    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+    <span class="n">kpi_definitions</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">{</span><span class="s2">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;total_sales&quot;</span><span class="p">,</span> <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Total Sales&quot;</span><span class="p">,</span> <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;total_units&quot;</span><span class="p">,</span> <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Total Units Sold&quot;</span><span class="p">,</span> <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;info&quot;</span><span class="p">},</span>
+    <span class="p">],</span>
+    <span class="n">subscribes_to</span><span class="o">=</span><span class="s2">&quot;dummy_state&quot;</span>  <span class="c1"># Not used in static dashboard</span>
+<span class="p">)</span>
+
+<span class="c1"># Define chart function</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_sales_by_fruit</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a bar chart of sales by fruit.&quot;&quot;&quot;</span>
+    <span class="n">sales_by_fruit</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;Fruit&quot;</span><span class="p">)[</span><span class="s2">&quot;Sales&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">px</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">sales_by_fruit</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="s2">&quot;Fruit&quot;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&quot;Sales&quot;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Sales by Fruit&quot;</span><span class="p">)</span>
+
+<span class="c1"># Create chart block</span>
+<span class="n">chart_block</span> <span class="o">=</span> <span class="n">StaticChartBlock</span><span class="p">(</span>
+    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;sales_chart&quot;</span><span class="p">,</span>
+    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Fruit Sales&quot;</span><span class="p">,</span>
+    <span class="n">chart_generator</span><span class="o">=</span><span class="n">plot_sales_by_fruit</span><span class="p">,</span>
+    <span class="n">subscribes_to</span><span class="o">=</span><span class="s2">&quot;dummy_state&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-3-create-dashboard-page">
+<h3>Step 3: Create Dashboard Page<a class="headerlink" href="#step-3-create-dashboard-page" title="Link to this heading"></a></h3>
+<p>Assemble your blocks into a dashboard page:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.page</span><span class="w"> </span><span class="kn">import</span> <span class="n">DashboardPage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.presets.layouts</span><span class="w"> </span><span class="kn">import</span> <span class="n">one_column</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">dash_bootstrap_components</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dbc</span>
+
+<span class="c1"># Create dashboard page using layout presets</span>
+<span class="n">dashboard_page</span> <span class="o">=</span> <span class="n">DashboardPage</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Simple Sales Dashboard&quot;</span><span class="p">,</span>
+    <span class="n">blocks</span><span class="o">=</span><span class="n">one_column</span><span class="p">([</span><span class="n">kpi_block</span><span class="p">,</span> <span class="n">chart_block</span><span class="p">]),</span>  <span class="c1"># Stack blocks vertically</span>
+    <span class="n">theme</span><span class="o">=</span><span class="n">dbc</span><span class="o">.</span><span class="n">themes</span><span class="o">.</span><span class="n">LUX</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-4-run-the-application">
+<h3>Step 4: Run the Application<a class="headerlink" href="#step-4-run-the-application" title="Link to this heading"></a></h3>
+<p>Set up and run your Dash application:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">dash</span>
+
+<span class="c1"># Create Dash app</span>
+<span class="n">app</span> <span class="o">=</span> <span class="n">dash</span><span class="o">.</span><span class="n">Dash</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">external_stylesheets</span><span class="o">=</span><span class="p">[</span><span class="n">dashboard_page</span><span class="o">.</span><span class="n">theme</span><span class="p">])</span>
+<span class="n">app</span><span class="o">.</span><span class="n">layout</span> <span class="o">=</span> <span class="n">dashboard_page</span><span class="o">.</span><span class="n">build_layout</span><span class="p">()</span>
+
+<span class="c1"># Register callbacks (handled automatically)</span>
+<span class="n">dashboard_page</span><span class="o">.</span><span class="n">register_callbacks</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+
+<span class="c1"># Run the app</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">app</span><span class="o">.</span><span class="n">run_server</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="complete-example">
+<h2>Complete Example<a class="headerlink" href="#complete-example" title="Link to this heading"></a></h2>
+<p>Here’s the complete code for your first dashboard:</p>
+</section>
+<section id="next-steps">
+<h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading"></a></h2>
+<p>Now that you’ve created your first dashboard, you might want to:</p>
+<ol class="arabic simple">
+<li><p><strong>Add Interactivity</strong>: Learn about <span class="xref std std-doc">interactivity</span> to connect blocks together</p></li>
+<li><p><strong>Use Presets</strong>: Explore <span class="xref std std-doc">presets/index</span> for ready-made visualization blocks</p></li>
+<li><p><strong>Custom Layouts</strong>: Discover <span class="xref std std-doc">layouts</span> for different dashboard arrangements</p></li>
+<li><p><strong>Create Custom Blocks</strong>: Learn how to extend Dashboard Lego with your own components</p></li>
+</ol>
+</section>
+<section id="running-the-example">
+<h2>Running the Example<a class="headerlink" href="#running-the-example" title="Link to this heading"></a></h2>
+<p>To run this example:</p>
+<ol class="arabic simple">
+<li><p>Save the code to a file (e.g., <code class="docutils literal notranslate"><span class="pre">my_dashboard.py</span></code>)</p></li>
+<li><p>Create a sample data file with columns: <code class="docutils literal notranslate"><span class="pre">Fruit</span></code>, <code class="docutils literal notranslate"><span class="pre">Sales</span></code>, <code class="docutils literal notranslate"><span class="pre">UnitsSold</span></code></p></li>
+<li><p>Run: <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">my_dashboard.py</span></code></p></li>
+<li><p>Open your browser to <code class="docutils literal notranslate"><span class="pre">http://localhost:8050</span></code></p></li>
+</ol>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
+<p>Common issues and solutions:</p>
+<dl class="simple">
+<dt><strong>Import Error</strong>: Make sure Dashboard Lego is installed:</dt><dd></dd>
+</dl>
+<p><strong>Data Loading Error</strong>: Check that your data file exists and has the expected columns.</p>
+<p><strong>Chart Not Displaying</strong>: Verify that your data source is properly initialized with <code class="docutils literal notranslate"><span class="pre">datasource.init_data()</span></code>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="concepts.html" class="btn btn-neutral float-right" title="Core Concepts" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Dashboard Lego Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

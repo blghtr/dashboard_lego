@@ -1,0 +1,75 @@
+Blocks Module
+==============
+
+The blocks module contains the building blocks for creating dashboard components.
+
+Base Block
+----------
+
+.. automodule:: blocks.base
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. autoclass:: blocks.base.BaseBlock
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Chart Blocks
+------------
+
+.. automodule:: blocks.chart
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Static Chart Block
+^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: blocks.chart.StaticChartBlock
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Interactive Chart Block
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: blocks.chart.InteractiveChartBlock
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Control Class
+^^^^^^^^^^^^^
+
+.. autoclass:: blocks.chart.Control
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+KPI Block
+---------
+
+.. automodule:: blocks.kpi
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. autoclass:: blocks.kpi.KPIBlock
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Text Block
+----------
+
+.. automodule:: blocks.text
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. autoclass:: blocks.text.TextBlock
+   :members:
+   :undoc-members:
+   :show-inheritance:

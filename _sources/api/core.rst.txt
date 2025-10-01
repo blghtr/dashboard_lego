@@ -1,0 +1,83 @@
+Core Module
+============
+
+The core module contains the fundamental classes for building dashboards with Dashboard Lego.
+
+Data Sources
+------------
+
+.. automodule:: core.datasource
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. autoclass:: core.datasource.BaseDataSource
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Data Source Implementations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+CSV Data Source
+^^^^^^^^^^^^^^^
+
+.. automodule:: core.datasources.csv_source
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Parquet Data Source
+^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: core.datasources.parquet_source
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+SQL Data Source
+^^^^^^^^^^^^^^^
+
+.. automodule:: core.datasources.sql_source
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Dashboard Page
+--------------
+
+.. automodule:: core.page
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. autoclass:: core.page.DashboardPage
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+State Management
+----------------
+
+.. automodule:: core.state
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. autoclass:: core.state.StateManager
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Chart Context
+-------------
+
+.. automodule:: core.chart_context
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. autoclass:: core.chart_context.ChartContext
+   :members:
+   :undoc-members:
+   :show-inheritance:

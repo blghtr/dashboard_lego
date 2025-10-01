@@ -1,0 +1,363 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contributing to Dashboard Lego &mdash; Dashboard Lego 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="dashboard_lego.utils.logger module" href="api/dashboard_lego.utils.logger.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Dashboard Lego
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="concepts.html">Core Concepts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">dashboard_lego</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Contributing to Dashboard Lego</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#getting-started">Getting Started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#development-setup">Development Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#code-style">Code Style</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#documentation-standards">Documentation Standards</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#docstring-format">Docstring Format</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#testing">Testing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#test-structure">Test Structure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#running-tests">Running Tests</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#creating-presets">Creating Presets</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#eda-presets">EDA Presets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml-presets">ML Presets</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#pull-request-process">Pull Request Process</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pr-template">PR Template</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-process">Release Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#getting-help">Getting Help</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Dashboard Lego</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Contributing to Dashboard Lego</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/contributing.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="contributing-to-dashboard-lego">
+<h1>Contributing to Dashboard Lego<a class="headerlink" href="#contributing-to-dashboard-lego" title="Link to this heading"></a></h1>
+<p>We welcome contributions to Dashboard Lego! This guide will help you get started.</p>
+<section id="getting-started">
+<h2>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p><strong>Fork the Repository</strong>: Fork the project on GitHub</p></li>
+<li><p><strong>Clone Your Fork</strong>: Clone your fork locally</p></li>
+<li><p><strong>Set Up Development Environment</strong>: Install dependencies and tools</p></li>
+<li><p><strong>Create a Branch</strong>: Create a feature branch for your changes</p></li>
+</ol>
+</section>
+<section id="development-setup">
+<h2>Development Setup<a class="headerlink" href="#development-setup" title="Link to this heading"></a></h2>
+<p>Install development dependencies:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Clone your fork</span>
+git<span class="w"> </span>clone<span class="w"> </span>https://github.com/YOUR_USERNAME/dashboard-lego.git
+<span class="nb">cd</span><span class="w"> </span>dashboard-lego
+
+<span class="c1"># Create virtual environment</span>
+uv<span class="w"> </span>venv
+uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.<span class="o">[</span>dev,docs,ml,sql<span class="o">]</span>
+
+<span class="c1"># Install pre-commit hooks</span>
+pre-commit<span class="w"> </span>install
+</pre></div>
+</div>
+</section>
+<section id="code-style">
+<h2>Code Style<a class="headerlink" href="#code-style" title="Link to this heading"></a></h2>
+<p>Dashboard Lego follows these coding standards:</p>
+<ul class="simple">
+<li><p><strong>Black</strong> for code formatting (88 character line length)</p></li>
+<li><p><strong>Flake8</strong> for linting</p></li>
+<li><p><strong>MyPy</strong> for type checking</p></li>
+<li><p><strong>Sphinx</strong> for documentation</p></li>
+</ul>
+<p>Run code quality checks:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Format code</span>
+uv<span class="w"> </span>run<span class="w"> </span>black<span class="w"> </span>.
+
+<span class="c1"># Check linting</span>
+uv<span class="w"> </span>run<span class="w"> </span>flake8<span class="w"> </span>.
+
+<span class="c1"># Check types</span>
+uv<span class="w"> </span>run<span class="w"> </span>mypy<span class="w"> </span>dashboard_lego
+</pre></div>
+</div>
+</section>
+<section id="documentation-standards">
+<h2>Documentation Standards<a class="headerlink" href="#documentation-standards" title="Link to this heading"></a></h2>
+<p>All code must include comprehensive documentation:</p>
+<section id="docstring-format">
+<h3>Docstring Format<a class="headerlink" href="#docstring-format" title="Link to this heading"></a></h3>
+<p>Use the project’s Sphinx-compatible format:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">create_chart</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">chart_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a chart based on the provided data and type.</span>
+
+<span class="sd">    :hierarchy: [Core | Chart Creation | create_chart]</span>
+<span class="sd">    :relates-to:</span>
+<span class="sd">     - motivated_by: &quot;PRD: Need flexible chart generation for different data types&quot;</span>
+<span class="sd">     - implements: &quot;function: &#39;create_chart&#39;&quot;</span>
+<span class="sd">     - uses: [&quot;interface: &#39;pd.DataFrame&#39;&quot;, &quot;interface: &#39;go.Figure&#39;&quot;]</span>
+
+<span class="sd">    :rationale: &quot;Chose factory pattern for chart creation to support multiple chart types with consistent interface.&quot;</span>
+
+<span class="sd">    :contract:</span>
+<span class="sd">     - pre: &quot;data is a valid DataFrame with required columns for chart_type&quot;</span>
+<span class="sd">     - post: &quot;Returns a configured Plotly Figure ready for display&quot;</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data: DataFrame containing the data to visualize</span>
+<span class="sd">        chart_type: Type of chart to create (&#39;bar&#39;, &#39;line&#39;, &#39;scatter&#39;)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Plotly Figure object</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If chart_type is not supported</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="testing">
+<h2>Testing<a class="headerlink" href="#testing" title="Link to this heading"></a></h2>
+<p>All new code must include tests:</p>
+<section id="test-structure">
+<h3>Test Structure<a class="headerlink" href="#test-structure" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_my_function_behavior</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample_data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Test that my_function behaves correctly.</span>
+
+<span class="sd">    :hierarchy: [Unit Tests | MyModule | MyFunction | Behavior]</span>
+<span class="sd">    :covers:</span>
+<span class="sd">     - object: &quot;function: &#39;my_function&#39;&quot;</span>
+<span class="sd">     - requirement: &quot;Function must process data correctly&quot;</span>
+
+<span class="sd">    :scenario: &quot;Verifies that my_function processes sample data as expected&quot;</span>
+<span class="sd">    :strategy: &quot;Uses pytest fixtures and assertions to validate behavior&quot;</span>
+<span class="sd">    :contract:</span>
+<span class="sd">     - pre: &quot;sample_data is a valid DataFrame&quot;</span>
+<span class="sd">     - post: &quot;Function returns expected result&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">my_function</span><span class="p">(</span><span class="n">sample_data</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+</pre></div>
+</div>
+</section>
+<section id="running-tests">
+<h3>Running Tests<a class="headerlink" href="#running-tests" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run all tests</span>
+uv<span class="w"> </span>run<span class="w"> </span>pytest
+
+<span class="c1"># Run with coverage</span>
+uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>--cov<span class="o">=</span>dashboard_lego<span class="w"> </span>--cov-report<span class="o">=</span>html
+
+<span class="c1"># Run specific test file</span>
+uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/unit/test_my_module.py
+</pre></div>
+</div>
+</section>
+</section>
+<section id="creating-presets">
+<h2>Creating Presets<a class="headerlink" href="#creating-presets" title="Link to this heading"></a></h2>
+<section id="eda-presets">
+<h3>EDA Presets<a class="headerlink" href="#eda-presets" title="Link to this heading"></a></h3>
+<p>Create presets for common exploratory data analysis tasks:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyEDAPreset</span><span class="p">(</span><span class="n">StaticChartBlock</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Description of what this preset does.</span>
+
+<span class="sd">    :hierarchy: [Presets | EDA | MyEDAPreset]</span>
+<span class="sd">    :relates-to:</span>
+<span class="sd">     - motivated_by: &quot;Common EDA pattern for [specific analysis]&quot;</span>
+<span class="sd">     - implements: &quot;preset: &#39;MyEDAPreset&#39;&quot;</span>
+<span class="sd">     - uses: [&quot;block: &#39;StaticChartBlock&#39;&quot;]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_chart</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the specific chart for this EDA preset.&quot;&quot;&quot;</span>
+        <span class="c1"># Implementation here</span>
+        <span class="k">pass</span>
+</pre></div>
+</div>
+</section>
+<section id="ml-presets">
+<h3>ML Presets<a class="headerlink" href="#ml-presets" title="Link to this heading"></a></h3>
+<p>Create presets for machine learning visualizations:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyMLPreset</span><span class="p">(</span><span class="n">KPIBlock</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    ML-specific preset for [specific ML visualization].</span>
+
+<span class="sd">    :hierarchy: [Presets | ML | MyMLPreset]</span>
+<span class="sd">    :relates-to:</span>
+<span class="sd">     - motivated_by: &quot;ML workflow requires [specific visualization]&quot;</span>
+<span class="sd">     - implements: &quot;preset: &#39;MyMLPreset&#39;&quot;</span>
+<span class="sd">     - uses: [&quot;block: &#39;KPIBlock&#39;&quot;]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="pull-request-process">
+<h2>Pull Request Process<a class="headerlink" href="#pull-request-process" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p><strong>Create Feature Branch</strong>: <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">checkout</span> <span class="pre">-b</span> <span class="pre">feature/your-feature-name</span></code></p></li>
+<li><p><strong>Make Changes</strong>: Implement your feature with tests and documentation</p></li>
+<li><p><strong>Run Quality Checks</strong>: Ensure all tests pass and code quality checks succeed</p></li>
+<li><p><strong>Commit Changes</strong>: Use descriptive commit messages</p></li>
+<li><p><strong>Push Branch</strong>: Push your branch to your fork</p></li>
+<li><p><strong>Create Pull Request</strong>: Submit PR with detailed description</p></li>
+</ol>
+<section id="pr-template">
+<h3>PR Template<a class="headerlink" href="#pr-template" title="Link to this heading"></a></h3>
+<div class="highlight-markdown notranslate"><div class="highlight"><pre><span></span><span class="gu">## Description</span>
+Brief description of changes
+
+<span class="gu">## Type of Changes</span>
+<span class="k">- [ ]</span> Bug fix
+<span class="k">- [ ]</span> New feature
+<span class="k">- [ ]</span> Refactoring
+<span class="k">- [ ]</span> Documentation
+<span class="k">- [ ]</span> Tests
+
+<span class="gu">## Related Issues</span>
+Closes <span class="ni">#123</span>
+
+<span class="gu">## Testing</span>
+<span class="k">- [ ]</span> Added tests
+<span class="k">- [ ]</span> All tests pass
+<span class="k">- [ ]</span> Manual testing completed
+
+<span class="gu">## Checklist</span>
+<span class="k">- [ ]</span> Code follows project standards
+<span class="k">- [ ]</span> Documentation added/updated
+<span class="k">- [ ]</span> CHANGELOG updated
+</pre></div>
+</div>
+</section>
+</section>
+<section id="release-process">
+<h2>Release Process<a class="headerlink" href="#release-process" title="Link to this heading"></a></h2>
+<p>Versioning follows Semantic Versioning (MAJOR.MINOR.PATCH):</p>
+<ul class="simple">
+<li><p><strong>MAJOR</strong>: Breaking API changes</p></li>
+<li><p><strong>MINOR</strong>: New features (backward compatible)</p></li>
+<li><p><strong>PATCH</strong>: Bug fixes (backward compatible)</p></li>
+</ul>
+</section>
+<section id="getting-help">
+<h2>Getting Help<a class="headerlink" href="#getting-help" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Issues</strong>: Report bugs and request features</p></li>
+<li><p><strong>Discussions</strong>: Ask questions and discuss ideas</p></li>
+<li><p><strong>Email</strong>: <a class="reference external" href="mailto:team&#37;&#52;&#48;dashboard-lego&#46;com">team<span>&#64;</span>dashboard-lego<span>&#46;</span>com</a></p></li>
+</ul>
+<p>Thank you for contributing to Dashboard Lego! 🧱✨</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="api/dashboard_lego.utils.logger.html" class="btn btn-neutral float-left" title="dashboard_lego.utils.logger module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Dashboard Lego Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
