@@ -30,8 +30,7 @@ jobs:
 
       - name: Check package with twine
         run: |
-          uv pip install twine
-          uv run twine check dist/*
+          uvx twine check dist/*
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
