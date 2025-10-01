@@ -160,7 +160,9 @@ class DashboardPage:
 
             # Register all blocks with the state manager
             self.logger.debug("Registering blocks with state manager")
-            self.logger.debug(f"Registering {len(self.blocks)} blocks with state manager")
+            self.logger.debug(
+                f"Registering {len(self.blocks)} blocks with state manager"
+            )
             for block in self.blocks:
                 self.logger.debug(f"Registering block: {block.block_id}")
                 block._register_state_interactions(self.state_manager)
@@ -440,7 +442,9 @@ class DashboardPage:
             )
 
         # Dynamic sidebar width based on content
-        max_title_length = max(len(section.title) for section in self.navigation.sections)
+        max_title_length = max(
+            len(section.title) for section in self.navigation.sections
+        )
         sidebar_width = max(16, min(24, max_title_length * 0.8 + 8))  # Dynamic width
 
         # Fixed sidebar style with better colors and spacing
@@ -596,9 +600,7 @@ class DashboardPage:
         """
         if section_index in self._section_blocks_cache:
             # Return cached content
-            self.logger.debug(
-                f"Using cached content for section {section_index}"
-            )
+            self.logger.debug(f"Using cached content for section {section_index}")
             # Re-render from cached blocks
             rows = []
             for row_spec in self._section_layout_cache[section_index]:
@@ -614,7 +616,9 @@ class DashboardPage:
             layout_structure = section.block_factory()
             self.logger.debug(f"Factory returned {len(layout_structure)} rows")
         except Exception as e:
-            self.logger.error(f"Error in block factory for section {section_index}: {e}")
+            self.logger.error(
+                f"Error in block factory for section {section_index}: {e}"
+            )
             raise ConfigurationError(
                 f"Block factory for section '{section.title}' failed: {e}"
             ) from e
@@ -639,7 +643,7 @@ class DashboardPage:
 
         # Cache blocks and layout
         self._section_blocks_cache[section_index] = section_blocks
-        if not hasattr(self, '_section_layout_cache'):
+        if not hasattr(self, "_section_layout_cache"):
             self._section_layout_cache: Dict[int, List[List[Any]]] = {}
         self._section_layout_cache[section_index] = layout_structure
 

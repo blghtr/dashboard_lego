@@ -10,13 +10,9 @@ Exports:
 
 """
 
-from dashboard_lego.core.page import (
-    DashboardPage,
-    NavigationConfig,
-    NavigationSection,
-)
-from dashboard_lego.core.state import StateManager
 from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.page import DashboardPage, NavigationConfig, NavigationSection
+from dashboard_lego.core.state import StateManager
 
 __all__ = [
     "DashboardPage",
