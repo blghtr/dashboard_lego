@@ -1,16 +1,15 @@
-
 from .eda_presets import (
+    BoxPlotPreset,
     CorrelationHeatmapPreset,
     GroupedHistogramPreset,
     MissingValuesPreset,
-    BoxPlotPreset
 )
 from .ml_presets import (
     ConfusionMatrixPreset,
-    RocAucCurvePreset,
     FeatureImportancePreset,
+    MetricCardBlock,
     ModelSummaryBlock,
-    MetricCardBlock
+    RocAucCurvePreset,
 )
 
 __all__ = [
@@ -22,5 +21,5 @@ __all__ = [
     "RocAucCurvePreset",
     "FeatureImportancePreset",
     "ModelSummaryBlock",
-    "MetricCardBlock"
+    "MetricCardBlock",
 ]

@@ -3,7 +3,8 @@ Tests for examples functionality.
 
 :hierarchy: [Testing | Integration Tests | Examples]
 :relates-to:
- - motivated_by: "TEST_PLAN.md: Уровень 3.3 - Тесты примеров"
+ - motivated_by: "Architectural Conclusion: Example tests ensure all
+   demonstration code remains functional and serves as integration tests"
  - implements: "test_suite: 'Examples'"
 
 :strategy: "Use pytest to validate that all examples can be imported and run without errors"
@@ -13,15 +14,16 @@ Tests for examples functionality.
 
 """
 
-import pytest
-import sys
 import os
+import sys
 import tempfile
+from unittest.mock import MagicMock, patch
+
 import pandas as pd
-from unittest.mock import patch, MagicMock
+import pytest
 
 # Add examples directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'examples'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "examples"))
 
 
 class TestExamplesImport:
@@ -58,11 +60,13 @@ class TestExamplesImport:
 
         """
         # Test that example file exists and can be read
-        example_path = os.path.join(os.path.dirname(__file__), '..', '..', 'examples', '01_simple_dashboard.py')
+        example_path = os.path.join(
+            os.path.dirname(__file__), "..", "..", "examples", "01_simple_dashboard.py"
+        )
         assert os.path.exists(example_path), f"Example file not found: {example_path}"
-        
+
         # Test that we can read the file content
-        with open(example_path, 'r') as f:
+        with open(example_path, "r") as f:
             content = f.read()
             assert len(content) > 0, "Example file is empty"
 
@@ -83,11 +87,17 @@ class TestExamplesImport:
 
         """
         # Test that example file exists and can be read
-        example_path = os.path.join(os.path.dirname(__file__), '..', '..', 'examples', '02_interactive_dashboard.py')
+        example_path = os.path.join(
+            os.path.dirname(__file__),
+            "..",
+            "..",
+            "examples",
+            "02_interactive_dashboard.py",
+        )
         assert os.path.exists(example_path), f"Example file not found: {example_path}"
-        
+
         # Test that we can read the file content
-        with open(example_path, 'r') as f:
+        with open(example_path, "r") as f:
             content = f.read()
             assert len(content) > 0, "Example file is empty"
 
@@ -108,11 +118,13 @@ class TestExamplesImport:
 
         """
         # Test that example file exists and can be read
-        example_path = os.path.join(os.path.dirname(__file__), '..', '..', 'examples', '03_presets_dashboard.py')
+        example_path = os.path.join(
+            os.path.dirname(__file__), "..", "..", "examples", "03_presets_dashboard.py"
+        )
         assert os.path.exists(example_path), f"Example file not found: {example_path}"
-        
+
         # Test that we can read the file content
-        with open(example_path, 'r') as f:
+        with open(example_path, "r") as f:
             content = f.read()
             assert len(content) > 0, "Example file is empty"
 
@@ -133,11 +145,13 @@ class TestExamplesImport:
 
         """
         # Test that example file exists and can be read
-        example_path = os.path.join(os.path.dirname(__file__), '..', '..', 'examples', '04_ml_dashboard.py')
+        example_path = os.path.join(
+            os.path.dirname(__file__), "..", "..", "examples", "04_ml_dashboard.py"
+        )
         assert os.path.exists(example_path), f"Example file not found: {example_path}"
-        
+
         # Test that we can read the file content
-        with open(example_path, 'r') as f:
+        with open(example_path, "r") as f:
             content = f.read()
             assert len(content) > 0, "Example file is empty"
 
@@ -176,22 +190,24 @@ class TestExamplesFunctionality:
 
         """
         # Create sample data for testing
-        sample_data = pd.DataFrame({
-            'Fruit': ['Apple', 'Banana', 'Orange'],
-            'Sales': [100, 150, 120],
-            'UnitsSold': [10, 15, 12]
-        })
+        sample_data = pd.DataFrame(
+            {
+                "Fruit": ["Apple", "Banana", "Orange"],
+                "Sales": [100, 150, 120],
+                "UnitsSold": [10, 15, 12],
+            }
+        )
 
         # Create temporary CSV file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             sample_data.to_csv(f.name, index=False)
             csv_path = f.name
 
         try:
             # Test that we can create basic components like in the example
-            from core.datasources.csv_source import CsvDataSource
-            from blocks.kpi import KPIBlock
             from blocks.chart import StaticChartBlock
+            from blocks.kpi import KPIBlock
+            from core.datasources.csv_source import CsvDataSource
 
             # Create data source
             datasource = CsvDataSource(csv_path)
@@ -207,14 +223,15 @@ class TestExamplesFunctionality:
                 datasource=datasource,
                 kpi_definitions=[
                     {"key": "total_sales", "title": "Total Sales", "color": "success"},
-                    {"key": "total_units", "title": "Total Units", "color": "info"}
+                    {"key": "total_units", "title": "Total Units", "color": "info"},
                 ],
-                subscribes_to="dummy_state"
+                subscribes_to="dummy_state",
             )
 
             # Test chart block creation
             def chart_generator(df: pd.DataFrame):
                 import plotly.express as px
+
                 return px.bar(df, x="Fruit", y="Sales", title="Sales by Fruit")
 
             chart_block = StaticChartBlock(
@@ -222,7 +239,7 @@ class TestExamplesFunctionality:
                 datasource=datasource,
                 title="Sales Chart",
                 chart_generator=chart_generator,
-                subscribes_to="dummy_state"
+                subscribes_to="dummy_state",
             )
 
             # Validate components are created
@@ -249,20 +266,22 @@ class TestExamplesFunctionality:
 
         """
         # Create sample data for testing
-        sample_data = pd.DataFrame({
-            'Fruit': ['Apple', 'Banana', 'Orange'],
-            'Sales': [100, 150, 120],
-            'UnitsSold': [10, 15, 12]
-        })
+        sample_data = pd.DataFrame(
+            {
+                "Fruit": ["Apple", "Banana", "Orange"],
+                "Sales": [100, 150, 120],
+                "UnitsSold": [10, 15, 12],
+            }
+        )
 
         # Create temporary CSV file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             sample_data.to_csv(f.name, index=False)
             csv_path = f.name
 
         try:
-            from core.datasources.csv_source import CsvDataSource
             from blocks.chart import InteractiveChartBlock
+            from core.datasources.csv_source import CsvDataSource
 
             # Create data source
             datasource = CsvDataSource(csv_path)
@@ -271,19 +290,21 @@ class TestExamplesFunctionality:
             # Test interactive chart block creation
             def chart_generator(df: pd.DataFrame):
                 import plotly.express as px
+
                 return px.bar(df, x="Fruit", y="Sales", title="Interactive Sales Chart")
 
             # Mock controls for testing
-            from blocks.chart import Control
             from dash import dcc
+
+            from blocks.chart import Control
 
             controls = {
                 "fruit_filter": Control(
                     component=dcc.Dropdown,
                     props={
                         "options": ["Apple", "Banana", "Orange"],
-                        "placeholder": "Select Fruit"
-                    }
+                        "placeholder": "Select Fruit",
+                    },
                 )
             }
 
@@ -293,7 +314,7 @@ class TestExamplesFunctionality:
                 title="Interactive Chart",
                 chart_generator=chart_generator,
                 controls=controls,
-                subscribes_to=["filter_state"]
+                subscribes_to=["filter_state"],
             )
 
             # Validate interactive component is created
@@ -320,15 +341,17 @@ class TestExamplesFunctionality:
 
         """
         # Create sample data for testing
-        sample_data = pd.DataFrame({
-            'Fruit': ['Apple', 'Banana', 'Orange'],
-            'Sales': [100, 150, 120],
-            'UnitsSold': [10, 15, 12],
-            'Price': [10.0, 10.0, 10.0]
-        })
+        sample_data = pd.DataFrame(
+            {
+                "Fruit": ["Apple", "Banana", "Orange"],
+                "Sales": [100, 150, 120],
+                "UnitsSold": [10, 15, 12],
+                "Price": [10.0, 10.0, 10.0],
+            }
+        )
 
         # Create temporary CSV file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             sample_data.to_csv(f.name, index=False)
             csv_path = f.name
 
@@ -344,7 +367,7 @@ class TestExamplesFunctionality:
             correlation_preset = CorrelationHeatmapPreset(
                 block_id="eda_correlation",
                 datasource=datasource,
-                subscribes_to="dummy_state"
+                subscribes_to="dummy_state",
             )
 
             # Validate preset component is created
@@ -371,14 +394,16 @@ class TestExamplesFunctionality:
 
         """
         # Create sample data for testing
-        sample_data = pd.DataFrame({
-            'Fruit': ['Apple', 'Banana', 'Orange'],
-            'Sales': [100, 150, 120],
-            'UnitsSold': [10, 15, 12]
-        })
+        sample_data = pd.DataFrame(
+            {
+                "Fruit": ["Apple", "Banana", "Orange"],
+                "Sales": [100, 150, 120],
+                "UnitsSold": [10, 15, 12],
+            }
+        )
 
         # Create temporary CSV file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             sample_data.to_csv(f.name, index=False)
             csv_path = f.name
 
@@ -389,17 +414,13 @@ class TestExamplesFunctionality:
             # Create data source with ML methods
             class MLDataSource(CsvDataSource):
                 def get_kpis(self) -> dict:
-                    return {
-                        "accuracy": 0.95,
-                        "precision": 0.87,
-                        "recall": 0.92
-                    }
+                    return {"accuracy": 0.95, "precision": 0.87, "recall": 0.92}
 
                 def get_summary_data(self) -> dict:
                     return {
                         "algorithm": "Random Forest",
                         "n_estimators": 100,
-                        "max_depth": 10
+                        "max_depth": 10,
                     }
 
             # Create data source
@@ -413,15 +434,13 @@ class TestExamplesFunctionality:
                 kpi_definitions=[
                     {"key": "accuracy", "title": "Accuracy"},
                     {"key": "precision", "title": "Precision"},
-                    {"key": "recall", "title": "Recall"}
+                    {"key": "recall", "title": "Recall"},
                 ],
-                subscribes_to="dummy_state"
+                subscribes_to="dummy_state",
             )
 
             summary_block = ModelSummaryBlock(
-                block_id="ml_summary",
-                datasource=datasource,
-                title="Model Summary"
+                block_id="ml_summary", datasource=datasource, title="Model Summary"
             )
 
             # Validate ML components are created

@@ -12,9 +12,11 @@ Tests for the SqlDataSource.
  - post: "All tests for SqlDataSource pass, and code coverage for the module is high."
 
 """
-import sys
+
 import importlib
+import sys
 from unittest.mock import patch
+
 import pandas as pd
 import pytest
 from sqlalchemy import create_engine
@@ -23,16 +25,18 @@ from sqlalchemy import create_engine
 from core.datasources import sql_source
 from core.datasources.sql_source import SqlDataSource
 
+
 @pytest.fixture
 def db_uri(tmp_path):
     """Fixture to create a file-based SQLite database and return the URI."""
     db_path = tmp_path / "test.db"
     uri = f"sqlite:///{db_path}"
     engine = create_engine(uri)
-    df = pd.DataFrame({'col1': [1, 2, 3], 'col2': ['a', 'b', 'c']})
+    df = pd.DataFrame({"col1": [1, 2, 3], "col2": ["a", "b", "c"]})
     with engine.connect() as connection:
-        df.to_sql('test_table', connection, index=False, if_exists='replace')
+        df.to_sql("test_table", connection, index=False, if_exists="replace")
     return uri
+
 
 def test_sql_source_executes_query(db_uri):
     """
@@ -46,7 +50,7 @@ def test_sql_source_executes_query(db_uri):
     """
     # Arrange
     source = SqlDataSource(connection_uri=db_uri, query="SELECT * FROM test_table")
-    expected_df = pd.DataFrame({'col1': [1, 2, 3], 'col2': ['a', 'b', 'c']})
+    expected_df = pd.DataFrame({"col1": [1, 2, 3], "col2": ["a", "b", "c"]})
 
     # Act
     source.init_data()
@@ -54,6 +58,7 @@ def test_sql_source_executes_query(db_uri):
 
     # Assert
     pd.testing.assert_frame_equal(data, expected_df)
+
 
 def test_sql_source_invalid_connection_string():
     """
@@ -76,6 +81,7 @@ def test_sql_source_invalid_connection_string():
     assert not result
     assert data.empty
 
+
 def test_sql_source_invalid_query(db_uri):
     """
     Tests that SqlDataSource handles an invalid SQL query gracefully.
@@ -87,7 +93,9 @@ def test_sql_source_invalid_query(db_uri):
 
     """
     # Arrange
-    source = SqlDataSource(connection_uri=db_uri, query="SELECT * FROM non_existent_table")
+    source = SqlDataSource(
+        connection_uri=db_uri, query="SELECT * FROM non_existent_table"
+    )
 
     # Act
     result = source.init_data()
@@ -96,6 +104,7 @@ def test_sql_source_invalid_query(db_uri):
     # Assert
     assert not result
     assert data.empty
+
 
 def test_sql_source_with_parameters(db_uri):
     """
@@ -110,7 +119,9 @@ def test_sql_source_with_parameters(db_uri):
     # Arrange
     query = "SELECT * FROM test_table WHERE col1 > :val"
     source = SqlDataSource(connection_uri=db_uri, query=query)
-    expected_df = pd.DataFrame({'col1': [2, 3], 'col2': ['b', 'c']}).reset_index(drop=True)
+    expected_df = pd.DataFrame({"col1": [2, 3], "col2": ["b", "c"]}).reset_index(
+        drop=True
+    )
 
     # Act
     source.init_data(params={"val": 1})
@@ -118,6 +129,7 @@ def test_sql_source_with_parameters(db_uri):
 
     # Assert
     pd.testing.assert_frame_equal(data.reset_index(drop=True), expected_df)
+
 
 def test_sql_source_caching(db_uri):
     """
@@ -133,12 +145,13 @@ def test_sql_source_caching(db_uri):
     source = SqlDataSource(connection_uri=db_uri, query="SELECT * FROM test_table")
 
     # Act
-    with patch.object(source, '_load_data', wraps=source._load_data) as mock_load:
+    with patch.object(source, "_load_data", wraps=source._load_data) as mock_load:
         source.init_data()
         source.init_data()
 
         # Assert
         mock_load.assert_called_once()
+
 
 def test_sql_source_caching_with_different_params(db_uri):
     """
@@ -155,13 +168,14 @@ def test_sql_source_caching_with_different_params(db_uri):
     source = SqlDataSource(connection_uri=db_uri, query=query)
 
     # Act
-    with patch.object(source, '_load_data', wraps=source._load_data) as mock_load:
+    with patch.object(source, "_load_data", wraps=source._load_data) as mock_load:
         source.init_data(params={"val": 1})  # First call
         source.init_data(params={"val": 2})  # Second call with different params
         source.init_data(params={"val": 1})  # Third call, same as first
 
         # Assert
         assert mock_load.call_count == 2
+
 
 def test_sql_placeholder_and_summary_methods(db_uri):
     """
@@ -178,7 +192,7 @@ def test_sql_placeholder_and_summary_methods(db_uri):
 
     # Act & Assert (before load)
     assert source.get_kpis() == {}
-    assert source.get_filter_options('any_filter') == []
+    assert source.get_filter_options("any_filter") == []
     assert source.get_summary() == "No data loaded."
 
     # Act (load data)
@@ -188,6 +202,7 @@ def test_sql_placeholder_and_summary_methods(db_uri):
     summary = source.get_summary()
     assert summary.startswith("SQL data loaded via query.")
     assert "Shape: (3, 2)" in summary
+
 
 def test_sql_source_missing_sqlalchemy():
     """
@@ -200,10 +215,10 @@ def test_sql_source_missing_sqlalchemy():
 
     """
     # Arrange
-    with patch.dict(sys.modules, {'sqlalchemy': None}):
+    with patch.dict(sys.modules, {"sqlalchemy": None}):
         # Act & Assert
         with pytest.raises(ImportError, match="SQLAlchemy is required"):
             importlib.reload(sql_source)
-    
+
     # Clean up by reloading the module with dependencies
     importlib.reload(sql_source)

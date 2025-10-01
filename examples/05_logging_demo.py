@@ -11,13 +11,14 @@ This example shows:
 
 """
 import os
+
 import pandas as pd
 
-from utils.logger import setup_logging, get_logger
+from blocks.kpi import KPIBlock
 from core.datasource import BaseDataSource
 from core.datasources.csv_source import CsvDataSource
-from blocks.kpi import KPIBlock
 from core.page import DashboardPage
+from utils.logger import get_logger, setup_logging
 
 
 def demonstrate_logging():
@@ -40,10 +41,10 @@ def demonstrate_logging():
     # Setup logging with DEBUG level to see hierarchy
     setup_logging(level="DEBUG")
     logger = get_logger(__name__, demonstrate_logging)
-    
+
     logger.info("=== Dashboard Lego Logging Demo ===")
     logger.debug("This is a DEBUG message - you should see hierarchy above")
-    
+
     # Create a custom datasource to show logging
     class DemoDataSource(BaseDataSource):
         """
@@ -61,36 +62,38 @@ def demonstrate_logging():
              - post: "Data is processed with logging."
 
         """
-        
+
         def __init__(self, data: pd.DataFrame):
             super().__init__()
             self.logger = get_logger(__name__, DemoDataSource)
             self.logger.info("DemoDataSource initialized")
             self._data = data
-            
+
         def _load_data(self, params: dict) -> pd.DataFrame:
             self.logger.debug(f"Loading data with params: {params}")
             self.logger.info(f"Data loaded: {len(self._data)} rows")
             return self._data
-            
+
         def get_kpis(self) -> dict:
             self.logger.debug("Calculating KPIs")
             return {"total_rows": len(self._data)}
-            
+
         def get_filter_options(self, filter_name: str) -> list:
             return []
-            
+
         def get_summary(self) -> str:
             return f"Demo data with {len(self._data)} rows"
-    
+
     # Create sample data
     logger.info("Creating sample data")
-    sample_data = pd.DataFrame({
-        'Category': ['A', 'B', 'A', 'B', 'A'],
-        'Value': [10, 20, 15, 25, 12],
-        'Sales': [100, 200, 150, 250, 120]
-    })
-    
+    sample_data = pd.DataFrame(
+        {
+            "Category": ["A", "B", "A", "B", "A"],
+            "Value": [10, 20, 15, 25, 12],
+            "Sales": [100, 200, 150, 250, 120],
+        }
+    )
+
     # Test CSV datasource logging
     logger.info("Testing CSV datasource logging")
     csv_file = "examples/sample_data.csv"
@@ -100,29 +103,24 @@ def demonstrate_logging():
         logger.info("CSV datasource test completed")
     else:
         logger.warning(f"Sample CSV file not found: {csv_file}")
-    
+
     # Test custom datasource
     logger.info("Testing custom datasource")
     demo_datasource = DemoDataSource(sample_data)
     demo_datasource.init_data()
-    
+
     # Test KPI block logging
     logger.info("Testing KPI block logging")
     kpi_block = KPIBlock(
         block_id="demo_kpis",
         datasource=demo_datasource,
-        kpi_definitions=[
-            {"key": "total_rows", "title": "Total Rows"}
-        ]
+        kpi_definitions=[{"key": "total_rows", "title": "Total Rows"}],
     )
-    
+
     # Test page creation logging
     logger.info("Testing page creation logging")
-    page = DashboardPage(
-        title="Logging Demo",
-        blocks=[[kpi_block]]
-    )
-    
+    page = DashboardPage(title="Logging Demo", blocks=[[kpi_block]])
+
     logger.info("=== Logging Demo Complete ===")
     logger.info("Check the console output above to see:")
     logger.info("1. INFO messages (user-friendly)")

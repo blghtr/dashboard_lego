@@ -1,18 +1,18 @@
-name: Python CI
+name: Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
     branches: [ main ]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11" ]
+        python-version: ['3.10', '3.11', '3.12']
 
     steps:
     - name: Checkout repository
@@ -24,10 +24,40 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Install uv
-      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      uses: astral-sh/setup-uv@v2
+      with:
+        version: "latest"
 
     - name: Install dependencies
-      run: uv sync --all-extras
+      run: |
+        uv sync --all-extras
 
-    - name: Run tests
-      run: uv run pytest
+    - name: Check code formatting with Black
+      run: |
+        uv run black --check --diff blocks/ core/ presets/ utils/ tests/ examples/
+
+    - name: Check import sorting with isort
+      run: |
+        uv run isort --check-only --diff blocks/ core/ presets/ utils/ tests/ examples/
+
+    - name: Run linting checks
+      run: |
+        uv run flake8 blocks/ core/ presets/ utils/ --max-line-length=88 --extend-ignore=E203,W503,E501
+
+    - name: Run type checking with mypy
+      run: |
+        uv run mypy blocks/ core/ presets/ utils/ --ignore-missing-imports --no-strict-optional --explicit-package-bases
+      continue-on-error: true
+
+    - name: Run tests with coverage
+      run: |
+        uv run pytest --cov=. --cov-report=xml --cov-report=term-missing
+
+    - name: Upload coverage to Codecov
+      if: matrix.python-version == '3.11'
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false

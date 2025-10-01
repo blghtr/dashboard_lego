@@ -5,13 +5,14 @@ This module provides a smart logging system with automatic hierarchy extraction
 from docstrings and dual output (console + rotating file).
 
 """
+
+import inspect
 import logging
 import os
 import re
-import inspect
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Optional, Any, Dict
+from typing import Any, Dict, Optional
 
 
 # Global logging configuration
@@ -19,9 +20,11 @@ def _get_log_level():
     """Get log level from environment variable."""
     return os.getenv("DASHBOARD_LEGO_LOG_LEVEL", "INFO").upper()
 
+
 def _get_log_dir():
     """Get log directory from environment variable."""
     return os.getenv("DASHBOARD_LEGO_LOG_DIR", "./logs")
+
 
 LOG_FILE = "dashboard_lego.log"
 MAX_LOG_SIZE = 10 * 1024 * 1024  # 10 MB
@@ -52,9 +55,7 @@ class HierarchyLoggerAdapter(logging.LoggerAdapter):
 
     """
 
-    def __init__(
-        self, logger: logging.Logger, hierarchy: Optional[str] = None
-    ):
+    def __init__(self, logger: logging.Logger, hierarchy: Optional[str] = None):
         """
         Initialize the adapter with hierarchy context.
 
@@ -149,7 +150,7 @@ def get_logger(name: str, obj: Optional[Any] = None) -> HierarchyLoggerAdapter:
         logger_name = f"dashboard_lego.{name}"
     else:
         logger_name = name
-    
+
     base_logger = logging.getLogger(logger_name)
 
     # Extract hierarchy if obj is provided
@@ -160,9 +161,7 @@ def get_logger(name: str, obj: Optional[Any] = None) -> HierarchyLoggerAdapter:
     return HierarchyLoggerAdapter(base_logger, hierarchy)
 
 
-def setup_logging(
-    level: Optional[str] = None, log_dir: Optional[str] = None
-) -> None:
+def setup_logging(level: Optional[str] = None, log_dir: Optional[str] = None) -> None:
     """
     Configure global logging with dual output (console + rotating file).
 
@@ -195,7 +194,7 @@ def setup_logging(
     # Get root logger for dashboard_lego
     root_logger = logging.getLogger("dashboard_lego")
     root_logger.setLevel(getattr(logging, level, logging.INFO))
-    
+
     # Also set the root logger to ensure proper propagation
     logging.getLogger().setLevel(getattr(logging, level, logging.INFO))
 
@@ -203,7 +202,7 @@ def setup_logging(
     if root_logger.handlers:
         root_logger.debug("Logging already configured, skipping re-initialization")
         return
-    
+
     # Mark as configured
     global _logging_configured
     _logging_configured = True
@@ -214,49 +213,48 @@ def setup_logging(
     console_handler.setLevel(getattr(logging, level, logging.INFO))
     console_formatter = logging.Formatter(
         fmt="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
     console_handler.setFormatter(console_formatter)
 
     # File Handler (with rotation)
     log_file_path = os.path.join(log_dir, LOG_FILE)
     file_handler = RotatingFileHandler(
-        log_file_path,
-        maxBytes=MAX_LOG_SIZE,
-        backupCount=BACKUP_COUNT,
-        encoding="utf-8"
+        log_file_path, maxBytes=MAX_LOG_SIZE, backupCount=BACKUP_COUNT, encoding="utf-8"
     )
     # File captures everything
     file_handler.setLevel(logging.DEBUG)
     file_formatter = logging.Formatter(
-        fmt=("%(asctime)s - %(name)s - %(levelname)s - "
-             "%(funcName)s:%(lineno)d - %(message)s"),
-        datefmt="%Y-%m-%d %H:%M:%S"
+        fmt=(
+            "%(asctime)s - %(name)s - %(levelname)s - "
+            "%(funcName)s:%(lineno)d - %(message)s"
+        ),
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
     file_handler.setFormatter(file_formatter)
 
     # Add handlers to root logger
     root_logger.addHandler(console_handler)
     root_logger.addHandler(file_handler)
-    
+
     # Ensure propagation to child loggers
     root_logger.propagate = True
 
     # Force immediate output
     import sys
+
     sys.stdout.flush()
     sys.stderr.flush()
 
     # Log the initialization only when not in reloader subprocess
     if os.environ.get("WERKZEUG_RUN_MAIN") != "true":
-        root_logger.info(
-            f"Logging initialized: level={level}, log_dir={log_dir}"
-        )
+        root_logger.info(f"Logging initialized: level={level}, log_dir={log_dir}")
 
 
 # Auto-setup on import (can be disabled by setting env var)
 # Only auto-setup if not already configured
 _logging_configured = False
+
 
 def _auto_setup_logging():
     """Auto-setup logging if not already configured."""
@@ -264,6 +262,7 @@ def _auto_setup_logging():
     if not _logging_configured and not os.getenv("DASHBOARD_LEGO_NO_AUTO_LOG_SETUP"):
         setup_logging()
         _logging_configured = True
+
 
 # Auto-setup on import only if not explicitly disabled
 if not os.getenv("DASHBOARD_LEGO_NO_AUTO_LOG_SETUP"):

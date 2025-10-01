@@ -35,7 +35,7 @@ def one_column(blocks: Sequence[BaseBlock]):
          - post: "Returns rows where each row contains a single full-width column"
 
     """
-    return [[(block, {'md': 12})] for block in blocks]
+    return [[(block, {"md": 12})] for block in blocks]
 
 
 def two_column_6_6(left: BaseBlock, right: BaseBlock):
@@ -54,7 +54,7 @@ def two_column_6_6(left: BaseBlock, right: BaseBlock):
          - post: "Returns a single row with two 6-unit columns"
 
     """
-    return [[(left, {'md': 6}), (right, {'md': 6})]]
+    return [[(left, {"md": 6}), (right, {"md": 6})]]
 
 
 def two_column_8_4(main: BaseBlock, side: BaseBlock):
@@ -73,7 +73,7 @@ def two_column_8_4(main: BaseBlock, side: BaseBlock):
          - post: "Returns a single row with 8/4 split"
 
     """
-    return [[(main, {'md': 8}), (side, {'md': 4})]]
+    return [[(main, {"md": 8}), (side, {"md": 4})]]
 
 
 def three_column_4_4_4(a: BaseBlock, b: BaseBlock, c: BaseBlock):
@@ -92,7 +92,7 @@ def three_column_4_4_4(a: BaseBlock, b: BaseBlock, c: BaseBlock):
          - post: "Returns a single row with 4/4/4 split"
 
     """
-    return [[(a, {'md': 4}), (b, {'md': 4}), (c, {'md': 4})]]
+    return [[(a, {"md": 4}), (b, {"md": 4}), (c, {"md": 4})]]
 
 
 def sidebar_main_3_9(side: BaseBlock, main: BaseBlock):
@@ -111,7 +111,7 @@ def sidebar_main_3_9(side: BaseBlock, main: BaseBlock):
          - post: "Returns a single row with 3/9 split"
 
     """
-    return [[(side, {'md': 3}), (main, {'md': 9})]]
+    return [[(side, {"md": 3}), (main, {"md": 9})]]
 
 
 def kpi_row_top(kpi_blocks: Sequence[BaseBlock], content_rows: List[List[BaseBlock]]):
@@ -132,9 +132,5 @@ def kpi_row_top(kpi_blocks: Sequence[BaseBlock], content_rows: List[List[BaseBlo
     """
     kpi_count = max(1, len(kpi_blocks))
     kpi_width = max(1, 12 // kpi_count)
-    kpi_row = [[(k, {'md': kpi_width}) for k in kpi_blocks]]
+    kpi_row = [[(k, {"md": kpi_width}) for k in kpi_blocks]]
     return kpi_row + [row for row in content_rows]
-
-
-
-

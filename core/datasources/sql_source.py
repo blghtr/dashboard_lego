@@ -2,12 +2,14 @@
 Concrete implementation of a DataSource for SQL databases.
 
 """
+
 from typing import Any, Dict, List, Optional
+
 import pandas as pd
 
 from core.datasource import BaseDataSource
-from utils.logger import get_logger
 from utils.exceptions import DataLoadError
+from utils.logger import get_logger
 
 try:
     from sqlalchemy import create_engine, text
@@ -17,6 +19,7 @@ except ImportError:
         "SQLAlchemy is required for SqlDataSource. "
         "Please install it with `pip install dashboard-lego[sql]`."
     )
+
 
 class SqlDataSource(BaseDataSource):
     """
@@ -34,13 +37,14 @@ class SqlDataSource(BaseDataSource):
           - post: "The instance holds a pandas DataFrame with the query results."
 
     """
+
     def __init__(self, connection_uri: str, query: str, **kwargs):
         """
         Initializes the SqlDataSource.
 
         Args:
             connection_uri: A SQLAlchemy-compatible database URI.
-                            (e.g., 'sqlite:///mydatabase.db', 
+                            (e.g., 'sqlite:///mydatabase.db',
                             'postgresql://user:pass@host/db')
             query: The SQL query to execute to retrieve the data.
             **kwargs: Keyword arguments for the parent BaseDataSource
@@ -51,9 +55,11 @@ class SqlDataSource(BaseDataSource):
         self.logger = get_logger(__name__, SqlDataSource)
         self.connection_uri = connection_uri
         self.query = query
-        
+
         self.logger.info(f"SQL datasource initialized for URI: {connection_uri}")
-        self.logger.debug(f"Query: {query[:100]}..." if len(query) > 100 else f"Query: {query}")
+        self.logger.debug(
+            f"Query: {query[:100]}..." if len(query) > 100 else f"Query: {query}"
+        )
 
     def _load_data(self, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
         """
@@ -67,25 +73,25 @@ class SqlDataSource(BaseDataSource):
 
         """
         self.logger.debug(f"Executing SQL query with params: {params}")
-        
+
         try:
             engine = create_engine(self.connection_uri)
             self.logger.debug("Database engine created successfully")
-            
+
             with engine.connect() as connection:
                 self.logger.debug("Database connection established")
                 df = pd.read_sql(text(self.query), connection, params=params)
-                
+
                 self.logger.info(
                     f"SQL query executed successfully: {len(df)} rows, "
                     f"{len(df.columns)} columns"
                 )
-                
+
                 if df.empty:
                     self.logger.warning("SQL query returned empty result set")
-                
+
                 return df
-                
+
         except SQLAlchemyError as e:
             self.logger.error(f"SQLAlchemy error: {e}", exc_info=True)
             raise DataLoadError(f"Database error: {e}") from e

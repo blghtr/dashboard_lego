@@ -18,9 +18,9 @@ Unit tests for layout API helpers in DashboardPage.
 import pytest
 from dash import html
 
-from core.page import DashboardPage
 from blocks.base import BaseBlock
 from core.datasource import BaseDataSource
+from core.page import DashboardPage
 from utils.exceptions import ConfigurationError
 
 
@@ -59,7 +59,7 @@ def test_normalize_cell_assigns_default_width():
     page = DashboardPage(title="T", blocks=[[a]])
     block, opts = page._normalize_cell(a, row_length=3)
     assert block is a
-    assert 'width' in opts and 1 <= opts['width'] <= 12
+    assert "width" in opts and 1 <= opts["width"] <= 12
 
 
 def test_validate_row_enforces_breakpoint_sum():
@@ -67,6 +67,4 @@ def test_validate_row_enforces_breakpoint_sum():
     b = _DummyBlock("b")
     page = DashboardPage(title="T", blocks=[[a, b]])
     with pytest.raises(ConfigurationError):
-        page._validate_row(([(a, {'md': 10}), (b, {'md': 6})], {}))
-
-
+        page._validate_row(([(a, {"md": 10}), (b, {"md": 6})], {}))

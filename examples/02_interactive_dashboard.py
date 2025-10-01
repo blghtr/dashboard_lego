@@ -2,21 +2,22 @@
 
 import dash
 import dash_bootstrap_components as dbc
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import pandas as pd
 from dash import dcc
 
+from blocks.chart import Control, InteractiveChartBlock
+from blocks.kpi import KPIBlock
 from core.datasource import BaseDataSource
 from core.page import DashboardPage
-from blocks.kpi import KPIBlock
-from blocks.chart import InteractiveChartBlock, Control
-from utils.logger import setup_logging, get_logger
+from utils.logger import get_logger, setup_logging
 
 # 1. Setup logging for demonstration
 setup_logging(level="DEBUG")  # Enable DEBUG level to see hierarchy
 logger = get_logger(__name__)
 logger.info("Starting interactive dashboard example")
+
 
 # 2. Define a custom data source
 class SalesDataSource(BaseDataSource):
@@ -29,33 +30,36 @@ class SalesDataSource(BaseDataSource):
         df = pd.read_csv(self.file_path)
         # In a real app, params would be used to filter data from a DB
         # Here, we simulate filtering based on the category from the dropdown
-        category = params.get('category_filter')
-        if category and category != 'All':
+        category = params.get("category_filter")
+        if category and category != "All":
             logger.info(f"Filtering data by category: {category}")
-            filtered_df = df[df['Category'] == category]
+            filtered_df = df[df["Category"] == category]
             logger.debug(f"Filtered data shape: {filtered_df.shape}")
             return filtered_df
         logger.info("No category filter applied, returning full dataset")
         return df
 
     def get_kpis(self) -> dict:
-        if self._data is None: return {}
+        if self._data is None:
+            return {}
         return {
             "total_sales": self._data["Sales"].sum(),
             "total_units": self._data["UnitsSold"].sum(),
-            "fruit_count": len(self._data["Fruit"].unique())
+            "fruit_count": len(self._data["Fruit"].unique()),
         }
 
     def get_filter_options(self, filter_name: str) -> list:
         """Provides options for filter controls."""
-        if self._data is None: self.init_data()
-        if filter_name == 'category_filter':
-            categories = self._data['Category'].unique().tolist()
-            return ['All'] + categories
+        if self._data is None:
+            self.init_data()
+        if filter_name == "category_filter":
+            categories = self._data["Category"].unique().tolist()
+            return ["All"] + categories
         return []
 
     def get_summary(self) -> str:
         return ""
+
 
 # 3. Define plotting functions
 def plot_sales_by_fruit(df: pd.DataFrame, ctx) -> go.Figure:
@@ -63,6 +67,7 @@ def plot_sales_by_fruit(df: pd.DataFrame, ctx) -> go.Figure:
     fig = px.bar(df, x="Fruit", y="Sales", title="Sales by Fruit")
     logger.info("Chart created successfully")
     return fig
+
 
 # 4. Instantiate data source and blocks
 logger.info("Creating datasource and blocks")
@@ -79,12 +84,12 @@ interactive_chart = InteractiveChartBlock(
         "category_filter": Control(
             component=dcc.Dropdown,
             props={
-                "options": datasource.get_filter_options('category_filter'),
+                "options": datasource.get_filter_options("category_filter"),
                 "value": "All",
-                "clearable": False
-            }
+                "clearable": False,
+            },
         )
-    }
+    },
 )
 
 # This block SUBSCRIBES to the state published by the interactive chart
@@ -95,10 +100,10 @@ kpi_block = KPIBlock(
     kpi_definitions=[
         {"key": "total_sales", "title": "Total Sales"},
         {"key": "total_units", "title": "Units Sold"},
-        {"key": "fruit_count", "title": "Fruit Varieties"}
+        {"key": "fruit_count", "title": "Fruit Varieties"},
     ],
     # Subscribes to the state from the dropdown in the other block
-    subscribes_to="interactive_chart-category_filter"
+    subscribes_to="interactive_chart-category_filter",
 )
 
 # 5. Create the Dashboard Page using layout presets
@@ -108,7 +113,7 @@ logger.info("Creating dashboard page")
 dashboard_page = DashboardPage(
     title="Interactive Sales Dashboard",
     blocks=two_column_8_4(interactive_chart, kpi_block),  # Main chart with KPI sidebar
-    theme=dbc.themes.DARKLY
+    theme=dbc.themes.DARKLY,
 )
 
 # 6. Set up and run the Dash app

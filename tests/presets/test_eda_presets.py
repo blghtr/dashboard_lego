@@ -1,10 +1,10 @@
-
 """
 Tests for the EDA (Exploratory Data Analysis) presets.
 
 :hierarchy: [Testing | Unit Tests | Presets | EDA]
 :relates-to:
- - motivated_by: "TEST_PLAN.md: Need to cover presets/eda_presets.py"
+ - motivated_by: "Architectural Conclusion: EDA presets require thorough testing
+   to ensure accurate data visualization and analysis capabilities"
  - implements: "test_suite: 'EDAPresets'"
 
 :strategy: "Use a factory fixture to create mock datasources with specific dataframes for each test case. This allows for isolated testing of each preset's data handling and figure generation logic."
@@ -13,25 +13,28 @@ Tests for the EDA (Exploratory Data Analysis) presets.
  - post: "All tests for EDA presets pass, and code coverage for the module is 100%."
 
 """
-import pytest
-import pandas as pd
-import numpy as np
-import plotly.graph_objects as go
-from unittest.mock import MagicMock
-import sys
+
 import os
+import sys
+from unittest.mock import MagicMock
+
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+import pytest
 
 # Add project root to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
+from core.chart_context import ChartContext
 from core.datasource import BaseDataSource
 from presets.eda_presets import (
+    BoxPlotPreset,
     CorrelationHeatmapPreset,
     GroupedHistogramPreset,
     MissingValuesPreset,
-    BoxPlotPreset
 )
-from core.chart_context import ChartContext
+
 
 @pytest.fixture
 def datasource_factory():
@@ -42,6 +45,7 @@ def datasource_factory():
     :scenario: "Returns a function that can be called with a DataFrame to create a mock datasource."
     :returns: A factory function.
     """
+
     def _factory(df: pd.DataFrame):
         mock_ds = MagicMock(spec=BaseDataSource)
         mock_ds.get_processed_data.return_value = df
@@ -52,6 +56,7 @@ def datasource_factory():
         return mock_ds
 
     return _factory
+
 
 def create_chart_context(datasource, controls=None):
     """Helper function to create ChartContext for tests."""
@@ -70,9 +75,11 @@ class TestCorrelationHeatmapPreset:
         """
         Tests that the CorrelationHeatmapPreset initializes correctly.
         """
-        df = pd.DataFrame({'a': [1], 'b': [2]})
+        df = pd.DataFrame({"a": [1], "b": [2]})
         mock_ds = datasource_factory(df)
-        preset = CorrelationHeatmapPreset(block_id="test_corr", datasource=mock_ds, subscribes_to="filters")
+        preset = CorrelationHeatmapPreset(
+            block_id="test_corr", datasource=mock_ds, subscribes_to="filters"
+        )
         assert preset.title == "Correlation Heatmap"
         assert preset.block_id == "test_corr"
 
@@ -80,14 +87,18 @@ class TestCorrelationHeatmapPreset:
         """
         Tests that a heatmap figure is generated with valid data.
         """
-        df = pd.DataFrame({
-            'numeric_1': [1, 2, 3, 4],
-            'numeric_2': [4, 3, 2, 1],
-            'categorical': ['a', 'b', 'a', 'b']
-        })
+        df = pd.DataFrame(
+            {
+                "numeric_1": [1, 2, 3, 4],
+                "numeric_2": [4, 3, 2, 1],
+                "categorical": ["a", "b", "a", "b"],
+            }
+        )
         mock_ds = datasource_factory(df)
-        preset = CorrelationHeatmapPreset(block_id="test_corr", datasource=mock_ds, subscribes_to="filters")
-        
+        preset = CorrelationHeatmapPreset(
+            block_id="test_corr", datasource=mock_ds, subscribes_to="filters"
+        )
+
         ctx = create_chart_context(mock_ds)
         fig = preset._create_heatmap(df, ctx)
 
@@ -100,9 +111,11 @@ class TestCorrelationHeatmapPreset:
         """
         Tests behavior when the DataFrame has no numerical data.
         """
-        df = pd.DataFrame({'categorical': ['a', 'b', 'c']})
+        df = pd.DataFrame({"categorical": ["a", "b", "c"]})
         mock_ds = datasource_factory(df)
-        preset = CorrelationHeatmapPreset(block_id="test_corr", datasource=mock_ds, subscribes_to="filters")
+        preset = CorrelationHeatmapPreset(
+            block_id="test_corr", datasource=mock_ds, subscribes_to="filters"
+        )
 
         ctx = create_chart_context(mock_ds)
         fig = preset._create_heatmap(df, ctx)
@@ -121,16 +134,18 @@ class TestGroupedHistogramPreset:
         """
         Tests that initialization raises a ValueError if the datasource has no numerical columns.
         """
-        df = pd.DataFrame({'categorical': ['a', 'b', 'c']})
+        df = pd.DataFrame({"categorical": ["a", "b", "c"]})
         mock_ds = datasource_factory(df)
-        with pytest.raises(ValueError, match="requires a datasource with at least one numerical column"):
+        with pytest.raises(
+            ValueError, match="requires a datasource with at least one numerical column"
+        ):
             GroupedHistogramPreset(block_id="test_hist", datasource=mock_ds)
 
     def test_initialization(self, datasource_factory):
         """
         Tests successful initialization.
         """
-        df = pd.DataFrame({'numeric': [1, 2], 'categorical': ['a', 'b']})
+        df = pd.DataFrame({"numeric": [1, 2], "categorical": ["a", "b"]})
         mock_ds = datasource_factory(df)
         preset = GroupedHistogramPreset(block_id="test_hist", datasource=mock_ds)
         assert preset.title == "Distribution Analysis"
@@ -141,11 +156,13 @@ class TestGroupedHistogramPreset:
         """
         Tests that a histogram figure is generated.
         """
-        df = pd.DataFrame({'numeric': [1, 2, 2, 3], 'categorical': ['a', 'b', 'a', 'b']})
+        df = pd.DataFrame(
+            {"numeric": [1, 2, 2, 3], "categorical": ["a", "b", "a", "b"]}
+        )
         mock_ds = datasource_factory(df)
         preset = GroupedHistogramPreset(block_id="test_hist", datasource=mock_ds)
-        
-        ctx = create_chart_context(mock_ds, {'x_col': 'numeric', 'group_by': 'None'})
+
+        ctx = create_chart_context(mock_ds, {"x_col": "numeric", "group_by": "None"})
         fig = preset._create_histogram(df, ctx)
 
         assert isinstance(fig, go.Figure)
@@ -157,16 +174,20 @@ class TestGroupedHistogramPreset:
         """
         Tests that a grouped histogram is generated correctly.
         """
-        df = pd.DataFrame({'numeric': [1, 2, 2, 3], 'categorical': ['a', 'b', 'a', 'b']})
+        df = pd.DataFrame(
+            {"numeric": [1, 2, 2, 3], "categorical": ["a", "b", "a", "b"]}
+        )
         mock_ds = datasource_factory(df)
         preset = GroupedHistogramPreset(block_id="test_hist", datasource=mock_ds)
 
-        ctx = create_chart_context(mock_ds, {'x_col': 'numeric', 'group_by': 'categorical'})
+        ctx = create_chart_context(
+            mock_ds, {"x_col": "numeric", "group_by": "categorical"}
+        )
         fig = preset._create_histogram(df, ctx)
 
         assert isinstance(fig, go.Figure)
         # Plotly creates a trace for each category
-        assert len(fig.data) == 2 
+        assert len(fig.data) == 2
         assert isinstance(fig.data[0], go.Histogram)
         assert "grouped by categorical" in fig.layout.title.text
 
@@ -174,11 +195,11 @@ class TestGroupedHistogramPreset:
         """
         Tests behavior when x_col is not provided to the chart generator.
         """
-        df = pd.DataFrame({'numeric': [1, 2, 3]})
+        df = pd.DataFrame({"numeric": [1, 2, 3]})
         mock_ds = datasource_factory(df)
         preset = GroupedHistogramPreset(block_id="test_hist", datasource=mock_ds)
 
-        ctx = create_chart_context(mock_ds, {'x_col': None, 'group_by': 'None'})
+        ctx = create_chart_context(mock_ds, {"x_col": None, "group_by": "None"})
         fig = preset._create_histogram(df, ctx)
 
         assert isinstance(fig, go.Figure)
@@ -195,22 +216,28 @@ class TestMissingValuesPreset:
         """
         Tests that the MissingValuesPreset initializes correctly.
         """
-        df = pd.DataFrame({'a': [1]})
+        df = pd.DataFrame({"a": [1]})
         mock_ds = datasource_factory(df)
-        preset = MissingValuesPreset(block_id="test_missing", datasource=mock_ds, subscribes_to="filters")
+        preset = MissingValuesPreset(
+            block_id="test_missing", datasource=mock_ds, subscribes_to="filters"
+        )
         assert preset.title == "Missing Values Analysis"
 
     def test_generates_figure_with_missing_values(self, datasource_factory):
         """
         Tests that a bar chart is generated showing missing value percentages.
         """
-        df = pd.DataFrame({
-            'a': [1, 2, np.nan, 4],
-            'b': [np.nan, np.nan, np.nan, np.nan],
-            'c': [1, 2, 3, 4]
-        })
+        df = pd.DataFrame(
+            {
+                "a": [1, 2, np.nan, 4],
+                "b": [np.nan, np.nan, np.nan, np.nan],
+                "c": [1, 2, 3, 4],
+            }
+        )
         mock_ds = datasource_factory(df)
-        preset = MissingValuesPreset(block_id="test_missing", datasource=mock_ds, subscribes_to="filters")
+        preset = MissingValuesPreset(
+            block_id="test_missing", datasource=mock_ds, subscribes_to="filters"
+        )
 
         ctx = create_chart_context(mock_ds)
         fig = preset._create_missing_values_chart(df, ctx)
@@ -218,19 +245,21 @@ class TestMissingValuesPreset:
         assert isinstance(fig, go.Figure)
         assert len(fig.data) == 1
         assert isinstance(fig.data[0], go.Bar)
-        
+
         # Check the data in the bar chart
         chart_data = fig.data[0]
-        assert list(chart_data.x) == ['b', 'a']  # Sorted descending
+        assert list(chart_data.x) == ["b", "a"]  # Sorted descending
         assert list(chart_data.y) == [100.0, 25.0]
 
     def test_no_missing_values(self, datasource_factory):
         """
         Tests behavior when the DataFrame has no missing values.
         """
-        df = pd.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
+        df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
         mock_ds = datasource_factory(df)
-        preset = MissingValuesPreset(block_id="test_missing", datasource=mock_ds, subscribes_to="filters")
+        preset = MissingValuesPreset(
+            block_id="test_missing", datasource=mock_ds, subscribes_to="filters"
+        )
 
         ctx = create_chart_context(mock_ds)
         fig = preset._create_missing_values_chart(df, ctx)
@@ -250,26 +279,35 @@ class TestBoxPlotPreset:
         Tests that initialization raises ValueError if required column types are missing.
         """
         # No numerical
-        df_no_numeric = pd.DataFrame({'cat': ['a', 'b']})
+        df_no_numeric = pd.DataFrame({"cat": ["a", "b"]})
         mock_ds_no_numeric = datasource_factory(df_no_numeric)
-        with pytest.raises(ValueError, match="requires a datasource with at least one numerical column"):
+        with pytest.raises(
+            ValueError, match="requires a datasource with at least one numerical column"
+        ):
             BoxPlotPreset(block_id="test_box", datasource=mock_ds_no_numeric)
 
         # No categorical
-        df_no_cat = pd.DataFrame({'num': [1, 2]})
+        df_no_cat = pd.DataFrame({"num": [1, 2]})
         mock_ds_no_cat = datasource_factory(df_no_cat)
-        with pytest.raises(ValueError, match="requires a datasource with at least one categorical column"):
+        with pytest.raises(
+            ValueError,
+            match="requires a datasource with at least one categorical column",
+        ):
             BoxPlotPreset(block_id="test_box", datasource=mock_ds_no_cat)
 
     def test_generates_figure(self, datasource_factory):
         """
         Tests that a box plot figure is generated.
         """
-        df = pd.DataFrame({'numeric': [1, 2, 10, 11], 'categorical': ['a', 'a', 'b', 'b']})
+        df = pd.DataFrame(
+            {"numeric": [1, 2, 10, 11], "categorical": ["a", "a", "b", "b"]}
+        )
         mock_ds = datasource_factory(df)
         preset = BoxPlotPreset(block_id="test_box", datasource=mock_ds)
 
-        ctx = create_chart_context(mock_ds, {'y_col': 'numeric', 'x_col': 'categorical'})
+        ctx = create_chart_context(
+            mock_ds, {"y_col": "numeric", "x_col": "categorical"}
+        )
         fig = preset._create_box_plot(df, ctx)
 
         assert isinstance(fig, go.Figure)
@@ -281,11 +319,11 @@ class TestBoxPlotPreset:
         """
         Tests behavior when columns are not provided to the chart generator.
         """
-        df = pd.DataFrame({'numeric': [1], 'categorical': ['a']})
+        df = pd.DataFrame({"numeric": [1], "categorical": ["a"]})
         mock_ds = datasource_factory(df)
         preset = BoxPlotPreset(block_id="test_box", datasource=mock_ds)
 
-        ctx = create_chart_context(mock_ds, {'y_col': None, 'x_col': None})
+        ctx = create_chart_context(mock_ds, {"y_col": None, "x_col": None})
         fig = preset._create_box_plot(df, ctx)
 
         assert isinstance(fig, go.Figure)

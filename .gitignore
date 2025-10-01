@@ -117,6 +117,10 @@ venv.bak/
 # Rope project settings
 .ropeproject
 
+# Documentation build outputs
+docs/_build/
+docs/build/
+
 # mkdocs documentation
 /site
 
@@ -166,5 +170,5 @@ assets/
 # *.parquet
 
 .cursor/
-*.md
 *.mdc
+GEMINI.md

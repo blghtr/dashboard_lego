@@ -1,0 +1,111 @@
+Presets Module
+===============
+
+The presets module contains pre-built blocks for common data analysis and visualization tasks.
+
+EDA Presets
+-----------
+
+Exploratory Data Analysis presets for common data visualization patterns.
+
+.. automodule:: presets.eda_presets
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Correlation Heatmap Preset
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: presets.eda_presets.CorrelationHeatmapPreset
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Grouped Histogram Preset
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: presets.eda_presets.GroupedHistogramPreset
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Missing Values Preset
+^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: presets.eda_presets.MissingValuesPreset
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Box Plot Preset
+^^^^^^^^^^^^^^^
+
+.. autoclass:: presets.eda_presets.BoxPlotPreset
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+ML Presets
+----------
+
+Machine Learning visualization presets for common ML workflows.
+
+.. automodule:: presets.ml_presets
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Metric Card Block
+^^^^^^^^^^^^^^^^^
+
+.. autoclass:: presets.ml_presets.MetricCardBlock
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Confusion Matrix Preset
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: presets.ml_presets.ConfusionMatrixPreset
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Feature Importance Preset
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: presets.ml_presets.FeatureImportancePreset
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+ROC Curve Preset
+^^^^^^^^^^^^^^^^
+
+.. autoclass:: presets.ml_presets.ROC_CurvePreset
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Layout Presets
+--------------
+
+Pre-built layout patterns for common dashboard arrangements.
+
+.. automodule:: presets.layouts
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Layout Functions
+^^^^^^^^^^^^^^^^
+
+.. autofunction:: presets.layouts.one_column
+
+.. autofunction:: presets.layouts.two_column_6_6
+
+.. autofunction:: presets.layouts.two_column_8_4
+
+.. autofunction:: presets.layouts.three_column_4_4_4
+
+.. autofunction:: presets.layouts.kpi_row_top

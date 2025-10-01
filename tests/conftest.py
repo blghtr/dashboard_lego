@@ -2,12 +2,14 @@
 This file contains shared fixtures for the test suite.
 
 """
+
 from unittest.mock import MagicMock
 
 import pandas as pd
 import pytest
 
 from core.datasource import BaseDataSource
+
 
 @pytest.fixture
 def datasource_factory():
@@ -20,6 +22,7 @@ def datasource_factory():
         :rationale: "Chosen a factory returning a MagicMock for maximum flexibility in tests."
 
     """
+
     def _factory(**kwargs):
         """
         Creates a mock datasource.
@@ -34,9 +37,9 @@ def datasource_factory():
         for method_name, return_value in kwargs.items():
             # Set the return_value for the mocked method
             setattr(mock_ds, method_name, MagicMock(return_value=return_value))
-        
+
         # Ensure get_processed_data returns a DataFrame by default if not specified
-        if 'get_processed_data' not in kwargs:
+        if "get_processed_data" not in kwargs:
             mock_ds.get_processed_data.return_value = pd.DataFrame()
 
         return mock_ds
@@ -60,9 +63,20 @@ def sample_csv_data():
      - post: "Returns DataFrame with sample sales data"
 
     """
-    return pd.DataFrame({
-        'Fruit': ['Apple', 'Banana', 'Orange', 'Apple', 'Banana', 'Orange', 'Apple', 'Banana'],
-        'Sales': [100, 150, 120, 110, 160, 130, 105, 155],
-        'UnitsSold': [10, 15, 12, 11, 16, 13, 10, 15],
-        'Price': [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.5, 9.7]
-    })
+    return pd.DataFrame(
+        {
+            "Fruit": [
+                "Apple",
+                "Banana",
+                "Orange",
+                "Apple",
+                "Banana",
+                "Orange",
+                "Apple",
+                "Banana",
+            ],
+            "Sales": [100, 150, 120, 110, 160, 130, 105, 155],
+            "UnitsSold": [10, 15, 12, 11, 16, 13, 10, 15],
+            "Price": [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.5, 9.7],
+        }
+    )

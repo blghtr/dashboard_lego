@@ -3,7 +3,8 @@ Tests for the BaseBlock abstract base class.
 
 :hierarchy: [Testing | Unit Tests | Blocks | BaseBlock]
 :relates-to:
- - motivated_by: "Increase test coverage for blocks/base.py to 100%"
+ - motivated_by: "Architectural Conclusion: Base block requires comprehensive
+   testing as the foundation for all dashboard components"
  - implements: "test_suite: 'BaseBlock'"
 
 :strategy: "Use a concrete subclass of BaseBlock for testing its non-abstract methods. Use pytest.raises to test abstract nature and input validation."
@@ -12,7 +13,9 @@ Tests for the BaseBlock abstract base class.
  - post: "All tests for BaseBlock pass, and code coverage for the module is 100%."
 
 """
+
 from unittest.mock import MagicMock, call
+
 import pytest
 from dash import html
 
@@ -21,20 +24,24 @@ from core.datasource import BaseDataSource
 from core.state import StateManager
 from utils.exceptions import ConfigurationError
 
+
 # A concrete implementation of BaseBlock for testing purposes
 class ConcreteTestBlock(BaseBlock):
     def layout(self):
         return html.Div()
+
 
 @pytest.fixture
 def mock_datasource():
     """Fixture for a mocked BaseDataSource."""
     return MagicMock(spec=BaseDataSource)
 
+
 @pytest.fixture
 def mock_state_manager():
     """Fixture for a mocked StateManager."""
     return MagicMock(spec=StateManager)
+
 
 def test_base_block_is_abstract(mock_datasource):
     """
@@ -51,8 +58,12 @@ def test_base_block_is_abstract(mock_datasource):
      - post: "TypeError is raised."
 
     """
-    with pytest.raises(TypeError, match="Can't instantiate abstract class BaseBlock with abstract method layout"):
+    with pytest.raises(
+        TypeError,
+        match="Can't instantiate abstract class BaseBlock with abstract method layout",
+    ):
         BaseBlock(block_id="test", datasource=mock_datasource)
+
 
 def test_base_block_init_invalid_id(mock_datasource):
     """
@@ -69,12 +80,19 @@ def test_base_block_init_invalid_id(mock_datasource):
      - post: "ValueError is raised."
 
     """
-    with pytest.raises(ConfigurationError, match="block_id must be a non-empty string."):
+    with pytest.raises(
+        ConfigurationError, match="block_id must be a non-empty string."
+    ):
         ConcreteTestBlock(block_id="", datasource=mock_datasource)
-    with pytest.raises(ConfigurationError, match="block_id must be a non-empty string."):
+    with pytest.raises(
+        ConfigurationError, match="block_id must be a non-empty string."
+    ):
         ConcreteTestBlock(block_id=None, datasource=mock_datasource)
-    with pytest.raises(ConfigurationError, match="block_id must be a non-empty string."):
+    with pytest.raises(
+        ConfigurationError, match="block_id must be a non-empty string."
+    ):
         ConcreteTestBlock(block_id=123, datasource=mock_datasource)
+
 
 def test_base_block_init_invalid_datasource():
     """
@@ -91,8 +109,11 @@ def test_base_block_init_invalid_datasource():
      - post: "TypeError is raised."
 
     """
-    with pytest.raises(ConfigurationError, match="datasource must be an instance of BaseDataSource."):
+    with pytest.raises(
+        ConfigurationError, match="datasource must be an instance of BaseDataSource."
+    ):
         ConcreteTestBlock(block_id="test", datasource=object())
+
 
 def test_register_with_state_manager(mock_datasource, mock_state_manager):
     """
@@ -109,29 +130,28 @@ def test_register_with_state_manager(mock_datasource, mock_state_manager):
      - post: "StateManager.register_publisher and StateManager.register_subscriber are called with correct arguments."
 
     """
-    publishes = [
-        {'state_id': 'filter-a', 'component_prop': 'value'}
-    ]
-    subscribes = {
-        'filter-b': lambda x: x
-    }
+    publishes = [{"state_id": "filter-a", "component_prop": "value"}]
+    subscribes = {"filter-b": lambda x: x}
     block = ConcreteTestBlock(
-        block_id="my-block", 
-        datasource=mock_datasource, 
-        publishes=publishes, 
-        subscribes=subscribes
+        block_id="my-block",
+        datasource=mock_datasource,
+        publishes=publishes,
+        subscribes=subscribes,
     )
 
     block._register_state_interactions(mock_state_manager)
 
     mock_state_manager.register_publisher.assert_called_once_with(
-        'filter-a', 'my-block-a', 'value'
+        "filter-a", "my-block-a", "value"
     )
     mock_state_manager.register_subscriber.assert_called_once_with(
-        'filter-b', 'my-block-container', 'children', subscribes['filter-b']
+        "filter-b", "my-block-container", "children", subscribes["filter-b"]
     )
 
-def test_register_with_state_manager_no_interactions(mock_datasource, mock_state_manager):
+
+def test_register_with_state_manager_no_interactions(
+    mock_datasource, mock_state_manager
+):
     """
     Tests that no registration happens if publishes/subscribes are not defined.
 
@@ -152,6 +172,7 @@ def test_register_with_state_manager_no_interactions(mock_datasource, mock_state
     mock_state_manager.register_publisher.assert_not_called()
     mock_state_manager.register_subscriber.assert_not_called()
 
+
 def test_generate_id(mock_datasource):
     """
     Tests the _generate_id method.
@@ -169,6 +190,7 @@ def test_generate_id(mock_datasource):
     """
     block = ConcreteTestBlock(block_id="my-block", datasource=mock_datasource)
     assert block._generate_id("my-component") == "my-block-my-component"
+
 
 def test_register_callbacks_does_nothing(mock_datasource):
     """

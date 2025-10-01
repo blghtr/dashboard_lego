@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dashboard-lego"
-version = "1.0.0"
-description = "Модульная библиотека для создания интерактивных дашбордов на основе Dash"
+version = "0.9.0"
+description = "A modular Python library for building interactive dashboards using Dash and Plotly"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
@@ -76,7 +76,7 @@ line-length = 88
 target-version = ['py39']
 include = '\.pyi?'
 extend-exclude = '''
-/
+/(
   # directories
   \.eggs
   | \.git
@@ -86,7 +86,7 @@ extend-exclude = '''
   | \.venv
   | build
   | dist
-)/ 
+)/
 '''
 
 [tool.isort]

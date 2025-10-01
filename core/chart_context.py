@@ -6,6 +6,7 @@ interface for chart generators, containing all necessary context information
 including datasource, controls, and logger.
 
 """
+
 from dataclasses import dataclass
 from typing import Any, Dict
 
@@ -24,7 +25,8 @@ class ChartContext:
 
         :hierarchy: [Architecture | ChartContext | ChartContext]
         :relates-to:
-         - motivated_by: "ARCHITECTURE_REFACTOR_PLAN Step 1: Unify chart generator signatures"
+         - motivated_by: "Architectural Conclusion: Unified chart generator signatures
+           enable consistent chart creation across different block types"
          - implements: "datatype: 'ChartContext'"
          - uses: ["interface: 'BaseDataSource'", "module: 'utils.logger'"]
 
@@ -34,6 +36,7 @@ class ChartContext:
          - post: "Context object contains all necessary data for chart generation."
 
     """
+
     datasource: BaseDataSource
     controls: Dict[str, Any]
     logger: Any = None
@@ -44,4 +47,4 @@ class ChartContext:
 
         """
         if self.logger is None:
-            object.__setattr__(self, 'logger', get_logger(__name__))
+            object.__setattr__(self, "logger", get_logger(__name__))

@@ -25,6 +25,7 @@ class DashboardLegoError(Exception):
          - post: "Exception can be caught and handled appropriately."
 
     """
+
     pass
 
 
@@ -46,6 +47,7 @@ class DataSourceError(DashboardLegoError):
          - post: "Error is raised with descriptive message."
 
     """
+
     pass
 
 
@@ -66,6 +68,7 @@ class DataLoadError(DataSourceError):
          - post: "Error is raised with source-specific details."
 
     """
+
     pass
 
 
@@ -86,6 +89,7 @@ class CacheError(DataSourceError):
          - post: "Error is raised and can be handled gracefully."
 
     """
+
     pass
 
 
@@ -107,6 +111,7 @@ class BlockError(DashboardLegoError):
          - post: "Error is raised with block_id for context."
 
     """
+
     pass
 
 
@@ -128,6 +133,7 @@ class StateError(DashboardLegoError):
          - post: "Error is raised with state_id for context."
 
     """
+
     pass
 
 
@@ -149,4 +155,5 @@ class ConfigurationError(DashboardLegoError):
          - post: "Error is raised with details about what's invalid."
 
     """
+
     pass

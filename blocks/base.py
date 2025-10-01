@@ -2,16 +2,17 @@
 This module defines the abstract base class for all dashboard blocks.
 
 """
+
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Callable
+from typing import Any, Callable, Dict, List, Optional
 
 from dash.development.base_component import Component
 
 # Use forward references for type hints to avoid circular imports
 from core.datasource import BaseDataSource
 from core.state import StateManager
-from utils.logger import get_logger
 from utils.exceptions import BlockError, ConfigurationError
+from utils.logger import get_logger
 
 
 class BaseBlock(ABC):
@@ -48,7 +49,9 @@ class BaseBlock(ABC):
         """
         self.logger = get_logger(__name__, BaseBlock)
         self.logger.info(f"Initializing block: {block_id}")
-        self.logger.debug(f"Block {block_id} instantiated with datasource: {type(datasource).__name__}")
+        self.logger.debug(
+            f"Block {block_id} instantiated with datasource: {type(datasource).__name__}"
+        )
 
         if not isinstance(block_id, str) or not block_id:
             error_msg = "block_id must be a non-empty string."
@@ -84,15 +87,11 @@ class BaseBlock(ABC):
         try:
             # Register as a publisher
             if self.publishes:
-                self.logger.debug(
-                    f"Registering {len(self.publishes)} publishers"
-                )
+                self.logger.debug(f"Registering {len(self.publishes)} publishers")
                 for pub_info in self.publishes:
-                    state_id = pub_info['state_id']
-                    component_prop = pub_info['component_prop']
-                    publisher_component_id = self._generate_id(
-                        state_id.split('-')[-1]
-                    )
+                    state_id = pub_info["state_id"]
+                    component_prop = pub_info["component_prop"]
+                    publisher_component_id = self._generate_id(state_id.split("-")[-1])
                     self.logger.debug(
                         f"Registering publisher: {state_id} -> "
                         f"{publisher_component_id}.{component_prop}"
@@ -103,9 +102,7 @@ class BaseBlock(ABC):
 
             # Register as a subscriber
             if self.subscribes:
-                self.logger.debug(
-                    f"Registering {len(self.subscribes)} subscriptions"
-                )
+                self.logger.debug(f"Registering {len(self.subscribes)} subscriptions")
                 for state_id, callback_fn in self.subscribes.items():
                     subscriber_component_id = self._generate_id("container")
                     subscriber_component_prop = self._get_component_prop()
@@ -117,22 +114,19 @@ class BaseBlock(ABC):
                         state_id,
                         subscriber_component_id,
                         subscriber_component_prop,
-                        callback_fn
+                        callback_fn,
                     )
 
             self.logger.info(
-                f"State interactions registered successfully for "
-                f"{self.block_id}"
+                f"State interactions registered successfully for " f"{self.block_id}"
             )
         except Exception as e:
             self.logger.error(
-                f"Error registering state interactions for "
-                f"{self.block_id}: {e}",
-                exc_info=True
+                f"Error registering state interactions for " f"{self.block_id}: {e}",
+                exc_info=True,
             )
             raise BlockError(
-                f"Failed to register state interactions for "
-                f"{self.block_id}: {e}"
+                f"Failed to register state interactions for " f"{self.block_id}: {e}"
             ) from e
 
     def _generate_id(self, component_name: str) -> str:
@@ -147,37 +141,38 @@ class BaseBlock(ABC):
     def _get_component_prop(self) -> str:
         """
         Get the component property to update for this block type.
-        
+
         :hierarchy: [Blocks | Base | Component Property]
         :relates-to:
          - motivated_by: "Different block types need different update properties"
          - implements: "method: '_get_component_prop'"
-         
+
         :rationale: "Default to 'children' for most blocks, override for special cases."
         :contract:
          - pre: "Block is properly initialized."
          - post: "Returns the appropriate component property name."
-         
+
         Returns:
             The component property name for updates.
         """
-        return 'children'
+        return "children"
 
     def output_target(self) -> tuple[str, str]:
         """
         Returns the output target for this block's callback.
-        
+
         :hierarchy: [Architecture | Output Targets | BaseBlock]
         :relates-to:
-         - motivated_by: "ARCHITECTURE_REFACTOR_PLAN Step 2: Make Output targets explicit"
+         - motivated_by: "Architectural Conclusion: Explicit output targets enable
+           proper callback binding and component property updates"
          - implements: "method: 'output_target'"
          - uses: ["method: '_generate_id'", "method: '_get_component_prop'"]
-         
+
         :rationale: "Default implementation returns container with 'children' property."
         :contract:
          - pre: "Block is properly initialized."
          - post: "Returns tuple of (component_id, property_name) for callback output."
-         
+
         Returns:
             Tuple of (component_id, property_name) for the block's output target.
         """
@@ -188,63 +183,62 @@ class BaseBlock(ABC):
     def list_control_inputs(self) -> List[tuple[str, str]]:
         """
         Returns list of control inputs for this block.
-        
+
         :hierarchy: [Architecture | Block-centric Callbacks | BaseBlock]
         :relates-to:
-         - motivated_by: "ARCHITECTURE_REFACTOR_PLAN Step 4: One callback per block"
+         - motivated_by: "Architectural Conclusion: Block-centric callbacks improve
+           performance and maintainability by reducing callback complexity"
          - implements: "method: 'list_control_inputs'"
          - uses: ["attribute: 'publishes'"]
-         
+
         :rationale: "Default implementation extracts inputs from publishes attribute."
         :contract:
          - pre: "Block is properly initialized."
          - post: "Returns list of (component_id, property_name) tuples for inputs."
-         
+
         Returns:
             List of (component_id, property_name) tuples for control inputs.
         """
         if not self.publishes:
             return []
-        
-        return [
-            (pub['state_id'], pub['component_prop']) 
-            for pub in self.publishes
-        ]
+
+        return [(pub["state_id"], pub["component_prop"]) for pub in self.publishes]
 
     def update_from_controls(self, control_values: Dict[str, Any]) -> Any:
         """
         Updates the block based on control values.
-        
+
         :hierarchy: [Architecture | Block-centric Callbacks | BaseBlock]
         :relates-to:
-         - motivated_by: "ARCHITECTURE_REFACTOR_PLAN Step 4: One callback per block"
+         - motivated_by: "Architectural Conclusion: Block-centric callbacks improve
+           performance and maintainability by reducing callback complexity"
          - implements: "method: 'update_from_controls'"
          - uses: ["attribute: 'subscribes'"]
-         
+
         :rationale: "Default implementation calls the first subscription callback."
         :contract:
          - pre: "Block has at least one subscription callback."
          - post: "Returns the result of the subscription callback."
-         
+
         Args:
             control_values: Dictionary of control name -> value mappings.
-            
+
         Returns:
             The result of the subscription callback.
         """
         if not self.subscribes:
             return None
-        
+
         # Get the first subscription callback
         callback_fn = next(iter(self.subscribes.values()))
-        
+
         # Convert control_values to kwargs format expected by callbacks
         kwargs = {}
         for control_name, value in control_values.items():
             # Create the full component ID for the control
             component_id = self._generate_id(control_name)
             kwargs[component_id] = value
-        
+
         return callback_fn(**kwargs)
 
     @abstractmethod
@@ -262,4 +256,3 @@ class BaseBlock(ABC):
 
         """
         pass
-

@@ -2,14 +2,16 @@
 This module defines the TextBlock for displaying text content.
 
 """
-from typing import Optional, Any, Callable
+
+from typing import Any, Callable, Optional
 
 import dash_bootstrap_components as dbc
+import pandas as pd
 from dash import dcc, html
 from dash.development.base_component import Component
-import pandas as pd
 
 from blocks.base import BaseBlock
+
 
 class TextBlock(BaseBlock):
     """
@@ -20,7 +22,8 @@ class TextBlock(BaseBlock):
 
         :hierarchy: [Blocks | Text | TextBlock]
         :relates-to:
-          - motivated_by: "Plan 4.2: Need for dynamic text blocks to display model summaries"
+          - motivated_by: "Architectural Conclusion: Dynamic text blocks are essential
+            for displaying model summaries and other formatted content"
           - implements: "block: 'TextBlock'"
           - uses: ["interface: 'BaseBlock'"]
 
@@ -38,9 +41,8 @@ class TextBlock(BaseBlock):
         datasource: Any,
         subscribes_to: str,
         content_generator: Callable[[pd.DataFrame], Component | str],
-        title: Optional[str] = None
+        title: Optional[str] = None,
     ):
-        
         """
         Initializes the TextBlock.
 
@@ -54,7 +56,9 @@ class TextBlock(BaseBlock):
         """
         self.title = title
         self.content_generator = content_generator
-        super().__init__(block_id, datasource, subscribes={subscribes_to: self._update_content})
+        super().__init__(
+            block_id, datasource, subscribes={subscribes_to: self._update_content}
+        )
 
     def _update_content(self, *args) -> Component:
         """
@@ -64,7 +68,7 @@ class TextBlock(BaseBlock):
         try:
             df = self.datasource.get_processed_data()
             generated_content = self.content_generator(df)
-            
+
             # If the generator returns a string, wrap it in dcc.Markdown
             if isinstance(generated_content, str):
                 content_component = dcc.Markdown(generated_content)
@@ -74,10 +78,12 @@ class TextBlock(BaseBlock):
             children = [content_component]
             if self.title:
                 children.insert(0, html.H4(self.title, className="card-title"))
-            
+
             return dbc.CardBody(children)
         except Exception as e:
-            return dbc.Alert(f"Ошибка генерации текстового блока: {str(e)}", color="danger")
+            return dbc.Alert(
+                f"Ошибка генерации текстового блока: {str(e)}", color="danger"
+            )
 
     def layout(self) -> Component:
         """
@@ -90,7 +96,9 @@ class TextBlock(BaseBlock):
             dcc.Loading(
                 id=self._generate_id("loading"),
                 type="default",
-                children=html.Div(id=self._generate_id("container"), children=initial_content)
+                children=html.Div(
+                    id=self._generate_id("container"), children=initial_content
+                ),
             ),
-            className="mb-4"
+            className="mb-4",
         )

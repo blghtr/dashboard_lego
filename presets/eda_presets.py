@@ -8,8 +8,9 @@ import plotly.express as px
 import plotly.graph_objects as go
 from dash import dcc
 
-from blocks.chart import StaticChartBlock, InteractiveChartBlock, Control
+from blocks.chart import Control, InteractiveChartBlock, StaticChartBlock
 from core.datasource import BaseDataSource
+
 
 class CorrelationHeatmapPreset(StaticChartBlock):
     """
@@ -17,13 +18,20 @@ class CorrelationHeatmapPreset(StaticChartBlock):
 
         :hierarchy: [Presets | EDA | CorrelationHeatmap]
         :relates-to:
-          - motivated_by: "Plan 3.2: Create reusable presets for common EDA tasks"
+          - motivated_by: "Architectural Conclusion: Provide pre-built EDA components
+            for common data analysis patterns to reduce boilerplate"
           - implements: "preset: 'CorrelationHeatmapPreset'"
           - uses: ["block: 'StaticChartBlock'"]
 
     """
 
-    def __init__(self, block_id: str, datasource: BaseDataSource, subscribes_to: str, title: str = "Correlation Heatmap"):
+    def __init__(
+        self,
+        block_id: str,
+        datasource: BaseDataSource,
+        subscribes_to: str,
+        title: str = "Correlation Heatmap",
+    ):
         """
         Initializes the CorrelationHeatmapPreset.
 
@@ -39,7 +47,7 @@ class CorrelationHeatmapPreset(StaticChartBlock):
             datasource=datasource,
             title=title,
             chart_generator=self._create_heatmap,
-            subscribes_to=subscribes_to
+            subscribes_to=subscribes_to,
         )
 
     def _create_heatmap(self, df: pd.DataFrame, ctx) -> go.Figure:
@@ -54,10 +62,12 @@ class CorrelationHeatmapPreset(StaticChartBlock):
 
         """
         # Select only numerical columns for correlation matrix
-        numerical_df = df.select_dtypes(include=['float64', 'int64'])
+        numerical_df = df.select_dtypes(include=["float64", "int64"])
 
         if numerical_df.empty:
-            return go.Figure().update_layout(title="No numerical data to create a correlation matrix.")
+            return go.Figure().update_layout(
+                title="No numerical data to create a correlation matrix."
+            )
 
         corr_matrix = numerical_df.corr()
         fig = px.imshow(
@@ -65,10 +75,11 @@ class CorrelationHeatmapPreset(StaticChartBlock):
             text_auto=True,
             aspect="auto",
             labels=dict(color="Correlation"),
-            title="Correlation Matrix"
+            title="Correlation Matrix",
         )
         fig.update_xaxes(side="top")
         return fig
+
 
 class GroupedHistogramPreset(InteractiveChartBlock):
     """
@@ -79,40 +90,50 @@ class GroupedHistogramPreset(InteractiveChartBlock):
 
         :hierarchy: [Presets | EDA | GroupedHistogram]
         :relates-to:
-          - motivated_by: "Plan 3.2: Create reusable presets for common EDA tasks"
+          - motivated_by: "Architectural Conclusion: Provide pre-built EDA components
+            for common data analysis patterns to reduce boilerplate"
           - implements: "preset: 'GroupedHistogramPreset'"
           - uses: ["block: 'InteractiveChartBlock'"]
 
     """
 
-    def __init__(self, block_id: str, datasource: BaseDataSource, title: str = "Distribution Analysis"):
+    def __init__(
+        self,
+        block_id: str,
+        datasource: BaseDataSource,
+        title: str = "Distribution Analysis",
+    ):
         # Inspect the dataframe to find numerical and categorical columns
         df = datasource.get_processed_data()
-        numerical_cols = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
-        categorical_cols = ['None'] + df.select_dtypes(include=['object', 'category']).columns.tolist()
+        numerical_cols = df.select_dtypes(include=["float64", "int64"]).columns.tolist()
+        categorical_cols = ["None"] + df.select_dtypes(
+            include=["object", "category"]
+        ).columns.tolist()
 
         if not numerical_cols:
-            raise ValueError("GroupedHistogramPreset requires a datasource with at least one numerical column.")
+            raise ValueError(
+                "GroupedHistogramPreset requires a datasource with at least one numerical column."
+            )
 
         controls = {
             "x_col": Control(
                 component=dcc.Dropdown,
                 props={
-                    "options": numerical_cols, 
-                    "value": numerical_cols[0], 
+                    "options": numerical_cols,
+                    "value": numerical_cols[0],
                     "clearable": False,
-                    "style": {"minWidth": "150px"}
-                }
+                    "style": {"minWidth": "150px"},
+                },
             ),
             "group_by": Control(
                 component=dcc.Dropdown,
                 props={
-                    "options": categorical_cols, 
-                    "value": categorical_cols[0], 
+                    "options": categorical_cols,
+                    "value": categorical_cols[0],
                     "clearable": False,
-                    "style": {"minWidth": "150px"}
-                }
-            )
+                    "style": {"minWidth": "150px"},
+                },
+            ),
         }
 
         super().__init__(
@@ -120,7 +141,7 @@ class GroupedHistogramPreset(InteractiveChartBlock):
             datasource=datasource,
             title=title,
             chart_generator=self._create_histogram,
-            controls=controls
+            controls=controls,
         )
 
     def _create_histogram(self, df: pd.DataFrame, ctx) -> go.Figure:
@@ -128,8 +149,8 @@ class GroupedHistogramPreset(InteractiveChartBlock):
         Generates a histogram based on the selected control values.
 
         """
-        x_col = ctx.controls.get('x_col')
-        group_by = ctx.controls.get('group_by')
+        x_col = ctx.controls.get("x_col")
+        group_by = ctx.controls.get("group_by")
 
         if not x_col:
             return go.Figure().update_layout(title="Please select a column to display.")
@@ -137,12 +158,14 @@ class GroupedHistogramPreset(InteractiveChartBlock):
         fig = px.histogram(
             df,
             x=x_col,
-            color=None if group_by == 'None' else group_by,
-            title=f"Distribution of {x_col}" + (f" grouped by {group_by}" if group_by != 'None' else ""),
-            barmode="overlay"
+            color=None if group_by == "None" else group_by,
+            title=f"Distribution of {x_col}"
+            + (f" grouped by {group_by}" if group_by != "None" else ""),
+            barmode="overlay",
         )
         fig.update_traces(opacity=0.75)
         return fig
+
 
 class MissingValuesPreset(StaticChartBlock):
     """
@@ -150,7 +173,8 @@ class MissingValuesPreset(StaticChartBlock):
 
         :hierarchy: [Presets | EDA | MissingValues]
         :relates-to:
-          - motivated_by: "User Request: Expand EDA presets with more useful formats."
+          - motivated_by: "Architectural Conclusion: Missing value analysis is a
+            fundamental EDA requirement for data quality assessment"
           - implements: "preset: 'MissingValuesPreset'"
           - uses: ["block: 'StaticChartBlock'"]
 
@@ -161,7 +185,13 @@ class MissingValuesPreset(StaticChartBlock):
 
     """
 
-    def __init__(self, block_id: str, datasource: BaseDataSource, subscribes_to: str, title: str = "Missing Values Analysis"):
+    def __init__(
+        self,
+        block_id: str,
+        datasource: BaseDataSource,
+        subscribes_to: str,
+        title: str = "Missing Values Analysis",
+    ):
         """
         Initializes the MissingValuesPreset.
 
@@ -177,7 +207,7 @@ class MissingValuesPreset(StaticChartBlock):
             datasource=datasource,
             title=title,
             chart_generator=self._create_missing_values_chart,
-            subscribes_to=subscribes_to
+            subscribes_to=subscribes_to,
         )
 
     def _create_missing_values_chart(self, df: pd.DataFrame, ctx) -> go.Figure:
@@ -192,20 +222,25 @@ class MissingValuesPreset(StaticChartBlock):
 
         """
         missing_percent = (df.isnull().sum() / len(df)) * 100
-        missing_percent = missing_percent[missing_percent > 0].sort_values(ascending=False)
+        missing_percent = missing_percent[missing_percent > 0].sort_values(
+            ascending=False
+        )
 
         if missing_percent.empty:
-            return go.Figure().update_layout(title="No missing values found in the dataset.")
+            return go.Figure().update_layout(
+                title="No missing values found in the dataset."
+            )
 
         fig = px.bar(
             missing_percent,
             x=missing_percent.index,
             y=missing_percent.values,
-            labels={'x': 'Column', 'y': 'Missing Values (%)'},
-            title="Percentage of Missing Values per Column"
+            labels={"x": "Column", "y": "Missing Values (%)"},
+            title="Percentage of Missing Values per Column",
         )
         fig.update_layout(showlegend=False)
         return fig
+
 
 class BoxPlotPreset(InteractiveChartBlock):
     """
@@ -216,7 +251,8 @@ class BoxPlotPreset(InteractiveChartBlock):
 
         :hierarchy: [Presets | EDA | BoxPlot]
         :relates-to:
-          - motivated_by: "User Request: Expand EDA presets with more useful formats."
+          - motivated_by: "Architectural Conclusion: Box plots are essential for
+            understanding data distribution and identifying outliers"
           - implements: "preset: 'BoxPlotPreset'"
           - uses: ["block: 'InteractiveChartBlock'"]
 
@@ -227,35 +263,46 @@ class BoxPlotPreset(InteractiveChartBlock):
 
     """
 
-    def __init__(self, block_id: str, datasource: BaseDataSource, title: str = "Distribution Comparison (Box Plot)"):
+    def __init__(
+        self,
+        block_id: str,
+        datasource: BaseDataSource,
+        title: str = "Distribution Comparison (Box Plot)",
+    ):
         df = datasource.get_processed_data()
-        numerical_cols = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
-        categorical_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
+        numerical_cols = df.select_dtypes(include=["float64", "int64"]).columns.tolist()
+        categorical_cols = df.select_dtypes(
+            include=["object", "category"]
+        ).columns.tolist()
 
         if not numerical_cols:
-            raise ValueError("BoxPlotPreset requires a datasource with at least one numerical column.")
+            raise ValueError(
+                "BoxPlotPreset requires a datasource with at least one numerical column."
+            )
         if not categorical_cols:
-            raise ValueError("BoxPlotPreset requires a datasource with at least one categorical column.")
+            raise ValueError(
+                "BoxPlotPreset requires a datasource with at least one categorical column."
+            )
 
         controls = {
             "y_col": Control(
                 component=dcc.Dropdown,
                 props={
-                    "options": numerical_cols, 
-                    "value": numerical_cols[0], 
+                    "options": numerical_cols,
+                    "value": numerical_cols[0],
                     "clearable": False,
-                    "style": {"minWidth": "150px"}
-                }
+                    "style": {"minWidth": "150px"},
+                },
             ),
             "x_col": Control(
                 component=dcc.Dropdown,
                 props={
-                    "options": categorical_cols, 
-                    "value": categorical_cols[0], 
+                    "options": categorical_cols,
+                    "value": categorical_cols[0],
                     "clearable": False,
-                    "style": {"minWidth": "150px"}
-                }
-            )
+                    "style": {"minWidth": "150px"},
+                },
+            ),
         }
 
         super().__init__(
@@ -263,7 +310,7 @@ class BoxPlotPreset(InteractiveChartBlock):
             datasource=datasource,
             title=title,
             chart_generator=self._create_box_plot,
-            controls=controls
+            controls=controls,
         )
 
     def _create_box_plot(self, df: pd.DataFrame, ctx) -> go.Figure:
@@ -271,8 +318,8 @@ class BoxPlotPreset(InteractiveChartBlock):
         Generates a box plot based on the selected control values.
 
         """
-        y_col = ctx.controls.get('y_col')
-        x_col = ctx.controls.get('x_col')
+        y_col = ctx.controls.get("y_col")
+        x_col = ctx.controls.get("x_col")
 
         if not y_col or not x_col:
             return go.Figure().update_layout(title="Please select columns to display.")
@@ -282,6 +329,6 @@ class BoxPlotPreset(InteractiveChartBlock):
             x=x_col,
             y=y_col,
             title=f"Distribution of {y_col} by {x_col}",
-            color=x_col
+            color=x_col,
         )
         return fig

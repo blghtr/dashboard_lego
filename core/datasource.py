@@ -2,6 +2,7 @@
 This module defines the abstract interface for data sources.
 
 """
+
 import json
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
@@ -9,8 +10,8 @@ from typing import Any, Dict, List, Optional
 import pandas as pd
 from diskcache import Cache
 
+from utils.exceptions import CacheError, DataLoadError
 from utils.logger import get_logger
-from utils.exceptions import DataLoadError, CacheError
 
 
 class BaseDataSource(ABC):
@@ -21,7 +22,8 @@ class BaseDataSource(ABC):
 
         :hierarchy: [Core | DataSources | BaseDataSource]
         :relates-to:
-          - motivated_by: "plan.md: Фаза 5.3 - Улучшение кэширования"
+          - motivated_by: "Architectural Conclusion: Disk-based caching improves
+            performance by avoiding repeated data loading operations"
           - implements: "interface: 'BaseDataSource'"
           - uses: ["library: 'diskcache'"]
 
@@ -34,9 +36,8 @@ class BaseDataSource(ABC):
            benefiting from a configurable caching layer."
 
     """
-    def __init__(
-        self, cache_dir: Optional[str] = None, cache_ttl: int = 300, **kwargs
-    ):
+
+    def __init__(self, cache_dir: Optional[str] = None, cache_ttl: int = 300, **kwargs):
         """
         Initializes the BaseDataSource with a configurable cache.
 
@@ -48,8 +49,7 @@ class BaseDataSource(ABC):
         """
         self.logger = get_logger(__name__, BaseDataSource)
         self.logger.info(
-            f"Initializing datasource with cache_dir={cache_dir}, "
-            f"ttl={cache_ttl}s"
+            f"Initializing datasource with cache_dir={cache_dir}, " f"ttl={cache_ttl}s"
         )
         try:
             self.cache = Cache(directory=cache_dir, expire=cache_ttl)
@@ -90,15 +90,11 @@ class BaseDataSource(ABC):
                 # Cache Hit
                 self.logger.info(f"Cache hit for key={cache_key}")
                 self._data = self.cache[cache_key]
-                self.logger.debug(
-                    f"Loaded {len(self._data)} rows from cache"
-                )
+                self.logger.debug(f"Loaded {len(self._data)} rows from cache")
                 return True
             else:
                 # Cache Miss
-                self.logger.info(
-                    f"Cache miss for key={cache_key}, loading data"
-                )
+                self.logger.info(f"Cache miss for key={cache_key}, loading data")
                 loaded_data = self._load_data(params)
                 if not isinstance(loaded_data, pd.DataFrame):
                     raise DataLoadError(
@@ -115,15 +111,12 @@ class BaseDataSource(ABC):
                 return True
         except DataLoadError as e:
             # Log the error and set empty data
-            self.logger.error(
-                f"DataLoadError loading data for key {cache_key}: {e}"
-            )
+            self.logger.error(f"DataLoadError loading data for key {cache_key}: {e}")
             self._data = pd.DataFrame()  # Ensure data is empty on error
             return False
         except Exception as e:
             self.logger.error(
-                f"Error loading data for key {cache_key}: {e}",
-                exc_info=True
+                f"Error loading data for key {cache_key}: {e}", exc_info=True
             )
             self._data = pd.DataFrame()  # Ensure data is empty on error
             return False

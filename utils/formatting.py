@@ -5,6 +5,7 @@ This module provides utility functions for formatting values.
 
 from typing import Any
 
+
 def format_number(value: Any) -> str:
     """
     Formats a number into a string with appropriate separators.
@@ -15,7 +16,8 @@ def format_number(value: Any) -> str:
 
         :hierarchy: [Utils | Formatting | format_number]
         :relates-to:
-          - motivated_by: "Plan 3.3: Create reusable utility functions"
+          - motivated_by: "Architectural Conclusion: Consistent number formatting
+            improves user experience across all dashboard components"
           - implements: "utility: 'format_number'"
 
         :rationale: "A simple function was chosen for direct extraction of formatting logic from KPIBlock, avoiding over-engineering."

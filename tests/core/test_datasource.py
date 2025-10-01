@@ -2,16 +2,18 @@
 Unit tests for the BaseDataSource class.
 
 """
-import time
+
 import shutil
+import time
 from typing import Any, Dict, List
 
 import pandas as pd
 import pytest
+from diskcache import Cache
 from pandas.testing import assert_frame_equal
 
 from core.datasource import BaseDataSource
-from diskcache import Cache
+
 
 @pytest.fixture
 def temp_cache(tmp_path):
@@ -23,6 +25,7 @@ def temp_cache(tmp_path):
     cache = Cache(directory=str(cache_dir))
     yield cache
     cache.close()
+
 
 @pytest.fixture
 def temp_ttl_cache(tmp_path):
@@ -46,6 +49,7 @@ class ConcreteDataSource(BaseDataSource):
           - object: "class: BaseDataSource"
 
     """
+
     def __init__(self, cache_obj: Cache = None, **kwargs):
         # Allow injecting a cache object for testing purposes
         if cache_obj:
@@ -73,6 +77,7 @@ class ConcreteDataSource(BaseDataSource):
     def get_summary(self) -> str:
         return "Test Summary"
 
+
 def test_datasource_in_memory_caching_hit(mocker):
     """
     Tests that the _load_data method is only called once for identical params with in-memory cache.
@@ -87,11 +92,12 @@ def test_datasource_in_memory_caching_hit(mocker):
     spy = mocker.spy(source, "_load_data")
 
     params = {"value": 100}
-    
+
     source.init_data(params)
     source.init_data(params)
-    
+
     spy.assert_called_once_with(params)
+
 
 def test_datasource_disk_caching_hit(mocker, temp_cache):
     """
@@ -109,13 +115,14 @@ def test_datasource_disk_caching_hit(mocker, temp_cache):
 
     # First call, should hit the disk
     source.init_data(params)
-    
+
     # Second call, should be a cache hit
     source.init_data(params)
     data2 = source.get_processed_data()
 
     spy.assert_called_once_with(params)
     assert data2["A"][0] == 200
+
 
 def test_datasource_caching_miss(mocker):
     """
@@ -138,6 +145,7 @@ def test_datasource_caching_miss(mocker):
 
     assert spy.call_count == 2
 
+
 def test_datasource_cache_ttl_configuration():
     """
     Tests that the cache_ttl parameter is correctly passed to the underlying cache object.
@@ -149,8 +157,9 @@ def test_datasource_cache_ttl_configuration():
 
     # Test with default TTL
     source_default = ConcreteDataSource()
-    assert source_default.cache.expire == 300 # Default value in BaseDataSource
+    assert source_default.cache.expire == 300  # Default value in BaseDataSource
     source_default.cache.close()
+
 
 def test_datasource_load_error_handling(mocker):
     """
@@ -171,6 +180,7 @@ def test_datasource_load_error_handling(mocker):
     assert result is False
     assert isinstance(data, pd.DataFrame)
     assert data.empty
+
 
 def test_get_processed_data_before_init():
     """

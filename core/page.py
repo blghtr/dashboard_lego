@@ -2,7 +2,8 @@
 This module defines the DashboardPage class, which orchestrates blocks on a page.
 
 """
-from typing import List, Any, Dict, Tuple, Optional, Iterable, Union
+
+from typing import Any, Dict, Iterable, List, Tuple
 
 import dash_bootstrap_components as dbc
 from dash import html
@@ -10,8 +11,9 @@ from dash.development.base_component import Component
 
 from blocks.base import BaseBlock
 from core.state import StateManager
-from utils.logger import get_logger
 from utils.exceptions import ConfigurationError
+from utils.logger import get_logger
+
 
 class DashboardPage:
     """
@@ -31,10 +33,7 @@ class DashboardPage:
     """
 
     def __init__(
-        self,
-        title: str,
-        blocks: List[List[Any]],
-        theme: str = dbc.themes.BOOTSTRAP
+        self, title: str, blocks: List[List[Any]], theme: str = dbc.themes.BOOTSTRAP
     ):
         """
         Initializes the DashboardPage, creates a StateManager, and
@@ -53,7 +52,7 @@ class DashboardPage:
         """
         self.logger = get_logger(__name__, DashboardPage)
         self.logger.info(f"Initializing dashboard page: '{title}'")
-        
+
         self.title = title
         self.theme = theme
         self.layout_structure = blocks
@@ -70,8 +69,10 @@ class DashboardPage:
                 else:
                     # Old format: list of blocks
                     blocks_list = row
-                
-                self.logger.debug(f"Processing row {row_idx} with {len(blocks_list)} blocks")
+
+                self.logger.debug(
+                    f"Processing row {row_idx} with {len(blocks_list)} blocks"
+                )
                 for item in blocks_list:
                     block = item[0] if isinstance(item, tuple) else item
                     if not isinstance(block, BaseBlock):
@@ -82,7 +83,7 @@ class DashboardPage:
                         self.logger.error(error_msg)
                         raise ConfigurationError(error_msg)
                     self.blocks.append(block)
-                    
+
             self.logger.info(
                 f"Page structure validated: {len(self.layout_structure)} rows, "
                 f"{len(self.blocks)} blocks total"
@@ -100,15 +101,23 @@ class DashboardPage:
 
     # --- Layout v2: helper constants ---
     _CELL_ALLOWED_KEYS: set = {
-        'width', 'xs', 'sm', 'md', 'lg', 'xl', 'offset', 'align', 'className', 'style', 'children'
+        "width",
+        "xs",
+        "sm",
+        "md",
+        "lg",
+        "xl",
+        "offset",
+        "align",
+        "className",
+        "style",
+        "children",
     }
 
-    _ROW_ALLOWED_KEYS: set = {'align', 'justify', 'g', 'className', 'style'}
+    _ROW_ALLOWED_KEYS: set = {"align", "justify", "g", "className", "style"}
 
     def _normalize_cell(
-        self,
-        cell_spec: Any,
-        row_length: int
+        self, cell_spec: Any, row_length: int
     ) -> Tuple[BaseBlock, Dict[str, Any]]:
         """
         Normalizes a cell spec to a `(block, options)` tuple with defaults.
@@ -144,9 +153,9 @@ class DashboardPage:
             )
 
         # Back-compat default: if no responsive width provided, set 'width'
-        if not any(k in options for k in ['width', 'xs', 'sm', 'md', 'lg', 'xl']):
+        if not any(k in options for k in ["width", "xs", "sm", "md", "lg", "xl"]):
             # Equal split; ensure at least 1
-            options['width'] = max(1, 12 // max(1, row_length))
+            options["width"] = max(1, 12 // max(1, row_length))
 
         return block, options
 
@@ -166,7 +175,11 @@ class DashboardPage:
              - post: "Returns (cells, row_options) with allowed keys only; ensures width bounds and per-breakpoint sums do not exceed 12 when specified"
 
         """
-        if isinstance(row_spec, tuple) and len(row_spec) == 2 and isinstance(row_spec[1], dict):
+        if (
+            isinstance(row_spec, tuple)
+            and len(row_spec) == 2
+            and isinstance(row_spec[1], dict)
+        ):
             row_cells, row_options = row_spec
         else:
             row_cells, row_options = row_spec, {}
@@ -192,7 +205,7 @@ class DashboardPage:
             block, options = self._normalize_cell(cell, row_length=len(row_cells))
 
             # Validate width bounds for any provided breakpoint
-            for key in ['width', 'xs', 'sm', 'md', 'lg', 'xl']:
+            for key in ["width", "xs", "sm", "md", "lg", "xl"]:
                 if key in options:
                     value = options[key]
                     if not isinstance(value, int) or value < 1 or value > 12:
@@ -202,7 +215,7 @@ class DashboardPage:
             normalized.append((block, options))
 
         # Validate that explicit breakpoint sums do not exceed 12
-        for bp in ['width', 'xs', 'sm', 'md', 'lg', 'xl']:
+        for bp in ["width", "xs", "sm", "md", "lg", "xl"]:
             bp_sum = sum(opts.get(bp, 0) for _, opts in normalized if bp in opts)
             if bp_sum and bp_sum > 12:
                 raise ConfigurationError(
@@ -213,7 +226,9 @@ class DashboardPage:
         return [(b, o) for b, o in normalized], row_options
 
     def _render_row(
-        self, row_cells: List[Tuple[BaseBlock, Dict[str, Any]]], row_options: Dict[str, Any]
+        self,
+        row_cells: List[Tuple[BaseBlock, Dict[str, Any]]],
+        row_options: Dict[str, Any],
     ) -> Component:
         """
         Renders a row into a `dbc.Row` with validated options.
@@ -232,27 +247,29 @@ class DashboardPage:
         """
         cols = [self._render_cell(block, opts) for block, opts in row_cells]
         row_kwargs: Dict[str, Any] = {}
-        
+
         # Handle Bootstrap gap classes
-        if 'g' in row_options:
-            gap = row_options['g']
+        if "g" in row_options:
+            gap = row_options["g"]
             if isinstance(gap, int):
-                row_kwargs['className'] = f"g-{gap}"
+                row_kwargs["className"] = f"g-{gap}"
             else:
-                row_kwargs['className'] = f"g-{gap}"
-        
+                row_kwargs["className"] = f"g-{gap}"
+
         # Handle other row options
-        for key in ['align', 'justify', 'className', 'style']:
+        for key in ["align", "justify", "className", "style"]:
             if key in row_options:
-                if key == 'className' and 'className' in row_kwargs:
+                if key == "className" and "className" in row_kwargs:
                     # Merge gap class with existing className
-                    row_kwargs['className'] = f"{row_kwargs['className']} {row_options[key]}"
+                    row_kwargs["className"] = (
+                        f"{row_kwargs['className']} {row_options[key]}"
+                    )
                 else:
                     row_kwargs[key] = row_options[key]
-        
+
         # Keep legacy spacing class unless overridden
-        if 'className' not in row_kwargs:
-            row_kwargs['className'] = 'mb-4'
+        if "className" not in row_kwargs:
+            row_kwargs["className"] = "mb-4"
         return dbc.Row(cols, **row_kwargs)
 
     def _render_cell(self, block: BaseBlock, options: Dict[str, Any]) -> Component:
@@ -273,21 +290,33 @@ class DashboardPage:
         """
         # Split options into Col kwargs and special fields
         col_kwargs: Dict[str, Any] = {}
-        
+
         # Handle offset classes
-        if 'offset' in options:
-            offset = options['offset']
+        if "offset" in options:
+            offset = options["offset"]
             if isinstance(offset, int):
-                col_kwargs['className'] = f"offset-{offset}"
+                col_kwargs["className"] = f"offset-{offset}"
             else:
-                col_kwargs['className'] = f"offset-{offset}"
-        
+                col_kwargs["className"] = f"offset-{offset}"
+
         # Handle other column options
-        for key in ['width', 'xs', 'sm', 'md', 'lg', 'xl', 'align', 'className', 'style']:
+        for key in [
+            "width",
+            "xs",
+            "sm",
+            "md",
+            "lg",
+            "xl",
+            "align",
+            "className",
+            "style",
+        ]:
             if key in options:
-                if key == 'className' and 'className' in col_kwargs:
+                if key == "className" and "className" in col_kwargs:
                     # Merge offset class with existing className
-                    col_kwargs['className'] = f"{col_kwargs['className']} {options[key]}"
+                    col_kwargs["className"] = (
+                        f"{col_kwargs['className']} {options[key]}"
+                    )
                 else:
                     col_kwargs[key] = options[key]
 
@@ -296,16 +325,24 @@ class DashboardPage:
         content_children.append(block.layout())
 
         # Nested rows if provided
-        children_rows = options.get('children')
+        children_rows = options.get("children")
         if children_rows:
-            if not isinstance(children_rows, Iterable) or isinstance(children_rows, (str, bytes)):
+            if not isinstance(children_rows, Iterable) or isinstance(
+                children_rows, (str, bytes)
+            ):
                 raise ConfigurationError("'children' must be a list of row specs")
             for child_row in children_rows:
                 normalized_child_cells, child_row_opts = self._validate_row(child_row)
-                content_children.append(self._render_row(normalized_child_cells, child_row_opts))
+                content_children.append(
+                    self._render_row(normalized_child_cells, child_row_opts)
+                )
 
         # If only one child, pass directly; else wrap
-        col_content: Component = content_children[0] if len(content_children) == 1 else html.Div(content_children)
+        col_content: Component = (
+            content_children[0]
+            if len(content_children) == 1
+            else html.Div(content_children)
+        )
         return dbc.Col(col_content, **col_kwargs)
 
     def build_layout(self) -> Component:
@@ -317,9 +354,11 @@ class DashboardPage:
 
         """
         self.logger.info("Building page layout")
-        self.logger.debug(f"Building layout: {len(self.layout_structure)} rows, {len(self.blocks)} blocks")
+        self.logger.debug(
+            f"Building layout: {len(self.layout_structure)} rows, {len(self.blocks)} blocks"
+        )
         rows: List[Component] = []
-        
+
         try:
             for row_idx, row_spec in enumerate(self.layout_structure):
                 # Validate and normalize the row and its cells
@@ -330,15 +369,9 @@ class DashboardPage:
                 )
                 rows.append(self._render_row(normalized_cells, row_options))
 
-            self.logger.info(
-                f"Layout built successfully: {len(rows)} rows rendered"
-            )
+            self.logger.info(f"Layout built successfully: {len(rows)} rows rendered")
             return dbc.Container(
-                [
-                    html.H1(self.title, className="my-4"),
-                    *rows
-                ],
-                fluid=True
+                [html.H1(self.title, className="my-4"), *rows], fluid=True
             )
         except Exception as e:
             self.logger.error(f"Error building layout: {e}", exc_info=True)
@@ -347,14 +380,15 @@ class DashboardPage:
     def register_callbacks(self, app: Any):
         """
         Registers callbacks using both old (state-based) and new (block-centric) mechanisms.
-        
+
         :hierarchy: [Architecture | Callback Registration | DashboardPage]
         :relates-to:
-         - motivated_by: "ARCHITECTURE_REFACTOR_PLAN Step 4: Hybrid callback system"
+         - motivated_by: "Architectural Conclusion: Hybrid callback system enables
+           both legacy and modern callback patterns for backward compatibility"
          - implements: "method: 'register_callbacks' with dual mechanism"
          - uses: ["method: 'generate_callbacks'", "method: 'bind_callbacks'"]
-         
-        :rationale: "Use old mechanism for static blocks with state dependencies, 
+
+        :rationale: "Use old mechanism for static blocks with state dependencies,
          new mechanism for interactive blocks with controls."
         :contract:
          - pre: "StateManager is initialized, blocks are registered."
@@ -368,13 +402,11 @@ class DashboardPage:
         try:
             # OLD MECHANISM: State-based callbacks for StaticChartBlock
             self.state_manager.generate_callbacks(app)
-            
+
             # NEW MECHANISM: Block-centric callbacks for InteractiveChartBlock
             self.state_manager.bind_callbacks(app, self.blocks)
-            
+
             self.logger.info("Callbacks registered successfully")
         except Exception as e:
-            self.logger.error(
-                f"Error registering callbacks: {e}", exc_info=True
-            )
+            self.logger.error(f"Error registering callbacks: {e}", exc_info=True)
             raise

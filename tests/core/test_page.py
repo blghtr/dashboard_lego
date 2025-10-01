@@ -2,15 +2,17 @@
 Unit tests for the DashboardPage class.
 
 """
+
 from unittest.mock import MagicMock, call
 
 import pytest
 from dash import html
 
-from core.page import DashboardPage
 from blocks.base import BaseBlock
 from core.datasource import BaseDataSource
+from core.page import DashboardPage
 from utils.exceptions import ConfigurationError
+
 
 # Mock BaseBlock for testing purposes
 class MockBlock(BaseBlock):
@@ -25,6 +27,7 @@ class MockBlock(BaseBlock):
     def layout(self):
         return self._layout
 
+
 @pytest.fixture
 def mock_app():
     """Fixture to create a mock Dash app with a callback decorator."""
@@ -32,10 +35,12 @@ def mock_app():
     app.callback = MagicMock(return_value=lambda f: f)  # Decorator returns the function
     return app
 
+
 @pytest.fixture
 def mock_datasource():
     """Fixture to create a mock datasource that passes type checks."""
     return MagicMock(spec=BaseDataSource)
+
 
 def test_page_init_registers_blocks(mocker, mock_datasource):
     """
@@ -51,18 +56,21 @@ def test_page_init_registers_blocks(mocker, mock_datasource):
     block3 = MockBlock(block_id="b3", datasource=mock_datasource)
 
     page = DashboardPage(
-        title="Test Page",
-        blocks=[[block1], [(block2, {"width": 8}), block3]]
+        title="Test Page", blocks=[[block1], [(block2, {"width": 8}), block3]]
     )
 
     # Assert that the registration method was called for each block
     assert spy_register.call_count == 3
     # Check that it was called with the page's state_manager instance
-    spy_register.assert_has_calls([
-        call(block1, page.state_manager),
-        call(block2, page.state_manager),
-        call(block3, page.state_manager),
-    ], any_order=True)
+    spy_register.assert_has_calls(
+        [
+            call(block1, page.state_manager),
+            call(block2, page.state_manager),
+            call(block3, page.state_manager),
+        ],
+        any_order=True,
+    )
+
 
 def test_page_build_layout_structure(mock_datasource):
     """
@@ -77,8 +85,8 @@ def test_page_build_layout_structure(mock_datasource):
         title="My Dashboard",
         blocks=[
             [block1],  # First row
-            [(block2, {"lg": 8}), (block3, {"lg": 4})]  # Second row
-        ]
+            [(block2, {"lg": 8}), (block3, {"lg": 4})],  # Second row
+        ],
     )
 
     layout = page.build_layout()
@@ -96,7 +104,7 @@ def test_page_build_layout_structure(mock_datasource):
     assert len(row1_cols) == 1
     assert row1_cols[0].children.children == "b1"
     # Back-compat auto assignment uses 'width'
-    assert getattr(row1_cols[0], 'width', None) == 12
+    assert getattr(row1_cols[0], "width", None) == 12
 
     # Check second row
     row2_cols = rows[1].children
@@ -105,6 +113,7 @@ def test_page_build_layout_structure(mock_datasource):
     assert row2_cols[0].lg == 8
     assert row2_cols[1].children.children == "b3"
     assert row2_cols[1].lg == 4
+
 
 def test_page_register_callbacks_delegates_to_state_manager(mocker, mock_app):
     """
@@ -123,6 +132,7 @@ def test_page_register_callbacks_delegates_to_state_manager(mocker, mock_app):
     # Assert that the state manager's method was called exactly once with the app
     spy_generate.assert_called_once_with(mock_app)
 
+
 def test_page_init_raises_error_for_invalid_block_type(mock_datasource):
     """
     Tests that DashboardPage raises a TypeError if a non-BaseBlock object
@@ -132,5 +142,7 @@ def test_page_init_raises_error_for_invalid_block_type(mock_datasource):
     block1 = MockBlock(block_id="b1", datasource=mock_datasource)
     invalid_object = html.Div("I am not a block")
 
-    with pytest.raises(ConfigurationError, match="All layout items must be of type BaseBlock"):
+    with pytest.raises(
+        ConfigurationError, match="All layout items must be of type BaseBlock"
+    ):
         DashboardPage(title="Test", blocks=[[block1, invalid_object]])

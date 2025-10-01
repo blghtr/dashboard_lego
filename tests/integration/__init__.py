@@ -3,7 +3,8 @@ Integration tests for dashboard_lego.
 
 :hierarchy: [Testing | Integration Tests]
 :relates-to:
- - motivated_by: "TEST_PLAN.md: Уровень 3 - Интеграционные тесты"
+ - motivated_by: "Architectural Conclusion: Integration tests ensure
+   component interactions work correctly in realistic scenarios"
  - implements: "test_suite: 'Integration'"
 
 :strategy: "End-to-end testing with real data and complete workflows"

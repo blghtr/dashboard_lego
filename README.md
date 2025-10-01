@@ -1,41 +1,43 @@
 # Dashboard Lego 🧱
 
-Модульная библиотека для создания интерактивных дашбордов на Python с использованием Dash.
+A modular Python library for building interactive dashboards using Dash and Plotly.
 
-Dashboard Lego позволяет собирать сложные дашборды из независимых, переиспользуемых "блоков", как из конструктора. Это упрощает разработку, улучшает читаемость кода и способствует повторному использованию компонентов.
+Dashboard Lego allows you to build complex dashboards from independent, reusable "blocks" like building with LEGO bricks. This simplifies development, improves code readability, and promotes component reusability.
 
 ---
 
-## ✨ Основные возможности
+## ✨ Key Features
 
-- **Модульная архитектура**: Собирайте дашборды из независимых блоков (KPI, графики, текст).
-- **Реактивное состояние**: Встроенный менеджер состояний для легкого создания интерактивности между блоками (фильтры, drill-down и т.д.).
-- **Гибкая сетка**: Располагайте блоки в любой конфигурации с помощью системы сеток на базе `dash-bootstrap-components`.
-- **Кэширование данных**: Встроенный кэш на уровне источников данных для повышения производительности.
-- **Простое расширение**: Легко создавайте собственные блоки и источники данных, наследуясь от базовых классов.
+- **Modular Architecture**: Build dashboards from independent blocks (KPIs, charts, text)
+- **Reactive State Management**: Built-in state manager for easy interactivity between blocks (filters, drill-down, etc.)
+- **Flexible Grid System**: Position blocks in any configuration using a grid system based on `dash-bootstrap-components`
+- **Data Caching**: Built-in caching at the data source level for improved performance
+- **Easy Extension**: Easily create custom blocks and data sources by inheriting from base classes
+- **Presets & Layouts**: Pre-built EDA and ML visualization blocks, plus layout presets for common dashboard patterns
+- **Comprehensive Testing**: Full test coverage with unit, integration, and performance tests
 
-## 📦 Установка
+## 📦 Installation
 
-1.  **Клонируйте репозиторий:**
-    ```bash
-    git clone https://github.com/your-username/dashboard-lego.git
-    cd dashboard-lego
-    ```
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/your-username/dashboard-lego.git
+   cd dashboard-lego
+   ```
 
-2.  **Создайте виртуальное окружение и установите зависимости:**
-    Рекомендуется использовать `uv` для быстрой установки.
-    ```bash
-    # Установка uv
-    pip install uv
+2. **Create a virtual environment and install dependencies:**
+   We recommend using `uv` for fast installation.
+   ```bash
+   # Install uv
+   pip install uv
 
-    # Создание окружения и установка зависимостей
-    uv venv
-    uv pip install -e .[dev]
-    ```
+   # Create environment and install dependencies
+   uv venv
+   uv pip install -e .[dev]
+   ```
 
-## 🚀 Быстрый старт
+## 🚀 Quick Start
 
-Ниже приведен пример простого дашборда. Полный код можно найти в `examples/01_simple_dashboard.py`.
+Below is an example of a simple dashboard. The complete code can be found in `examples/01_simple_dashboard.py`.
 
 ```python
 # examples/01_simple_dashboard.py
@@ -50,8 +52,9 @@ from core.datasource import BaseDataSource
 from core.page import DashboardPage
 from blocks.kpi import KPIBlock
 from blocks.chart import StaticChartBlock
+from presets.layouts import one_column
 
-# 1. Определите источник данных
+# 1. Define a data source
 class SalesDataSource(BaseDataSource):
     def __init__(self, file_path):
         self.file_path = file_path
@@ -66,31 +69,49 @@ class SalesDataSource(BaseDataSource):
             "total_sales": self._data["Sales"].sum(),
             "total_units": self._data["UnitsSold"].sum()
         }
-    # ... другие обязательные методы ...
 
-# 2. Определите функцию для построения графика
-def plot_sales_by_fruit(df: pd.DataFrame) -> go.Figure:
+    def get_filter_options(self, filter_name: str) -> list:
+        return []
+
+    def get_summary(self) -> str:
+        return ""
+
+# 2. Define a plotting function
+def plot_sales_by_fruit(df: pd.DataFrame, ctx) -> go.Figure:
     sales_by_fruit = df.groupby("Fruit")["Sales"].sum().reset_index()
     return px.bar(sales_by_fruit, x="Fruit", y="Sales", title="Sales by Fruit")
 
-# 3. Инициализируйте ваш источник данных и блоки
+# 3. Initialize your data source and blocks
 datasource = SalesDataSource(file_path="examples/sample_data.csv")
 datasource.init_data()
 
-kpi_block = KPIBlock(...)
-chart_block = StaticChartBlock(...)
-
-# 4. Соберите страницу дашборда
-dashboard_page = DashboardPage(
-    title="Simple Sales Dashboard",
-    blocks=[
-        [kpi_block],      # Первый ряд
-        [chart_block]     # Второй ряд
-    ]
+kpi_block = KPIBlock(
+    block_id="sales_kpis",
+    datasource=datasource,
+    kpi_definitions=[
+        {"key": "total_sales", "title": "Total Sales", "color": "success"},
+        {"key": "total_units", "title": "Total Units Sold", "color": "info"},
+    ],
+    subscribes_to="dummy_state"
 )
 
-# 5. Запустите приложение
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+chart_block = StaticChartBlock(
+    block_id="sales_chart",
+    datasource=datasource,
+    title="Fruit Sales",
+    chart_generator=plot_sales_by_fruit,
+    subscribes_to="dummy_state"
+)
+
+# 4. Assemble the dashboard page using layout presets
+dashboard_page = DashboardPage(
+    title="Simple Sales Dashboard",
+    blocks=one_column([kpi_block, chart_block]),  # Stack blocks vertically
+    theme=dbc.themes.LUX
+)
+
+# 5. Run the application
+app = dash.Dash(__name__, external_stylesheets=[dashboard_page.theme])
 app.layout = dashboard_page.build_layout()
 dashboard_page.register_callbacks(app)
 
@@ -98,56 +119,167 @@ if __name__ == "__main__":
     app.run_server(debug=True)
 ```
 
-Чтобы запустить этот пример, выполните:
+To run this example:
 ```bash
 python examples/01_simple_dashboard.py
 ```
 
-## 🔗 Интерактивность
+## 🔗 Interactivity
 
-`dashboard-lego` позволяет легко связывать блоки между собой. Один блок может публиковать свое состояние (например, значение фильтра), а другие блоки могут подписываться на это состояние и обновляться соответствующим образом.
+`dashboard-lego` makes it easy to link blocks together. One block can publish its state (e.g., a filter value), and other blocks can subscribe to that state and update accordingly.
 
-Это реализовано через `StateManager`, который автоматически создает Dash колбэки.
+This is implemented through the `StateManager`, which automatically creates Dash callbacks.
 
-Полный пример интерактивного дашборда смотрите в `examples/02_interactive_dashboard.py`.
+See the complete interactive dashboard example in `examples/02_interactive_dashboard.py`.
 
-## 🎨 Пресеты и макеты
+## 🎨 Presets and Layouts
 
-Пресеты — это готовые к использованию блоки для решения стандартных задач анализа данных (EDA), которые значительно сокращают количество шаблонного кода.
+### EDA Presets
 
-- **`CorrelationHeatmapPreset`**: Автоматически строит тепловую карту корреляций для всех числовых столбцов в ваших данных.
-- **`GroupedHistogramPreset`**: Создает интерактивную гистограмму с выпадающими списками для выбора столбца и группировки.
-- **`MissingValuesPreset`**: Отображает столбчатую диаграмму с процентом пропущенных значений для каждой колонки, что помогает быстро оценить качество данных.
-- **`BoxPlotPreset`**: Позволяет сравнивать распределения числового признака по разным категориям с помощью интерактивных box plot диаграмм.
+Presets are ready-to-use blocks for standard data analysis tasks (EDA) that significantly reduce boilerplate code:
 
-Пример использования пресетов можно найти в файле `examples/03_presets_dashboard.py`.
+- **`CorrelationHeatmapPreset`**: Automatically builds a correlation heatmap for all numeric columns in your data
+- **`GroupedHistogramPreset`**: Creates an interactive histogram with dropdowns for column and grouping selection
+- **`MissingValuesPreset`**: Displays a bar chart showing the percentage of missing values for each column, helping quickly assess data quality
+- **`BoxPlotPreset`**: Allows comparing distributions of a numeric feature across different categories using interactive box plot charts
 
-### Макеты (lego-style)
-`DashboardPage` поддерживает декларативную схему расположения:
+Example usage of presets can be found in `examples/03_presets_dashboard.py`.
 
-- Ячейка: `Block` или `(Block, { 'xs|sm|md|lg|xl': int, 'offset': int, 'align': str, 'className': str, 'style': dict, 'children': [row_specs] })`
-- Ряд: `[cells]` или `([cells], { 'align': str, 'justify': str, 'g': int, 'className': str, 'style': dict })`
+### ML Presets
 
-Если ширины не указаны, для обратной совместимости автоматически выставляется равномерное деление через `width`.
+Machine learning visualization presets for common ML workflows:
 
-В модуле `presets/layouts.py` доступны распространенные шаблоны: `two_column_8_4`, `three_column_4_4_4`, `kpi_row_top` и др.
+- **`MetricCardBlock`**: Compact display for ML metrics in a list format
+- **`ConfusionMatrixPreset`**: Interactive confusion matrix visualization
+- **`FeatureImportancePreset`**: Feature importance charts for model interpretation
+- **`ROC_CurvePreset`**: ROC curve visualization for classification models
 
-## 🧪 Тестирование
+### Layout Presets
 
-Библиотека покрыта юнит-тестами. Для запуска тестов:
+`DashboardPage` supports declarative layout schemas:
+
+- Cell: `Block` or `(Block, { 'xs|sm|md|lg|xl': int, 'offset': int, 'align': str, 'className': str, 'style': dict, 'children': [row_specs] })`
+- Row: `[cells]` or `([cells], { 'align': str, 'justify': str, 'g': int, 'className': str, 'style': dict })`
+
+If widths are not specified, for backward compatibility, automatic equal division is set via `width`.
+
+The `presets/layouts.py` module provides common templates: `one_column`, `two_column_8_4`, `three_column_4_4_4`, `kpi_row_top`, etc.
+
+## 📊 Data Sources
+
+Dashboard Lego supports multiple data source types:
+
+- **CSV Source**: Load data from CSV files with automatic caching
+- **Parquet Source**: High-performance columnar data loading
+- **SQL Source**: Connect to databases via SQLAlchemy
+- **Custom Sources**: Inherit from `BaseDataSource` to create your own data providers
+
+## 🧪 Testing
+
+The library is covered by comprehensive tests. To run tests:
 
 ```bash
-# Убедитесь, что вы установили dev-зависимости
+# Make sure you have dev dependencies installed
 # uv pip install -e .[dev,docs,ml,sql]
 
-# Запуск тестов
+# Run tests
+uv run pytest
+
+# Run with coverage
+uv run pytest --cov=dashboard_lego --cov-report=html
+```
+
+## 📚 Documentation
+
+### Building Documentation Locally
+
+```bash
+cd docs
+
+# Build and serve locally (opens http://localhost:8000)
+make serve
+
+# Just build HTML
+make html
+
+# Clean and rebuild
+make clean && make html
+
+# Check docs build without errors
+make check
+```
+
+### Documentation Structure
+
+- **API Documentation**: Automatically generated from docstrings
+- **User Guides**: Installation, quick start, and concepts
+- **Examples**: Check the `examples/` directory for various use cases
+- **Contributing**: See `CONTRIBUTING.md` for development guidelines
+- **Changelog**: Track changes in `CHANGELOG.md`
+
+### Publishing Documentation
+
+**Automatic (Recommended):**
+- Documentation is automatically built and published to GitHub Pages when tests pass on `main` branch
+- Available at: `https://blghtr.github.io/dashboard_lego/`
+
+**Note:** No manual publishing needed! CI handles everything automatically.
+
+## 🛠️ Development
+
+### Prerequisites
+
+- Python 3.10+
+- uv (recommended) or pip
+
+### Development Setup
+
+```bash
+# Clone and setup
+git clone https://github.com/your-username/dashboard-lego.git
+cd dashboard-lego
+uv venv
+uv pip install -e .[dev,docs,ml,sql]
+
+# Run pre-commit hooks
+pre-commit install
+
+# Run tests
 uv run pytest
 ```
 
-## 🤝 Вклад в проект
+### Code Style
 
-Мы рады любому вкладу! Пожалуйста, ознакомьтесь с `CONTRIBUTING.md` для получения дополнительной информации.
+- **Black** for code formatting
+- **Flake8** for linting
+- **MyPy** for type checking
+- **Pre-commit** hooks for automated checks
 
-## 📄 Лицензия
+## 🤝 Contributing
 
-Этот проект распространяется под лицензией MIT. См. файл `LICENSE` для подробностей.
+We welcome contributions! Please see `CONTRIBUTING.md` for detailed information on:
+
+- Development setup and guidelines
+- Code style and standards
+- Testing requirements
+- Pull request process
+- Creating presets and custom blocks
+
+## 📄 License
+
+This project is distributed under the MIT License. See the `LICENSE` file for details.
+
+## 🚀 Roadmap
+
+- [ ] Enhanced chart types and customization options
+- [ ] Real-time data streaming capabilities
+- [ ] Advanced theming and styling system
+- [ ] Export functionality (PDF, PNG, etc.)
+- [ ] Web-based dashboard builder interface
+- [ ] Additional ML visualization presets
+- [ ] Database connection presets
+- [ ] Mobile-responsive optimizations
+
+---
+
+**Build amazing dashboards with Dashboard Lego! 🧱✨**

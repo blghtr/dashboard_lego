@@ -3,7 +3,8 @@ Performance tests for dashboard functionality.
 
 :hierarchy: [Testing | Integration Tests | Performance]
 :relates-to:
- - motivated_by: "TEST_PLAN.md: Уровень 3.2 - Тесты производительности"
+ - motivated_by: "Architectural Conclusion: Performance tests ensure
+   dashboard responsiveness and scalability requirements are met"
  - implements: "test_suite: 'Performance'"
 
 :strategy: "Use pytest with timing and memory profiling for performance validation"
@@ -13,17 +14,18 @@ Performance tests for dashboard functionality.
 
 """
 
-import pytest
-import pandas as pd
-import tempfile
 import os
+import tempfile
 import time
 from unittest.mock import MagicMock
 
+import pandas as pd
+import pytest
+
+from blocks.chart import StaticChartBlock
+from blocks.kpi import KPIBlock
 from core.datasource import BaseDataSource
 from core.page import DashboardPage
-from blocks.kpi import KPIBlock
-from blocks.chart import StaticChartBlock
 from presets.ml_presets import MetricCardBlock
 
 
@@ -61,16 +63,18 @@ class TestLargeDatasetPerformance:
 
         """
         # Generate large dataset
-        large_data = pd.DataFrame({
-            'Fruit': ['Apple', 'Banana', 'Orange', 'Grape', 'Strawberry'] * 2000,
-            'Sales': range(10000),
-            'UnitsSold': range(10000),
-            'Price': [10.0, 15.0, 12.0, 8.0, 20.0] * 2000,
-            'Category': ['A', 'B', 'C', 'D', 'E'] * 2000
-        })
+        large_data = pd.DataFrame(
+            {
+                "Fruit": ["Apple", "Banana", "Orange", "Grape", "Strawberry"] * 2000,
+                "Sales": range(10000),
+                "UnitsSold": range(10000),
+                "Price": [10.0, 15.0, 12.0, 8.0, 20.0] * 2000,
+                "Category": ["A", "B", "C", "D", "E"] * 2000,
+            }
+        )
 
         # Create temporary CSV file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             large_data.to_csv(f.name, index=False)
             csv_path = f.name
 
@@ -86,7 +90,7 @@ class TestLargeDatasetPerformance:
                     return {
                         "total_sales": float(self._data["Sales"].sum()),
                         "total_units": int(self._data["UnitsSold"].sum()),
-                        "avg_price": float(self._data["Price"].mean())
+                        "avg_price": float(self._data["Price"].mean()),
                     }
 
                 def get_filter_options(self, filter_name: str) -> list:
@@ -102,7 +106,9 @@ class TestLargeDatasetPerformance:
             loading_time = time.time() - start_time
 
             # Validate performance
-            assert loading_time < 5.0, f"Loading took {loading_time:.2f}s, expected < 5.0s"
+            assert (
+                loading_time < 5.0
+            ), f"Loading took {loading_time:.2f}s, expected < 5.0s"
             assert len(datasource._data) == 10000
             assert datasource.get_kpis()["total_sales"] > 0
 
@@ -126,15 +132,17 @@ class TestLargeDatasetPerformance:
 
         """
         # Generate large dataset
-        large_data = pd.DataFrame({
-            'Fruit': ['Apple', 'Banana', 'Orange', 'Grape', 'Strawberry'] * 2000,
-            'Sales': range(10000),
-            'UnitsSold': range(10000),
-            'Price': [10.0, 15.0, 12.0, 8.0, 20.0] * 2000
-        })
+        large_data = pd.DataFrame(
+            {
+                "Fruit": ["Apple", "Banana", "Orange", "Grape", "Strawberry"] * 2000,
+                "Sales": range(10000),
+                "UnitsSold": range(10000),
+                "Price": [10.0, 15.0, 12.0, 8.0, 20.0] * 2000,
+            }
+        )
 
         # Create temporary CSV file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             large_data.to_csv(f.name, index=False)
             csv_path = f.name
 
@@ -154,7 +162,7 @@ class TestLargeDatasetPerformance:
                         "avg_price": float(self._data["Price"].mean()),
                         "max_sales": float(self._data["Sales"].max()),
                         "min_sales": float(self._data["Sales"].min()),
-                        "std_price": float(self._data["Price"].std())
+                        "std_price": float(self._data["Price"].std()),
                     }
 
                 def get_filter_options(self, filter_name: str) -> list:
@@ -175,16 +183,25 @@ class TestLargeDatasetPerformance:
             # Measure chart generation time
             def chart_generator(df: pd.DataFrame):
                 import plotly.express as px
-                return px.bar(df.groupby('Fruit')['Sales'].sum().reset_index(), 
-                            x='Fruit', y='Sales', title='Large Dataset Chart')
+
+                return px.bar(
+                    df.groupby("Fruit")["Sales"].sum().reset_index(),
+                    x="Fruit",
+                    y="Sales",
+                    title="Large Dataset Chart",
+                )
 
             start_time = time.time()
             chart_fig = chart_generator(datasource._data)
             chart_time = time.time() - start_time
 
             # Validate performance
-            assert kpi_time < 2.0, f"KPI calculation took {kpi_time:.2f}s, expected < 2.0s"
-            assert chart_time < 2.0, f"Chart generation took {chart_time:.2f}s, expected < 2.0s"
+            assert (
+                kpi_time < 2.0
+            ), f"KPI calculation took {kpi_time:.2f}s, expected < 2.0s"
+            assert (
+                chart_time < 2.0
+            ), f"Chart generation took {chart_time:.2f}s, expected < 2.0s"
             assert len(kpis) == 6
             assert chart_fig is not None
 
@@ -226,14 +243,16 @@ class TestCachePerformance:
 
         """
         # Generate test data
-        test_data = pd.DataFrame({
-            'Fruit': ['Apple', 'Banana', 'Orange'] * 100,
-            'Sales': range(300),
-            'UnitsSold': range(300)
-        })
+        test_data = pd.DataFrame(
+            {
+                "Fruit": ["Apple", "Banana", "Orange"] * 100,
+                "Sales": range(300),
+                "UnitsSold": range(300),
+            }
+        )
 
         # Create temporary CSV file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             test_data.to_csv(f.name, index=False)
             csv_path = f.name
 
@@ -250,7 +269,7 @@ class TestCachePerformance:
                         return {}
                     return {
                         "total_sales": float(self._data["Sales"].sum()),
-                        "total_units": int(self._data["UnitsSold"].sum())
+                        "total_units": int(self._data["UnitsSold"].sum()),
                     }
 
                 def get_filter_options(self, filter_name: str) -> list:
@@ -273,7 +292,9 @@ class TestCachePerformance:
             # Validate cache performance
             assert first_load_time > 0.1, "First load should take time for processing"
             assert second_load_time < first_load_time, "Cache hit should be faster"
-            assert second_load_time < 0.05, f"Cache hit took {second_load_time:.3f}s, expected < 0.05s"
+            assert (
+                second_load_time < 0.05
+            ), f"Cache hit took {second_load_time:.3f}s, expected < 0.05s"
 
         finally:
             os.unlink(csv_path)
@@ -313,14 +334,16 @@ class TestMemoryPerformance:
 
         """
         # Generate test data
-        test_data = pd.DataFrame({
-            'Fruit': ['Apple', 'Banana', 'Orange'] * 100,
-            'Sales': range(300),
-            'UnitsSold': range(300)
-        })
+        test_data = pd.DataFrame(
+            {
+                "Fruit": ["Apple", "Banana", "Orange"] * 100,
+                "Sales": range(300),
+                "UnitsSold": range(300),
+            }
+        )
 
         # Create temporary CSV file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             test_data.to_csv(f.name, index=False)
             csv_path = f.name
 
@@ -335,7 +358,7 @@ class TestMemoryPerformance:
                         return {}
                     return {
                         "total_sales": float(self._data["Sales"].sum()),
-                        "total_units": int(self._data["UnitsSold"].sum())
+                        "total_units": int(self._data["UnitsSold"].sum()),
                     }
 
                 def get_filter_options(self, filter_name: str) -> list:
@@ -350,24 +373,30 @@ class TestMemoryPerformance:
 
             # Measure block creation time
             start_time = time.time()
-            
+
             blocks = []
             for i in range(10):  # Create 10 blocks
                 kpi_block = KPIBlock(
                     block_id=f"perf_kpi_{i}",
                     datasource=datasource,
                     kpi_definitions=[
-                        {"key": "total_sales", "title": "Total Sales", "color": "success"},
-                        {"key": "total_units", "title": "Total Units", "color": "info"}
+                        {
+                            "key": "total_sales",
+                            "title": "Total Sales",
+                            "color": "success",
+                        },
+                        {"key": "total_units", "title": "Total Units", "color": "info"},
                     ],
-                    subscribes_to="dummy_state"
+                    subscribes_to="dummy_state",
                 )
                 blocks.append(kpi_block)
 
             creation_time = time.time() - start_time
 
             # Validate performance
-            assert creation_time < 2.0, f"Block creation took {creation_time:.2f}s, expected < 2.0s"
+            assert (
+                creation_time < 2.0
+            ), f"Block creation took {creation_time:.2f}s, expected < 2.0s"
             assert len(blocks) == 10
 
         finally:
@@ -390,14 +419,16 @@ class TestMemoryPerformance:
 
         """
         # Generate test data
-        test_data = pd.DataFrame({
-            'Fruit': ['Apple', 'Banana', 'Orange'] * 50,
-            'Sales': range(150),
-            'UnitsSold': range(150)
-        })
+        test_data = pd.DataFrame(
+            {
+                "Fruit": ["Apple", "Banana", "Orange"] * 50,
+                "Sales": range(150),
+                "UnitsSold": range(150),
+            }
+        )
 
         # Create temporary CSV file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             test_data.to_csv(f.name, index=False)
             csv_path = f.name
 
@@ -412,7 +443,7 @@ class TestMemoryPerformance:
                         return {}
                     return {
                         "total_sales": float(self._data["Sales"].sum()),
-                        "total_units": int(self._data["UnitsSold"].sum())
+                        "total_units": int(self._data["UnitsSold"].sum()),
                     }
 
                 def get_filter_options(self, filter_name: str) -> list:
@@ -432,24 +463,30 @@ class TestMemoryPerformance:
                     block_id=f"state_kpi_{i}",
                     datasource=datasource,
                     kpi_definitions=[
-                        {"key": "total_sales", "title": "Total Sales", "color": "success"},
-                        {"key": "total_units", "title": "Total Units", "color": "info"}
+                        {
+                            "key": "total_sales",
+                            "title": "Total Sales",
+                            "color": "success",
+                        },
+                        {"key": "total_units", "title": "Total Units", "color": "info"},
                     ],
-                    subscribes_to="test_state"
+                    subscribes_to="test_state",
                 )
                 blocks.append(kpi_block)
 
             # Measure state update time
             start_time = time.time()
-            
+
             # Simulate state update by calling update methods
             for block in blocks:
                 block._update_kpi_cards()
-            
+
             update_time = time.time() - start_time
 
             # Validate performance
-            assert update_time < 1.0, f"State update took {update_time:.3f}s, expected < 1.0s"
+            assert (
+                update_time < 1.0
+            ), f"State update took {update_time:.3f}s, expected < 1.0s"
             assert len(blocks) == 5
 
         finally:

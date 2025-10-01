@@ -2,17 +2,17 @@
 
 import dash
 import dash_bootstrap_components as dbc
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import pandas as pd
 from dash import html
 
+from blocks.chart import StaticChartBlock
+from blocks.kpi import KPIBlock
+from blocks.text import TextBlock
 from core.datasources.csv_source import CsvDataSource
 from core.page import DashboardPage
-from blocks.kpi import KPIBlock
-from blocks.chart import StaticChartBlock
-from blocks.text import TextBlock
-from utils.logger import setup_logging, get_logger
+from utils.logger import get_logger, setup_logging
 
 setup_logging()
 logger = get_logger(__name__)
@@ -31,26 +31,23 @@ total_sales_kpi = KPIBlock(
     kpi_definitions=[
         {"key": "total_sales", "title": "Total Sales", "color": "success"}
     ],
-    subscribes_to=dummy_state
+    subscribes_to=dummy_state,
 )
 
 total_units_kpi = KPIBlock(
     block_id="total_units",
     datasource=datasource,
-    kpi_definitions=[
-        {"key": "total_units", "title": "Total Units", "color": "info"}
-    ],
-    subscribes_to=dummy_state
+    kpi_definitions=[{"key": "total_units", "title": "Total Units", "color": "info"}],
+    subscribes_to=dummy_state,
 )
 
 avg_price_kpi = KPIBlock(
     block_id="avg_price",
     datasource=datasource,
-    kpi_definitions=[
-        {"key": "avg_price", "title": "Avg Price", "color": "warning"}
-    ],
-    subscribes_to=dummy_state
+    kpi_definitions=[{"key": "avg_price", "title": "Avg Price", "color": "warning"}],
+    subscribes_to=dummy_state,
 )
+
 
 # Chart blocks
 def plot_sales_by_fruit(df, ctx):
@@ -59,18 +56,25 @@ def plot_sales_by_fruit(df, ctx):
     fig = px.bar(sales_by_fruit, x="Fruit", y="Sales", title="Sales by Fruit")
     return fig
 
+
 def plot_units_by_category(df, ctx):
     """Creates a pie chart of units by category."""
     units_by_category = df.groupby("Category")["UnitsSold"].sum().reset_index()
-    fig = px.pie(units_by_category, values="UnitsSold", names="Category", title="Units by Category")
+    fig = px.pie(
+        units_by_category,
+        values="UnitsSold",
+        names="Category",
+        title="Units by Category",
+    )
     return fig
+
 
 sales_chart = StaticChartBlock(
     block_id="sales_chart",
     datasource=datasource,
     title="Sales Analysis",
     chart_generator=plot_sales_by_fruit,
-    subscribes_to=dummy_state
+    subscribes_to=dummy_state,
 )
 
 units_chart = StaticChartBlock(
@@ -78,7 +82,7 @@ units_chart = StaticChartBlock(
     datasource=datasource,
     title="Units Analysis",
     chart_generator=plot_units_by_category,
-    subscribes_to=dummy_state
+    subscribes_to=dummy_state,
 )
 
 # Additional chart for row 4
@@ -87,21 +91,25 @@ units_chart2 = StaticChartBlock(
     datasource=datasource,
     title="Units Analysis",
     chart_generator=plot_units_by_category,
-    subscribes_to=dummy_state
+    subscribes_to=dummy_state,
 )
+
 
 # Text blocks
 def header_content_generator(df):
-    return html.Div([
-        html.H2("Advanced Layout Features Demo"),
-        html.P("This example shows custom row and column options.")
-    ])
+    return html.Div(
+        [
+            html.H2("Advanced Layout Features Demo"),
+            html.P("This example shows custom row and column options."),
+        ]
+    )
+
 
 header_text = TextBlock(
     block_id="header",
     datasource=datasource,
     content_generator=header_content_generator,
-    subscribes_to=dummy_state
+    subscribes_to=dummy_state,
 )
 
 # 3. Demonstrate advanced layout features with custom options
@@ -111,25 +119,34 @@ dashboard_page = DashboardPage(
     title="Advanced Layout Features",
     blocks=[
         # Row 1: Header with custom styling
-        ([(header_text, {'md': 12, 'className': 'text-center bg-light p-3'})], 
-         {'className': 'mb-4', 'style': {'backgroundColor': '#f8f9fa'}}),
-        
+        (
+            [(header_text, {"md": 12, "className": "text-center bg-light p-3"})],
+            {"className": "mb-4", "style": {"backgroundColor": "#f8f9fa"}},
+        ),
         # Row 2: KPI row with custom gap and alignment
-        ([(total_sales_kpi, {'md': 4, 'className': 'border rounded p-2'}),
-          (total_units_kpi, {'md': 4, 'className': 'border rounded p-2'}),
-          (avg_price_kpi, {'md': 4, 'className': 'border rounded p-2'})],
-         {'g': 3, 'justify': 'center', 'className': 'mb-4'}),
-        
+        (
+            [
+                (total_sales_kpi, {"md": 4, "className": "border rounded p-2"}),
+                (total_units_kpi, {"md": 4, "className": "border rounded p-2"}),
+                (avg_price_kpi, {"md": 4, "className": "border rounded p-2"}),
+            ],
+            {"g": 3, "justify": "center", "className": "mb-4"},
+        ),
         # Row 3: Two charts with responsive breakpoints
-        ([(sales_chart, {'xs': 6, 'sm': 6, 'md': 8, 'lg': 8, 'xl': 8}),
-          (units_chart, {'xs': 6, 'sm': 6, 'md': 4, 'lg': 4, 'xl': 4})],
-         {'align': 'start', 'className': 'mb-4'}),
-        
+        (
+            [
+                (sales_chart, {"xs": 6, "sm": 6, "md": 8, "lg": 8, "xl": 8}),
+                (units_chart, {"xs": 6, "sm": 6, "md": 4, "lg": 4, "xl": 4}),
+            ],
+            {"align": "start", "className": "mb-4"},
+        ),
         # Row 4: Single chart with offset
-        ([(units_chart2, {'md': 6, 'offset': 3, 'className': 'border shadow-sm'})],
-         {'className': 'mb-4'})
+        (
+            [(units_chart2, {"md": 6, "offset": 3, "className": "border shadow-sm"})],
+            {"className": "mb-4"},
+        ),
     ],
-    theme=dbc.themes.BOOTSTRAP
+    theme=dbc.themes.BOOTSTRAP,
 )
 
 # 4. Set up and run the Dash app

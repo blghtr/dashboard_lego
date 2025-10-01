@@ -3,7 +3,8 @@ Simplified End-to-End tests for dashboard functionality.
 
 :hierarchy: [Testing | Integration Tests | Simple E2E]
 :relates-to:
- - motivated_by: "TEST_PLAN.md: Уровень 3.1 - End-to-End тесты (упрощенная версия)"
+ - motivated_by: "Architectural Conclusion: End-to-end tests validate
+   complete dashboard functionality and user workflows"
  - implements: "test_suite: 'SimpleDashboardE2E'"
 
 :strategy: "Use pytest with real data but simplified state management"
@@ -13,19 +14,20 @@ Simplified End-to-End tests for dashboard functionality.
 
 """
 
-import pytest
-import pandas as pd
-import tempfile
 import os
-from unittest.mock import patch, MagicMock
+import tempfile
+from unittest.mock import MagicMock, patch
 
+import pandas as pd
+import pytest
+
+from blocks.chart import StaticChartBlock
+from blocks.kpi import KPIBlock
+from blocks.text import TextBlock
 from core.datasource import BaseDataSource
 from core.page import DashboardPage
-from blocks.kpi import KPIBlock
-from blocks.chart import StaticChartBlock
-from blocks.text import TextBlock
-from presets.ml_presets import MetricCardBlock, ModelSummaryBlock
 from presets.eda_presets import CorrelationHeatmapPreset
+from presets.ml_presets import MetricCardBlock, ModelSummaryBlock
 
 
 class TestSimpleDashboardE2E:
@@ -62,7 +64,7 @@ class TestSimpleDashboardE2E:
 
         """
         # Create temporary CSV file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             sample_csv_data.to_csv(f.name, index=False)
             csv_path = f.name
 
@@ -77,7 +79,7 @@ class TestSimpleDashboardE2E:
                         return {}
                     return {
                         "total_sales": self._data["Sales"].sum(),
-                        "total_units": self._data["UnitsSold"].sum()
+                        "total_units": self._data["UnitsSold"].sum(),
                     }
 
                 def get_filter_options(self, filter_name: str) -> list:
@@ -103,13 +105,14 @@ class TestSimpleDashboardE2E:
                 datasource=datasource,
                 kpi_definitions=[
                     {"key": "total_sales", "title": "Total Sales", "color": "success"},
-                    {"key": "total_units", "title": "Total Units", "color": "info"}
+                    {"key": "total_units", "title": "Total Units", "color": "info"},
                 ],
-                subscribes_to="dummy_state"
+                subscribes_to="dummy_state",
             )
 
             def chart_generator(df: pd.DataFrame):
                 import plotly.express as px
+
                 return px.bar(df, x="Fruit", y="Sales", title="Sales by Fruit")
 
             chart_block = StaticChartBlock(
@@ -117,7 +120,7 @@ class TestSimpleDashboardE2E:
                 datasource=datasource,
                 title="Sales Chart",
                 chart_generator=chart_generator,
-                subscribes_to="dummy_state"
+                subscribes_to="dummy_state",
             )
 
             # Validate blocks are created correctly
@@ -146,7 +149,7 @@ class TestSimpleDashboardE2E:
 
         """
         # Create temporary CSV file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             sample_csv_data.to_csv(f.name, index=False)
             csv_path = f.name
 
@@ -161,7 +164,7 @@ class TestSimpleDashboardE2E:
                         return {}
                     return {
                         "total_sales": float(self._data["Sales"].sum()),
-                        "total_units": int(self._data["UnitsSold"].sum())
+                        "total_units": int(self._data["UnitsSold"].sum()),
                     }
 
                 def get_filter_options(self, filter_name: str) -> list:
@@ -205,7 +208,7 @@ class TestSimpleDashboardE2E:
 
         """
         # Create temporary CSV file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             sample_csv_data.to_csv(f.name, index=False)
             csv_path = f.name
 
@@ -221,7 +224,7 @@ class TestSimpleDashboardE2E:
                     return {
                         "total_sales": float(self._data["Sales"].sum()),
                         "total_units": int(self._data["UnitsSold"].sum()),
-                        "avg_price": float(self._data["Sales"].mean())
+                        "avg_price": float(self._data["Sales"].mean()),
                     }
 
                 def get_filter_options(self, filter_name: str) -> list:
@@ -241,13 +244,14 @@ class TestSimpleDashboardE2E:
                 kpi_definitions=[
                     {"key": "total_sales", "title": "Total Sales", "color": "success"},
                     {"key": "total_units", "title": "Total Units", "color": "info"},
-                    {"key": "avg_price", "title": "Average Price", "color": "warning"}
+                    {"key": "avg_price", "title": "Average Price", "color": "warning"},
                 ],
-                subscribes_to="dummy_state"
+                subscribes_to="dummy_state",
             )
 
             def chart_generator(df: pd.DataFrame):
                 import plotly.express as px
+
                 return px.bar(df, x="Fruit", y="Sales", title="Sales Analysis")
 
             chart_block = StaticChartBlock(
@@ -255,7 +259,7 @@ class TestSimpleDashboardE2E:
                 datasource=datasource,
                 title="Sales Chart",
                 chart_generator=chart_generator,
-                subscribes_to="dummy_state"
+                subscribes_to="dummy_state",
             )
 
             def text_generator(df: pd.DataFrame):
@@ -266,7 +270,7 @@ class TestSimpleDashboardE2E:
                 datasource=datasource,
                 subscribes_to="dummy_state",
                 content_generator=text_generator,
-                title="Dashboard Info"
+                title="Dashboard Info",
             )
 
             # Validate all blocks are properly created
@@ -315,7 +319,7 @@ class TestPresetDashboardE2E:
 
         """
         # Create temporary CSV file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             sample_csv_data.to_csv(f.name, index=False)
             csv_path = f.name
 
@@ -342,7 +346,7 @@ class TestPresetDashboardE2E:
             correlation_preset = CorrelationHeatmapPreset(
                 block_id="eda_correlation",
                 datasource=datasource,
-                subscribes_to="dummy_state"
+                subscribes_to="dummy_state",
             )
 
             # Validate EDA preset
@@ -369,7 +373,7 @@ class TestPresetDashboardE2E:
 
         """
         # Create temporary CSV file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             sample_csv_data.to_csv(f.name, index=False)
             csv_path = f.name
 
@@ -380,11 +384,7 @@ class TestPresetDashboardE2E:
                     return pd.read_csv(csv_path)
 
                 def get_kpis(self) -> dict:
-                    return {
-                        "accuracy": 0.95,
-                        "precision": 0.87,
-                        "recall": 0.92
-                    }
+                    return {"accuracy": 0.95, "precision": 0.87, "recall": 0.92}
 
                 def get_filter_options(self, filter_name: str) -> list:
                     return []
@@ -396,7 +396,7 @@ class TestPresetDashboardE2E:
                     return {
                         "algorithm": "Random Forest",
                         "n_estimators": 100,
-                        "max_depth": 10
+                        "max_depth": 10,
                     }
 
             # Initialize data source
@@ -410,15 +410,13 @@ class TestPresetDashboardE2E:
                 kpi_definitions=[
                     {"key": "accuracy", "title": "Accuracy"},
                     {"key": "precision", "title": "Precision"},
-                    {"key": "recall", "title": "Recall"}
+                    {"key": "recall", "title": "Recall"},
                 ],
-                subscribes_to="dummy_state"
+                subscribes_to="dummy_state",
             )
 
             summary_block = ModelSummaryBlock(
-                block_id="ml_summary",
-                datasource=datasource,
-                title="Model Summary"
+                block_id="ml_summary", datasource=datasource, title="Model Summary"
             )
 
             # Validate ML presets

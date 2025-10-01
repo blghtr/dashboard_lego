@@ -3,7 +3,8 @@ Tests for ML presets module.
 
 :hierarchy: [Testing | Unit Tests | ML Presets]
 :relates-to:
- - motivated_by: "TEST_PLAN.md: Уровень 2.4 - Тесты для presets/ml_presets.py"
+ - motivated_by: "Architectural Conclusion: ML presets require comprehensive
+   testing to ensure reliable model evaluation visualizations"
  - implements: "test_suite: 'MLPresets'"
 
 :strategy: "Use pytest with fixtures and mocking for isolation"
@@ -13,25 +14,27 @@ Tests for ML presets module.
 
 """
 
-import pytest
-import pandas as pd
-from unittest.mock import MagicMock, patch
-from dash import html
-import dash_bootstrap_components as dbc
-import sys
 import os
+import sys
+from unittest.mock import MagicMock, patch
+
+import dash_bootstrap_components as dbc
+import pandas as pd
+import pytest
+from dash import html
 
 # Add project root to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
+from core.chart_context import ChartContext
 from presets.ml_presets import (
+    ConfusionMatrixPreset,
+    FeatureImportancePreset,
     MetricCardBlock,
     ModelSummaryBlock,
-    ConfusionMatrixPreset,
     RocAucCurvePreset,
-    FeatureImportancePreset
 )
-from core.chart_context import ChartContext
+
 
 def create_chart_context(datasource, controls=None):
     """Helper function to create ChartContext for tests."""
@@ -77,17 +80,17 @@ class TestMetricCardBlock:
         mock_ds = datasource_factory()
         kpi_definitions = [
             {"key": "accuracy", "title": "Accuracy"},
-            {"key": "precision", "title": "Precision"}
+            {"key": "precision", "title": "Precision"},
         ]
-        
+
         block = MetricCardBlock(
             block_id="test_metrics",
             datasource=mock_ds,
             kpi_definitions=kpi_definitions,
             subscribes_to="test_state",
-            title="Test Metrics"
+            title="Test Metrics",
         )
-        
+
         assert block.block_id == "test_metrics"
         assert block.title == "Test Metrics"
         assert block.kpi_definitions == kpi_definitions
@@ -112,24 +115,24 @@ class TestMetricCardBlock:
         mock_ds.get_kpis.return_value = {
             "accuracy": 0.95,
             "precision": 0.87,
-            "recall": 0.92
+            "recall": 0.92,
         }
-        
+
         kpi_definitions = [
             {"key": "accuracy", "title": "Accuracy"},
             {"key": "precision", "title": "Precision"},
-            {"key": "recall", "title": "Recall"}
+            {"key": "recall", "title": "Recall"},
         ]
-        
+
         block = MetricCardBlock(
             block_id="test_metrics",
             datasource=mock_ds,
             kpi_definitions=kpi_definitions,
-            subscribes_to="test_state"
+            subscribes_to="test_state",
         )
-        
+
         result = block._update_kpi_cards()
-        
+
         assert isinstance(result, html.Div)
         assert isinstance(result.children, dbc.Card)
 
@@ -151,16 +154,16 @@ class TestMetricCardBlock:
         """
         mock_ds = datasource_factory()
         mock_ds.get_kpis.return_value = None
-        
+
         block = MetricCardBlock(
             block_id="test_metrics",
             datasource=mock_ds,
             kpi_definitions=[],
-            subscribes_to="test_state"
+            subscribes_to="test_state",
         )
-        
+
         result = block._update_kpi_cards()
-        
+
         assert isinstance(result, html.Div)
         assert isinstance(result.children, dbc.Alert)
 
@@ -199,13 +202,11 @@ class TestModelSummaryBlock:
 
         """
         mock_ds = datasource_factory()
-        
+
         block = ModelSummaryBlock(
-            block_id="test_summary",
-            datasource=mock_ds,
-            title="Test Summary"
+            block_id="test_summary", datasource=mock_ds, title="Test Summary"
         )
-        
+
         assert block.block_id == "test_summary"
         assert block.title == "Test Summary"
 
@@ -226,20 +227,19 @@ class TestModelSummaryBlock:
 
         """
         mock_ds = datasource_factory()
-        mock_ds.get_summary_data = MagicMock(return_value={
-            "algorithm": "Random Forest",
-            "n_estimators": 100,
-            "max_depth": 10,
-            "random_state": 42
-        })
-        
-        block = ModelSummaryBlock(
-            block_id="test_summary",
-            datasource=mock_ds
+        mock_ds.get_summary_data = MagicMock(
+            return_value={
+                "algorithm": "Random Forest",
+                "n_estimators": 100,
+                "max_depth": 10,
+                "random_state": 42,
+            }
         )
-        
+
+        block = ModelSummaryBlock(block_id="test_summary", datasource=mock_ds)
+
         result = block.layout()
-        
+
         assert isinstance(result, html.Div)
         assert isinstance(result.children, dbc.Card)
 
@@ -261,14 +261,11 @@ class TestModelSummaryBlock:
         """
         mock_ds = datasource_factory()
         mock_ds.get_summary_data = MagicMock(return_value=None)
-        
-        block = ModelSummaryBlock(
-            block_id="test_summary",
-            datasource=mock_ds
-        )
-        
+
+        block = ModelSummaryBlock(block_id="test_summary", datasource=mock_ds)
+
         result = block.layout()
-        
+
         assert isinstance(result, html.Div)
         assert isinstance(result.children, dbc.Alert)
 
@@ -307,14 +304,14 @@ class TestConfusionMatrixPreset:
 
         """
         mock_ds = datasource_factory()
-        
+
         preset = ConfusionMatrixPreset(
             block_id="test_cm",
             datasource=mock_ds,
             y_true_col="y_true",
-            y_pred_col="y_pred"
+            y_pred_col="y_pred",
         )
-        
+
         assert preset.block_id == "test_cm"
         assert preset.y_true_col == "y_true"
         assert preset.y_pred_col == "y_pred"
@@ -336,27 +333,24 @@ class TestConfusionMatrixPreset:
 
         """
         mock_ds = datasource_factory()
-        
+
         preset = ConfusionMatrixPreset(
             block_id="test_cm",
             datasource=mock_ds,
             y_true_col="y_true",
-            y_pred_col="y_pred"
+            y_pred_col="y_pred",
         )
-        
+
         # Create test data
-        df = pd.DataFrame({
-            "y_true": [0, 1, 0, 1, 0, 1],
-            "y_pred": [0, 1, 1, 1, 0, 0]
-        })
-        
-        with patch('presets.ml_presets.px') as mock_px:
+        df = pd.DataFrame({"y_true": [0, 1, 0, 1, 0, 1], "y_pred": [0, 1, 1, 1, 0, 0]})
+
+        with patch("presets.ml_presets.px") as mock_px:
             mock_fig = MagicMock()
             mock_px.imshow.return_value = mock_fig
-            
+
             ctx = create_chart_context(mock_ds)
             result = preset._generate_chart(df, ctx)
-            
+
             assert result == mock_fig
             mock_px.imshow.assert_called_once()
 
@@ -395,14 +389,14 @@ class TestRocAucCurvePreset:
 
         """
         mock_ds = datasource_factory()
-        
+
         preset = RocAucCurvePreset(
             block_id="test_roc",
             datasource=mock_ds,
             y_true_col="y_true",
-            y_score_cols=["score"]
+            y_score_cols=["score"],
         )
-        
+
         assert preset.block_id == "test_roc"
         assert preset.y_true_col == "y_true"
         assert preset.y_score_cols == ["score"]
@@ -424,27 +418,26 @@ class TestRocAucCurvePreset:
 
         """
         mock_ds = datasource_factory()
-        
+
         preset = RocAucCurvePreset(
             block_id="test_roc",
             datasource=mock_ds,
             y_true_col="y_true",
-            y_score_cols=["score"]
+            y_score_cols=["score"],
         )
-        
+
         # Create binary classification test data
-        df = pd.DataFrame({
-            "y_true": [0, 1, 0, 1, 0, 1],
-            "score": [0.1, 0.8, 0.3, 0.9, 0.2, 0.7]
-        })
-        
-        with patch('presets.ml_presets.go') as mock_go:
+        df = pd.DataFrame(
+            {"y_true": [0, 1, 0, 1, 0, 1], "score": [0.1, 0.8, 0.3, 0.9, 0.2, 0.7]}
+        )
+
+        with patch("presets.ml_presets.go") as mock_go:
             mock_fig = MagicMock()
             mock_go.Figure.return_value = mock_fig
-            
+
             ctx = create_chart_context(mock_ds)
             result = preset._generate_chart(df, ctx)
-            
+
             assert result == mock_fig
 
     def test_roc_auc_multiclass_classification(self, datasource_factory):
@@ -464,29 +457,31 @@ class TestRocAucCurvePreset:
 
         """
         mock_ds = datasource_factory()
-        
+
         preset = RocAucCurvePreset(
             block_id="test_roc",
             datasource=mock_ds,
             y_true_col="y_true",
-            y_score_cols=["score_0", "score_1", "score_2"]
+            y_score_cols=["score_0", "score_1", "score_2"],
         )
-        
+
         # Create multiclass classification test data
-        df = pd.DataFrame({
-            "y_true": [0, 1, 2, 0, 1, 2],
-            "score_0": [0.8, 0.1, 0.2, 0.9, 0.1, 0.1],
-            "score_1": [0.1, 0.8, 0.1, 0.1, 0.9, 0.1],
-            "score_2": [0.1, 0.1, 0.7, 0.0, 0.0, 0.8]
-        })
-        
-        with patch('presets.ml_presets.go') as mock_go:
+        df = pd.DataFrame(
+            {
+                "y_true": [0, 1, 2, 0, 1, 2],
+                "score_0": [0.8, 0.1, 0.2, 0.9, 0.1, 0.1],
+                "score_1": [0.1, 0.8, 0.1, 0.1, 0.9, 0.1],
+                "score_2": [0.1, 0.1, 0.7, 0.0, 0.0, 0.8],
+            }
+        )
+
+        with patch("presets.ml_presets.go") as mock_go:
             mock_fig = MagicMock()
             mock_go.Figure.return_value = mock_fig
-            
+
             ctx = create_chart_context(mock_ds)
             result = preset._generate_chart(df, ctx)
-            
+
             assert result == mock_fig
 
 
@@ -524,14 +519,14 @@ class TestFeatureImportancePreset:
 
         """
         mock_ds = datasource_factory()
-        
+
         preset = FeatureImportancePreset(
             block_id="test_fi",
             datasource=mock_ds,
             feature_col="feature",
-            importance_col="importance"
+            importance_col="importance",
         )
-        
+
         assert preset.block_id == "test_fi"
         assert preset.feature_col == "feature"
         assert preset.importance_col == "importance"
@@ -553,26 +548,28 @@ class TestFeatureImportancePreset:
 
         """
         mock_ds = datasource_factory()
-        
+
         preset = FeatureImportancePreset(
             block_id="test_fi",
             datasource=mock_ds,
             feature_col="feature",
-            importance_col="importance"
+            importance_col="importance",
         )
-        
+
         # Create test data
-        df = pd.DataFrame({
-            "feature": ["feature_A", "feature_B", "feature_C"],
-            "importance": [0.1, 0.8, 0.3]
-        })
-        
-        with patch('presets.ml_presets.px') as mock_px:
+        df = pd.DataFrame(
+            {
+                "feature": ["feature_A", "feature_B", "feature_C"],
+                "importance": [0.1, 0.8, 0.3],
+            }
+        )
+
+        with patch("presets.ml_presets.px") as mock_px:
             mock_fig = MagicMock()
             mock_px.bar.return_value = mock_fig
-            
+
             ctx = create_chart_context(mock_ds)
             result = preset._generate_chart(df, ctx)
-            
+
             assert result == mock_fig
             mock_px.bar.assert_called_once()

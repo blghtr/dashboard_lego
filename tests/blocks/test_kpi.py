@@ -2,29 +2,22 @@
 Unit tests for the KPIBlock class.
 
 """
-import pytest
+
 import dash_bootstrap_components as dbc
-from dash import html, dcc
+import pytest
+from dash import dcc, html
 
 from blocks.kpi import KPIBlock
+
 
 @pytest.fixture
 def kpi_definitions():
     return [
-        {
-            "key": "total_sales",
-            "title": "Total Sales",
-            "color": "success"
-        },
-        {
-            "key": "avg_order_value",
-            "title": "Average Order Value"
-        },
-        {
-            "key": "status",
-            "title": "Status"
-        }
+        {"key": "total_sales", "title": "Total Sales", "color": "success"},
+        {"key": "avg_order_value", "title": "Average Order Value"},
+        {"key": "status", "title": "Status"},
     ]
+
 
 def test_kpi_block_layout(datasource_factory):
     """
@@ -32,21 +25,23 @@ def test_kpi_block_layout(datasource_factory):
 
     """
     mock_ds = datasource_factory()
-    block = KPIBlock(block_id="test_kpi", datasource=mock_ds, kpi_definitions=[], subscribes_to="some_state")
+    block = KPIBlock(
+        block_id="test_kpi",
+        datasource=mock_ds,
+        kpi_definitions=[],
+        subscribes_to="some_state",
+    )
     layout = block.layout()
     assert isinstance(layout, dcc.Loading)
     assert layout.children.id == "test_kpi-container"
+
 
 def test_update_kpi_cards_success(datasource_factory, kpi_definitions):
     """
     Tests the successful generation of KPI cards with correct formatting.
 
     """
-    mock_data = {
-        "total_sales": 1234567,
-        "avg_order_value": 123.456,
-        "status": "Active"
-    }
+    mock_data = {"total_sales": 1234567, "avg_order_value": 123.456, "status": "Active"}
     mock_ds = datasource_factory(get_kpis=mock_data)
     block = KPIBlock("sales_kpis", mock_ds, kpi_definitions, "filters_changed")
 
@@ -65,11 +60,12 @@ def test_update_kpi_cards_success(datasource_factory, kpi_definitions):
     card2_body = row.children[1].children.children
     assert card2_body.children[0].children == "123.46"  # Float formatting (default .2f)
     assert card2_body.children[1].children == "Average Order Value"
-    assert "bg-primary" in row.children[1].children.className # Default color
+    assert "bg-primary" in row.children[1].children.className  # Default color
 
     card3_body = row.children[2].children.children
     assert card3_body.children[0].children == "Active"  # String formatting
     assert card3_body.children[1].children == "Status"
+
 
 def test_update_kpi_cards_no_data(datasource_factory, kpi_definitions):
     """
@@ -82,6 +78,7 @@ def test_update_kpi_cards_no_data(datasource_factory, kpi_definitions):
     alert = block._update_kpi_cards()
     assert isinstance(alert, dbc.Alert)
     assert alert.children == "Нет данных для KPI."
+
 
 def test_update_kpi_cards_error(datasource_factory, kpi_definitions):
     """

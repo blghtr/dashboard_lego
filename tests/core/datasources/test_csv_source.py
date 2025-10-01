@@ -3,7 +3,8 @@ Tests for the CsvDataSource.
 
 :hierarchy: [Testing | Unit Tests | Core | Datasources | CsvDataSource]
 :relates-to:
- - motivated_by: "TEST_PLAN.md: Need to cover core/datasources/csv_source.py"
+ - motivated_by: "Architectural Conclusion: CSV data source requires testing
+   to ensure reliable data loading and caching functionality"
  - implements: "test_suite: 'CsvDataSource'"
 
 :strategy: "Use pytest with tmp_path fixtures to create temporary CSV files for isolated testing."
@@ -12,11 +13,14 @@ Tests for the CsvDataSource.
  - post: "All tests for CsvDataSource pass and code coverage is 100%."
 
 """
-import pytest
-import pandas as pd
+
 from unittest.mock import patch
 
+import pandas as pd
+import pytest
+
 from core.datasources.csv_source import CsvDataSource
+
 
 @pytest.fixture
 def sample_csv_path(tmp_path):
@@ -33,6 +37,7 @@ def sample_csv_path(tmp_path):
     csv_file = tmp_path / "sample.csv"
     csv_file.write_text(csv_content)
     return str(csv_file)
+
 
 def test_csv_source_loads_file(sample_csv_path):
     """
@@ -59,7 +64,8 @@ def test_csv_source_loads_file(sample_csv_path):
     assert isinstance(data, pd.DataFrame)
     assert data.shape == (4, 3)
     assert list(data.columns) == ["col1", "col2", "col3"]
-    assert data['col1'].tolist() == [1, 2, 3, 4]
+    assert data["col1"].tolist() == [1, 2, 3, 4]
+
 
 def test_csv_source_invalid_path():
     """
@@ -85,6 +91,7 @@ def test_csv_source_invalid_path():
     assert result is False
     assert data.empty
 
+
 def test_csv_source_with_filters(sample_csv_path):
     """
     Tests that CsvDataSource correctly applies filters to the loaded data.
@@ -103,13 +110,14 @@ def test_csv_source_with_filters(sample_csv_path):
     filters = ["col1 > 2", "col3 == True"]
 
     # Act
-    assert source.init_data(params={'filters': filters}) is True
+    assert source.init_data(params={"filters": filters}) is True
     data = source.get_processed_data()
 
     # Assert
     assert data is not None
     assert data.shape == (2, 3)
-    assert data['col1'].tolist() == [3, 4]
+    assert data["col1"].tolist() == [3, 4]
+
 
 def test_csv_source_caching(sample_csv_path):
     """
@@ -126,15 +134,16 @@ def test_csv_source_caching(sample_csv_path):
     """
     # Arrange
     source = CsvDataSource(file_path=sample_csv_path)
-    
+
     # Act
-    with patch.object(source, '_load_data', wraps=source._load_data) as mock_load_data:
+    with patch.object(source, "_load_data", wraps=source._load_data) as mock_load_data:
         source.init_data()  # First call, should trigger load
         source.init_data()  # Second call, should use cache
         source.init_data()  # Third call, should use cache
 
     # Assert
     mock_load_data.assert_called_once()
+
 
 def test_csv_source_with_custom_delimiter(tmp_path):
     """
@@ -153,8 +162,8 @@ def test_csv_source_with_custom_delimiter(tmp_path):
     csv_content = "col1;col2\n1;a\n2;b"
     csv_file = tmp_path / "sample_semi.csv"
     csv_file.write_text(csv_content)
-    
-    options = {'delimiter': ';'}
+
+    options = {"delimiter": ";"}
     source = CsvDataSource(file_path=str(csv_file), read_csv_options=options)
 
     # Act
@@ -164,6 +173,7 @@ def test_csv_source_with_custom_delimiter(tmp_path):
     # Assert
     assert data.shape == (2, 2)
     assert list(data.columns) == ["col1", "col2"]
+
 
 def test_csv_source_empty_file(tmp_path):
     """
@@ -180,8 +190,8 @@ def test_csv_source_empty_file(tmp_path):
     """
     # Arrange
     csv_file = tmp_path / "empty.csv"
-    csv_file.write_text("col1,col2") # Header only
-    
+    csv_file.write_text("col1,col2")  # Header only
+
     source = CsvDataSource(file_path=str(csv_file))
 
     # Act
@@ -191,6 +201,7 @@ def test_csv_source_empty_file(tmp_path):
     # Assert
     assert data.empty
     assert data.shape == (0, 2)
+
 
 def test_placeholder_methods(sample_csv_path):
     """
@@ -210,7 +221,8 @@ def test_placeholder_methods(sample_csv_path):
 
     # Act & Assert
     assert source.get_kpis() == {}
-    assert source.get_filter_options('any_filter') == []
+    assert source.get_filter_options("any_filter") == []
+
 
 def test_get_summary(sample_csv_path):
     """
@@ -237,6 +249,7 @@ def test_get_summary(sample_csv_path):
     summary = source.get_summary()
     assert summary.startswith("CSV data loaded from")
     assert "Shape: (4, 3)" in summary
+
 
 def test_get_processed_data_before_init(sample_csv_path):
     """

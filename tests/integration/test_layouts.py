@@ -18,17 +18,17 @@ from typing import Any
 
 from dash import html
 
-from core.page import DashboardPage
-from presets.layouts import (
-    one_column,
-    two_column_6_6,
-    two_column_8_4,
-    three_column_4_4_4,
-    sidebar_main_3_9,
-    kpi_row_top,
-)
 from blocks.base import BaseBlock
 from core.datasource import BaseDataSource
+from core.page import DashboardPage
+from presets.layouts import (
+    kpi_row_top,
+    one_column,
+    sidebar_main_3_9,
+    three_column_4_4_4,
+    two_column_6_6,
+    two_column_8_4,
+)
 
 
 class _DummyBlock(BaseBlock):
@@ -82,6 +82,4 @@ def test_kpi_row_top_distributes_widths_evenly():
     assert len(rows) >= 2
     kpi_cols = rows[0].children
     assert len(kpi_cols) == 3
-    assert all(getattr(col, 'md', 0) == 4 for col in kpi_cols)
-
-
+    assert all(getattr(col, "md", 0) == 4 for col in kpi_cols)
