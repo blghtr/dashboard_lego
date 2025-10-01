@@ -1,12 +1,12 @@
 name: Publish to PyPI
 
+# Публикация происходит ТОЛЬКО при создании GitHub Release.
+# Теги сами по себе НЕ триггерят публикацию.
+
 on:
   release:
     types: [published]
-  push:
-    tags:
-      - 'v*'
-  workflow_dispatch:  # Позволяет запускать вручную
+  workflow_dispatch:  # Позволяет запускать вручную для тестирования
 
 jobs:
   build:
@@ -24,7 +24,9 @@ jobs:
         uses: astral-sh/setup-uv@v4
 
       - name: Build package
-        run: uv build
+        run: |
+          uv sync --all-extras
+          uv build
 
       - name: Check package with twine
         run: |
