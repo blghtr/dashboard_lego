@@ -7,19 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- Comprehensive documentation updates in English
-- Enhanced contributing guidelines with presets sections
-- Updated project description and metadata
+## [0.9.2] - 2025-10-01
 
 ### Changed
-- Documentation language changed from Russian to English
-- Improved code examples and installation instructions
+- **BREAKING CHANGE**: Restructured package to src-layout architecture
+  - All modules moved to `src/dashboard_lego/` directory
+  - All imports must now use `dashboard_lego.*` prefix (e.g., `from dashboard_lego.blocks import ...`)
+  - Migration: `from blocks.chart import X` → `from dashboard_lego.blocks.chart import X`
+- Updated package metadata with author information and project URLs
+- Improved CI workflows with updated paths for new structure
+- Code formatting improvements (isort, flake8 compliance)
 
-## [0.9.0] - 2024-01-XX
+### Fixed
+- Package installation issue where only `.dist-info` was created without actual code modules
+- Import formatting and linter warnings in `__init__.py`
+
+### Added
+- PyPI publish workflow for automated releases
+- `__all__` export in main `__init__.py` for explicit module exports
+
+## [0.9.0] - 2025-10-01
 
 ### Added
 - Initial release of Dashboard Lego library
+- Comprehensive Sphinx documentation with automatic GitHub Pages deployment
+- CHANGELOG and CONTRIBUTING guidelines
+- Multiple example dashboards (simple, interactive, presets, ML, layouts)
 - Modular architecture with BaseBlock and BaseDataSource
 - Core dashboard components:
   - StaticChartBlock for non-interactive charts
