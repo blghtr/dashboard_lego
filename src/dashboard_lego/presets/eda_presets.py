@@ -3,6 +3,8 @@ This module contains pre-built blocks for common Exploratory Data Analysis (EDA)
 
 """
 
+from typing import Any, Dict, Optional
+
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -31,15 +33,32 @@ class CorrelationHeatmapPreset(StaticChartBlock):
         datasource: BaseDataSource,
         subscribes_to: str,
         title: str = "Correlation Heatmap",
+        # Style customization parameters (inherited from StaticChartBlock)
+        card_style: Optional[Dict[str, Any]] = None,
+        card_className: Optional[str] = None,
+        title_style: Optional[Dict[str, Any]] = None,
+        title_className: Optional[str] = None,
+        loading_type: str = "default",
+        graph_config: Optional[Dict[str, Any]] = None,
+        graph_style: Optional[Dict[str, Any]] = None,
+        figure_layout: Optional[Dict[str, Any]] = None,
     ):
         """
-        Initializes the CorrelationHeatmapPreset.
+        Initializes the CorrelationHeatmapPreset with customizable styling.
 
         Args:
             block_id: A unique identifier for this block instance.
             datasource: An instance of a class that implements the BaseDataSource interface.
             subscribes_to: The state ID to which this block subscribes to receive updates.
             title: The title to be displayed on the chart card.
+            card_style: Optional style dictionary for the card component.
+            card_className: Optional CSS class name for the card component.
+            title_style: Optional style dictionary for the title component.
+            title_className: Optional CSS class name for the title component.
+            loading_type: Type of loading indicator to display.
+            graph_config: Optional configuration for the Plotly graph.
+            graph_style: Optional style dictionary for the graph component.
+            figure_layout: Optional layout overrides for the Plotly figure.
 
         """
         super().__init__(
@@ -48,6 +67,15 @@ class CorrelationHeatmapPreset(StaticChartBlock):
             title=title,
             chart_generator=self._create_heatmap,
             subscribes_to=subscribes_to,
+            # Pass through customization parameters
+            card_style=card_style,
+            card_className=card_className,
+            title_style=title_style,
+            title_className=title_className,
+            loading_type=loading_type,
+            graph_config=graph_config,
+            graph_style=graph_style,
+            figure_layout=figure_layout,
         )
 
     def _create_heatmap(self, df: pd.DataFrame, ctx) -> go.Figure:
@@ -102,6 +130,17 @@ class GroupedHistogramPreset(InteractiveChartBlock):
         block_id: str,
         datasource: BaseDataSource,
         title: str = "Distribution Analysis",
+        # Style customization parameters (inherited from InteractiveChartBlock)
+        card_style: Optional[Dict[str, Any]] = None,
+        card_className: Optional[str] = None,
+        title_style: Optional[Dict[str, Any]] = None,
+        title_className: Optional[str] = None,
+        loading_type: str = "default",
+        graph_config: Optional[Dict[str, Any]] = None,
+        graph_style: Optional[Dict[str, Any]] = None,
+        figure_layout: Optional[Dict[str, Any]] = None,
+        controls_row_style: Optional[Dict[str, Any]] = None,
+        controls_row_className: Optional[str] = None,
     ):
         # Inspect the dataframe to find numerical and categorical columns
         df = datasource.get_processed_data()
@@ -142,6 +181,17 @@ class GroupedHistogramPreset(InteractiveChartBlock):
             title=title,
             chart_generator=self._create_histogram,
             controls=controls,
+            # Pass through customization parameters
+            card_style=card_style,
+            card_className=card_className,
+            title_style=title_style,
+            title_className=title_className,
+            loading_type=loading_type,
+            graph_config=graph_config,
+            graph_style=graph_style,
+            figure_layout=figure_layout,
+            controls_row_style=controls_row_style,
+            controls_row_className=controls_row_className,
         )
 
     def _create_histogram(self, df: pd.DataFrame, ctx) -> go.Figure:
@@ -191,15 +241,32 @@ class MissingValuesPreset(StaticChartBlock):
         datasource: BaseDataSource,
         subscribes_to: str,
         title: str = "Missing Values Analysis",
+        # Style customization parameters (inherited from StaticChartBlock)
+        card_style: Optional[Dict[str, Any]] = None,
+        card_className: Optional[str] = None,
+        title_style: Optional[Dict[str, Any]] = None,
+        title_className: Optional[str] = None,
+        loading_type: str = "default",
+        graph_config: Optional[Dict[str, Any]] = None,
+        graph_style: Optional[Dict[str, Any]] = None,
+        figure_layout: Optional[Dict[str, Any]] = None,
     ):
         """
-        Initializes the MissingValuesPreset.
+        Initializes the MissingValuesPreset with customizable styling.
 
         Args:
             block_id: A unique identifier for this block instance.
             datasource: An instance of a class that implements the BaseDataSource interface.
             subscribes_to: The state ID to which this block subscribes to receive updates.
             title: The title to be displayed on the chart card.
+            card_style: Optional style dictionary for the card component.
+            card_className: Optional CSS class name for the card component.
+            title_style: Optional style dictionary for the title component.
+            title_className: Optional CSS class name for the title component.
+            loading_type: Type of loading indicator to display.
+            graph_config: Optional configuration for the Plotly graph.
+            graph_style: Optional style dictionary for the graph component.
+            figure_layout: Optional layout overrides for the Plotly figure.
 
         """
         super().__init__(
@@ -208,6 +275,15 @@ class MissingValuesPreset(StaticChartBlock):
             title=title,
             chart_generator=self._create_missing_values_chart,
             subscribes_to=subscribes_to,
+            # Pass through customization parameters
+            card_style=card_style,
+            card_className=card_className,
+            title_style=title_style,
+            title_className=title_className,
+            loading_type=loading_type,
+            graph_config=graph_config,
+            graph_style=graph_style,
+            figure_layout=figure_layout,
         )
 
     def _create_missing_values_chart(self, df: pd.DataFrame, ctx) -> go.Figure:
@@ -268,6 +344,17 @@ class BoxPlotPreset(InteractiveChartBlock):
         block_id: str,
         datasource: BaseDataSource,
         title: str = "Distribution Comparison (Box Plot)",
+        # Style customization parameters (inherited from InteractiveChartBlock)
+        card_style: Optional[Dict[str, Any]] = None,
+        card_className: Optional[str] = None,
+        title_style: Optional[Dict[str, Any]] = None,
+        title_className: Optional[str] = None,
+        loading_type: str = "default",
+        graph_config: Optional[Dict[str, Any]] = None,
+        graph_style: Optional[Dict[str, Any]] = None,
+        figure_layout: Optional[Dict[str, Any]] = None,
+        controls_row_style: Optional[Dict[str, Any]] = None,
+        controls_row_className: Optional[str] = None,
     ):
         df = datasource.get_processed_data()
         numerical_cols = df.select_dtypes(include=["float64", "int64"]).columns.tolist()
@@ -311,6 +398,17 @@ class BoxPlotPreset(InteractiveChartBlock):
             title=title,
             chart_generator=self._create_box_plot,
             controls=controls,
+            # Pass through customization parameters
+            card_style=card_style,
+            card_className=card_className,
+            title_style=title_style,
+            title_className=title_className,
+            loading_type=loading_type,
+            graph_config=graph_config,
+            graph_style=graph_style,
+            figure_layout=figure_layout,
+            controls_row_style=controls_row_style,
+            controls_row_className=controls_row_className,
         )
 
     def _create_box_plot(self, df: pd.DataFrame, ctx) -> go.Figure:

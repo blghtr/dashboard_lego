@@ -31,20 +31,23 @@ class Control:
 class StaticChartBlock(BaseBlock):
     """
     A block for displaying a single chart that is updated by external state
-    changes.
+    changes with customizable styling options.
 
         :hierarchy: [Blocks | Charts | StaticChartBlock]
         :relates-to:
          - motivated_by: "PRD: Need to display visualizations that react to
-           global filters"
+           global filters with customizable styling"
          - implements: "block: 'StaticChartBlock'"
          - uses: ["interface: 'BaseBlock'"]
 
+        :rationale: "Enhanced with style customization parameters to allow
+         fine-grained control over appearance while maintaining backward
+         compatibility."
         :contract:
          - pre: "A valid `subscribes_to` state ID and a `chart_generator`
            function must be provided."
          - post: "The block renders a chart that updates when the subscribed
-           state changes."
+           state changes with customizable styling applied."
 
     """
 
@@ -55,9 +58,29 @@ class StaticChartBlock(BaseBlock):
         title: str,
         chart_generator: Callable,
         subscribes_to: str,
+        # Style customization parameters
+        card_style: Optional[Dict[str, Any]] = None,
+        card_className: Optional[str] = None,
+        title_style: Optional[Dict[str, Any]] = None,
+        title_className: Optional[str] = None,
+        loading_type: str = "default",
+        graph_config: Optional[Dict[str, Any]] = None,
+        graph_style: Optional[Dict[str, Any]] = None,
+        figure_layout: Optional[Dict[str, Any]] = None,
     ):
         self.title = title
         self.chart_generator = chart_generator
+
+        # Store style customization parameters
+        self.card_style = card_style
+        self.card_className = card_className
+        self.title_style = title_style
+        self.title_className = title_className
+        self.loading_type = loading_type
+        self.graph_config = graph_config or {}
+        self.graph_style = graph_style
+        self.figure_layout = figure_layout or {}
+
         super().__init__(
             block_id, datasource, subscribes={subscribes_to: self._update_chart}
         )
@@ -105,6 +128,10 @@ class StaticChartBlock(BaseBlock):
             # Use new ChartContext interface
             figure = self.chart_generator(df, ctx)
 
+            # Apply figure layout overrides if provided
+            if self.figure_layout:
+                figure.update_layout(**self.figure_layout)
+
             self.logger.debug(f"Chart updated successfully for {self.block_id}")
             return figure
         except Exception as e:
@@ -114,29 +141,66 @@ class StaticChartBlock(BaseBlock):
             return go.Figure()
 
     def layout(self) -> Component:
+        """
+        Returns the Dash component layout for the StaticChartBlock with customizable styling.
+
+        :hierarchy: [Blocks | Charts | StaticChartBlock | Layout]
+        :relates-to:
+         - motivated_by: "PRD: Need customizable styling for chart blocks"
+         - implements: "method: 'layout' with style overrides"
+         - uses: ["attribute: 'card_style'", "attribute: 'title_style'", "attribute: 'graph_config'"]
+
+        :rationale: "Applied style customization parameters to all major UI elements."
+        :contract:
+         - pre: "Block is properly initialized with style parameters."
+         - post: "Returns a styled Card component with customizable appearance."
+
+        """
         # Initialize with current chart instead of empty container
         initial_chart = self._update_chart()
+
+        # Build card props with style overrides
+        card_props = {
+            "className": self.card_className or "mb-4",
+        }
+        if self.card_style:
+            card_props["style"] = self.card_style
+
+        # Build title props with style overrides
+        title_props = {
+            "className": self.title_className or "card-title",
+        }
+        if self.title_style:
+            title_props["style"] = self.title_style
+
+        # Build graph props with style overrides
+        graph_props = {
+            "id": self._generate_id("container"),
+            "figure": initial_chart,
+            "config": self.graph_config,
+        }
+        if self.graph_style:
+            graph_props["style"] = self.graph_style
+
         return dbc.Card(
             dbc.CardBody(
                 [
-                    html.H4(self.title, className="card-title"),
+                    html.H4(self.title, **title_props),
                     dcc.Loading(
                         id=self._generate_id("loading"),
-                        type="default",
-                        children=dcc.Graph(
-                            id=self._generate_id("container"), figure=initial_chart
-                        ),
+                        type=self.loading_type,
+                        children=dcc.Graph(**graph_props),
                     ),
                 ]
             ),
-            className="mb-4",
+            **card_props,
         )
 
 
 class InteractiveChartBlock(BaseBlock):
     """
     A block for a chart that has its own interactive controls and can react
-    to global state.
+    to global state with customizable styling options.
 
     This block is both a publisher (for its own controls) and a subscriber
     (to its own controls and optionally to external states).
@@ -144,15 +208,17 @@ class InteractiveChartBlock(BaseBlock):
         :hierarchy: [Blocks | Charts | InteractiveChartBlock]
         :relates-to:
          - motivated_by: "PRD: Need self-contained, interactive charts with
-           their own controls"
+           their own controls and customizable styling"
          - implements: "block: 'InteractiveChartBlock'"
          - uses: ["interface: 'BaseBlock'", "dataclass: 'Control'"]
 
+        :rationale: "Enhanced with style customization parameters to allow fine-grained
+         control over appearance while maintaining backward compatibility."
         :contract:
          - pre: "A `chart_generator` function and a dictionary of `controls`
            must be provided."
          - post: "The block renders a chart with UI controls that update the
-           chart on interaction."
+           chart on interaction with customizable styling applied."
 
     """
 
@@ -164,10 +230,34 @@ class InteractiveChartBlock(BaseBlock):
         chart_generator: Callable,
         controls: Dict[str, Control],
         subscribes_to: Optional[List[str]] = None,
+        # Style customization parameters (inherited from StaticChartBlock)
+        card_style: Optional[Dict[str, Any]] = None,
+        card_className: Optional[str] = None,
+        title_style: Optional[Dict[str, Any]] = None,
+        title_className: Optional[str] = None,
+        loading_type: str = "default",
+        graph_config: Optional[Dict[str, Any]] = None,
+        graph_style: Optional[Dict[str, Any]] = None,
+        figure_layout: Optional[Dict[str, Any]] = None,
+        # Interactive-specific parameters
+        controls_row_style: Optional[Dict[str, Any]] = None,
+        controls_row_className: Optional[str] = None,
     ):
         self.title = title
         self.chart_generator = chart_generator
         self.controls = controls
+
+        # Store style customization parameters
+        self.card_style = card_style
+        self.card_className = card_className
+        self.title_style = title_style
+        self.title_className = title_className
+        self.loading_type = loading_type
+        self.graph_config = graph_config or {}
+        self.graph_style = graph_style
+        self.figure_layout = figure_layout or {}
+        self.controls_row_style = controls_row_style
+        self.controls_row_className = controls_row_className
 
         # Call super() FIRST to set self.block_id
         super().__init__(block_id, datasource)
@@ -232,6 +322,10 @@ class InteractiveChartBlock(BaseBlock):
 
             # Use new ChartContext interface
             figure = self.chart_generator(df, ctx)
+
+            # Apply figure layout overrides if provided
+            if self.figure_layout:
+                figure.update_layout(**self.figure_layout)
 
             self.logger.debug(
                 f"Interactive chart updated successfully for {self.block_id}"
@@ -319,6 +413,21 @@ class InteractiveChartBlock(BaseBlock):
         return self._update_chart(**kwargs)
 
     def layout(self) -> Component:
+        """
+        Returns the Dash component layout for the InteractiveChartBlock with customizable styling.
+
+        :hierarchy: [Blocks | Charts | InteractiveChartBlock | Layout]
+        :relates-to:
+         - motivated_by: "PRD: Need customizable styling for interactive chart blocks"
+         - implements: "method: 'layout' with style overrides"
+         - uses: ["attribute: 'card_style'", "attribute: 'title_style'", "attribute: 'controls_row_style'"]
+
+        :rationale: "Applied style customization parameters to all major UI elements including controls."
+        :contract:
+         - pre: "Block is properly initialized with style parameters."
+         - post: "Returns a styled Card component with customizable appearance and controls."
+
+        """
         # Initialize with current chart data using default control values
         initial_control_values = {}
         for key, control in self.controls.items():
@@ -328,6 +437,36 @@ class InteractiveChartBlock(BaseBlock):
 
         initial_chart = self._update_chart(**initial_control_values)
 
+        # Build card props with style overrides
+        card_props = {
+            "className": self.card_className or "mb-4",
+        }
+        if self.card_style:
+            card_props["style"] = self.card_style
+
+        # Build title props with style overrides
+        title_props = {
+            "className": self.title_className or "card-title",
+        }
+        if self.title_style:
+            title_props["style"] = self.title_style
+
+        # Build controls row props with style overrides
+        controls_row_props = {
+            "className": self.controls_row_className or "mb-3 align-items-center",
+        }
+        if self.controls_row_style:
+            controls_row_props["style"] = self.controls_row_style
+
+        # Build graph props with style overrides
+        graph_props = {
+            "id": self._generate_id("container"),
+            "figure": initial_chart,
+            "config": self.graph_config,
+        }
+        if self.graph_style:
+            graph_props["style"] = self.graph_style
+
         control_elements = [
             dbc.Col(
                 control.component(id=self._generate_id(key), **control.props),
@@ -335,19 +474,18 @@ class InteractiveChartBlock(BaseBlock):
             )
             for key, control in self.controls.items()
         ]
+
         return dbc.Card(
             dbc.CardBody(
                 [
-                    html.H4(self.title, className="card-title"),
-                    dbc.Row(control_elements, className="mb-3 align-items-center"),
+                    html.H4(self.title, **title_props),
+                    dbc.Row(control_elements, **controls_row_props),
                     dcc.Loading(
                         id=self._generate_id("loading"),
-                        type="default",
-                        children=dcc.Graph(
-                            id=self._generate_id("container"), figure=initial_chart
-                        ),
+                        type=self.loading_type,
+                        children=dcc.Graph(**graph_props),
                     ),
                 ]
             ),
-            className="mb-4",
+            **card_props,
         )

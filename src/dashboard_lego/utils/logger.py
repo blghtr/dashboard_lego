@@ -246,6 +246,28 @@ def setup_logging(level: Optional[str] = None, log_dir: Optional[str] = None) ->
     sys.stdout.flush()
     sys.stderr.flush()
 
+    # Configure exception hook to log unhandled exceptions
+    def exception_hook(exc_type, exc_value, exc_traceback):
+        """Log unhandled exceptions to file before program terminates."""
+        if issubclass(exc_type, KeyboardInterrupt):
+            # Don't log keyboard interrupts
+            sys.__excepthook__(exc_type, exc_value, exc_traceback)
+            return
+
+        root_logger.critical(
+            "Unhandled exception occurred",
+            exc_info=(exc_type, exc_value, exc_traceback),
+        )
+
+        # Force log flush to ensure it's written to file
+        for handler in root_logger.handlers:
+            handler.flush()
+
+        # Also call the default handler to print to stderr
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+
+    sys.excepthook = exception_hook
+
     # Log the initialization only when not in reloader subprocess
     if os.environ.get("WERKZEUG_RUN_MAIN") != "true":
         root_logger.info(f"Logging initialized: level={level}, log_dir={log_dir}")

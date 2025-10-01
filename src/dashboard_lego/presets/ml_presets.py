@@ -3,6 +3,8 @@ This module provides preset blocks for machine learning visualization.
 
 """
 
+from typing import Any, Dict, Optional
+
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
@@ -98,9 +100,27 @@ class ModelSummaryBlock(BaseBlock):
         block_id: str,
         datasource: BaseDataSource,
         title: str = "Model Summary",
+        # Style customization parameters
+        card_style: Optional[Dict[str, Any]] = None,
+        card_className: Optional[str] = None,
+        title_style: Optional[Dict[str, Any]] = None,
+        title_className: Optional[str] = None,
+        content_style: Optional[Dict[str, Any]] = None,
+        content_className: Optional[str] = None,
+        loading_type: str = "default",
         **kwargs,
     ):
         self.title = title
+
+        # Store style customization parameters
+        self.card_style = card_style
+        self.card_className = card_className
+        self.title_style = title_style
+        self.title_className = title_className
+        self.content_style = content_style
+        self.content_className = content_className
+        self.loading_type = loading_type
+
         super().__init__(block_id, datasource, **kwargs)
 
     def layout(self) -> html.Div:
@@ -113,12 +133,36 @@ class ModelSummaryBlock(BaseBlock):
         for key, value in summary_data.items():
             list_group_items.append(dbc.ListGroupItem([html.B(f"{key}: "), str(value)]))
 
+        # Build card props with style overrides
+        card_props = {
+            "className": self.card_className or "mb-4",
+        }
+        if self.card_style:
+            card_props["style"] = self.card_style
+
+        # Build title props with style overrides
+        title_props = {
+            "className": self.title_className or "card-header",
+        }
+        if self.title_style:
+            title_props["style"] = self.title_style
+
+        # Build content props with style overrides
+        content_props = {}
+        if self.content_style:
+            content_props["style"] = self.content_style
+        if self.content_className:
+            content_props["className"] = self.content_className
+
         return html.Div(
             dbc.Card(
                 [
-                    dbc.CardHeader(self.title),
-                    dbc.CardBody(dbc.ListGroup(list_group_items, flush=True)),
-                ]
+                    dbc.CardHeader(self.title, **title_props),
+                    dbc.CardBody(
+                        dbc.ListGroup(list_group_items, flush=True), **content_props
+                    ),
+                ],
+                **card_props,
             )
         )
 

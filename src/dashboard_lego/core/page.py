@@ -13,6 +13,7 @@ from dash.development.base_component import Component
 
 from dashboard_lego.blocks.base import BaseBlock
 from dashboard_lego.core.state import StateManager
+from dashboard_lego.core.theme import ThemeConfig
 from dashboard_lego.utils.exceptions import ConfigurationError
 from dashboard_lego.utils.logger import get_logger
 
@@ -42,18 +43,18 @@ class NavigationSection:
 @dataclass
 class NavigationConfig:
     """
-    Configuration for navigation panel in DashboardPage.
+    Configuration for navigation panel in DashboardPage with customizable styling.
 
         :hierarchy: [Feature | Navigation System | NavigationConfig]
         :relates-to:
-         - motivated_by: "PRD: Simplify creation of dashboards with navigation sidebar"
-         - implements: "dataclass: 'NavigationConfig'"
+         - motivated_by: "PRD: Simplify creation of dashboards with navigation sidebar and customization"
+         - implements: "dataclass: 'NavigationConfig' with style parameters"
          - uses: ["dataclass: 'NavigationSection'"]
 
-        :rationale: "Encapsulates all navigation settings in a typed, immutable config object."
+        :rationale: "Encapsulates all navigation settings including style customization in a typed, immutable config object."
         :contract:
          - pre: "sections is a non-empty list of NavigationSection instances"
-         - post: "Config provides all data needed to render navigation UI"
+         - post: "Config provides all data needed to render navigation UI with custom styling"
 
     """
 
@@ -61,6 +62,18 @@ class NavigationConfig:
     position: str = "left"  # "left" or "top"
     sidebar_width: int = 3  # Bootstrap columns (1-12)
     default_section: int = 0  # Index of initially active section
+
+    # Style customization parameters
+    sidebar_style: Optional[Dict[str, Any]] = None
+    sidebar_className: Optional[str] = None
+    content_style: Optional[Dict[str, Any]] = None
+    content_className: Optional[str] = None
+    nav_style: Optional[Dict[str, Any]] = None
+    nav_className: Optional[str] = None
+    nav_link_style: Optional[Dict[str, Any]] = None
+    nav_link_className: Optional[str] = None
+    nav_link_active_style: Optional[Dict[str, Any]] = None
+    nav_link_active_className: Optional[str] = None
 
 
 class DashboardPage:
@@ -86,6 +99,7 @@ class DashboardPage:
         blocks: Optional[List[List[Any]]] = None,
         theme: str = dbc.themes.BOOTSTRAP,
         navigation: Optional[NavigationConfig] = None,
+        theme_config: Optional[ThemeConfig] = None,
     ):
         """
         Initializes the DashboardPage, creates a StateManager, and
@@ -103,6 +117,7 @@ class DashboardPage:
                    (e.g., dbc.themes.CYBORG).
             navigation: Optional NavigationConfig for multi-section dashboard
                        with lazy-loaded content.
+            theme_config: Optional ThemeConfig for global styling customization.
 
         """
         self.logger = get_logger(__name__, DashboardPage)
@@ -111,6 +126,7 @@ class DashboardPage:
         self.title = title
         self.theme = theme
         self.navigation = navigation
+        self.theme_config = theme_config or ThemeConfig.light_theme()
         self.layout_structure = blocks or []
         self.state_manager = StateManager()
 
@@ -447,8 +463,8 @@ class DashboardPage:
         )
         sidebar_width = max(16, min(24, max_title_length * 0.8 + 8))  # Dynamic width
 
-        # Fixed sidebar style with better colors and spacing
-        sidebar_style = {
+        # Default sidebar style with better colors and spacing
+        default_sidebar_style = {
             "position": "fixed",
             "top": 0,
             "left": 0,
@@ -462,8 +478,14 @@ class DashboardPage:
             "z-index": 1000,
         }
 
-        # Content area style with margin to avoid sidebar overlap
-        content_style = {
+        # Apply custom sidebar style overrides
+        sidebar_style = {
+            **default_sidebar_style,
+            **(self.navigation.sidebar_style or {}),
+        }
+
+        # Default content area style with margin to avoid sidebar overlap
+        default_content_style = {
             "margin-left": f"{sidebar_width + 1}rem",
             "margin-right": "2rem",
             "padding": "2rem 1rem",
@@ -471,9 +493,45 @@ class DashboardPage:
             "background-color": "#ffffff",
         }
 
-        # Create navigation links with better styling
+        # Apply custom content style overrides
+        content_style = {
+            **default_content_style,
+            **(self.navigation.content_style or {}),
+        }
+
+        # Default nav link style
+        default_nav_link_style = {
+            "color": "#ecf0f1",
+            "border-radius": "8px",
+            "padding": "0.75rem 1rem",
+            "transition": "all 0.3s ease",
+        }
+
+        # Apply custom nav link style overrides
+        nav_link_style = {
+            **default_nav_link_style,
+            **(self.navigation.nav_link_style or {}),
+        }
+
+        # Default nav link className
+        nav_link_className = self.navigation.nav_link_className or "mb-2"
+
+        # Create navigation links with customizable styling
         nav_links = []
         for idx, section in enumerate(self.navigation.sections):
+            # Apply active style if this is the active section
+            if (
+                idx == self.navigation.default_section
+                and self.navigation.nav_link_active_style
+            ):
+                link_style = {**nav_link_style, **self.navigation.nav_link_active_style}
+                link_className = (
+                    self.navigation.nav_link_active_className or nav_link_className
+                )
+            else:
+                link_style = nav_link_style
+                link_className = nav_link_className
+
             nav_links.append(
                 dbc.NavLink(
                     [
@@ -484,15 +542,15 @@ class DashboardPage:
                     href=f"#section-{idx}",
                     active=idx == self.navigation.default_section,
                     n_clicks=0,
-                    className="mb-2",
-                    style={
-                        "color": "#ecf0f1",
-                        "border-radius": "8px",
-                        "padding": "0.75rem 1rem",
-                        "transition": "all 0.3s ease",
-                    },
+                    className=link_className,
+                    style=link_style,
                 )
             )
+
+        # Default nav style
+        default_nav_style = {}
+        nav_style = {**default_nav_style, **(self.navigation.nav_style or {})}
+        nav_className = self.navigation.nav_className or "nav-pills-custom"
 
         # Sidebar with navigation
         sidebar = html.Div(
@@ -514,10 +572,12 @@ class DashboardPage:
                     vertical=True,
                     pills=True,
                     id="nav-list",
-                    className="nav-pills-custom",
+                    className=nav_className,
+                    style=nav_style,
                 ),
             ],
             style=sidebar_style,
+            className=self.navigation.sidebar_className,
         )
 
         # Content area for dynamic content
@@ -525,6 +585,7 @@ class DashboardPage:
             id="nav-content-area",
             children=[],
             style=content_style,
+            className=self.navigation.content_className,
         )
 
         # Store to track the currently active section index

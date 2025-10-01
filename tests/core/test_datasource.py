@@ -54,7 +54,7 @@ class ConcreteDataSource(BaseDataSource):
         # Allow injecting a cache object for testing purposes
         if cache_obj:
             self.cache = cache_obj
-            self._data: Optional[pd.DataFrame] = None
+            self._data = None
         else:
             super().__init__(**kwargs)
 
