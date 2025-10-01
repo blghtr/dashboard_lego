@@ -1,0 +1,7 @@
+blocks.text module
+==================
+
+.. automodule:: blocks.text
+   :members:
+   :show-inheritance:
+   :undoc-members:

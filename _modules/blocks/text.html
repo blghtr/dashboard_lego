@@ -83,17 +83,19 @@
 <span class="sd">This module defines the TextBlock for displaying text content.</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">dash_bootstrap_components</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dbc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dash</span><span class="w"> </span><span class="kn">import</span> <span class="n">dcc</span><span class="p">,</span> <span class="n">html</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dash.development.base_component</span><span class="w"> </span><span class="kn">import</span> <span class="n">Component</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">blocks.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseBlock</span>
 
+
 <div class="viewcode-block" id="TextBlock">
-<a class="viewcode-back" href="../../api/blocks.html#blocks.text.TextBlock">[docs]</a>
+<a class="viewcode-back" href="../../api/blocks.text.html#blocks.text.TextBlock">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TextBlock</span><span class="p">(</span><span class="n">BaseBlock</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A block for displaying dynamic text content, with support for Markdown.</span>
@@ -117,16 +119,15 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="TextBlock.__init__">
-<a class="viewcode-back" href="../../api/blocks.html#blocks.text.TextBlock.__init__">[docs]</a>
+<a class="viewcode-back" href="../../api/blocks.text.html#blocks.text.TextBlock.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">datasource</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
         <span class="n">subscribes_to</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">content_generator</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span> <span class="n">Component</span> <span class="o">|</span> <span class="nb">str</span><span class="p">],</span>
-        <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initializes the TextBlock.</span>
 
@@ -140,7 +141,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">title</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">content_generator</span> <span class="o">=</span> <span class="n">content_generator</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">block_id</span><span class="p">,</span> <span class="n">datasource</span><span class="p">,</span> <span class="n">subscribes</span><span class="o">=</span><span class="p">{</span><span class="n">subscribes_to</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_content</span><span class="p">})</span></div>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">block_id</span><span class="p">,</span> <span class="n">datasource</span><span class="p">,</span> <span class="n">subscribes</span><span class="o">=</span><span class="p">{</span><span class="n">subscribes_to</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_content</span><span class="p">}</span>
+        <span class="p">)</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_update_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
@@ -151,7 +154,7 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
             <span class="n">generated_content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">content_generator</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
-            
+
             <span class="c1"># If the generator returns a string, wrap it in dcc.Markdown</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">generated_content</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
                 <span class="n">content_component</span> <span class="o">=</span> <span class="n">dcc</span><span class="o">.</span><span class="n">Markdown</span><span class="p">(</span><span class="n">generated_content</span><span class="p">)</span>
@@ -161,13 +164,15 @@
             <span class="n">children</span> <span class="o">=</span> <span class="p">[</span><span class="n">content_component</span><span class="p">]</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">:</span>
                 <span class="n">children</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">html</span><span class="o">.</span><span class="n">H4</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="n">className</span><span class="o">=</span><span class="s2">&quot;card-title&quot;</span><span class="p">))</span>
-            
+
             <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">CardBody</span><span class="p">(</span><span class="n">children</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Alert</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка генерации текстового блока: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;danger&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Alert</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Ошибка генерации текстового блока: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;danger&quot;</span>
+            <span class="p">)</span>
 
 <div class="viewcode-block" id="TextBlock.layout">
-<a class="viewcode-back" href="../../api/blocks.html#blocks.text.TextBlock.layout">[docs]</a>
+<a class="viewcode-back" href="../../api/blocks.text.html#blocks.text.TextBlock.layout">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">layout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Defines the initial layout of the block, including a loading wrapper.</span>
@@ -179,9 +184,11 @@
             <span class="n">dcc</span><span class="o">.</span><span class="n">Loading</span><span class="p">(</span>
                 <span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_generate_id</span><span class="p">(</span><span class="s2">&quot;loading&quot;</span><span class="p">),</span>
                 <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">,</span>
-                <span class="n">children</span><span class="o">=</span><span class="n">html</span><span class="o">.</span><span class="n">Div</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_generate_id</span><span class="p">(</span><span class="s2">&quot;container&quot;</span><span class="p">),</span> <span class="n">children</span><span class="o">=</span><span class="n">initial_content</span><span class="p">)</span>
+                <span class="n">children</span><span class="o">=</span><span class="n">html</span><span class="o">.</span><span class="n">Div</span><span class="p">(</span>
+                    <span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_generate_id</span><span class="p">(</span><span class="s2">&quot;container&quot;</span><span class="p">),</span> <span class="n">children</span><span class="o">=</span><span class="n">initial_content</span>
+                <span class="p">),</span>
             <span class="p">),</span>
-            <span class="n">className</span><span class="o">=</span><span class="s2">&quot;mb-4&quot;</span>
+            <span class="n">className</span><span class="o">=</span><span class="s2">&quot;mb-4&quot;</span><span class="p">,</span>
         <span class="p">)</span></div>
 </div>
 

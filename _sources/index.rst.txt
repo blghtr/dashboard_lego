@@ -56,7 +56,7 @@ Create a simple dashboard:
    class MyDataSource(BaseDataSource):
        def _load_data(self, params: dict) -> pd.DataFrame:
            return pd.read_csv("your_data.csv")
-       
+
        def get_kpis(self) -> dict:
            return {"total": len(self._data)}
 

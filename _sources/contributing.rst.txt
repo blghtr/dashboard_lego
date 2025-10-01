@@ -83,10 +83,10 @@ Use the project's Sphinx-compatible format:
        Args:
            data: DataFrame containing the data to visualize
            chart_type: Type of chart to create ('bar', 'line', 'scatter')
-           
+
        Returns:
            Plotly Figure object
-           
+
        Raises:
            ValueError: If chart_type is not supported
        """
@@ -148,14 +148,14 @@ Create presets for common exploratory data analysis tasks:
    class MyEDAPreset(StaticChartBlock):
        """
        Description of what this preset does.
-       
+
        :hierarchy: [Presets | EDA | MyEDAPreset]
        :relates-to:
         - motivated_by: "Common EDA pattern for [specific analysis]"
         - implements: "preset: 'MyEDAPreset'"
         - uses: ["block: 'StaticChartBlock'"]
        """
-       
+
        def _create_chart(self, df: pd.DataFrame, ctx) -> go.Figure:
            """Create the specific chart for this EDA preset."""
            # Implementation here
@@ -171,7 +171,7 @@ Create presets for machine learning visualizations:
    class MyMLPreset(KPIBlock):
        """
        ML-specific preset for [specific ML visualization].
-       
+
        :hierarchy: [Presets | ML | MyMLPreset]
        :relates-to:
         - motivated_by: "ML workflow requires [specific visualization]"

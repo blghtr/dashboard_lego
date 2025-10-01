@@ -1,0 +1,7 @@
+blocks.base module
+==================
+
+.. automodule:: blocks.base
+   :members:
+   :show-inheritance:
+   :undoc-members:

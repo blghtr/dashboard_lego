@@ -1,0 +1,7 @@
+blocks.kpi module
+=================
+
+.. automodule:: blocks.kpi
+   :members:
+   :show-inheritance:
+   :undoc-members:

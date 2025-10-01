@@ -87,6 +87,7 @@
 <span class="sd">including datasource, controls, and logger.</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span>
 
@@ -118,6 +119,7 @@
 <span class="sd">         - post: &quot;Context object contains all necessary data for chart generation.&quot;</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span>
     <span class="n">controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
     <span class="n">logger</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
@@ -130,7 +132,7 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;logger&#39;</span><span class="p">,</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">))</span></div>
+            <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;logger&quot;</span><span class="p">,</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">))</span></div>
 </div>
 
 </pre></div>

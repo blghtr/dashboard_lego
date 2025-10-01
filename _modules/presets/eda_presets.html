@@ -89,8 +89,9 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">plotly.graph_objects</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">go</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dash</span><span class="w"> </span><span class="kn">import</span> <span class="n">dcc</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">blocks.chart</span><span class="w"> </span><span class="kn">import</span> <span class="n">StaticChartBlock</span><span class="p">,</span> <span class="n">InteractiveChartBlock</span><span class="p">,</span> <span class="n">Control</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">blocks.chart</span><span class="w"> </span><span class="kn">import</span> <span class="n">Control</span><span class="p">,</span> <span class="n">InteractiveChartBlock</span><span class="p">,</span> <span class="n">StaticChartBlock</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">core.datasource</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseDataSource</span>
+
 
 <div class="viewcode-block" id="CorrelationHeatmapPreset">
 <a class="viewcode-back" href="../../api/presets.html#presets.eda_presets.CorrelationHeatmapPreset">[docs]</a>
@@ -109,7 +110,13 @@
 
 <div class="viewcode-block" id="CorrelationHeatmapPreset.__init__">
 <a class="viewcode-back" href="../../api/presets.html#presets.eda_presets.CorrelationHeatmapPreset.__init__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span> <span class="n">subscribes_to</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Correlation Heatmap&quot;</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span>
+        <span class="n">subscribes_to</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Correlation Heatmap&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initializes the CorrelationHeatmapPreset.</span>
 
@@ -125,7 +132,7 @@
             <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
             <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
             <span class="n">chart_generator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_create_heatmap</span><span class="p">,</span>
-            <span class="n">subscribes_to</span><span class="o">=</span><span class="n">subscribes_to</span>
+            <span class="n">subscribes_to</span><span class="o">=</span><span class="n">subscribes_to</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 
@@ -141,10 +148,12 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Select only numerical columns for correlation matrix</span>
-        <span class="n">numerical_df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;float64&#39;</span><span class="p">,</span> <span class="s1">&#39;int64&#39;</span><span class="p">])</span>
+        <span class="n">numerical_df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">])</span>
 
         <span class="k">if</span> <span class="n">numerical_df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;No numerical data to create a correlation matrix.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
+                <span class="n">title</span><span class="o">=</span><span class="s2">&quot;No numerical data to create a correlation matrix.&quot;</span>
+            <span class="p">)</span>
 
         <span class="n">corr_matrix</span> <span class="o">=</span> <span class="n">numerical_df</span><span class="o">.</span><span class="n">corr</span><span class="p">()</span>
         <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span>
@@ -152,10 +161,11 @@
             <span class="n">text_auto</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">aspect</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
             <span class="n">labels</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&quot;Correlation&quot;</span><span class="p">),</span>
-            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Correlation Matrix&quot;</span>
+            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Correlation Matrix&quot;</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">fig</span><span class="o">.</span><span class="n">update_xaxes</span><span class="p">(</span><span class="n">side</span><span class="o">=</span><span class="s2">&quot;top&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">fig</span></div>
+
 
 
 <div class="viewcode-block" id="GroupedHistogramPreset">
@@ -178,34 +188,43 @@
 
 <div class="viewcode-block" id="GroupedHistogramPreset.__init__">
 <a class="viewcode-back" href="../../api/presets.html#presets.eda_presets.GroupedHistogramPreset.__init__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Distribution Analysis&quot;</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span>
+        <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Distribution Analysis&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="c1"># Inspect the dataframe to find numerical and categorical columns</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
-        <span class="n">numerical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;float64&#39;</span><span class="p">,</span> <span class="s1">&#39;int64&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-        <span class="n">categorical_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;None&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">,</span> <span class="s1">&#39;category&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">numerical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">categorical_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;None&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span>
+            <span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;object&quot;</span><span class="p">,</span> <span class="s2">&quot;category&quot;</span><span class="p">]</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">numerical_cols</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;GroupedHistogramPreset requires a datasource with at least one numerical column.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;GroupedHistogramPreset requires a datasource with at least one numerical column.&quot;</span>
+            <span class="p">)</span>
 
         <span class="n">controls</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;x_col&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span>
                 <span class="n">component</span><span class="o">=</span><span class="n">dcc</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">,</span>
                 <span class="n">props</span><span class="o">=</span><span class="p">{</span>
-                    <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="n">numerical_cols</span><span class="p">,</span> 
-                    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">numerical_cols</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> 
+                    <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="n">numerical_cols</span><span class="p">,</span>
+                    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">numerical_cols</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
                     <span class="s2">&quot;clearable&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                    <span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="s2">&quot;150px&quot;</span><span class="p">}</span>
-                <span class="p">}</span>
+                    <span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="s2">&quot;150px&quot;</span><span class="p">},</span>
+                <span class="p">},</span>
             <span class="p">),</span>
             <span class="s2">&quot;group_by&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span>
                 <span class="n">component</span><span class="o">=</span><span class="n">dcc</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">,</span>
                 <span class="n">props</span><span class="o">=</span><span class="p">{</span>
-                    <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="n">categorical_cols</span><span class="p">,</span> 
-                    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">categorical_cols</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> 
+                    <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="n">categorical_cols</span><span class="p">,</span>
+                    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">categorical_cols</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
                     <span class="s2">&quot;clearable&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                    <span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="s2">&quot;150px&quot;</span><span class="p">}</span>
-                <span class="p">}</span>
-            <span class="p">)</span>
+                    <span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="s2">&quot;150px&quot;</span><span class="p">},</span>
+                <span class="p">},</span>
+            <span class="p">),</span>
         <span class="p">}</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
@@ -213,7 +232,7 @@
             <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
             <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
             <span class="n">chart_generator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_create_histogram</span><span class="p">,</span>
-            <span class="n">controls</span><span class="o">=</span><span class="n">controls</span>
+            <span class="n">controls</span><span class="o">=</span><span class="n">controls</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 
@@ -222,8 +241,8 @@
 <span class="sd">        Generates a histogram based on the selected control values.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">x_col</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;x_col&#39;</span><span class="p">)</span>
-        <span class="n">group_by</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;group_by&#39;</span><span class="p">)</span>
+        <span class="n">x_col</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;x_col&quot;</span><span class="p">)</span>
+        <span class="n">group_by</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;group_by&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">x_col</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Please select a column to display.&quot;</span><span class="p">)</span>
@@ -231,12 +250,14 @@
         <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span>
             <span class="n">df</span><span class="p">,</span>
             <span class="n">x</span><span class="o">=</span><span class="n">x_col</span><span class="p">,</span>
-            <span class="n">color</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">group_by</span> <span class="o">==</span> <span class="s1">&#39;None&#39;</span> <span class="k">else</span> <span class="n">group_by</span><span class="p">,</span>
-            <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Distribution of </span><span class="si">{</span><span class="n">x_col</span><span class="si">}</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot; grouped by </span><span class="si">{</span><span class="n">group_by</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">group_by</span> <span class="o">!=</span> <span class="s1">&#39;None&#39;</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
-            <span class="n">barmode</span><span class="o">=</span><span class="s2">&quot;overlay&quot;</span>
+            <span class="n">color</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">group_by</span> <span class="o">==</span> <span class="s2">&quot;None&quot;</span> <span class="k">else</span> <span class="n">group_by</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Distribution of </span><span class="si">{</span><span class="n">x_col</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot; grouped by </span><span class="si">{</span><span class="n">group_by</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">group_by</span> <span class="o">!=</span> <span class="s2">&quot;None&quot;</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="n">barmode</span><span class="o">=</span><span class="s2">&quot;overlay&quot;</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">fig</span><span class="o">.</span><span class="n">update_traces</span><span class="p">(</span><span class="n">opacity</span><span class="o">=</span><span class="mf">0.75</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">fig</span></div>
+
 
 
 <div class="viewcode-block" id="MissingValuesPreset">
@@ -261,7 +282,13 @@
 
 <div class="viewcode-block" id="MissingValuesPreset.__init__">
 <a class="viewcode-back" href="../../api/presets.html#presets.eda_presets.MissingValuesPreset.__init__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span> <span class="n">subscribes_to</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Missing Values Analysis&quot;</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span>
+        <span class="n">subscribes_to</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Missing Values Analysis&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initializes the MissingValuesPreset.</span>
 
@@ -277,7 +304,7 @@
             <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
             <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
             <span class="n">chart_generator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_create_missing_values_chart</span><span class="p">,</span>
-            <span class="n">subscribes_to</span><span class="o">=</span><span class="n">subscribes_to</span>
+            <span class="n">subscribes_to</span><span class="o">=</span><span class="n">subscribes_to</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 
@@ -293,20 +320,25 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">missing_percent</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span> <span class="o">*</span> <span class="mi">100</span>
-        <span class="n">missing_percent</span> <span class="o">=</span> <span class="n">missing_percent</span><span class="p">[</span><span class="n">missing_percent</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">missing_percent</span> <span class="o">=</span> <span class="n">missing_percent</span><span class="p">[</span><span class="n">missing_percent</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span>
+            <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">missing_percent</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;No missing values found in the dataset.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
+                <span class="n">title</span><span class="o">=</span><span class="s2">&quot;No missing values found in the dataset.&quot;</span>
+            <span class="p">)</span>
 
         <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span>
             <span class="n">missing_percent</span><span class="p">,</span>
             <span class="n">x</span><span class="o">=</span><span class="n">missing_percent</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
             <span class="n">y</span><span class="o">=</span><span class="n">missing_percent</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-            <span class="n">labels</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;Column&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="s1">&#39;Missing Values (%)&#39;</span><span class="p">},</span>
-            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Percentage of Missing Values per Column&quot;</span>
+            <span class="n">labels</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="s2">&quot;Column&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="s2">&quot;Missing Values (%)&quot;</span><span class="p">},</span>
+            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Percentage of Missing Values per Column&quot;</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">showlegend</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">fig</span></div>
+
 
 
 <div class="viewcode-block" id="BoxPlotPreset">
@@ -334,35 +366,46 @@
 
 <div class="viewcode-block" id="BoxPlotPreset.__init__">
 <a class="viewcode-back" href="../../api/presets.html#presets.eda_presets.BoxPlotPreset.__init__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Distribution Comparison (Box Plot)&quot;</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span>
+        <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Distribution Comparison (Box Plot)&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
-        <span class="n">numerical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;float64&#39;</span><span class="p">,</span> <span class="s1">&#39;int64&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-        <span class="n">categorical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">,</span> <span class="s1">&#39;category&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">numerical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">categorical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span>
+            <span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;object&quot;</span><span class="p">,</span> <span class="s2">&quot;category&quot;</span><span class="p">]</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">numerical_cols</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;BoxPlotPreset requires a datasource with at least one numerical column.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;BoxPlotPreset requires a datasource with at least one numerical column.&quot;</span>
+            <span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">categorical_cols</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;BoxPlotPreset requires a datasource with at least one categorical column.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;BoxPlotPreset requires a datasource with at least one categorical column.&quot;</span>
+            <span class="p">)</span>
 
         <span class="n">controls</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;y_col&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span>
                 <span class="n">component</span><span class="o">=</span><span class="n">dcc</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">,</span>
                 <span class="n">props</span><span class="o">=</span><span class="p">{</span>
-                    <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="n">numerical_cols</span><span class="p">,</span> 
-                    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">numerical_cols</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> 
+                    <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="n">numerical_cols</span><span class="p">,</span>
+                    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">numerical_cols</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
                     <span class="s2">&quot;clearable&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                    <span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="s2">&quot;150px&quot;</span><span class="p">}</span>
-                <span class="p">}</span>
+                    <span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="s2">&quot;150px&quot;</span><span class="p">},</span>
+                <span class="p">},</span>
             <span class="p">),</span>
             <span class="s2">&quot;x_col&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span>
                 <span class="n">component</span><span class="o">=</span><span class="n">dcc</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">,</span>
                 <span class="n">props</span><span class="o">=</span><span class="p">{</span>
-                    <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="n">categorical_cols</span><span class="p">,</span> 
-                    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">categorical_cols</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> 
+                    <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="n">categorical_cols</span><span class="p">,</span>
+                    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">categorical_cols</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
                     <span class="s2">&quot;clearable&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                    <span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="s2">&quot;150px&quot;</span><span class="p">}</span>
-                <span class="p">}</span>
-            <span class="p">)</span>
+                    <span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="s2">&quot;150px&quot;</span><span class="p">},</span>
+                <span class="p">},</span>
+            <span class="p">),</span>
         <span class="p">}</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
@@ -370,7 +413,7 @@
             <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
             <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
             <span class="n">chart_generator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_create_box_plot</span><span class="p">,</span>
-            <span class="n">controls</span><span class="o">=</span><span class="n">controls</span>
+            <span class="n">controls</span><span class="o">=</span><span class="n">controls</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 
@@ -379,8 +422,8 @@
 <span class="sd">        Generates a box plot based on the selected control values.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">y_col</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;y_col&#39;</span><span class="p">)</span>
-        <span class="n">x_col</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;x_col&#39;</span><span class="p">)</span>
+        <span class="n">y_col</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;y_col&quot;</span><span class="p">)</span>
+        <span class="n">x_col</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;x_col&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">y_col</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">x_col</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Please select columns to display.&quot;</span><span class="p">)</span>
@@ -390,7 +433,7 @@
             <span class="n">x</span><span class="o">=</span><span class="n">x_col</span><span class="p">,</span>
             <span class="n">y</span><span class="o">=</span><span class="n">y_col</span><span class="p">,</span>
             <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Distribution of </span><span class="si">{</span><span class="n">y_col</span><span class="si">}</span><span class="s2"> by </span><span class="si">{</span><span class="n">x_col</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-            <span class="n">color</span><span class="o">=</span><span class="n">x_col</span>
+            <span class="n">color</span><span class="o">=</span><span class="n">x_col</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">fig</span></div>
 

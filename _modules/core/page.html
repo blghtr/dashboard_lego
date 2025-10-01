@@ -83,7 +83,8 @@
 <span class="sd">This module defines the DashboardPage class, which orchestrates blocks on a page.</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">dash_bootstrap_components</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dbc</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dash</span><span class="w"> </span><span class="kn">import</span> <span class="n">html</span>
@@ -91,8 +92,9 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">blocks.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseBlock</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">core.state</span><span class="w"> </span><span class="kn">import</span> <span class="n">StateManager</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigurationError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
+
 
 <div class="viewcode-block" id="DashboardPage">
 <a class="viewcode-back" href="../../api/core.html#core.page.DashboardPage">[docs]</a>
@@ -116,10 +118,7 @@
 <div class="viewcode-block" id="DashboardPage.__init__">
 <a class="viewcode-back" href="../../api/core.html#core.page.DashboardPage.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">blocks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]],</span>
-        <span class="n">theme</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">dbc</span><span class="o">.</span><span class="n">themes</span><span class="o">.</span><span class="n">BOOTSTRAP</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">blocks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]],</span> <span class="n">theme</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">dbc</span><span class="o">.</span><span class="n">themes</span><span class="o">.</span><span class="n">BOOTSTRAP</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initializes the DashboardPage, creates a StateManager, and</span>
@@ -138,7 +137,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">DashboardPage</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initializing dashboard page: &#39;</span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
-        
+
         <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">title</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">theme</span> <span class="o">=</span> <span class="n">theme</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layout_structure</span> <span class="o">=</span> <span class="n">blocks</span>
@@ -155,8 +154,10 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="c1"># Old format: list of blocks</span>
                     <span class="n">blocks_list</span> <span class="o">=</span> <span class="n">row</span>
-                
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processing row </span><span class="si">{</span><span class="n">row_idx</span><span class="si">}</span><span class="s2"> with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">blocks_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> blocks&quot;</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Processing row </span><span class="si">{</span><span class="n">row_idx</span><span class="si">}</span><span class="s2"> with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">blocks_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> blocks&quot;</span>
+                <span class="p">)</span>
                 <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">blocks_list</span><span class="p">:</span>
                     <span class="n">block</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="k">else</span> <span class="n">item</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="n">BaseBlock</span><span class="p">):</span>
@@ -167,7 +168,7 @@
                         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
                         <span class="k">raise</span> <span class="n">ConfigurationError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
-                    
+
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Page structure validated: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layout_structure</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows, &quot;</span>
                 <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="p">)</span><span class="si">}</span><span class="s2"> blocks total&quot;</span>
@@ -186,15 +187,23 @@
 
     <span class="c1"># --- Layout v2: helper constants ---</span>
     <span class="n">_CELL_ALLOWED_KEYS</span><span class="p">:</span> <span class="nb">set</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;width&#39;</span><span class="p">,</span> <span class="s1">&#39;xs&#39;</span><span class="p">,</span> <span class="s1">&#39;sm&#39;</span><span class="p">,</span> <span class="s1">&#39;md&#39;</span><span class="p">,</span> <span class="s1">&#39;lg&#39;</span><span class="p">,</span> <span class="s1">&#39;xl&#39;</span><span class="p">,</span> <span class="s1">&#39;offset&#39;</span><span class="p">,</span> <span class="s1">&#39;align&#39;</span><span class="p">,</span> <span class="s1">&#39;className&#39;</span><span class="p">,</span> <span class="s1">&#39;style&#39;</span><span class="p">,</span> <span class="s1">&#39;children&#39;</span>
+        <span class="s2">&quot;width&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;xs&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;sm&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;md&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;lg&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;xl&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;offset&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;align&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;className&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;style&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;children&quot;</span><span class="p">,</span>
     <span class="p">}</span>
 
-    <span class="n">_ROW_ALLOWED_KEYS</span><span class="p">:</span> <span class="nb">set</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;align&#39;</span><span class="p">,</span> <span class="s1">&#39;justify&#39;</span><span class="p">,</span> <span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="s1">&#39;className&#39;</span><span class="p">,</span> <span class="s1">&#39;style&#39;</span><span class="p">}</span>
+    <span class="n">_ROW_ALLOWED_KEYS</span><span class="p">:</span> <span class="nb">set</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;align&quot;</span><span class="p">,</span> <span class="s2">&quot;justify&quot;</span><span class="p">,</span> <span class="s2">&quot;g&quot;</span><span class="p">,</span> <span class="s2">&quot;className&quot;</span><span class="p">,</span> <span class="s2">&quot;style&quot;</span><span class="p">}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_normalize_cell</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">cell_spec</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-        <span class="n">row_length</span><span class="p">:</span> <span class="nb">int</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">cell_spec</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">row_length</span><span class="p">:</span> <span class="nb">int</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">BaseBlock</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Normalizes a cell spec to a `(block, options)` tuple with defaults.</span>
@@ -230,9 +239,9 @@
             <span class="p">)</span>
 
         <span class="c1"># Back-compat default: if no responsive width provided, set &#39;width&#39;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">k</span> <span class="ow">in</span> <span class="n">options</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;width&#39;</span><span class="p">,</span> <span class="s1">&#39;xs&#39;</span><span class="p">,</span> <span class="s1">&#39;sm&#39;</span><span class="p">,</span> <span class="s1">&#39;md&#39;</span><span class="p">,</span> <span class="s1">&#39;lg&#39;</span><span class="p">,</span> <span class="s1">&#39;xl&#39;</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">k</span> <span class="ow">in</span> <span class="n">options</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;width&quot;</span><span class="p">,</span> <span class="s2">&quot;xs&quot;</span><span class="p">,</span> <span class="s2">&quot;sm&quot;</span><span class="p">,</span> <span class="s2">&quot;md&quot;</span><span class="p">,</span> <span class="s2">&quot;lg&quot;</span><span class="p">,</span> <span class="s2">&quot;xl&quot;</span><span class="p">]):</span>
             <span class="c1"># Equal split; ensure at least 1</span>
-            <span class="n">options</span><span class="p">[</span><span class="s1">&#39;width&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">12</span> <span class="o">//</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">row_length</span><span class="p">))</span>
+            <span class="n">options</span><span class="p">[</span><span class="s2">&quot;width&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">12</span> <span class="o">//</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">row_length</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="n">block</span><span class="p">,</span> <span class="n">options</span>
 
@@ -252,7 +261,11 @@
 <span class="sd">             - post: &quot;Returns (cells, row_options) with allowed keys only; ensures width bounds and per-breakpoint sums do not exceed 12 when specified&quot;</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">row_spec</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">row_spec</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">row_spec</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">row_spec</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">row_spec</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+            <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">row_spec</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">dict</span><span class="p">)</span>
+        <span class="p">):</span>
             <span class="n">row_cells</span><span class="p">,</span> <span class="n">row_options</span> <span class="o">=</span> <span class="n">row_spec</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">row_cells</span><span class="p">,</span> <span class="n">row_options</span> <span class="o">=</span> <span class="n">row_spec</span><span class="p">,</span> <span class="p">{}</span>
@@ -278,7 +291,7 @@
             <span class="n">block</span><span class="p">,</span> <span class="n">options</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_cell</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">row_length</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">row_cells</span><span class="p">))</span>
 
             <span class="c1"># Validate width bounds for any provided breakpoint</span>
-            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;width&#39;</span><span class="p">,</span> <span class="s1">&#39;xs&#39;</span><span class="p">,</span> <span class="s1">&#39;sm&#39;</span><span class="p">,</span> <span class="s1">&#39;md&#39;</span><span class="p">,</span> <span class="s1">&#39;lg&#39;</span><span class="p">,</span> <span class="s1">&#39;xl&#39;</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;width&quot;</span><span class="p">,</span> <span class="s2">&quot;xs&quot;</span><span class="p">,</span> <span class="s2">&quot;sm&quot;</span><span class="p">,</span> <span class="s2">&quot;md&quot;</span><span class="p">,</span> <span class="s2">&quot;lg&quot;</span><span class="p">,</span> <span class="s2">&quot;xl&quot;</span><span class="p">]:</span>
                 <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
                     <span class="n">value</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">value</span> <span class="o">&gt;</span> <span class="mi">12</span><span class="p">:</span>
@@ -288,7 +301,7 @@
             <span class="n">normalized</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">block</span><span class="p">,</span> <span class="n">options</span><span class="p">))</span>
 
         <span class="c1"># Validate that explicit breakpoint sums do not exceed 12</span>
-        <span class="k">for</span> <span class="n">bp</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;width&#39;</span><span class="p">,</span> <span class="s1">&#39;xs&#39;</span><span class="p">,</span> <span class="s1">&#39;sm&#39;</span><span class="p">,</span> <span class="s1">&#39;md&#39;</span><span class="p">,</span> <span class="s1">&#39;lg&#39;</span><span class="p">,</span> <span class="s1">&#39;xl&#39;</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">bp</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;width&quot;</span><span class="p">,</span> <span class="s2">&quot;xs&quot;</span><span class="p">,</span> <span class="s2">&quot;sm&quot;</span><span class="p">,</span> <span class="s2">&quot;md&quot;</span><span class="p">,</span> <span class="s2">&quot;lg&quot;</span><span class="p">,</span> <span class="s2">&quot;xl&quot;</span><span class="p">]:</span>
             <span class="n">bp_sum</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">bp</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">opts</span> <span class="ow">in</span> <span class="n">normalized</span> <span class="k">if</span> <span class="n">bp</span> <span class="ow">in</span> <span class="n">opts</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">bp_sum</span> <span class="ow">and</span> <span class="n">bp_sum</span> <span class="o">&gt;</span> <span class="mi">12</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">ConfigurationError</span><span class="p">(</span>
@@ -299,7 +312,9 @@
         <span class="k">return</span> <span class="p">[(</span><span class="n">b</span><span class="p">,</span> <span class="n">o</span><span class="p">)</span> <span class="k">for</span> <span class="n">b</span><span class="p">,</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">normalized</span><span class="p">],</span> <span class="n">row_options</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_render_row</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">row_cells</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">BaseBlock</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]],</span> <span class="n">row_options</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">row_cells</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">BaseBlock</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]],</span>
+        <span class="n">row_options</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Renders a row into a `dbc.Row` with validated options.</span>
@@ -318,27 +333,29 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_render_cell</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span> <span class="k">for</span> <span class="n">block</span><span class="p">,</span> <span class="n">opts</span> <span class="ow">in</span> <span class="n">row_cells</span><span class="p">]</span>
         <span class="n">row_kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-        
+
         <span class="c1"># Handle Bootstrap gap classes</span>
-        <span class="k">if</span> <span class="s1">&#39;g&#39;</span> <span class="ow">in</span> <span class="n">row_options</span><span class="p">:</span>
-            <span class="n">gap</span> <span class="o">=</span> <span class="n">row_options</span><span class="p">[</span><span class="s1">&#39;g&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">&quot;g&quot;</span> <span class="ow">in</span> <span class="n">row_options</span><span class="p">:</span>
+            <span class="n">gap</span> <span class="o">=</span> <span class="n">row_options</span><span class="p">[</span><span class="s2">&quot;g&quot;</span><span class="p">]</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gap</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-                <span class="n">row_kwargs</span><span class="p">[</span><span class="s1">&#39;className&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;g-</span><span class="si">{</span><span class="n">gap</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">row_kwargs</span><span class="p">[</span><span class="s2">&quot;className&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;g-</span><span class="si">{</span><span class="n">gap</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">row_kwargs</span><span class="p">[</span><span class="s1">&#39;className&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;g-</span><span class="si">{</span><span class="n">gap</span><span class="si">}</span><span class="s2">&quot;</span>
-        
+                <span class="n">row_kwargs</span><span class="p">[</span><span class="s2">&quot;className&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;g-</span><span class="si">{</span><span class="n">gap</span><span class="si">}</span><span class="s2">&quot;</span>
+
         <span class="c1"># Handle other row options</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;align&#39;</span><span class="p">,</span> <span class="s1">&#39;justify&#39;</span><span class="p">,</span> <span class="s1">&#39;className&#39;</span><span class="p">,</span> <span class="s1">&#39;style&#39;</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;align&quot;</span><span class="p">,</span> <span class="s2">&quot;justify&quot;</span><span class="p">,</span> <span class="s2">&quot;className&quot;</span><span class="p">,</span> <span class="s2">&quot;style&quot;</span><span class="p">]:</span>
             <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">row_options</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;className&#39;</span> <span class="ow">and</span> <span class="s1">&#39;className&#39;</span> <span class="ow">in</span> <span class="n">row_kwargs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;className&quot;</span> <span class="ow">and</span> <span class="s2">&quot;className&quot;</span> <span class="ow">in</span> <span class="n">row_kwargs</span><span class="p">:</span>
                     <span class="c1"># Merge gap class with existing className</span>
-                    <span class="n">row_kwargs</span><span class="p">[</span><span class="s1">&#39;className&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">row_kwargs</span><span class="p">[</span><span class="s1">&#39;className&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">row_options</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="n">row_kwargs</span><span class="p">[</span><span class="s2">&quot;className&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">row_kwargs</span><span class="p">[</span><span class="s1">&#39;className&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">row_options</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">row_kwargs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">row_options</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-        
+
         <span class="c1"># Keep legacy spacing class unless overridden</span>
-        <span class="k">if</span> <span class="s1">&#39;className&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">row_kwargs</span><span class="p">:</span>
-            <span class="n">row_kwargs</span><span class="p">[</span><span class="s1">&#39;className&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;mb-4&#39;</span>
+        <span class="k">if</span> <span class="s2">&quot;className&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">row_kwargs</span><span class="p">:</span>
+            <span class="n">row_kwargs</span><span class="p">[</span><span class="s2">&quot;className&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mb-4&quot;</span>
         <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span><span class="n">cols</span><span class="p">,</span> <span class="o">**</span><span class="n">row_kwargs</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_render_cell</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="p">:</span> <span class="n">BaseBlock</span><span class="p">,</span> <span class="n">options</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
@@ -359,21 +376,33 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Split options into Col kwargs and special fields</span>
         <span class="n">col_kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-        
+
         <span class="c1"># Handle offset classes</span>
-        <span class="k">if</span> <span class="s1">&#39;offset&#39;</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
-            <span class="n">offset</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;offset&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">&quot;offset&quot;</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;offset&quot;</span><span class="p">]</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-                <span class="n">col_kwargs</span><span class="p">[</span><span class="s1">&#39;className&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;offset-</span><span class="si">{</span><span class="n">offset</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">col_kwargs</span><span class="p">[</span><span class="s2">&quot;className&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;offset-</span><span class="si">{</span><span class="n">offset</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">col_kwargs</span><span class="p">[</span><span class="s1">&#39;className&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;offset-</span><span class="si">{</span><span class="n">offset</span><span class="si">}</span><span class="s2">&quot;</span>
-        
+                <span class="n">col_kwargs</span><span class="p">[</span><span class="s2">&quot;className&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;offset-</span><span class="si">{</span><span class="n">offset</span><span class="si">}</span><span class="s2">&quot;</span>
+
         <span class="c1"># Handle other column options</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;width&#39;</span><span class="p">,</span> <span class="s1">&#39;xs&#39;</span><span class="p">,</span> <span class="s1">&#39;sm&#39;</span><span class="p">,</span> <span class="s1">&#39;md&#39;</span><span class="p">,</span> <span class="s1">&#39;lg&#39;</span><span class="p">,</span> <span class="s1">&#39;xl&#39;</span><span class="p">,</span> <span class="s1">&#39;align&#39;</span><span class="p">,</span> <span class="s1">&#39;className&#39;</span><span class="p">,</span> <span class="s1">&#39;style&#39;</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="s2">&quot;width&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;xs&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;sm&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;md&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;lg&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;xl&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;align&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;className&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;style&quot;</span><span class="p">,</span>
+        <span class="p">]:</span>
             <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;className&#39;</span> <span class="ow">and</span> <span class="s1">&#39;className&#39;</span> <span class="ow">in</span> <span class="n">col_kwargs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;className&quot;</span> <span class="ow">and</span> <span class="s2">&quot;className&quot;</span> <span class="ow">in</span> <span class="n">col_kwargs</span><span class="p">:</span>
                     <span class="c1"># Merge offset class with existing className</span>
-                    <span class="n">col_kwargs</span><span class="p">[</span><span class="s1">&#39;className&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">col_kwargs</span><span class="p">[</span><span class="s1">&#39;className&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">options</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="n">col_kwargs</span><span class="p">[</span><span class="s2">&quot;className&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">col_kwargs</span><span class="p">[</span><span class="s1">&#39;className&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">options</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">col_kwargs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
 
@@ -382,16 +411,24 @@
         <span class="n">content_children</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">layout</span><span class="p">())</span>
 
         <span class="c1"># Nested rows if provided</span>
-        <span class="n">children_rows</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+        <span class="n">children_rows</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;children&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">children_rows</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">children_rows</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">children_rows</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">children_rows</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
+                <span class="n">children_rows</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)</span>
+            <span class="p">):</span>
                 <span class="k">raise</span> <span class="n">ConfigurationError</span><span class="p">(</span><span class="s2">&quot;&#39;children&#39; must be a list of row specs&quot;</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">child_row</span> <span class="ow">in</span> <span class="n">children_rows</span><span class="p">:</span>
                 <span class="n">normalized_child_cells</span><span class="p">,</span> <span class="n">child_row_opts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_row</span><span class="p">(</span><span class="n">child_row</span><span class="p">)</span>
-                <span class="n">content_children</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_render_row</span><span class="p">(</span><span class="n">normalized_child_cells</span><span class="p">,</span> <span class="n">child_row_opts</span><span class="p">))</span>
+                <span class="n">content_children</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_render_row</span><span class="p">(</span><span class="n">normalized_child_cells</span><span class="p">,</span> <span class="n">child_row_opts</span><span class="p">)</span>
+                <span class="p">)</span>
 
         <span class="c1"># If only one child, pass directly; else wrap</span>
-        <span class="n">col_content</span><span class="p">:</span> <span class="n">Component</span> <span class="o">=</span> <span class="n">content_children</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">content_children</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">html</span><span class="o">.</span><span class="n">Div</span><span class="p">(</span><span class="n">content_children</span><span class="p">)</span>
+        <span class="n">col_content</span><span class="p">:</span> <span class="n">Component</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">content_children</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">content_children</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+            <span class="k">else</span> <span class="n">html</span><span class="o">.</span><span class="n">Div</span><span class="p">(</span><span class="n">content_children</span><span class="p">)</span>
+        <span class="p">)</span>
         <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Col</span><span class="p">(</span><span class="n">col_content</span><span class="p">,</span> <span class="o">**</span><span class="n">col_kwargs</span><span class="p">)</span>
 
 <div class="viewcode-block" id="DashboardPage.build_layout">
@@ -405,9 +442,11 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Building page layout&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Building layout: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layout_structure</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="p">)</span><span class="si">}</span><span class="s2"> blocks&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Building layout: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layout_structure</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="p">)</span><span class="si">}</span><span class="s2"> blocks&quot;</span>
+        <span class="p">)</span>
         <span class="n">rows</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Component</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-        
+
         <span class="k">try</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">row_idx</span><span class="p">,</span> <span class="n">row_spec</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layout_structure</span><span class="p">):</span>
                 <span class="c1"># Validate and normalize the row and its cells</span>
@@ -418,15 +457,9 @@
                 <span class="p">)</span>
                 <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_render_row</span><span class="p">(</span><span class="n">normalized_cells</span><span class="p">,</span> <span class="n">row_options</span><span class="p">))</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Layout built successfully: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows rendered&quot;</span>
-            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Layout built successfully: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows rendered&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Container</span><span class="p">(</span>
-                <span class="p">[</span>
-                    <span class="n">html</span><span class="o">.</span><span class="n">H1</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="n">className</span><span class="o">=</span><span class="s2">&quot;my-4&quot;</span><span class="p">),</span>
-                    <span class="o">*</span><span class="n">rows</span>
-                <span class="p">],</span>
-                <span class="n">fluid</span><span class="o">=</span><span class="kc">True</span>
+                <span class="p">[</span><span class="n">html</span><span class="o">.</span><span class="n">H1</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="n">className</span><span class="o">=</span><span class="s2">&quot;my-4&quot;</span><span class="p">),</span> <span class="o">*</span><span class="n">rows</span><span class="p">],</span> <span class="n">fluid</span><span class="o">=</span><span class="kc">True</span>
             <span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error building layout: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -438,15 +471,15 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">register_callbacks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Registers callbacks using both old (state-based) and new (block-centric) mechanisms.</span>
-<span class="sd">        </span>
+
 <span class="sd">        :hierarchy: [Architecture | Callback Registration | DashboardPage]</span>
 <span class="sd">        :relates-to:</span>
 <span class="sd">         - motivated_by: &quot;Architectural Conclusion: Hybrid callback system enables</span>
 <span class="sd">           both legacy and modern callback patterns for backward compatibility&quot;</span>
 <span class="sd">         - implements: &quot;method: &#39;register_callbacks&#39; with dual mechanism&quot;</span>
 <span class="sd">         - uses: [&quot;method: &#39;generate_callbacks&#39;&quot;, &quot;method: &#39;bind_callbacks&#39;&quot;]</span>
-<span class="sd">         </span>
-<span class="sd">        :rationale: &quot;Use old mechanism for static blocks with state dependencies, </span>
+
+<span class="sd">        :rationale: &quot;Use old mechanism for static blocks with state dependencies,</span>
 <span class="sd">         new mechanism for interactive blocks with controls.&quot;</span>
 <span class="sd">        :contract:</span>
 <span class="sd">         - pre: &quot;StateManager is initialized, blocks are registered.&quot;</span>
@@ -460,15 +493,13 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># OLD MECHANISM: State-based callbacks for StaticChartBlock</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">state_manager</span><span class="o">.</span><span class="n">generate_callbacks</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
-            
+
             <span class="c1"># NEW MECHANISM: Block-centric callbacks for InteractiveChartBlock</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">state_manager</span><span class="o">.</span><span class="n">bind_callbacks</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="p">)</span>
-            
+
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Callbacks registered successfully&quot;</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Error registering callbacks: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span>
-            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error registering callbacks: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">raise</span></div>
 </div>
 
