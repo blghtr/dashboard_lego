@@ -15,12 +15,9 @@ help:
 clean:
 	@echo "🧹 Cleaning build artifacts..."
 	rm -rf build/
-	rm -rf source/api/
 	@echo "✅ Clean complete"
 
 html:
-	@echo "📖 Generating API documentation..."
-	uv run sphinx-apidoc -o source/api --separate --module-first ../blocks/ ../core/ ../presets/ ../utils/
 	@echo "🔨 Building HTML documentation..."
 	uv run sphinx-build -b html source build
 	@echo "✅ Documentation built: docs/build/index.html"

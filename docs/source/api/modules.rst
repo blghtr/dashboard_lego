@@ -1,7 +1,12 @@
-dashboard_lego
-==============
+API Reference
+=============
+
+Complete API documentation for all Dashboard Lego modules.
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 2
 
-   dashboard_lego
+   blocks
+   core
+   presets
+   utils
