@@ -9,14 +9,14 @@ description = "A modular Python library for building interactive dashboards usin
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
-    {name = "Dashboard Lego Team", email = "team@dashboard-lego.com"}
+    {name = "Vitalii Voronov", email = "myrdhin.yates@gmail.com"}
 ]
 maintainers = [
-    {name = "Dashboard Lego Team", email = "team@dashboard-lego.com"}
+    {name = "Vitalii Voronov", email = "myrdhin.yates@gmail.com"}
 ]
 keywords = ["dashboard", "dash", "plotly", "data-visualization", "eda"]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
@@ -40,6 +40,13 @@ dependencies = [
     "scikit-learn>=1.6.1",
     "isort>=6.0.1",
 ]
+
+[project.urls]
+Homepage = "https://github.com/blghtr/dashboard_lego"
+Documentation = "https://blghtr.github.io/dashboard_lego/"
+Repository = "https://github.com/blghtr/dashboard_lego"
+"Bug Tracker" = "https://github.com/blghtr/dashboard_lego/issues"
+Changelog = "https://github.com/blghtr/dashboard_lego/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
