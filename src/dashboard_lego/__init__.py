@@ -6,7 +6,4 @@ using Dash and Plotly with a modular block-based architecture.
 """
 
 # Import core modules to make them available at package level
-from . import blocks
-from . import core
-from . import presets
-from . import utils
+from . import blocks, core, presets, utils
