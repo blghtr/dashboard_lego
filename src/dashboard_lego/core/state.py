@@ -223,7 +223,7 @@ class StateManager:
         callback_count = 0
 
         try:
-            # Validate for duplicate outputs at compile time
+            # Validate for duplicate outputs at compile time with enhanced error handling
             self._validate_no_duplicate_outputs(blocks)
 
             for block in blocks:
@@ -249,29 +249,53 @@ class StateManager:
                     Input(component_id, prop) for component_id, prop in inputs
                 ]
 
-                # Create Output object
-                output_object = Output(output_id, output_prop)
+                # Create Output object with allow_duplicate support
+                allow_duplicate = getattr(block, "allow_duplicate_output", False)
+                output_object = Output(
+                    output_id, output_prop, allow_duplicate=allow_duplicate
+                )
 
-                # Create callback function
+                # Create callback function with enhanced error handling
                 def create_block_callback(block_ref):
                     def block_callback(*values):
-                        # Convert input values to control values dict
-                        control_values = {}
-                        for i, (component_id, prop) in enumerate(
-                            block_ref.list_control_inputs()
-                        ):
-                            # Extract control name from component_id (last part after -)
-                            control_name = component_id.split("-")[-1]
-                            control_values[control_name] = values[i]
+                        try:
+                            # Convert input values to control values dict
+                            control_values = {}
+                            for i, (component_id, prop) in enumerate(
+                                block_ref.list_control_inputs()
+                            ):
+                                # Extract control name from component_id (last part after -)
+                                control_name = component_id.split("-")[-1]
+                                control_values[control_name] = values[i]
 
-                        # Call the block's update method
-                        return block_ref.update_from_controls(control_values)
+                            # Call the block's update method
+                            return block_ref.update_from_controls(control_values)
+                        except Exception as e:
+                            self.logger.error(
+                                f"Error in callback for block {block_ref.block_id}: {e}",
+                                exc_info=True,
+                            )
+                            # Return a safe fallback to prevent UI crashes
+                            return self._get_fallback_output(block_ref)
 
                     return block_callback
 
-                # Register the callback
-                app.callback(output_object, input_objects)(create_block_callback(block))
-                callback_count += 1
+                # Register the callback with enhanced error handling
+                try:
+                    app.callback(output_object, input_objects)(
+                        create_block_callback(block)
+                    )
+                    callback_count += 1
+                    self.logger.debug(
+                        f"Successfully registered callback for block: {block.block_id}"
+                    )
+                except Exception as callback_error:
+                    self.logger.error(
+                        f"Failed to register callback for block {block.block_id}: {callback_error}",
+                        exc_info=True,
+                    )
+                    # Continue with other blocks instead of failing completely
+                    continue
 
             self.logger.info(
                 f"Successfully registered {callback_count} block callbacks"
@@ -304,19 +328,43 @@ class StateManager:
             StateError: If duplicate output targets are found.
         """
         output_targets = {}
+        duplicate_blocks = []
 
         for block in blocks:
             try:
                 output_id, output_prop = block.output_target()
                 output_key = (output_id, output_prop)
+                allow_duplicate = getattr(block, "allow_duplicate_output", False)
 
                 if output_key in output_targets:
                     existing_block = output_targets[output_key]
-                    raise StateError(
-                        f"Duplicate output target detected: {output_id}.{output_prop} "
-                        f"is used by both blocks '{existing_block.block_id}' and '{block.block_id}'. "
-                        f"Each block must have a unique output target."
+                    existing_allow_duplicate = getattr(
+                        existing_block, "allow_duplicate_output", False
                     )
+
+                    # Check if either block allows duplicates
+                    if not (allow_duplicate or existing_allow_duplicate):
+                        duplicate_blocks.append(
+                            {
+                                "output": f"{output_id}.{output_prop}",
+                                "block1": existing_block.block_id,
+                                "block2": block.block_id,
+                                "allow_duplicate1": existing_allow_duplicate,
+                                "allow_duplicate2": allow_duplicate,
+                            }
+                        )
+
+                        self.logger.error(
+                            f"Duplicate output target detected: {output_id}.{output_prop} "
+                            f"is used by both blocks '{existing_block.block_id}' and '{block.block_id}'. "
+                            f"Set allow_duplicate_output=True on one or both blocks to resolve this conflict."
+                        )
+                    else:
+                        self.logger.warning(
+                            f"Duplicate output target allowed: {output_id}.{output_prop} "
+                            f"used by blocks '{existing_block.block_id}' and '{block.block_id}' "
+                            f"(allow_duplicate_output=True)"
+                        )
 
                 output_targets[output_key] = block
 
@@ -325,9 +373,72 @@ class StateManager:
                     f"Block '{block.block_id}' does not have required output_target() method: {e}"
                 ) from e
 
+        # Raise error if there are unresolved duplicates
+        if duplicate_blocks:
+            error_msg = "Duplicate output targets detected:\n"
+            for dup in duplicate_blocks:
+                error_msg += f"  - {dup['output']}: blocks '{dup['block1']}' and '{dup['block2']}'\n"
+            error_msg += "\nTo resolve this, set allow_duplicate_output=True on one or both blocks."
+            raise StateError(error_msg)
+
         self.logger.debug(
             f"Output validation passed: {len(output_targets)} unique targets"
         )
+
+    def _get_fallback_output(self, block: Any) -> Any:
+        """
+        Provides a safe fallback output when a callback fails.
+
+        :hierarchy: [Architecture | Error Handling | StateManager]
+        :relates-to:
+         - motivated_by: "Architectural Conclusion: Prevent UI crashes by providing
+           safe fallbacks when callbacks fail"
+         - implements: "method: '_get_fallback_output'"
+         - uses: ["method: 'output_target'"]
+
+        :rationale: "Returns appropriate fallback based on output type to prevent UI crashes."
+        :contract:
+         - pre: "Block has output_target() method."
+         - post: "Returns a safe fallback value for the output type."
+
+        Args:
+            block: The block that failed.
+
+        Returns:
+            A safe fallback value appropriate for the output type.
+        """
+        try:
+            output_id, output_prop = block.output_target()
+
+            # Return appropriate fallback based on property type
+            if output_prop == "figure":
+                # For Plotly figures, return empty figure
+                import plotly.graph_objects as go
+
+                return go.Figure().update_layout(
+                    title="Error loading chart",
+                    annotations=[
+                        dict(
+                            text="An error occurred while loading this chart",
+                            xref="paper",
+                            yref="paper",
+                            x=0.5,
+                            y=0.5,
+                            showarrow=False,
+                            font=dict(size=16, color="red"),
+                        )
+                    ],
+                )
+            elif output_prop == "children":
+                # For text/HTML content, return error message
+                return "Error loading content"
+            else:
+                # Generic fallback
+                return None
+
+        except Exception as e:
+            self.logger.error(f"Error creating fallback output: {e}", exc_info=True)
+            return None
 
     def _create_callback_wrapper(self, subscribers: List[Dict[str, Any]]) -> Callable:
         """

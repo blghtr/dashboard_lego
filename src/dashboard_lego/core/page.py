@@ -745,6 +745,10 @@ class DashboardPage:
 
         """
         self.logger.info("Registering callbacks with Dash app")
+
+        # Set up comprehensive error handling for Dash callbacks
+        self._setup_callback_error_handling(app)
+
         try:
             # Navigation-specific callbacks
             if self.navigation:
@@ -769,6 +773,79 @@ class DashboardPage:
         except Exception as e:
             self.logger.error(f"Error registering callbacks: {e}", exc_info=True)
             raise
+
+    def _setup_callback_error_handling(self, app: Any):
+        """
+        Sets up comprehensive error handling for Dash callbacks.
+
+        :hierarchy: [Architecture | Error Handling | DashboardPage]
+        :relates-to:
+         - motivated_by: "Architectural Conclusion: Comprehensive error handling
+           prevents silent failures and improves debugging"
+         - implements: "method: '_setup_callback_error_handling'"
+         - uses: ["attribute: 'logger'"]
+
+        :rationale: "Intercepts Dash callback errors and logs them properly for debugging."
+        :contract:
+         - pre: "Dash app instance is provided."
+         - post: "Callback error handling is configured for the app."
+
+        Args:
+            app: The Dash app instance.
+        """
+        from dash.exceptions import PreventUpdate
+
+        def enhanced_callback(*args, **kwargs):
+            """Enhanced callback decorator with error handling."""
+
+            def decorator(func):
+                def wrapper(*callback_args, **callback_kwargs):
+                    try:
+                        return func(*callback_args, **callback_kwargs)
+                    except PreventUpdate:
+                        # Re-raise PreventUpdate as it's intentional
+                        raise
+                    except Exception as e:
+                        # Log the error with context
+                        self.logger.error(
+                            f"Callback error in function '{func.__name__}': {e}",
+                            exc_info=True,
+                        )
+
+                        # Try to provide a meaningful error message
+                        error_msg = f"Error in callback: {str(e)}"
+
+                        # For figure outputs, return error figure
+                        if args and hasattr(args[0], "component_property"):
+                            if args[0].component_property == "figure":
+                                import plotly.graph_objects as go
+
+                                return go.Figure().update_layout(
+                                    title="Callback Error",
+                                    annotations=[
+                                        dict(
+                                            text=error_msg,
+                                            xref="paper",
+                                            yref="paper",
+                                            x=0.5,
+                                            y=0.5,
+                                            showarrow=False,
+                                            font=dict(size=14, color="red"),
+                                        )
+                                    ],
+                                )
+
+                        # For other outputs, return error message
+                        return f"Error: {error_msg}"
+
+                return wrapper
+
+            return decorator
+
+        # Replace the callback decorator
+        app.callback = enhanced_callback
+
+        self.logger.debug("Enhanced callback error handling configured")
 
     def _register_navigation_callbacks(self, app: Any):
         """

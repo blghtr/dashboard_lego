@@ -67,6 +67,8 @@ class StaticChartBlock(BaseBlock):
         graph_config: Optional[Dict[str, Any]] = None,
         graph_style: Optional[Dict[str, Any]] = None,
         figure_layout: Optional[Dict[str, Any]] = None,
+        # Callback configuration
+        allow_duplicate_output: bool = False,
     ):
         self.title = title
         self.chart_generator = chart_generator
@@ -82,7 +84,10 @@ class StaticChartBlock(BaseBlock):
         self.figure_layout = figure_layout or {}
 
         super().__init__(
-            block_id, datasource, subscribes={subscribes_to: self._update_chart}
+            block_id,
+            datasource,
+            subscribes={subscribes_to: self._update_chart},
+            allow_duplicate_output=allow_duplicate_output,
         )
         self.logger.debug(f"Static chart {block_id} with title: {title}")
 

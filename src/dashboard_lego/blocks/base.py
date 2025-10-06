@@ -45,6 +45,8 @@ class BaseBlock(ABC):
             block_id: A unique identifier for this block instance.
             datasource: An instance of a class that implements the
                        BaseDataSource interface.
+            allow_duplicate_output: If True, allows this block to share output targets
+                                  with other blocks (useful for overlay scenarios).
 
         """
         self.logger = get_logger(__name__, BaseBlock)
@@ -66,10 +68,12 @@ class BaseBlock(ABC):
         self.datasource = datasource
         self.publishes: Optional[List[Dict[str, str]]] = kwargs.get("publishes")
         self.subscribes: Optional[Dict[str, Callable]] = kwargs.get("subscribes")
+        self.allow_duplicate_output: bool = kwargs.get("allow_duplicate_output", False)
 
         self.logger.debug(
             f"Block initialized: publishes={bool(self.publishes)}, "
-            f"subscribes={bool(self.subscribes)}"
+            f"subscribes={bool(self.subscribes)}, "
+            f"allow_duplicate_output={self.allow_duplicate_output}"
         )
 
     def _register_state_interactions(self, state_manager: StateManager):
