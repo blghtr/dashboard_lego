@@ -155,6 +155,8 @@
         <span class="n">graph_config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">graph_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">figure_layout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="c1"># Callback configuration</span>
+        <span class="n">allow_duplicate_output</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">title</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">chart_generator</span> <span class="o">=</span> <span class="n">chart_generator</span>
@@ -170,7 +172,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">figure_layout</span> <span class="o">=</span> <span class="n">figure_layout</span> <span class="ow">or</span> <span class="p">{}</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">block_id</span><span class="p">,</span> <span class="n">datasource</span><span class="p">,</span> <span class="n">subscribes</span><span class="o">=</span><span class="p">{</span><span class="n">subscribes_to</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_chart</span><span class="p">}</span>
+            <span class="n">block_id</span><span class="p">,</span>
+            <span class="n">datasource</span><span class="p">,</span>
+            <span class="n">subscribes</span><span class="o">=</span><span class="p">{</span><span class="n">subscribes_to</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_chart</span><span class="p">},</span>
+            <span class="n">allow_duplicate_output</span><span class="o">=</span><span class="n">allow_duplicate_output</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Static chart </span><span class="si">{</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> with title: </span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
