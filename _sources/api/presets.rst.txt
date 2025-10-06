@@ -8,7 +8,7 @@ EDA Presets
 
 Exploratory Data Analysis presets for common data visualization patterns.
 
-.. automodule:: presets.eda_presets
+.. automodule:: dashboard_lego.presets.eda_presets
    :members:
    :undoc-members:
    :show-inheritance:
@@ -16,41 +16,45 @@ Exploratory Data Analysis presets for common data visualization patterns.
 Correlation Heatmap Preset
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: presets.eda_presets.CorrelationHeatmapPreset
+.. autoclass:: dashboard_lego.presets.eda_presets.CorrelationHeatmapPreset
    :members:
    :undoc-members:
    :show-inheritance:
+   :noindex:
 
 Grouped Histogram Preset
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: presets.eda_presets.GroupedHistogramPreset
+.. autoclass:: dashboard_lego.presets.eda_presets.GroupedHistogramPreset
    :members:
    :undoc-members:
    :show-inheritance:
+   :noindex:
 
 Missing Values Preset
 ^^^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: presets.eda_presets.MissingValuesPreset
+.. autoclass:: dashboard_lego.presets.eda_presets.MissingValuesPreset
    :members:
    :undoc-members:
    :show-inheritance:
+   :noindex:
 
 Box Plot Preset
 ^^^^^^^^^^^^^^^
 
-.. autoclass:: presets.eda_presets.BoxPlotPreset
+.. autoclass:: dashboard_lego.presets.eda_presets.BoxPlotPreset
    :members:
    :undoc-members:
    :show-inheritance:
+   :noindex:
 
 ML Presets
 ----------
 
 Machine Learning visualization presets for common ML workflows.
 
-.. automodule:: presets.ml_presets
+.. automodule:: dashboard_lego.presets.ml_presets
    :members:
    :undoc-members:
    :show-inheritance:
@@ -58,41 +62,42 @@ Machine Learning visualization presets for common ML workflows.
 Metric Card Block
 ^^^^^^^^^^^^^^^^^
 
-.. autoclass:: presets.ml_presets.MetricCardBlock
+.. autoclass:: dashboard_lego.presets.ml_presets.MetricCardBlock
    :members:
    :undoc-members:
    :show-inheritance:
+   :noindex:
 
 Confusion Matrix Preset
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: presets.ml_presets.ConfusionMatrixPreset
+.. autoclass:: dashboard_lego.presets.ml_presets.ConfusionMatrixPreset
    :members:
    :undoc-members:
    :show-inheritance:
+   :noindex:
 
 Feature Importance Preset
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: presets.ml_presets.FeatureImportancePreset
+.. autoclass:: dashboard_lego.presets.ml_presets.FeatureImportancePreset
    :members:
    :undoc-members:
    :show-inheritance:
+   :noindex:
 
 ROC Curve Preset
 ^^^^^^^^^^^^^^^^
 
-.. autoclass:: presets.ml_presets.ROC_CurvePreset
-   :members:
-   :undoc-members:
-   :show-inheritance:
+..
+.. Note: ROC_CurvePreset is not present in the codebase.
 
 Layout Presets
 --------------
 
 Pre-built layout patterns for common dashboard arrangements.
 
-.. automodule:: presets.layouts
+.. automodule:: dashboard_lego.presets.layouts
    :members:
    :undoc-members:
    :show-inheritance:
@@ -100,12 +105,17 @@ Pre-built layout patterns for common dashboard arrangements.
 Layout Functions
 ^^^^^^^^^^^^^^^^
 
-.. autofunction:: presets.layouts.one_column
+.. autofunction:: dashboard_lego.presets.layouts.one_column
+   :noindex:
 
-.. autofunction:: presets.layouts.two_column_6_6
+.. autofunction:: dashboard_lego.presets.layouts.two_column_6_6
+   :noindex:
 
-.. autofunction:: presets.layouts.two_column_8_4
+.. autofunction:: dashboard_lego.presets.layouts.two_column_8_4
+   :noindex:
 
-.. autofunction:: presets.layouts.three_column_4_4_4
+.. autofunction:: dashboard_lego.presets.layouts.three_column_4_4_4
+   :noindex:
 
-.. autofunction:: presets.layouts.kpi_row_top
+.. autofunction:: dashboard_lego.presets.layouts.kpi_row_top
+   :noindex:

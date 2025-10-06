@@ -6,20 +6,21 @@ The blocks module contains the building blocks for creating dashboard components
 Base Block
 ----------
 
-.. automodule:: blocks.base
+.. automodule:: dashboard_lego.blocks.base
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: blocks.base.BaseBlock
+.. autoclass:: dashboard_lego.blocks.base.BaseBlock
    :members:
    :undoc-members:
    :show-inheritance:
+   :noindex:
 
 Chart Blocks
 ------------
 
-.. automodule:: blocks.chart
+.. automodule:: dashboard_lego.blocks.chart
    :members:
    :undoc-members:
    :show-inheritance:
@@ -27,49 +28,54 @@ Chart Blocks
 Static Chart Block
 ^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: blocks.chart.StaticChartBlock
+.. autoclass:: dashboard_lego.blocks.chart.StaticChartBlock
    :members:
    :undoc-members:
    :show-inheritance:
+   :noindex:
 
 Interactive Chart Block
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: blocks.chart.InteractiveChartBlock
+.. autoclass:: dashboard_lego.blocks.chart.InteractiveChartBlock
    :members:
    :undoc-members:
    :show-inheritance:
+   :noindex:
 
 Control Class
 ^^^^^^^^^^^^^
 
-.. autoclass:: blocks.chart.Control
+.. autoclass:: dashboard_lego.blocks.chart.Control
    :members:
    :undoc-members:
    :show-inheritance:
+   :noindex:
 
 KPI Block
 ---------
 
-.. automodule:: blocks.kpi
+.. automodule:: dashboard_lego.blocks.kpi
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: blocks.kpi.KPIBlock
+.. autoclass:: dashboard_lego.blocks.kpi.KPIBlock
    :members:
    :undoc-members:
    :show-inheritance:
+   :noindex:
 
 Text Block
 ----------
 
-.. automodule:: blocks.text
+.. automodule:: dashboard_lego.blocks.text
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: blocks.text.TextBlock
+.. autoclass:: dashboard_lego.blocks.text.TextBlock
    :members:
    :undoc-members:
    :show-inheritance:
+   :noindex:

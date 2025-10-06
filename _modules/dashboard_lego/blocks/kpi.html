@@ -1,0 +1,347 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dashboard_lego.blocks.kpi &mdash; Dashboard Lego 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Dashboard Lego
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../concepts.html">Core Concepts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">API Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing to Dashboard Lego</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Dashboard Lego</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">dashboard_lego.blocks.kpi</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for dashboard_lego.blocks.kpi</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module defines the KPIBlock for displaying key performance indicators.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">dash_bootstrap_components</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dbc</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dash</span><span class="w"> </span><span class="kn">import</span> <span class="n">dcc</span><span class="p">,</span> <span class="n">html</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dash.development.base_component</span><span class="w"> </span><span class="kn">import</span> <span class="n">Component</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseBlock</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.formatting</span><span class="w"> </span><span class="kn">import</span> <span class="n">format_number</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_create_kpi_card</span><span class="p">(</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">icon</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;primary&quot;</span><span class="p">,</span>
+    <span class="c1"># Style customization parameters</span>
+    <span class="n">kpi_card_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">kpi_card_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">value_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">value_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">title_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">title_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Col</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a KPI card with customizable styling.</span>
+
+<span class="sd">    :hierarchy: [Blocks | KPIs | KPIBlock | Card Creation]</span>
+<span class="sd">    :relates-to:</span>
+<span class="sd">     - motivated_by: &quot;PRD: Need customizable styling for KPI cards&quot;</span>
+<span class="sd">     - implements: &quot;function: &#39;_create_kpi_card&#39; with style overrides&quot;</span>
+<span class="sd">     - uses: [&quot;component: &#39;dbc.Card&#39;&quot;, &quot;component: &#39;html.H4&#39;&quot;,</span>
+<span class="sd">              &quot;component: &#39;html.P&#39;&quot;]</span>
+
+<span class="sd">    :rationale: &quot;Enhanced with style customization parameters to allow</span>
+<span class="sd">     fine-grained control over KPI card appearance while maintaining</span>
+<span class="sd">     backward compatibility.&quot;</span>
+<span class="sd">    :contract:</span>
+<span class="sd">     - pre: &quot;Title, value, and icon strings are provided.&quot;</span>
+<span class="sd">     - post: &quot;Returns a styled KPI card component with customizable</span>
+<span class="sd">       appearance.&quot;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Build card props with style overrides</span>
+    <span class="n">default_card_class</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;text-center text-white bg-</span><span class="si">{</span><span class="n">color</span><span class="si">}</span><span class="s2"> m-2&quot;</span>
+    <span class="n">card_props</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="n">kpi_card_className</span> <span class="ow">or</span> <span class="n">default_card_class</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">kpi_card_style</span><span class="p">:</span>
+        <span class="n">card_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kpi_card_style</span>
+
+    <span class="c1"># Build value props with style overrides</span>
+    <span class="n">value_props</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="n">value_className</span> <span class="ow">or</span> <span class="s2">&quot;card-title&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">value_style</span><span class="p">:</span>
+        <span class="n">value_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value_style</span>
+
+    <span class="c1"># Build title props with style overrides</span>
+    <span class="n">title_props</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="n">title_className</span> <span class="ow">or</span> <span class="s2">&quot;card-text&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">title_style</span><span class="p">:</span>
+        <span class="n">title_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">title_style</span>
+
+    <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Col</span><span class="p">(</span>
+        <span class="n">dbc</span><span class="o">.</span><span class="n">Card</span><span class="p">(</span>
+            <span class="n">dbc</span><span class="o">.</span><span class="n">CardBody</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="n">html</span><span class="o">.</span><span class="n">H4</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="o">**</span><span class="n">value_props</span><span class="p">),</span>
+                    <span class="n">html</span><span class="o">.</span><span class="n">P</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="o">**</span><span class="n">title_props</span><span class="p">),</span>
+                <span class="p">]</span>
+            <span class="p">),</span>
+            <span class="o">**</span><span class="n">card_props</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="KPIBlock">
+<a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.kpi.KPIBlock">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">KPIBlock</span><span class="p">(</span><span class="n">BaseBlock</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A block for displaying a row of Key Performance Indicators (KPIs) with</span>
+<span class="sd">    customizable styling.</span>
+
+<span class="sd">    This block subscribes to a state and updates its KPI values when the state</span>
+<span class="sd">    changes.</span>
+
+<span class="sd">        :hierarchy: [Blocks | KPIs | KPIBlock]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">          - motivated_by: &quot;PRD: Need to display summary statistics that react</span>
+<span class="sd">            to filters with customizable styling&quot;</span>
+<span class="sd">          - implements: &quot;block: &#39;KPIBlock&#39;&quot;</span>
+<span class="sd">          - uses: [&quot;interface: &#39;BaseBlock&#39;&quot;]</span>
+
+<span class="sd">        :rationale: &quot;Enhanced with style customization parameters to allow</span>
+<span class="sd">         fine-grained control over KPI appearance while maintaining backward</span>
+<span class="sd">         compatibility.&quot;</span>
+<span class="sd">        :contract:</span>
+<span class="sd">          - pre: &quot;A `subscribes_to` state ID and a list of `kpi_definitions`</span>
+<span class="sd">            must be provided.&quot;</span>
+<span class="sd">          - post: &quot;The block renders a series of KPI cards that update on</span>
+<span class="sd">            state change with customizable styling applied.&quot;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="KPIBlock.__init__">
+<a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.kpi.KPIBlock.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">datasource</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">kpi_definitions</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span>
+        <span class="n">subscribes_to</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="c1"># Style customization parameters</span>
+        <span class="n">container_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">container_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">loading_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+        <span class="c1"># KPI card styling parameters</span>
+        <span class="n">kpi_card_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">kpi_card_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">value_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">value_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">title_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">title_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kpi_definitions</span> <span class="o">=</span> <span class="n">kpi_definitions</span>
+
+        <span class="c1"># Store style customization parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">container_style</span> <span class="o">=</span> <span class="n">container_style</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">container_className</span> <span class="o">=</span> <span class="n">container_className</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loading_type</span> <span class="o">=</span> <span class="n">loading_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kpi_card_style</span> <span class="o">=</span> <span class="n">kpi_card_style</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kpi_card_className</span> <span class="o">=</span> <span class="n">kpi_card_className</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value_style</span> <span class="o">=</span> <span class="n">value_style</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value_className</span> <span class="o">=</span> <span class="n">value_className</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title_style</span> <span class="o">=</span> <span class="n">title_style</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title_className</span> <span class="o">=</span> <span class="n">title_className</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">block_id</span><span class="p">,</span> <span class="n">datasource</span><span class="p">,</span> <span class="n">subscribes</span><span class="o">=</span><span class="p">{</span><span class="n">subscribes_to</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_kpi_cards</span><span class="p">}</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;KPI block </span><span class="si">{</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">kpi_definitions</span><span class="p">)</span><span class="si">}</span><span class="s2"> KPIs&quot;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_update_kpi_cards</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates KPI cards with current data and applies style customization.</span>
+
+<span class="sd">        :hierarchy: [Blocks | KPIs | KPIBlock | Update Logic]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;PRD: Need to display summary statistics that react</span>
+<span class="sd">           to filters&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_update_kpi_cards&#39; with style overrides&quot;</span>
+<span class="sd">         - uses: [&quot;function: &#39;_create_kpi_card&#39;&quot;, &quot;method: &#39;format_number&#39;&quot;]</span>
+
+<span class="sd">        :rationale: &quot;Enhanced to pass style customization parameters to</span>
+<span class="sd">         individual KPI cards.&quot;</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;Datasource is available and KPI definitions are set.&quot;</span>
+<span class="sd">         - post: &quot;Returns a Row of styled KPI cards with current data.&quot;</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">kpi_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">datasource</span><span class="o">.</span><span class="n">get_kpis</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">kpi_data</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Alert</span><span class="p">(</span><span class="s2">&quot;Нет данных для KPI.&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;warning&quot;</span><span class="p">)</span>
+            <span class="n">cards</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">definition</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">kpi_definitions</span><span class="p">:</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">definition</span><span class="p">[</span><span class="s2">&quot;key&quot;</span><span class="p">]</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">kpi_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s2">&quot;N/A&quot;</span><span class="p">)</span>
+                <span class="n">formatted_value</span> <span class="o">=</span> <span class="n">format_number</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="n">cards</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">_create_kpi_card</span><span class="p">(</span>
+                        <span class="n">title</span><span class="o">=</span><span class="n">definition</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">],</span>
+                        <span class="n">value</span><span class="o">=</span><span class="n">formatted_value</span><span class="p">,</span>
+                        <span class="n">icon</span><span class="o">=</span><span class="n">definition</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;icon&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                        <span class="n">color</span><span class="o">=</span><span class="n">definition</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;color&quot;</span><span class="p">,</span> <span class="s2">&quot;primary&quot;</span><span class="p">),</span>
+                        <span class="c1"># Pass style customization parameters</span>
+                        <span class="n">kpi_card_style</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kpi_card_style</span><span class="p">,</span>
+                        <span class="n">kpi_card_className</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kpi_card_className</span><span class="p">,</span>
+                        <span class="n">value_style</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">value_style</span><span class="p">,</span>
+                        <span class="n">value_className</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">value_className</span><span class="p">,</span>
+                        <span class="n">title_style</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">title_style</span><span class="p">,</span>
+                        <span class="n">title_className</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">title_className</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span><span class="n">cards</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Alert</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка загрузки KPI: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;danger&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="KPIBlock.layout">
+<a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.kpi.KPIBlock.layout">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">layout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the Dash component layout for the KPIBlock with customizable</span>
+<span class="sd">        styling.</span>
+
+<span class="sd">        :hierarchy: [Blocks | KPIs | KPIBlock | Layout]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;PRD: Need customizable styling for KPI blocks&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;layout&#39; with style overrides&quot;</span>
+<span class="sd">         - uses: [&quot;attribute: &#39;container_style&#39;&quot;, &quot;attribute: &#39;loading_type&#39;&quot;]</span>
+
+<span class="sd">        :rationale: &quot;Applied style customization parameters to container and</span>
+<span class="sd">         loading components.&quot;</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;Block is properly initialized with style parameters.&quot;</span>
+<span class="sd">         - post: &quot;Returns a styled Loading component with customizable</span>
+<span class="sd">           appearance.&quot;</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize with current data instead of empty container</span>
+        <span class="n">initial_content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_kpi_cards</span><span class="p">()</span>
+
+        <span class="c1"># Build container props with style overrides</span>
+        <span class="n">container_props</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_id</span><span class="p">(</span><span class="s2">&quot;container&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;children&quot;</span><span class="p">:</span> <span class="n">initial_content</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">container_style</span><span class="p">:</span>
+            <span class="n">container_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">container_style</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">container_className</span><span class="p">:</span>
+            <span class="n">container_props</span><span class="p">[</span><span class="s2">&quot;className&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">container_className</span>
+
+        <span class="k">return</span> <span class="n">dcc</span><span class="o">.</span><span class="n">Loading</span><span class="p">(</span>
+            <span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_generate_id</span><span class="p">(</span><span class="s2">&quot;loading&quot;</span><span class="p">),</span>
+            <span class="nb">type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">loading_type</span><span class="p">,</span>
+            <span class="n">children</span><span class="o">=</span><span class="n">html</span><span class="o">.</span><span class="n">Div</span><span class="p">(</span><span class="o">**</span><span class="n">container_props</span><span class="p">),</span>
+        <span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Dashboard Lego Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

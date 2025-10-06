@@ -53,13 +53,25 @@
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">API Reference</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="blocks.html">Blocks Module</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Core Module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#data-sources">Data Sources</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-dashboard_lego.core.datasource">Data Sources</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dashboard_lego.core.datasource.BaseDataSource"><code class="docutils literal notranslate"><span class="pre">BaseDataSource</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#data-source-implementations">Data Source Implementations</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#dashboard-page">Dashboard Page</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#state-management">State Management</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#chart-context">Chart Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-dashboard_lego.core.page">Dashboard Page</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dashboard_lego.core.page.NavigationSection"><code class="docutils literal notranslate"><span class="pre">NavigationSection</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dashboard_lego.core.page.NavigationConfig"><code class="docutils literal notranslate"><span class="pre">NavigationConfig</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dashboard_lego.core.page.DashboardPage"><code class="docutils literal notranslate"><span class="pre">DashboardPage</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-dashboard_lego.core.state">State Management</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dashboard_lego.core.state.StateManager"><code class="docutils literal notranslate"><span class="pre">StateManager</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-dashboard_lego.core.chart_context">Chart Context</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dashboard_lego.core.chart_context.ChartContext"><code class="docutils literal notranslate"><span class="pre">ChartContext</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="presets.html">Presets Module</a></li>
@@ -100,29 +112,1155 @@
   <section id="core-module">
 <h1>Core Module<a class="headerlink" href="#core-module" title="Link to this heading"></a></h1>
 <p>The core module contains the fundamental classes for building dashboards with Dashboard Lego.</p>
-<section id="data-sources">
-<h2>Data Sources<a class="headerlink" href="#data-sources" title="Link to this heading"></a></h2>
+<section id="module-dashboard_lego.core.datasource">
+<span id="data-sources"></span><h2>Data Sources<a class="headerlink" href="#module-dashboard_lego.core.datasource" title="Link to this heading"></a></h2>
+<p>This module defines the abstract interface for data sources.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="dashboard_lego.core.datasource.BaseDataSource">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.core.datasource.</span></span><span class="sig-name descname"><span class="pre">BaseDataSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cache_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_ttl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasource.BaseDataSource" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></a></p>
+<p>An abstract base class that defines the contract for data sources.
+This base class includes a transparent caching layer to prevent
+re-loading data.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Core | DataSources | BaseDataSource]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Disk-based caching improves performance by avoiding repeated data loading operations”</p></li>
+<li><p>implements: “interface: ‘BaseDataSource’”</p></li>
+<li><p>uses: [“library: ‘diskcache’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Replaced cachetools with diskcache to support both in-memory and persistent disk-based caching, configured via constructor arguments.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “A concrete implementation of this class must be provided.”</p></li>
+<li><p>post: “Dashboard blocks can reliably request data, benefiting from a configurable caching layer.”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.datasource.BaseDataSource.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cache_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_ttl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasource.BaseDataSource.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes the BaseDataSource with a configurable cache.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cache_dir</strong> – Directory for the disk cache. If None, an in-memory
+cache is used.</p></li>
+<li><p><strong>cache_ttl</strong> – The time-to-live for each item in seconds.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.datasource.BaseDataSource.init_data">
+<span class="sig-name descname"><span class="pre">init_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource.init_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasource.BaseDataSource.init_data" title="Link to this definition"></a></dt>
+<dd><p>Initializes or recalculates the data based on the given parameters.
+This method acts as a caching wrapper around the <cite>_load_data</cite> method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>params</strong> – A dictionary containing all necessary parameters for
+data processing.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if initialization was successful, False otherwise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.datasource.BaseDataSource.get_processed_data">
+<span class="sig-name descname"><span class="pre">get_processed_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.3.3)"><span class="pre">DataFrame</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource.get_processed_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasource.BaseDataSource.get_processed_data" title="Link to this definition"></a></dt>
+<dd><p>Returns the main processed pandas DataFrame.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.datasource.BaseDataSource.get_kpis">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_kpis</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource.get_kpis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasource.BaseDataSource.get_kpis" title="Link to this definition"></a></dt>
+<dd><p>Returns a dictionary of key performance indicators (KPIs).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.datasource.BaseDataSource.get_filter_options">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_filter_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filter_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource.get_filter_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasource.BaseDataSource.get_filter_options" title="Link to this definition"></a></dt>
+<dd><p>Returns a list of options for a given filter control.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.datasource.BaseDataSource.get_summary">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_summary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource.get_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasource.BaseDataSource.get_summary" title="Link to this definition"></a></dt>
+<dd><p>Returns a short text summary of the loaded data.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.core.datasource.</span></span><span class="sig-name descname"><span class="pre">BaseDataSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cache_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_ttl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></a></p>
+<p>An abstract base class that defines the contract for data sources.
+This base class includes a transparent caching layer to prevent
+re-loading data.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Core | DataSources | BaseDataSource]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Disk-based caching improves performance by avoiding repeated data loading operations”</p></li>
+<li><p>implements: “interface: ‘BaseDataSource’”</p></li>
+<li><p>uses: [“library: ‘diskcache’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Replaced cachetools with diskcache to support both in-memory and persistent disk-based caching, configured via constructor arguments.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “A concrete implementation of this class must be provided.”</p></li>
+<li><p>post: “Dashboard blocks can reliably request data, benefiting from a configurable caching layer.”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cache_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_ttl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Initializes the BaseDataSource with a configurable cache.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cache_dir</strong> – Directory for the disk cache. If None, an in-memory
+cache is used.</p></li>
+<li><p><strong>cache_ttl</strong> – The time-to-live for each item in seconds.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">init_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource.init_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Initializes or recalculates the data based on the given parameters.
+This method acts as a caching wrapper around the <cite>_load_data</cite> method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>params</strong> – A dictionary containing all necessary parameters for
+data processing.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if initialization was successful, False otherwise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">get_processed_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.3.3)"><span class="pre">DataFrame</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource.get_processed_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Returns the main processed pandas DataFrame.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_kpis</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource.get_kpis"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Returns a dictionary of key performance indicators (KPIs).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_filter_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filter_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource.get_filter_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Returns a list of options for a given filter control.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_summary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource.get_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Returns a short text summary of the loaded data.</p>
+</dd></dl>
+
+</dd></dl>
+
 <section id="data-source-implementations">
 <h3>Data Source Implementations<a class="headerlink" href="#data-source-implementations" title="Link to this heading"></a></h3>
-<section id="csv-data-source">
-<h4>CSV Data Source<a class="headerlink" href="#csv-data-source" title="Link to this heading"></a></h4>
+<section id="module-dashboard_lego.core.datasources.csv_source">
+<span id="csv-data-source"></span><h4>CSV Data Source<a class="headerlink" href="#module-dashboard_lego.core.datasources.csv_source" title="Link to this heading"></a></h4>
+<p>Concrete implementation of a DataSource for CSV files.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="dashboard_lego.core.datasources.csv_source.CsvDataSource">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.core.datasources.csv_source.</span></span><span class="sig-name descname"><span class="pre">CsvDataSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_csv_options</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/datasources/csv_source.html#CsvDataSource"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasources.csv_source.CsvDataSource" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#dashboard_lego.core.datasource.BaseDataSource" title="dashboard_lego.core.datasource.BaseDataSource"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDataSource</span></code></a></p>
+<p>A data source that loads data from a local CSV file.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.datasources.csv_source.CsvDataSource.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_csv_options</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/datasources/csv_source.html#CsvDataSource.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasources.csv_source.CsvDataSource.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes the CsvDataSource.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_path</strong> – The absolute or relative path to the CSV file.</p></li>
+<li><p><strong>read_csv_options</strong> – A dictionary of options to pass to
+pandas.read_csv.</p></li>
+<li><p><strong>**kwargs</strong> – Keyword arguments for the parent BaseDataSource
+(e.g., cache_ttl).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.datasources.csv_source.CsvDataSource.get_kpis">
+<span class="sig-name descname"><span class="pre">get_kpis</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasources/csv_source.html#CsvDataSource.get_kpis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasources.csv_source.CsvDataSource.get_kpis" title="Link to this definition"></a></dt>
+<dd><p>Returns KPI values calculated from the loaded data.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.datasources.csv_source.CsvDataSource.get_filter_options">
+<span class="sig-name descname"><span class="pre">get_filter_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filter_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasources/csv_source.html#CsvDataSource.get_filter_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasources.csv_source.CsvDataSource.get_filter_options" title="Link to this definition"></a></dt>
+<dd><p>Returns an empty list. Users should subclass to implement this.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.datasources.csv_source.CsvDataSource.get_summary">
+<span class="sig-name descname"><span class="pre">get_summary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasources/csv_source.html#CsvDataSource.get_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasources.csv_source.CsvDataSource.get_summary" title="Link to this definition"></a></dt>
+<dd><p>Returns a basic summary of the loaded data.</p>
+</dd></dl>
+
+</dd></dl>
+
 </section>
-<section id="parquet-data-source">
-<h4>Parquet Data Source<a class="headerlink" href="#parquet-data-source" title="Link to this heading"></a></h4>
+<section id="module-dashboard_lego.core.datasources.parquet_source">
+<span id="parquet-data-source"></span><h4>Parquet Data Source<a class="headerlink" href="#module-dashboard_lego.core.datasources.parquet_source" title="Link to this heading"></a></h4>
+<p>This module defines the ParquetDataSource for loading data from Parquet files.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="dashboard_lego.core.datasources.parquet_source.ParquetDataSource">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.core.datasources.parquet_source.</span></span><span class="sig-name descname"><span class="pre">ParquetDataSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/datasources/parquet_source.html#ParquetDataSource"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasources.parquet_source.ParquetDataSource" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#dashboard_lego.core.datasource.BaseDataSource" title="dashboard_lego.core.datasource.BaseDataSource"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDataSource</span></code></a></p>
+<p>A data source for loading data from a Parquet file.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Core | DataSources | ParquetDataSource]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Parquet format provides efficient
+columnar storage for large datasets with better compression”</p></li>
+<li><p>implements: “datasource: ‘ParquetDataSource’”</p></li>
+<li><p>uses: [“class: ‘BaseDataSource’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“A dedicated class for Parquet files provides a clean separation of concerns and is consistent with the existing datasource architecture.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “The file_path must point to a valid Parquet file.”</p></li>
+<li><p>post: “The data is loaded into a pandas DataFrame.”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.datasources.parquet_source.ParquetDataSource.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/datasources/parquet_source.html#ParquetDataSource.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasources.parquet_source.ParquetDataSource.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes the BaseDataSource with a configurable cache.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cache_dir</strong> – Directory for the disk cache. If None, an in-memory
+cache is used.</p></li>
+<li><p><strong>cache_ttl</strong> – The time-to-live for each item in seconds.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.datasources.parquet_source.ParquetDataSource.get_kpis">
+<span class="sig-name descname"><span class="pre">get_kpis</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasources/parquet_source.html#ParquetDataSource.get_kpis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasources.parquet_source.ParquetDataSource.get_kpis" title="Link to this definition"></a></dt>
+<dd><p>Returns a dictionary of key performance indicators (KPIs).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.datasources.parquet_source.ParquetDataSource.get_filter_options">
+<span class="sig-name descname"><span class="pre">get_filter_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filter_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><span class="pre">list</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasources/parquet_source.html#ParquetDataSource.get_filter_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasources.parquet_source.ParquetDataSource.get_filter_options" title="Link to this definition"></a></dt>
+<dd><p>Returns a list of options for a given filter control.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.datasources.parquet_source.ParquetDataSource.get_summary">
+<span class="sig-name descname"><span class="pre">get_summary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasources/parquet_source.html#ParquetDataSource.get_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasources.parquet_source.ParquetDataSource.get_summary" title="Link to this definition"></a></dt>
+<dd><p>Returns a short text summary of the loaded data.</p>
+</dd></dl>
+
+</dd></dl>
+
 </section>
-<section id="sql-data-source">
-<h4>SQL Data Source<a class="headerlink" href="#sql-data-source" title="Link to this heading"></a></h4>
+<section id="module-dashboard_lego.core.datasources.sql_source">
+<span id="sql-data-source"></span><h4>SQL Data Source<a class="headerlink" href="#module-dashboard_lego.core.datasources.sql_source" title="Link to this heading"></a></h4>
+<p>Concrete implementation of a DataSource for SQL databases.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="dashboard_lego.core.datasources.sql_source.SqlDataSource">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.core.datasources.sql_source.</span></span><span class="sig-name descname"><span class="pre">SqlDataSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">connection_uri</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/datasources/sql_source.html#SqlDataSource"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasources.sql_source.SqlDataSource" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#dashboard_lego.core.datasource.BaseDataSource" title="dashboard_lego.core.datasource.BaseDataSource"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDataSource</span></code></a></p>
+<p>A data source that loads data from a SQL database using SQLAlchemy.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Feature | DataSources | SqlDataSource]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Provide ready-to-use data source classes”</p></li>
+<li><p>implements: “class: ‘SqlDataSource’”</p></li>
+<li><p>uses: [“interface: ‘BaseDataSource’”, “library: ‘SQLAlchemy’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Uses SQLAlchemy to provide a consistent interface to various SQL backends.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “A valid SQLAlchemy connection URI and a SQL query must be provided.”</p></li>
+<li><p>post: “The instance holds a pandas DataFrame with the query results.”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.datasources.sql_source.SqlDataSource.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">connection_uri</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/datasources/sql_source.html#SqlDataSource.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasources.sql_source.SqlDataSource.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes the SqlDataSource.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>connection_uri</strong> – A SQLAlchemy-compatible database URI.
+(e.g., ‘sqlite:///mydatabase.db’,
+‘postgresql://user:pass&#64;host/db’)</p></li>
+<li><p><strong>query</strong> – The SQL query to execute to retrieve the data.</p></li>
+<li><p><strong>**kwargs</strong> – Keyword arguments for the parent BaseDataSource
+(e.g., cache_ttl).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.datasources.sql_source.SqlDataSource.get_kpis">
+<span class="sig-name descname"><span class="pre">get_kpis</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasources/sql_source.html#SqlDataSource.get_kpis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasources.sql_source.SqlDataSource.get_kpis" title="Link to this definition"></a></dt>
+<dd><p>Returns an empty dictionary. Users should subclass to implement this.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.datasources.sql_source.SqlDataSource.get_filter_options">
+<span class="sig-name descname"><span class="pre">get_filter_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filter_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasources/sql_source.html#SqlDataSource.get_filter_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasources.sql_source.SqlDataSource.get_filter_options" title="Link to this definition"></a></dt>
+<dd><p>Returns an empty list. Users should subclass to implement this.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.datasources.sql_source.SqlDataSource.get_summary">
+<span class="sig-name descname"><span class="pre">get_summary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasources/sql_source.html#SqlDataSource.get_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasources.sql_source.SqlDataSource.get_summary" title="Link to this definition"></a></dt>
+<dd><p>Returns a basic summary of the loaded data.</p>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 </section>
 </section>
-<section id="dashboard-page">
-<h2>Dashboard Page<a class="headerlink" href="#dashboard-page" title="Link to this heading"></a></h2>
+<section id="module-dashboard_lego.core.page">
+<span id="dashboard-page"></span><h2>Dashboard Page<a class="headerlink" href="#module-dashboard_lego.core.page" title="Link to this heading"></a></h2>
+<p>This module defines the DashboardPage class, which orchestrates blocks on a page.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="dashboard_lego.core.page.NavigationSection">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.core.page.</span></span><span class="sig-name descname"><span class="pre">NavigationSection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">block_factory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.13)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/page.html#NavigationSection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.page.NavigationSection" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Defines a single navigation section with a title and lazy block factory.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Feature | Navigation System | NavigationSection]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Lazy loading of dashboard sections improves performance”</p></li>
+<li><p>implements: “dataclass: ‘NavigationSection’”</p></li>
+<li><p>uses: [“interface: ‘BaseBlock’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Uses factory pattern to defer block creation until section is activated.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “title is a non-empty string, block_factory is a callable returning List[List[Any]]”</p></li>
+<li><p>post: “Section can be rendered on demand via factory invocation”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashboard_lego.core.page.NavigationSection.title">
+<span class="sig-name descname"><span class="pre">title</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></em><a class="headerlink" href="#dashboard_lego.core.page.NavigationSection.title" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashboard_lego.core.page.NavigationSection.block_factory">
+<span class="sig-name descname"><span class="pre">block_factory</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.13)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#dashboard_lego.core.page.NavigationSection.block_factory" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.page.NavigationSection.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">block_factory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.13)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#dashboard_lego.core.page.NavigationSection.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dashboard_lego.core.page.NavigationConfig">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.core.page.</span></span><span class="sig-name descname"><span class="pre">NavigationConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sections</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#dashboard_lego.core.page.NavigationSection" title="dashboard_lego.core.page.NavigationSection"><span class="pre">NavigationSection</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'left'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sidebar_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_section</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sidebar_style</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sidebar_className</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content_style</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content_className</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nav_style</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nav_className</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nav_link_style</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nav_link_className</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nav_link_active_style</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nav_link_active_className</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/page.html#NavigationConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.page.NavigationConfig" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Configuration for navigation panel in DashboardPage with customizable styling.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Feature | Navigation System | NavigationConfig]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “PRD: Simplify creation of dashboards with navigation sidebar and customization”</p></li>
+<li><p>implements: “dataclass: ‘NavigationConfig’ with style parameters”</p></li>
+<li><p>uses: [“dataclass: ‘NavigationSection’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Encapsulates all navigation settings including style customization in a typed, immutable config object.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “sections is a non-empty list of NavigationSection instances”</p></li>
+<li><p>post: “Config provides all data needed to render navigation UI with custom styling”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashboard_lego.core.page.NavigationConfig.sections">
+<span class="sig-name descname"><span class="pre">sections</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#dashboard_lego.core.page.NavigationSection" title="dashboard_lego.core.page.NavigationSection"><span class="pre">NavigationSection</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#dashboard_lego.core.page.NavigationConfig.sections" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashboard_lego.core.page.NavigationConfig.position">
+<span class="sig-name descname"><span class="pre">position</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'left'</span></em><a class="headerlink" href="#dashboard_lego.core.page.NavigationConfig.position" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashboard_lego.core.page.NavigationConfig.sidebar_width">
+<span class="sig-name descname"><span class="pre">sidebar_width</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#dashboard_lego.core.page.NavigationConfig.sidebar_width" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashboard_lego.core.page.NavigationConfig.default_section">
+<span class="sig-name descname"><span class="pre">default_section</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#dashboard_lego.core.page.NavigationConfig.default_section" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashboard_lego.core.page.NavigationConfig.sidebar_style">
+<span class="sig-name descname"><span class="pre">sidebar_style</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dashboard_lego.core.page.NavigationConfig.sidebar_style" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashboard_lego.core.page.NavigationConfig.sidebar_className">
+<span class="sig-name descname"><span class="pre">sidebar_className</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dashboard_lego.core.page.NavigationConfig.sidebar_className" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashboard_lego.core.page.NavigationConfig.content_style">
+<span class="sig-name descname"><span class="pre">content_style</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dashboard_lego.core.page.NavigationConfig.content_style" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashboard_lego.core.page.NavigationConfig.content_className">
+<span class="sig-name descname"><span class="pre">content_className</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dashboard_lego.core.page.NavigationConfig.content_className" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashboard_lego.core.page.NavigationConfig.nav_style">
+<span class="sig-name descname"><span class="pre">nav_style</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dashboard_lego.core.page.NavigationConfig.nav_style" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashboard_lego.core.page.NavigationConfig.nav_className">
+<span class="sig-name descname"><span class="pre">nav_className</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dashboard_lego.core.page.NavigationConfig.nav_className" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashboard_lego.core.page.NavigationConfig.nav_link_style">
+<span class="sig-name descname"><span class="pre">nav_link_style</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dashboard_lego.core.page.NavigationConfig.nav_link_style" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashboard_lego.core.page.NavigationConfig.nav_link_className">
+<span class="sig-name descname"><span class="pre">nav_link_className</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dashboard_lego.core.page.NavigationConfig.nav_link_className" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashboard_lego.core.page.NavigationConfig.nav_link_active_style">
+<span class="sig-name descname"><span class="pre">nav_link_active_style</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dashboard_lego.core.page.NavigationConfig.nav_link_active_style" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashboard_lego.core.page.NavigationConfig.nav_link_active_className">
+<span class="sig-name descname"><span class="pre">nav_link_active_className</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dashboard_lego.core.page.NavigationConfig.nav_link_active_className" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.page.NavigationConfig.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sections</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#dashboard_lego.core.page.NavigationSection" title="dashboard_lego.core.page.NavigationSection"><span class="pre">NavigationSection</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'left'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sidebar_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_section</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sidebar_style</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sidebar_className</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content_style</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content_className</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nav_style</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nav_className</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nav_link_style</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nav_link_className</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nav_link_active_style</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nav_link_active_className</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#dashboard_lego.core.page.NavigationConfig.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dashboard_lego.core.page.DashboardPage">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.core.page.</span></span><span class="sig-name descname"><span class="pre">DashboardPage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">blocks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theme</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'https://cdn.jsdelivr.net/npm/bootstrap&#64;5.3.6/dist/css/bootstrap.min.css'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">navigation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dashboard_lego.core.page.NavigationConfig" title="dashboard_lego.core.page.NavigationConfig"><span class="pre">NavigationConfig</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theme_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ThemeConfig</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/page.html#DashboardPage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.page.DashboardPage" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Orchestrates the assembly of a dashboard page from a list of blocks.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Feature | Layout System | Page Modification]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Provide a flexible grid-based layout system”</p></li>
+<li><p>implements: “class: ‘DashboardPage’”</p></li>
+<li><p>uses: [“interface: ‘BaseBlock’”, “class: ‘StateManager’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“The page now accepts a nested list structure for layout definition and builds a Bootstrap grid, offering a balance of power and simplicity.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “<cite>blocks</cite> must be a list of lists, where each inner item is a BaseBlock or a (BaseBlock, dict) tuple.”</p></li>
+<li><p>post: “A complete Dash layout with a grid structure can be retrieved.”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.page.DashboardPage.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">blocks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theme</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'https://cdn.jsdelivr.net/npm/bootstrap&#64;5.3.6/dist/css/bootstrap.min.css'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">navigation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dashboard_lego.core.page.NavigationConfig" title="dashboard_lego.core.page.NavigationConfig"><span class="pre">NavigationConfig</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theme_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ThemeConfig</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/page.html#DashboardPage.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.page.DashboardPage.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes the DashboardPage, creates a StateManager, and
+registers all blocks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>title</strong> – The main title of the dashboard page.</p></li>
+<li><p><strong>blocks</strong> – <p>A list of lists representing rows. Each item in a row is
+either a BaseBlock instance or a tuple of
+<code class="docutils literal notranslate"><span class="pre">(BaseBlock,</span> <span class="pre">dict_of_col_props)</span></code>.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[[</span><span class="n">block1</span><span class="p">],</span> <span class="p">[(</span><span class="n">block2</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;width&#39;</span><span class="p">:</span> <span class="mi">8</span><span class="p">}),</span> <span class="p">(</span><span class="n">block3</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;width&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">})]]</span>
+</pre></div>
+</div>
+<p>If navigation is provided, this parameter is optional.</p>
+</p></li>
+<li><p><strong>theme</strong> – An optional URL to a dash-bootstrap-components theme
+(e.g., <code class="docutils literal notranslate"><span class="pre">dbc.themes.CYBORG</span></code>).</p></li>
+<li><p><strong>navigation</strong> – Optional NavigationConfig for multi-section dashboard
+with lazy-loaded content.</p></li>
+<li><p><strong>theme_config</strong> – Optional ThemeConfig for global styling customization.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.page.DashboardPage.build_layout">
+<span class="sig-name descname"><span class="pre">build_layout</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Component</span></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/page.html#DashboardPage.build_layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.page.DashboardPage.build_layout" title="Link to this definition"></a></dt>
+<dd><p>Assembles the layouts from all blocks into a grid-based page layout.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A Dash component representing the entire page.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.page.DashboardPage.register_callbacks">
+<span class="sig-name descname"><span class="pre">register_callbacks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/page.html#DashboardPage.register_callbacks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.page.DashboardPage.register_callbacks" title="Link to this definition"></a></dt>
+<dd><p>Registers callbacks using both old (state-based) and new (block-centric) mechanisms.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Architecture | Callback Registration | DashboardPage]</p>
+</dd>
+<dt class="field-even">Relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Hybrid callback system enables
+both legacy and modern callback patterns for backward compatibility”</p></li>
+<li><p>implements: “method: ‘register_callbacks’ with dual mechanism”</p></li>
+<li><p>uses: [“method: ‘generate_callbacks’”, “method: ‘bind_callbacks’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Use old mechanism for static blocks with state dependencies,
+new mechanism for interactive blocks with controls.”</p>
+</dd>
+<dt class="field-even">Contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “StateManager is initialized, blocks are registered.”</p></li>
+<li><p>post: “All callbacks (old and new style) are registered with Dash app.”</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>app</strong> – The Dash app instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.core.page.</span></span><span class="sig-name descname"><span class="pre">DashboardPage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">blocks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theme</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'https://cdn.jsdelivr.net/npm/bootstrap&#64;5.3.6/dist/css/bootstrap.min.css'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">navigation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dashboard_lego.core.page.NavigationConfig" title="dashboard_lego.core.page.NavigationConfig"><span class="pre">NavigationConfig</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theme_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ThemeConfig</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/page.html#DashboardPage"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Orchestrates the assembly of a dashboard page from a list of blocks.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Feature | Layout System | Page Modification]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Provide a flexible grid-based layout system”</p></li>
+<li><p>implements: “class: ‘DashboardPage’”</p></li>
+<li><p>uses: [“interface: ‘BaseBlock’”, “class: ‘StateManager’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“The page now accepts a nested list structure for layout definition and builds a Bootstrap grid, offering a balance of power and simplicity.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “<cite>blocks</cite> must be a list of lists, where each inner item is a BaseBlock or a (BaseBlock, dict) tuple.”</p></li>
+<li><p>post: “A complete Dash layout with a grid structure can be retrieved.”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">blocks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theme</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'https://cdn.jsdelivr.net/npm/bootstrap&#64;5.3.6/dist/css/bootstrap.min.css'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">navigation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dashboard_lego.core.page.NavigationConfig" title="dashboard_lego.core.page.NavigationConfig"><span class="pre">NavigationConfig</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theme_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ThemeConfig</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/page.html#DashboardPage.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Initializes the DashboardPage, creates a StateManager, and
+registers all blocks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>title</strong> – The main title of the dashboard page.</p></li>
+<li><p><strong>blocks</strong> – <p>A list of lists representing rows. Each item in a row is
+either a BaseBlock instance or a tuple of
+<code class="docutils literal notranslate"><span class="pre">(BaseBlock,</span> <span class="pre">dict_of_col_props)</span></code>.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[[</span><span class="n">block1</span><span class="p">],</span> <span class="p">[(</span><span class="n">block2</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;width&#39;</span><span class="p">:</span> <span class="mi">8</span><span class="p">}),</span> <span class="p">(</span><span class="n">block3</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;width&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">})]]</span>
+</pre></div>
+</div>
+<p>If navigation is provided, this parameter is optional.</p>
+</p></li>
+<li><p><strong>theme</strong> – An optional URL to a dash-bootstrap-components theme
+(e.g., <code class="docutils literal notranslate"><span class="pre">dbc.themes.CYBORG</span></code>).</p></li>
+<li><p><strong>navigation</strong> – Optional NavigationConfig for multi-section dashboard
+with lazy-loaded content.</p></li>
+<li><p><strong>theme_config</strong> – Optional ThemeConfig for global styling customization.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">build_layout</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Component</span></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/page.html#DashboardPage.build_layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Assembles the layouts from all blocks into a grid-based page layout.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A Dash component representing the entire page.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">register_callbacks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/page.html#DashboardPage.register_callbacks"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Registers callbacks using both old (state-based) and new (block-centric) mechanisms.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Architecture | Callback Registration | DashboardPage]</p>
+</dd>
+<dt class="field-even">Relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Hybrid callback system enables
+both legacy and modern callback patterns for backward compatibility”</p></li>
+<li><p>implements: “method: ‘register_callbacks’ with dual mechanism”</p></li>
+<li><p>uses: [“method: ‘generate_callbacks’”, “method: ‘bind_callbacks’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Use old mechanism for static blocks with state dependencies,
+new mechanism for interactive blocks with controls.”</p>
+</dd>
+<dt class="field-even">Contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “StateManager is initialized, blocks are registered.”</p></li>
+<li><p>post: “All callbacks (old and new style) are registered with Dash app.”</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>app</strong> – The Dash app instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
-<section id="state-management">
-<h2>State Management<a class="headerlink" href="#state-management" title="Link to this heading"></a></h2>
+<section id="module-dashboard_lego.core.state">
+<span id="state-management"></span><h2>State Management<a class="headerlink" href="#module-dashboard_lego.core.state" title="Link to this heading"></a></h2>
+<p>This module defines the StateManager for handling interactivity between blocks.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="dashboard_lego.core.state.StateManager">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.core.state.</span></span><span class="sig-name descname"><span class="pre">StateManager</span></span><a class="reference internal" href="../_modules/dashboard_lego/core/state.html#StateManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.state.StateManager" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Manages the state dependencies and generates callbacks for a
+dashboard page.</p>
+<p>This class acts as a central registry for components that provide
+state (publishers) and components that consume state (subscribers).
+It builds a dependency graph and will be responsible for generating
+the necessary Dash callbacks to link them.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Feature | Global Interactivity | StateManager Design]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Decouple state
+management from UI components using a Pub/Sub model”</p></li>
+<li><p>implements: “class: ‘StateManager’”</p></li>
+<li><p>uses: []</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Chosen a graph-like dictionary structure to store state dependencies. This provides a good balance of implementation simplicity and ease of traversal for callback generation.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “All state IDs must be unique across the application.”</p></li>
+<li><p>post: “The manager holds a complete dependency graph of the page’s interactive components.”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.state.StateManager.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/state.html#StateManager.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.state.StateManager.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes the StateManager.</p>
+<p>The internal <code class="docutils literal notranslate"><span class="pre">dependency_graph</span></code> will store the relationships.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s1">&#39;selected_date_range&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;publisher&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;component_id&#39;</span><span class="p">:</span> <span class="s1">&#39;global-date-picker&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;component_prop&#39;</span><span class="p">:</span> <span class="s1">&#39;value&#39;</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;subscribers&#39;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s1">&#39;component_id&#39;</span><span class="p">:</span> <span class="s1">&#39;sales-trend-graph&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;component_prop&#39;</span><span class="p">:</span> <span class="s1">&#39;figure&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;callback_fn&#39;</span><span class="p">:</span> <span class="s1">&#39;&lt;function_ref&gt;&#39;</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s1">&#39;component_id&#39;</span><span class="p">:</span> <span class="s1">&#39;kpi-block-container&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;component_prop&#39;</span><span class="p">:</span> <span class="s1">&#39;children&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;callback_fn&#39;</span><span class="p">:</span> <span class="s1">&#39;&lt;function_ref&gt;&#39;</span>
+            <span class="p">}</span>
+        <span class="p">]</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.state.StateManager.register_publisher">
+<span class="sig-name descname"><span class="pre">register_publisher</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_prop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/state.html#StateManager.register_publisher"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.state.StateManager.register_publisher" title="Link to this definition"></a></dt>
+<dd><p>Registers a component property as a provider of a certain state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>state_id</strong> – The unique identifier for the state
+(e.g., ‘selected_date_range’).</p></li>
+<li><p><strong>component_id</strong> – The ID of the Dash component that publishes
+the state.</p></li>
+<li><p><strong>component_prop</strong> – The property of the component that holds the state
+(e.g., ‘value’).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.state.StateManager.register_subscriber">
+<span class="sig-name descname"><span class="pre">register_subscriber</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_prop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">callback_fn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.13)"><span class="pre">Callable</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/state.html#StateManager.register_subscriber"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.state.StateManager.register_subscriber" title="Link to this definition"></a></dt>
+<dd><p>Registers a component property as a consumer of a certain state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>state_id</strong> – The unique identifier for the state to subscribe to.</p></li>
+<li><p><strong>component_id</strong> – The ID of the Dash component that consumes
+the state.</p></li>
+<li><p><strong>component_prop</strong> – The property of the component to be updated
+(e.g., ‘figure’).</p></li>
+<li><p><strong>callback_fn</strong> – The function to call to generate the new property
+value.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.state.StateManager.generate_callbacks">
+<span class="sig-name descname"><span class="pre">generate_callbacks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/state.html#StateManager.generate_callbacks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.state.StateManager.generate_callbacks" title="Link to this definition"></a></dt>
+<dd><p>Traverses the dependency graph and registers all necessary callbacks
+with the Dash app.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>app</strong> – The Dash app instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.state.StateManager.bind_callbacks">
+<span class="sig-name descname"><span class="pre">bind_callbacks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">blocks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/state.html#StateManager.bind_callbacks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.state.StateManager.bind_callbacks" title="Link to this definition"></a></dt>
+<dd><p>Registers one callback per block instead of per state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Architecture | Block-centric Callbacks | StateManager]</p>
+</dd>
+<dt class="field-even">Relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Block-centric callbacks improve
+performance and maintainability by reducing callback complexity”</p></li>
+<li><p>implements: “method: ‘bind_callbacks’”</p></li>
+<li><p>uses: [“method: ‘output_target’”, “method: ‘list_control_inputs’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Each block gets exactly one callback that updates its output target.”</p>
+</dd>
+<dt class="field-even">Contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “Blocks must have output_target() and list_control_inputs() methods.”</p></li>
+<li><p>post: “Each block has exactly one callback registered with Dash.”</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>app</strong> – The Dash app instance.</p></li>
+<li><p><strong>blocks</strong> – List of blocks to register callbacks for.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.core.state.</span></span><span class="sig-name descname"><span class="pre">StateManager</span></span><a class="reference internal" href="../_modules/dashboard_lego/core/state.html#StateManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Manages the state dependencies and generates callbacks for a
+dashboard page.</p>
+<p>This class acts as a central registry for components that provide
+state (publishers) and components that consume state (subscribers).
+It builds a dependency graph and will be responsible for generating
+the necessary Dash callbacks to link them.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Feature | Global Interactivity | StateManager Design]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Decouple state
+management from UI components using a Pub/Sub model”</p></li>
+<li><p>implements: “class: ‘StateManager’”</p></li>
+<li><p>uses: []</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Chosen a graph-like dictionary structure to store state dependencies. This provides a good balance of implementation simplicity and ease of traversal for callback generation.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “All state IDs must be unique across the application.”</p></li>
+<li><p>post: “The manager holds a complete dependency graph of the page’s interactive components.”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/state.html#StateManager.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Initializes the StateManager.</p>
+<p>The internal <code class="docutils literal notranslate"><span class="pre">dependency_graph</span></code> will store the relationships.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s1">&#39;selected_date_range&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;publisher&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;component_id&#39;</span><span class="p">:</span> <span class="s1">&#39;global-date-picker&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;component_prop&#39;</span><span class="p">:</span> <span class="s1">&#39;value&#39;</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;subscribers&#39;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s1">&#39;component_id&#39;</span><span class="p">:</span> <span class="s1">&#39;sales-trend-graph&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;component_prop&#39;</span><span class="p">:</span> <span class="s1">&#39;figure&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;callback_fn&#39;</span><span class="p">:</span> <span class="s1">&#39;&lt;function_ref&gt;&#39;</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s1">&#39;component_id&#39;</span><span class="p">:</span> <span class="s1">&#39;kpi-block-container&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;component_prop&#39;</span><span class="p">:</span> <span class="s1">&#39;children&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;callback_fn&#39;</span><span class="p">:</span> <span class="s1">&#39;&lt;function_ref&gt;&#39;</span>
+            <span class="p">}</span>
+        <span class="p">]</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">register_publisher</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_prop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/state.html#StateManager.register_publisher"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Registers a component property as a provider of a certain state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>state_id</strong> – The unique identifier for the state
+(e.g., ‘selected_date_range’).</p></li>
+<li><p><strong>component_id</strong> – The ID of the Dash component that publishes
+the state.</p></li>
+<li><p><strong>component_prop</strong> – The property of the component that holds the state
+(e.g., ‘value’).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">register_subscriber</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_prop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">callback_fn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.13)"><span class="pre">Callable</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/state.html#StateManager.register_subscriber"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Registers a component property as a consumer of a certain state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>state_id</strong> – The unique identifier for the state to subscribe to.</p></li>
+<li><p><strong>component_id</strong> – The ID of the Dash component that consumes
+the state.</p></li>
+<li><p><strong>component_prop</strong> – The property of the component to be updated
+(e.g., ‘figure’).</p></li>
+<li><p><strong>callback_fn</strong> – The function to call to generate the new property
+value.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">generate_callbacks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/state.html#StateManager.generate_callbacks"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Traverses the dependency graph and registers all necessary callbacks
+with the Dash app.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>app</strong> – The Dash app instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">bind_callbacks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">blocks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/state.html#StateManager.bind_callbacks"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Registers one callback per block instead of per state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Architecture | Block-centric Callbacks | StateManager]</p>
+</dd>
+<dt class="field-even">Relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Block-centric callbacks improve
+performance and maintainability by reducing callback complexity”</p></li>
+<li><p>implements: “method: ‘bind_callbacks’”</p></li>
+<li><p>uses: [“method: ‘output_target’”, “method: ‘list_control_inputs’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Each block gets exactly one callback that updates its output target.”</p>
+</dd>
+<dt class="field-even">Contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “Blocks must have output_target() and list_control_inputs() methods.”</p></li>
+<li><p>post: “Each block has exactly one callback registered with Dash.”</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>app</strong> – The Dash app instance.</p></li>
+<li><p><strong>blocks</strong> – List of blocks to register callbacks for.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
-<section id="chart-context">
-<h2>Chart Context<a class="headerlink" href="#chart-context" title="Link to this heading"></a></h2>
+<section id="module-dashboard_lego.core.chart_context">
+<span id="chart-context"></span><h2>Chart Context<a class="headerlink" href="#module-dashboard_lego.core.chart_context" title="Link to this heading"></a></h2>
+<p>Chart context data structure for unified chart generation.</p>
+<p>This module defines the ChartContext dataclass that provides a standardized
+interface for chart generators, containing all necessary context information
+including datasource, controls, and logger.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="dashboard_lego.core.chart_context.ChartContext">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.core.chart_context.</span></span><span class="sig-name descname"><span class="pre">ChartContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dashboard_lego.core.datasource.BaseDataSource" title="dashboard_lego.core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">controls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/chart_context.html#ChartContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.chart_context.ChartContext" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Context object containing all necessary information for chart generation.</p>
+<p>This dataclass provides a unified interface for chart generators,
+encapsulating the datasource, control values, and logger in a single
+immutable object.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Architecture | ChartContext | ChartContext]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Unified chart generator signatures
+enable consistent chart creation across different block types”</p></li>
+<li><p>implements: “datatype: ‘ChartContext’”</p></li>
+<li><p>uses: [“interface: ‘BaseDataSource’”, “module: ‘utils.logger’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Chose immutable dataclass for thread safety and clear interface contract.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “Valid datasource and controls dictionary must be provided.”</p></li>
+<li><p>post: “Context object contains all necessary data for chart generation.”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashboard_lego.core.chart_context.ChartContext.datasource">
+<span class="sig-name descname"><span class="pre">datasource</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#dashboard_lego.core.datasource.BaseDataSource" title="dashboard_lego.core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></em><a class="headerlink" href="#dashboard_lego.core.chart_context.ChartContext.datasource" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashboard_lego.core.chart_context.ChartContext.controls">
+<span class="sig-name descname"><span class="pre">controls</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#dashboard_lego.core.chart_context.ChartContext.controls" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashboard_lego.core.chart_context.ChartContext.logger">
+<span class="sig-name descname"><span class="pre">logger</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dashboard_lego.core.chart_context.ChartContext.logger" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.chart_context.ChartContext.__post_init__">
+<span class="sig-name descname"><span class="pre">__post_init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/chart_context.html#ChartContext.__post_init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.chart_context.ChartContext.__post_init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize logger if not provided.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.chart_context.ChartContext.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dashboard_lego.core.datasource.BaseDataSource" title="dashboard_lego.core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">controls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#dashboard_lego.core.chart_context.ChartContext.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.core.chart_context.</span></span><span class="sig-name descname"><span class="pre">ChartContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dashboard_lego.core.datasource.BaseDataSource" title="dashboard_lego.core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">controls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/chart_context.html#ChartContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Context object containing all necessary information for chart generation.</p>
+<p>This dataclass provides a unified interface for chart generators,
+encapsulating the datasource, control values, and logger in a single
+immutable object.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Architecture | ChartContext | ChartContext]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Architectural Conclusion: Unified chart generator signatures
+enable consistent chart creation across different block types”</p></li>
+<li><p>implements: “datatype: ‘ChartContext’”</p></li>
+<li><p>uses: [“interface: ‘BaseDataSource’”, “module: ‘utils.logger’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Chose immutable dataclass for thread safety and clear interface contract.”</p>
+</dd>
+<dt class="field-even">contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “Valid datasource and controls dictionary must be provided.”</p></li>
+<li><p>post: “Context object contains all necessary data for chart generation.”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">datasource</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#dashboard_lego.core.datasource.BaseDataSource" title="dashboard_lego.core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></em></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">controls</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></em></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">logger</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">__post_init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/chart_context.html#ChartContext.__post_init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Initialize logger if not provided.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datasource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dashboard_lego.core.datasource.BaseDataSource" title="dashboard_lego.core.datasource.BaseDataSource"><span class="pre">BaseDataSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">controls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span></span></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </section>
 </section>
 

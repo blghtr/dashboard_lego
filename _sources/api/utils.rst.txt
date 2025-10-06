@@ -6,7 +6,7 @@ The utils module contains utility functions and helpers for Dashboard Lego.
 Formatting Utilities
 --------------------
 
-.. automodule:: utils.formatting
+.. automodule:: dashboard_lego.utils.formatting
    :members:
    :undoc-members:
    :show-inheritance:
@@ -14,7 +14,7 @@ Formatting Utilities
 Logging Utilities
 -----------------
 
-.. automodule:: utils.logger
+.. automodule:: dashboard_lego.utils.logger
    :members:
    :undoc-members:
    :show-inheritance:
@@ -22,7 +22,7 @@ Logging Utilities
 Data Utilities
 --------------
 
-.. automodule:: utils.data_utils
+.. automodule:: dashboard_lego.utils.exceptions
    :members:
    :undoc-members:
    :show-inheritance:
@@ -30,7 +30,8 @@ Data Utilities
 Validation Utilities
 --------------------
 
-.. automodule:: utils.validation
+..
+.. Note: Specific validation/data_utils modules are not present.
    :members:
    :undoc-members:
    :show-inheritance:

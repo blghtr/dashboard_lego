@@ -129,7 +129,7 @@ Complete Example
 
 Here's the complete code for your first dashboard:
 
-.. literalinclude:: ../examples/01_simple_dashboard.py
+.. literalinclude:: ../../examples/01_simple_dashboard.py
    :language: python
    :caption: Complete simple dashboard example
 
@@ -138,9 +138,9 @@ Next Steps
 
 Now that you've created your first dashboard, you might want to:
 
-1. **Add Interactivity**: Learn about :doc:`interactivity` to connect blocks together
-2. **Use Presets**: Explore :doc:`presets/index` for ready-made visualization blocks
-3. **Custom Layouts**: Discover :doc:`layouts` for different dashboard arrangements
+1. **Add Interactivity**: Explore interactive blocks in the API reference (:doc:`api/blocks`).
+2. **Use Presets**: See preset components in (:doc:`api/presets`).
+3. **Custom Layouts**: Learn layout helpers in (:doc:`api/presets`).
 4. **Create Custom Blocks**: Learn how to extend Dashboard Lego with your own components
 
 Running the Example
@@ -159,8 +159,10 @@ Troubleshooting
 Common issues and solutions:
 
 **Import Error**: Make sure Dashboard Lego is installed:
-   .. code-block:: bash
-      pip install dashboard-lego
+
+.. code-block:: bash
+
+   pip install dashboard-lego
 
 **Data Loading Error**: Check that your data file exists and has the expected columns.
 
