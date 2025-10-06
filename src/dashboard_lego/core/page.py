@@ -108,15 +108,18 @@ class DashboardPage:
         Args:
             title: The main title of the dashboard page.
             blocks: A list of lists representing rows. Each item in a row is
-                    either a BaseBlock instance or a tuple of
-                    (BaseBlock, dict_of_col_props).
-                    Example: [[block1], [(block2, {'width': 8}),
-                                        (block3, {'width': 4})]]
-                    If navigation is provided, this parameter is optional.
+                either a BaseBlock instance or a tuple of
+                ``(BaseBlock, dict_of_col_props)``.
+
+                Example::
+
+                    [[block1], [(block2, {'width': 8}), (block3, {'width': 4})]]
+
+                If navigation is provided, this parameter is optional.
             theme: An optional URL to a dash-bootstrap-components theme
-                   (e.g., dbc.themes.CYBORG).
+                (e.g., ``dbc.themes.CYBORG``).
             navigation: Optional NavigationConfig for multi-section dashboard
-                       with lazy-loaded content.
+                with lazy-loaded content.
             theme_config: Optional ThemeConfig for global styling customization.
 
         """

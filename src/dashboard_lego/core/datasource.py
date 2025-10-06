@@ -22,18 +22,15 @@ class BaseDataSource(ABC):
 
         :hierarchy: [Core | DataSources | BaseDataSource]
         :relates-to:
-          - motivated_by: "Architectural Conclusion: Disk-based caching improves
-            performance by avoiding repeated data loading operations"
+          - motivated_by: "Architectural Conclusion: Disk-based caching improves performance by avoiding repeated data loading operations"
           - implements: "interface: 'BaseDataSource'"
           - uses: ["library: 'diskcache'"]
 
-        :rationale: "Replaced cachetools with diskcache to support both
-         in-memory and persistent disk-based caching, configured via
-         constructor arguments."
+        :rationale: "Replaced cachetools with diskcache to support both in-memory and persistent disk-based caching, configured via constructor arguments."
         :contract:
           - pre: "A concrete implementation of this class must be provided."
-          - post: "Dashboard blocks can reliably request data,
-           benefiting from a configurable caching layer."
+          - post: "Dashboard blocks can reliably request data, benefiting from a configurable caching layer."
+
 
     """
 

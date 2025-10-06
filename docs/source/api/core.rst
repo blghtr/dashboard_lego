@@ -6,15 +6,16 @@ The core module contains the fundamental classes for building dashboards with Da
 Data Sources
 ------------
 
-.. automodule:: core.datasource
+.. automodule:: dashboard_lego.core.datasource
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: core.datasource.BaseDataSource
+.. autoclass:: dashboard_lego.core.datasource.BaseDataSource
    :members:
    :undoc-members:
    :show-inheritance:
+   :noindex:
 
 Data Source Implementations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -22,7 +23,7 @@ Data Source Implementations
 CSV Data Source
 ^^^^^^^^^^^^^^^
 
-.. automodule:: core.datasources.csv_source
+.. automodule:: dashboard_lego.core.datasources.csv_source
    :members:
    :undoc-members:
    :show-inheritance:
@@ -30,7 +31,7 @@ CSV Data Source
 Parquet Data Source
 ^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: core.datasources.parquet_source
+.. automodule:: dashboard_lego.core.datasources.parquet_source
    :members:
    :undoc-members:
    :show-inheritance:
@@ -38,7 +39,7 @@ Parquet Data Source
 SQL Data Source
 ^^^^^^^^^^^^^^^
 
-.. automodule:: core.datasources.sql_source
+.. automodule:: dashboard_lego.core.datasources.sql_source
    :members:
    :undoc-members:
    :show-inheritance:
@@ -46,38 +47,41 @@ SQL Data Source
 Dashboard Page
 --------------
 
-.. automodule:: core.page
+.. automodule:: dashboard_lego.core.page
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: core.page.DashboardPage
+.. autoclass:: dashboard_lego.core.page.DashboardPage
    :members:
    :undoc-members:
    :show-inheritance:
+   :noindex:
 
 State Management
 ----------------
 
-.. automodule:: core.state
+.. automodule:: dashboard_lego.core.state
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: core.state.StateManager
+.. autoclass:: dashboard_lego.core.state.StateManager
    :members:
    :undoc-members:
    :show-inheritance:
+   :noindex:
 
 Chart Context
 -------------
 
-.. automodule:: core.chart_context
+.. automodule:: dashboard_lego.core.chart_context
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: core.chart_context.ChartContext
+.. autoclass:: dashboard_lego.core.chart_context.ChartContext
    :members:
    :undoc-members:
    :show-inheritance:
+   :noindex:

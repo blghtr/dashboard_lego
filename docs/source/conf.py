@@ -4,7 +4,15 @@ Configuration file for the Sphinx documentation builder.
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../..'))
+
+# Ensure autodoc imports from the src/ layout
+DOCS_DIR = os.path.dirname(__file__)
+PROJECT_ROOT = os.path.abspath(os.path.join(DOCS_DIR, os.pardir, os.pardir))
+SRC_DIR = os.path.join(PROJECT_ROOT, 'src')
+
+# Prepend src/ so that `dashboard_lego` can be imported during doc build
+if SRC_DIR not in sys.path:
+    sys.path.insert(0, SRC_DIR)
 
 # -- Project information -----------------------------------------------------
 project = 'Dashboard Lego'
@@ -47,7 +55,6 @@ html_static_path = ['_static']
 html_theme_options = {
     'analytics_id': '',  # Provided by Google Analytics
     'logo_only': False,
-    'display_version': True,
     'prev_next_buttons_location': 'bottom',
     'style_external_links': False,
     'vcs_pageview_mode': '',
@@ -105,8 +112,9 @@ napoleon_attr_annotations = True
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
     'pandas': ('https://pandas.pydata.org/docs/', None),
-    'plotly': ('https://plotly.com/python-api-reference/', None),
-    'dash': ('https://dash.plotly.com/', None),
+    # External inventories below often return HTML; disable to avoid warnings
+    # 'plotly': ('https://plotly.com/python-api-reference/', None),
+    # 'dash': ('https://dash.plotly.com/', None),
     'numpy': ('https://numpy.org/doc/stable/', None),
     'sklearn': ('https://scikit-learn.org/stable/', None),
 }

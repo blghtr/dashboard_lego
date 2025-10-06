@@ -26,14 +26,11 @@ class StateManager:
          - implements: "class: 'StateManager'"
          - uses: []
 
-        :rationale: "Chosen a graph-like dictionary structure to store
-         state dependencies. This provides a good balance of
-         implementation simplicity and ease of traversal for callback
-         generation."
+        :rationale: "Chosen a graph-like dictionary structure to store state dependencies. This provides a good balance of implementation simplicity and ease of traversal for callback generation."
         :contract:
          - pre: "All state IDs must be unique across the application."
-         - post: "The manager holds a complete dependency graph of the
-          page's interactive components."
+         - post: "The manager holds a complete dependency graph of the page's interactive components."
+
 
     """
 
@@ -41,28 +38,30 @@ class StateManager:
         """
         Initializes the StateManager.
 
-        The internal `dependency_graph` will store the relationships.
-        Example:
-        {
-            'selected_date_range': {
-                'publisher': {
-                    'component_id': 'global-date-picker',
-                    'component_prop': 'value'
-                },
-                'subscribers': [
-                    {
-                        'component_id': 'sales-trend-graph',
-                        'component_prop': 'figure',
-                        'callback_fn': <function_ref>
+        The internal ``dependency_graph`` will store the relationships.
+
+        Example::
+
+            {
+                'selected_date_range': {
+                    'publisher': {
+                        'component_id': 'global-date-picker',
+                        'component_prop': 'value'
                     },
-                    {
-                        'component_id': 'kpi-block-container',
-                        'component_prop': 'children',
-                        'callback_fn': <function_ref>
-                    }
-                ]
+                    'subscribers': [
+                        {
+                            'component_id': 'sales-trend-graph',
+                            'component_prop': 'figure',
+                            'callback_fn': '<function_ref>'
+                        },
+                        {
+                            'component_id': 'kpi-block-container',
+                            'component_prop': 'children',
+                            'callback_fn': '<function_ref>'
+                        }
+                    ]
+                }
             }
-        }
 
         """
         self.logger = get_logger(__name__, StateManager)

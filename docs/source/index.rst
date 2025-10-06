@@ -101,7 +101,6 @@ Contents
    :caption: Development
 
    contributing
-   changelog
 
 Indices and tables
 ==================
