@@ -144,7 +144,7 @@ class BaseBlock(ABC):
 
     @staticmethod
     def _normalize_subscribes_to(
-        subscribes_to: Union[str, List[str], None]
+        subscribes_to: Union[str, List[str], None],
     ) -> List[str]:
         """
         Normalizes the subscribes_to parameter to a list of state IDs.
