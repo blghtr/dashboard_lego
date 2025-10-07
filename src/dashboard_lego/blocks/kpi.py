@@ -3,7 +3,7 @@ This module defines the KPIBlock for displaying key performance indicators.
 
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import dash_bootstrap_components as dbc
 from dash import dcc, html
@@ -111,7 +111,7 @@ class KPIBlock(BaseBlock):
         block_id: str,
         datasource: Any,
         kpi_definitions: List[Dict[str, str]],
-        subscribes_to: str,
+        subscribes_to: Union[str, List[str]],
         # Style customization parameters
         container_style: Optional[Dict[str, Any]] = None,
         container_className: Optional[str] = None,
@@ -137,9 +137,11 @@ class KPIBlock(BaseBlock):
         self.title_style = title_style
         self.title_className = title_className
 
-        super().__init__(
-            block_id, datasource, subscribes={subscribes_to: self._update_kpi_cards}
-        )
+        # Normalize subscribes_to to list and build subscribes dict
+        state_ids = self._normalize_subscribes_to(subscribes_to)
+        subscribes_dict = {state_id: self._update_kpi_cards for state_id in state_ids}
+
+        super().__init__(block_id, datasource, subscribes=subscribes_dict)
         self.logger.debug(f"KPI block {block_id} with {len(kpi_definitions)} KPIs")
 
     def _update_kpi_cards(self, *args) -> Component:

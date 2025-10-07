@@ -128,7 +128,8 @@ class TestStateManager:
 
         mock_app.callback.assert_called_once()
         args, _ = mock_app.callback.call_args
-        assert args[0] == [Output("sub-id", "children")]
+        # New implementation creates single Output (not list) for single subscriber
+        assert args[0] == Output("sub-id", "children")
         assert args[1] == [Input("pub-id", "value")]
 
     def test_generate_callbacks_multiple_subscribers(
@@ -139,7 +140,7 @@ class TestStateManager:
         :strategy: Register one pub and two subs, call generate_callbacks, and assert app.callback args.
         :contract:
         :pre: One publisher and two subscribers are registered.
-        :post: app.callback is called with one Input and a list of two Output objects.
+        :post: app.callback is called twice - one per unique output target.
 
         """
         state_manager.register_publisher("test_state", "pub-id", "value")
@@ -152,12 +153,19 @@ class TestStateManager:
 
         state_manager.generate_callbacks(mock_app)
 
-        mock_app.callback.assert_called_once()
-        args, _ = mock_app.callback.call_args
-        assert len(args[0]) == 2
-        assert Output("sub-id-1", "children") in args[0]
-        assert Output("sub-id-2", "figure") in args[0]
-        assert args[1] == [Input("pub-id", "value")]
+        # New implementation: one callback per output target (2 different outputs)
+        assert mock_app.callback.call_count == 2
+
+        # Verify both callbacks were registered
+        call_args_list = mock_app.callback.call_args_list
+        # args is (output, inputs), so args[0] is output, args[1] is inputs
+        outputs = [args[0] for args, _ in call_args_list]
+        inputs = [args[1] for args, _ in call_args_list]
+
+        assert Output("sub-id-1", "children") in outputs
+        assert Output("sub-id-2", "figure") in outputs
+        # Both should have the same input
+        assert all(inp == [Input("pub-id", "value")] for inp in inputs)
 
     def test_callback_wrapper_logic(self, state_manager: StateManager):
         """

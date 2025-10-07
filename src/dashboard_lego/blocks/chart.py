@@ -4,7 +4,7 @@ This module defines chart-related blocks.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Type
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
@@ -57,7 +57,7 @@ class StaticChartBlock(BaseBlock):
         datasource: BaseDataSource,
         title: str,
         chart_generator: Callable,
-        subscribes_to: str,
+        subscribes_to: Union[str, List[str]],
         # Style customization parameters
         card_style: Optional[Dict[str, Any]] = None,
         card_className: Optional[str] = None,
@@ -83,10 +83,14 @@ class StaticChartBlock(BaseBlock):
         self.graph_style = graph_style
         self.figure_layout = figure_layout or {}
 
+        # Normalize subscribes_to to list and build subscribes dict
+        state_ids = self._normalize_subscribes_to(subscribes_to)
+        subscribes_dict = {state_id: self._update_chart for state_id in state_ids}
+
         super().__init__(
             block_id,
             datasource,
-            subscribes={subscribes_to: self._update_chart},
+            subscribes=subscribes_dict,
             allow_duplicate_output=allow_duplicate_output,
         )
         self.logger.debug(f"Static chart {block_id} with title: {title}")
@@ -234,7 +238,7 @@ class InteractiveChartBlock(BaseBlock):
         title: str,
         chart_generator: Callable,
         controls: Dict[str, Control],
-        subscribes_to: Optional[List[str]] = None,
+        subscribes_to: Union[str, List[str], None] = None,
         # Style customization parameters (inherited from StaticChartBlock)
         card_style: Optional[Dict[str, Any]] = None,
         card_className: Optional[str] = None,
@@ -275,7 +279,9 @@ class InteractiveChartBlock(BaseBlock):
             {"state_id": self._generate_id(key), "component_prop": "value"}
             for key in self.controls
         ]
-        all_subscriptions = (subscribes_to or []) + [p["state_id"] for p in publishes]
+        # Normalize subscribes_to to list before concatenation
+        external_subscriptions = self._normalize_subscribes_to(subscribes_to)
+        all_subscriptions = external_subscriptions + [p["state_id"] for p in publishes]
 
         # Set the state interaction attributes on the instance
         self.publishes = publishes

@@ -149,6 +149,21 @@ class StateManager:
         Traverses the dependency graph and registers all necessary callbacks
         with the Dash app.
 
+        This method now supports multi-state subscriptions by grouping
+        subscribers by their output target and creating callbacks with
+        multiple Input sources.
+
+        :hierarchy: [Feature | Multi-State Subscription | StateManager]
+        :relates-to:
+         - motivated_by: "Bug Fix: Support subscribing to multiple states"
+         - implements: "method: 'generate_callbacks' with multi-input support"
+
+        :rationale: "Group subscriptions by output target to create one callback
+         per subscriber with multiple inputs, avoiding duplicate output errors."
+        :contract:
+         - pre: "Dependency graph is populated with publishers and subscribers."
+         - post: "One callback per unique output target with all its input states."
+
         Args:
             app: The Dash app instance.
 
@@ -159,37 +174,73 @@ class StateManager:
         callback_count = 0
 
         try:
+            # Group subscriptions by output target (component_id, component_prop)
+            # to support multi-state subscriptions
+            output_subscriptions = {}  # {(comp_id, comp_prop): [state_info]}
+
             for state_id, connections in self.dependency_graph.items():
                 publisher = connections.get("publisher")
                 subscribers = connections.get("subscribers")
 
-                if not publisher or not subscribers:
+                if not publisher:
                     self.logger.debug(
-                        f"Skipping state {state_id}: missing publisher or "
-                        f"subscribers (publisher={bool(publisher)}, "
-                        f"subscribers="
-                        f"{len(subscribers) if subscribers else 0})"
+                        f"Skipping state {state_id}: no publisher registered"
                     )
                     continue
 
+                if not subscribers:
+                    self.logger.debug(
+                        f"Skipping state {state_id}: no subscribers registered"
+                    )
+                    continue
+
+                # Add each subscriber to the grouped structure
+                for sub in subscribers:
+                    output_key = (sub["component_id"], sub["component_prop"])
+
+                    if output_key not in output_subscriptions:
+                        output_subscriptions[output_key] = []
+
+                    output_subscriptions[output_key].append(
+                        {
+                            "state_id": state_id,
+                            "publisher": publisher,
+                            "callback_fn": sub["callback_fn"],
+                        }
+                    )
+
+            # Create one callback per unique output target
+            for output_key, state_infos in output_subscriptions.items():
+                component_id, component_prop = output_key
+
                 self.logger.debug(
-                    f"Creating callback for state: {state_id} "
-                    f"({len(subscribers)} subscribers)"
+                    f"Creating callback for output: {component_id}.{component_prop} "
+                    f"with {len(state_infos)} input state(s)"
                 )
 
-                outputs = [
-                    Output(sub["component_id"], sub["component_prop"])
-                    for sub in subscribers
+                # Create Input for each state this output subscribes to
+                inputs = [
+                    Input(
+                        info["publisher"]["component_id"],
+                        info["publisher"]["component_prop"],
+                    )
+                    for info in state_infos
                 ]
-                inputs = [Input(publisher["component_id"], publisher["component_prop"])]
 
-                # Use the factory to create a unique callback function
-                # for this state
-                callback_func = self._create_callback_wrapper(subscribers)
+                # Create single Output for this subscriber
+                output = Output(component_id, component_prop)
 
-                # Dynamically register the callback with Dash
-                app.callback(outputs, inputs)(callback_func)
+                # Create callback that handles multiple inputs
+                callback_func = self._create_multi_input_callback(state_infos)
+
+                # Register callback with Dash
+                app.callback(output, inputs)(callback_func)
                 callback_count += 1
+
+                self.logger.debug(
+                    f"Registered callback: {len(inputs)} inputs -> "
+                    f"{component_id}.{component_prop}"
+                )
 
             self.logger.info(f"Successfully registered {callback_count} callbacks")
 
@@ -440,11 +491,69 @@ class StateManager:
             self.logger.error(f"Error creating fallback output: {e}", exc_info=True)
             return None
 
+    def _create_multi_input_callback(
+        self, state_infos: List[Dict[str, Any]]
+    ) -> Callable:
+        """
+        Creates a callback function that handles multiple input states.
+
+        :hierarchy: [Feature | Multi-State Subscription | Callback Creation]
+        :relates-to:
+         - motivated_by: "Bug Fix: Support blocks subscribing to multiple states"
+         - implements: "method: '_create_multi_input_callback'"
+
+        :rationale: "When a block subscribes to multiple states, the callback
+         receives multiple input values and must call the block's update function."
+        :contract:
+         - pre: "state_infos contains callback_fn and state metadata for each input."
+         - post: "Returns a function that processes all input values."
+
+        Args:
+            state_infos: List of dicts with 'state_id', 'publisher', 'callback_fn'.
+
+        Returns:
+            A callback function that accepts multiple input values.
+
+        """
+
+        def multi_input_callback(*values: Any) -> Any:
+            """
+            Callback that receives multiple input values from different states.
+
+            Since all state_infos point to the same callback_fn (same subscriber),
+            we just call it once with the first value that triggered the callback.
+
+            """
+            self.logger.debug(
+                f"Multi-input callback triggered with {len(values)} values"
+            )
+
+            try:
+                # All state_infos have the same callback_fn (same subscriber block)
+                # Just call it with the first triggering value
+                # Dash's callback context can be used if block needs to know which input triggered
+                callback_fn = state_infos[0]["callback_fn"]
+                result = callback_fn(*values)
+
+                self.logger.debug("Multi-input callback completed successfully")
+                return result
+
+            except Exception as e:
+                self.logger.error(
+                    f"Error in multi-input callback execution: {e}", exc_info=True
+                )
+                return None
+
+        return multi_input_callback
+
     def _create_callback_wrapper(self, subscribers: List[Dict[str, Any]]) -> Callable:
         """
         A factory that creates a unique callback function for a list
         of subscribers. This approach is used to correctly handle
         closures in a loop.
+
+        NOTE: This is the old method used when multiple subscribers react to
+        one state. Now deprecated in favor of _create_multi_input_callback.
 
         Args:
             subscribers: A list of subscriber dictionaries for a

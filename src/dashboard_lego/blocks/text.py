@@ -3,7 +3,7 @@ This module defines the TextBlock for displaying text content.
 
 """
 
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import dash_bootstrap_components as dbc
 import pandas as pd
@@ -44,7 +44,7 @@ class TextBlock(BaseBlock):
         self,
         block_id: str,
         datasource: Any,
-        subscribes_to: str,
+        subscribes_to: Union[str, List[str]],
         content_generator: Callable[[pd.DataFrame], Component | str],
         title: Optional[str] = None,
         # Style customization parameters
@@ -63,8 +63,9 @@ class TextBlock(BaseBlock):
             block_id: A unique identifier for this block instance.
             datasource: An instance of a class that implements the
                 BaseDataSource interface.
-            subscribes_to: The state ID to which this block subscribes to
-                receive updates.
+            subscribes_to: The state ID(s) to which this block subscribes to
+                receive updates. Can be a single state ID string or a list of
+                state IDs.
             content_generator: A function that takes a DataFrame and returns a
                 Dash Component or a Markdown string.
             title: An optional title for the block's card.
@@ -90,9 +91,11 @@ class TextBlock(BaseBlock):
         self.content_className = content_className
         self.loading_type = loading_type
 
-        super().__init__(
-            block_id, datasource, subscribes={subscribes_to: self._update_content}
-        )
+        # Normalize subscribes_to to list and build subscribes dict
+        state_ids = self._normalize_subscribes_to(subscribes_to)
+        subscribes_dict = {state_id: self._update_content for state_id in state_ids}
+
+        super().__init__(block_id, datasource, subscribes=subscribes_dict)
 
     def _update_content(self, *args) -> Component:
         """

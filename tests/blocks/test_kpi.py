@@ -94,3 +94,72 @@ def test_update_kpi_cards_error(datasource_factory, kpi_definitions):
     assert isinstance(alert, dbc.Alert)
     assert alert.color == "danger"
     assert "Ошибка загрузки KPI: DB connection failed" in alert.children
+
+
+def test_kpi_block_list_subscription(datasource_factory, kpi_definitions):
+    """
+    Tests that KPIBlock can subscribe to multiple states.
+
+    :hierarchy: [Testing | Unit Tests | Blocks | KPIBlock | Multi-State]
+    :covers:
+     - object: "KPIBlock with list subscription"
+     - requirement: "Bug Fix: Support subscribing to multiple states"
+
+    :scenario: "Verifies that KPIBlock can subscribe to multiple states
+     using a list parameter without causing TypeError."
+    :strategy: "Create KPIBlock with list subscription and verify
+     subscribes dict is created correctly."
+    :contract:
+     - pre: "subscribes_to accepts both str and List[str] types."
+     - post: "Block subscribes to all specified states successfully."
+
+    """
+    mock_ds = datasource_factory()
+    state_ids = ["filter-state-1", "filter-state-2"]
+
+    # This should not raise TypeError: unhashable type: 'list'
+    block = KPIBlock(
+        block_id="test_kpi",
+        datasource=mock_ds,
+        kpi_definitions=kpi_definitions,
+        subscribes_to=state_ids,
+    )
+
+    # Verify subscribes dict was created correctly
+    assert block.subscribes is not None
+    assert len(block.subscribes) == 2
+    for state_id in state_ids:
+        assert state_id in block.subscribes
+        assert block.subscribes[state_id] == block._update_kpi_cards
+
+
+def test_kpi_block_single_string_subscription(datasource_factory, kpi_definitions):
+    """
+    Tests that KPIBlock still works with single string (regression).
+
+    :hierarchy: [Testing | Unit Tests | Blocks | KPIBlock | Single State]
+    :covers:
+     - object: "KPIBlock with string subscription"
+     - requirement: "Regression test: Single string subscription must still work"
+
+    :scenario: "Verifies that KPIBlock continues to work with single string
+     state ID."
+    :strategy: "Create KPIBlock with string subscription and verify it works."
+    :contract:
+     - pre: "subscribes_to is a single string state ID."
+     - post: "Block subscribes to the state successfully."
+
+    """
+    mock_ds = datasource_factory()
+
+    block = KPIBlock(
+        block_id="test_kpi",
+        datasource=mock_ds,
+        kpi_definitions=kpi_definitions,
+        subscribes_to="single-state",
+    )
+
+    # Verify subscribes dict was created correctly
+    assert block.subscribes is not None
+    assert len(block.subscribes) == 1
+    assert "single-state" in block.subscribes

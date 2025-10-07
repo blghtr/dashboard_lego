@@ -149,3 +149,163 @@ class TestInteractiveChartBlock:
             ]
             == block._update_chart
         )
+
+
+class TestMultiStateSubscription:
+    """
+    Tests for multi-state subscription feature.
+
+    :hierarchy: [Testing | Unit Tests | Blocks | Multi-State Subscription]
+    :covers:
+     - object: "BaseBlock._normalize_subscribes_to"
+     - object: "StaticChartBlock with list subscription"
+     - object: "InteractiveChartBlock with list subscription"
+     - requirement: "Bug Fix: Support subscribing to multiple states"
+
+    :scenario: "Verifies that blocks can subscribe to multiple states using
+     a list parameter without causing TypeError."
+    :strategy: "Create blocks with list subscription parameters and verify
+     state registration occurs correctly for all states."
+    :contract:
+     - pre: "subscribes_to accepts both str and List[str] types."
+     - post: "Block subscribes to all specified states successfully."
+
+    """
+
+    def test_static_chart_list_subscription(self, datasource_factory):
+        """Test StaticChartBlock with list of state IDs."""
+        mock_ds = datasource_factory()
+        state_ids = ["filter-state-1", "filter-state-2"]
+
+        # This should not raise TypeError
+        block = StaticChartBlock(
+            "test_chart",
+            mock_ds,
+            "My Chart",
+            lambda df, ctx: go.Figure(),
+            subscribes_to=state_ids,
+        )
+
+        # Verify subscribes dict was created correctly
+        assert block.subscribes is not None
+        assert len(block.subscribes) == 2
+        assert "filter-state-1" in block.subscribes
+        assert "filter-state-2" in block.subscribes
+        assert block.subscribes["filter-state-1"] == block._update_chart
+        assert block.subscribes["filter-state-2"] == block._update_chart
+
+    def test_static_chart_single_string_subscription(self, datasource_factory):
+        """Test StaticChartBlock still works with single string (regression)."""
+        mock_ds = datasource_factory()
+
+        block = StaticChartBlock(
+            "test_chart",
+            mock_ds,
+            "My Chart",
+            lambda df, ctx: go.Figure(),
+            subscribes_to="single-state",
+        )
+
+        # Verify subscribes dict was created correctly
+        assert block.subscribes is not None
+        assert len(block.subscribes) == 1
+        assert "single-state" in block.subscribes
+
+    def test_interactive_chart_list_subscription(self, datasource_factory):
+        """Test InteractiveChartBlock with list of external state IDs."""
+        mock_ds = datasource_factory()
+        controls = {
+            "my_control": Control(
+                component=dcc.Dropdown, props={"options": ["a", "b"]}
+            ),
+        }
+        external_states = ["external-state-1", "external-state-2"]
+
+        # This should not raise TypeError: can only concatenate str (not "list")
+        block = InteractiveChartBlock(
+            "interactive",
+            mock_ds,
+            "Interactive Chart",
+            lambda df, ctx: go.Figure(),
+            controls=controls,
+            subscribes_to=external_states,
+        )
+
+        # Verify subscribes includes both external states and own control
+        assert block.subscribes is not None
+        assert len(block.subscribes) == 3  # 2 external + 1 own control
+        assert "external-state-1" in block.subscribes
+        assert "external-state-2" in block.subscribes
+        assert "interactive-my_control" in block.subscribes
+
+    def test_interactive_chart_string_subscription(self, datasource_factory):
+        """Test InteractiveChartBlock with single string (regression)."""
+        mock_ds = datasource_factory()
+        controls = {
+            "my_control": Control(
+                component=dcc.Dropdown, props={"options": ["a", "b"]}
+            ),
+        }
+
+        # This should work without errors
+        block = InteractiveChartBlock(
+            "interactive",
+            mock_ds,
+            "Interactive Chart",
+            lambda df, ctx: go.Figure(),
+            controls=controls,
+            subscribes_to="external-state",
+        )
+
+        # Verify subscribes includes both external state and own control
+        assert block.subscribes is not None
+        assert len(block.subscribes) == 2  # 1 external + 1 own control
+        assert "external-state" in block.subscribes
+        assert "interactive-my_control" in block.subscribes
+
+    def test_interactive_chart_none_subscription(self, datasource_factory):
+        """Test InteractiveChartBlock with None (only own controls)."""
+        mock_ds = datasource_factory()
+        controls = {
+            "my_control": Control(
+                component=dcc.Dropdown, props={"options": ["a", "b"]}
+            ),
+        }
+
+        block = InteractiveChartBlock(
+            "interactive",
+            mock_ds,
+            "Interactive Chart",
+            lambda df, ctx: go.Figure(),
+            controls=controls,
+            subscribes_to=None,
+        )
+
+        # Verify subscribes includes only own control
+        assert block.subscribes is not None
+        assert len(block.subscribes) == 1
+        assert "interactive-my_control" in block.subscribes
+
+    def test_multi_state_registration(self, datasource_factory):
+        """Test that multiple states register correctly with StateManager."""
+        mock_ds = datasource_factory()
+        state_ids = ["state-a", "state-b", "state-c"]
+
+        block = StaticChartBlock(
+            "test_chart",
+            mock_ds,
+            "My Chart",
+            lambda df, ctx: go.Figure(),
+            subscribes_to=state_ids,
+        )
+
+        state_manager = StateManager()
+        block._register_state_interactions(state_manager)
+
+        # Verify all states are registered
+        for state_id in state_ids:
+            assert state_id in state_manager.dependency_graph
+            subscribers = state_manager.dependency_graph[state_id]["subscribers"]
+            assert len(subscribers) == 1
+            assert subscribers[0]["callback_fn"] == block._update_chart
+            assert subscribers[0]["component_id"] == "test_chart-container"

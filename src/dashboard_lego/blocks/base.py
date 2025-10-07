@@ -4,7 +4,7 @@ This module defines the abstract base class for all dashboard blocks.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from dash.development.base_component import Component
 
@@ -141,6 +141,42 @@ class BaseBlock(ABC):
         component_id = f"{self.block_id}-{component_name}"
         self.logger.debug(f"Generated component ID: {component_id}")
         return component_id
+
+    @staticmethod
+    def _normalize_subscribes_to(
+        subscribes_to: Union[str, List[str], None]
+    ) -> List[str]:
+        """
+        Normalizes the subscribes_to parameter to a list of state IDs.
+
+        :hierarchy: [Blocks | Base | Multi-State Subscription Support]
+        :relates-to:
+         - motivated_by: "Bug Fix: Support subscribing to multiple states to
+           enable complex dashboard patterns with multi-filter dependencies"
+         - implements: "method: '_normalize_subscribes_to'"
+
+        :rationale: "Provides consistent handling of subscribes_to parameter
+         across all block types, accepting both single strings and lists."
+        :contract:
+         - pre: "subscribes_to can be a string, list of strings, or None."
+         - post: "Returns a list of state IDs (empty list if None)."
+
+        Args:
+            subscribes_to: Can be a single state ID (str), a list of state IDs,
+                          or None.
+
+        Returns:
+            A list of state IDs. Returns empty list if input is None.
+
+        """
+        if subscribes_to is None:
+            return []
+        if isinstance(subscribes_to, str):
+            return [subscribes_to]
+        if isinstance(subscribes_to, list):
+            return subscribes_to
+        # Fallback for unexpected types
+        return []
 
     def _get_component_prop(self) -> str:
         """
