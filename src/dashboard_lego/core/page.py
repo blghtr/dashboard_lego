@@ -474,11 +474,11 @@ class DashboardPage:
             "bottom": 0,
             "width": f"{sidebar_width}rem",
             "padding": "2rem 1.5rem",
-            "background-color": "#2c3e50",  # Dark blue-gray
+            "backgroundColor": "#2c3e50",  # Dark blue-gray
             "color": "#ecf0f1",  # Light text
-            "overflow-y": "auto",
-            "box-shadow": "2px 0 5px rgba(0,0,0,0.1)",
-            "z-index": 1000,
+            "overflowY": "auto",
+            "boxShadow": "2px 0 5px rgba(0,0,0,0.1)",
+            "zIndex": 1000,
         }
 
         # Apply custom sidebar style overrides
@@ -489,11 +489,11 @@ class DashboardPage:
 
         # Default content area style with margin to avoid sidebar overlap
         default_content_style = {
-            "margin-left": f"{sidebar_width + 1}rem",
-            "margin-right": "2rem",
+            "marginLeft": f"{sidebar_width + 1}rem",
+            "marginRight": "2rem",
             "padding": "2rem 1rem",
-            "min-height": "100vh",
-            "background-color": "#ffffff",
+            "minHeight": "100vh",
+            "backgroundColor": "#ffffff",
         }
 
         # Apply custom content style overrides
@@ -505,9 +505,11 @@ class DashboardPage:
         # Default nav link style
         default_nav_link_style = {
             "color": "#ecf0f1",
-            "border-radius": "8px",
+            "borderRadius": "8px",
             "padding": "0.75rem 1rem",
             "transition": "all 0.3s ease",
+            "cursor": "pointer",  # Make it clear these are clickable
+            "display": "block",  # Ensure proper layout
         }
 
         # Apply custom nav link style overrides
@@ -542,7 +544,7 @@ class DashboardPage:
                         section.title,
                     ],
                     id=f"nav-item-{idx}",
-                    href=f"#section-{idx}",
+                    href="#",  # As shown in docs for NavLink with n_clicks
                     active=idx == self.navigation.default_section,
                     n_clicks=0,
                     className=link_className,
@@ -565,7 +567,7 @@ class DashboardPage:
                     ],
                     className="mb-4",
                 ),
-                html.Hr(style={"border-color": "#34495e", "margin": "1.5rem 0"}),
+                html.Hr(style={"borderColor": "#34495e", "margin": "1.5rem 0"}),
                 html.P(
                     "Navigate between sections",
                     className="text-muted small mb-3",
@@ -583,10 +585,33 @@ class DashboardPage:
             className=self.navigation.sidebar_className,
         )
 
-        # Content area for dynamic content
+        # Load initial content for the default section
+        try:
+            initial_content = self._create_section_content(
+                self.navigation.default_section
+            )
+            self.logger.debug(
+                f"Loaded initial content for default section {self.navigation.default_section}"
+            )
+        except Exception as e:
+            self.logger.error(
+                f"Failed to load initial section {self.navigation.default_section}: {e}"
+            )
+            initial_content = [
+                dbc.Alert(
+                    [
+                        html.H4("Error Loading Section", className="alert-heading"),
+                        html.P(f"Failed to load initial section: {e}"),
+                    ],
+                    color="danger",
+                    className="m-3",
+                )
+            ]
+
+        # Content area for dynamic content with initial content loaded
         content_area = html.Div(
             id="nav-content-area",
-            children=[],
+            children=initial_content,
             style=content_style,
             className=self.navigation.content_className,
         )
@@ -746,13 +771,14 @@ class DashboardPage:
         """
         self.logger.info("Registering callbacks with Dash app")
 
-        # Set up comprehensive error handling for Dash callbacks
-        self._setup_callback_error_handling(app)
-
         try:
-            # Navigation-specific callbacks
+            # Navigation-specific callbacks MUST be registered BEFORE error handling wrapper
             if self.navigation:
                 self._register_navigation_callbacks(app)
+
+            # Set up comprehensive error handling for Dash callbacks
+            # NOTE: This replaces app.callback, so must be done AFTER navigation callbacks
+            self._setup_callback_error_handling(app)
 
             # OLD MECHANISM: State-based callbacks for StaticChartBlock
             self.state_manager.generate_callbacks(app)
@@ -878,26 +904,40 @@ class DashboardPage:
                 Input(f"nav-item-{i}", "n_clicks")
                 for i in range(len(self.navigation.sections))
             ],
-            prevent_initial_call=False,
         )
-        def update_navigation(*args):
+        def update_navigation(*n_clicks_list):
             """
             Updates content area and navigation link states on user clicks.
 
             """
             ctx = callback_context
 
-            # On initial call, load default section
+            self.logger.info("=== Navigation callback fired ===")
+            self.logger.info(f"n_clicks values: {n_clicks_list}")
+            self.logger.info(f"ctx.triggered: {ctx.triggered}")
+
+            # On initial call (no trigger or prop_id is ".")
             if not ctx.triggered or ctx.triggered[0]["prop_id"] == ".":
                 section_idx = self.navigation.default_section
-                self.logger.debug(f"Initial load: section {section_idx}")
+                self.logger.info(f"Initial load: loading default section {section_idx}")
             else:
+                # Find which nav item was clicked
+                triggered_prop_id = ctx.triggered[0]["prop_id"]
+                self.logger.info(f"Callback triggered by: {triggered_prop_id}")
+
                 # Extract clicked item index from triggered id
-                triggered_id = ctx.triggered[0]["prop_id"].split(".")[0]
-                section_idx = int(triggered_id.split("-")[-1])
-                self.logger.info(
-                    f"Navigation click: switching to section {section_idx}"
-                )
+                if "nav-item-" in triggered_prop_id:
+                    item_id = triggered_prop_id.split(".")[0]
+                    section_idx = int(item_id.split("-")[-1])
+                    self.logger.info(
+                        f"✅ Navigation click: switching to section {section_idx}"
+                    )
+                else:
+                    # Fallback to default
+                    section_idx = self.navigation.default_section
+                    self.logger.warning(
+                        f"⚠️ Unknown trigger: {triggered_prop_id}, using default"
+                    )
 
             # Load section content
             try:
