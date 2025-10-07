@@ -182,15 +182,38 @@ def create_eda_section():
     datasource = CsvDataSource("sample_theme_data.csv")
     datasource.init_data()
 
+    # Get theme from global context (will be set by create_themed_dashboard)
+    import dashboard_lego.core.theme as theme_module
+
+    theme_config = getattr(theme_module, "_current_theme", None)
+
+    # Create theme-aware figure layout
+    figure_layout = {}
+    if theme_config:
+        plotly_template = (
+            "plotly_dark" if theme_config.name.lower() == "dark" else "plotly"
+        )
+        figure_layout = {
+            "template": plotly_template,
+            "plot_bgcolor": theme_config.colors.background,
+            "paper_bgcolor": theme_config.colors.background,
+            "font": {"color": theme_config.colors.text_primary},
+        }
+        print(f"🎨 Applying {theme_config.name} theme to EDA section: {figure_layout}")
+
     correlation_block = CorrelationHeatmapPreset(
         block_id="correlation",
         datasource=datasource,
         subscribes_to="dummy_state",
         title="Correlation Analysis",
+        figure_layout=figure_layout,
     )
 
     histogram_block = GroupedHistogramPreset(
-        block_id="histogram", datasource=datasource, title="Distribution Analysis"
+        block_id="histogram",
+        datasource=datasource,
+        title="Distribution Analysis",
+        figure_layout=figure_layout,
     )
 
     missing_block = MissingValuesPreset(
@@ -198,6 +221,7 @@ def create_eda_section():
         datasource=datasource,
         subscribes_to="dummy_state",
         title="Missing Values",
+        figure_layout=figure_layout,
     )
 
     return [[correlation_block], [histogram_block], [missing_block]]
@@ -208,12 +232,32 @@ def create_ml_section():
     datasource = CsvDataSource("sample_theme_data.csv")
     datasource.init_data()
 
+    # Get theme from global context (will be set by create_themed_dashboard)
+    import dashboard_lego.core.theme as theme_module
+
+    theme_config = getattr(theme_module, "_current_theme", None)
+
+    # Create theme-aware figure layout
+    figure_layout = {}
+    if theme_config:
+        plotly_template = (
+            "plotly_dark" if theme_config.name.lower() == "dark" else "plotly"
+        )
+        figure_layout = {
+            "template": plotly_template,
+            "plot_bgcolor": theme_config.colors.background,
+            "paper_bgcolor": theme_config.colors.background,
+            "font": {"color": theme_config.colors.text_primary},
+        }
+        print(f"🎨 Applying {theme_config.name} theme to ML section: {figure_layout}")
+
     confusion_block = ConfusionMatrixPreset(
         block_id="confusion",
         datasource=datasource,
         y_true_col="target",
         y_pred_col="prediction",
         title="Confusion Matrix",
+        figure_layout=figure_layout,
     )
 
     # Create separate datasource for feature importance
@@ -227,6 +271,7 @@ def create_ml_section():
         feature_col="feature_name",
         importance_col="importance",
         title="Feature Importance",
+        figure_layout=figure_layout,
     )
 
     metrics_block = MetricCardBlock(
@@ -261,13 +306,20 @@ def create_themed_dashboard(theme_name="light"):
     else:
         theme_config = ThemeConfig.light_theme()
 
-    # Create navigation sections
+    # Set theme in global context for presets to access
+    import dashboard_lego.core.theme as theme_module
+
+    theme_module._current_theme = theme_config
+
+    # Create navigation sections with theme-aware blocks
     sections = [
         NavigationSection(title="📊 EDA Analysis", block_factory=create_eda_section),
         NavigationSection(title="🤖 ML Models", block_factory=create_ml_section),
     ]
 
     # Create navigation configuration with theme-based styling
+    # Note: nav_link styles are now handled via CSS classes (themed-nav-link*)
+    # which automatically use theme CSS variables
     navigation_config = NavigationConfig(
         sections=sections,
         position="left",
@@ -280,11 +332,8 @@ def create_themed_dashboard(theme_name="light"):
         content_className="themed-content",
         nav_style=theme_config.get_component_style("navigation", "nav"),
         nav_className="themed-nav",
-        nav_link_style=theme_config.get_component_style("navigation", "link"),
+        # CSS classes for nav links (no inline styles needed)
         nav_link_className="themed-nav-link",
-        nav_link_active_style=theme_config.get_component_style(
-            "navigation", "link_active"
-        ),
         nav_link_active_className="themed-nav-link-active",
     )
 
@@ -390,17 +439,13 @@ if __name__ == "__main__":
 
         logger.info("Dashboard created successfully")
 
-        # Create and configure Dash app
-        logger.info("Creating Dash application...")
-        from dash import Dash
+        # Create and configure Dash app with automatic theme application
+        logger.info("Creating Dash application with theme integration...")
 
-        app = Dash(__name__, external_stylesheets=[dashboard.theme])
+        # Use the new integrated theme system - no more CSS magic!
+        app = dashboard.create_app()
 
-        # Build the layout and register callbacks
-        logger.info("Building layout and registering callbacks...")
-        app.layout = dashboard.build_layout()
-        dashboard.register_callbacks(app)
-        logger.info("Layout built and callbacks registered")
+        logger.info(f"Theme '{dashboard.theme_config.name}' applied automatically")
 
         print("🚀 Starting Theme Customization Dashboard...")
         print("🌐 Dashboard will be available at: http://localhost:8050")

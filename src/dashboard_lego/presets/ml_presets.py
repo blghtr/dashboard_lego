@@ -224,6 +224,11 @@ class ConfusionMatrixPreset(StaticChartBlock):
             color_continuous_scale="Blues",
         )
         fig.update_layout(title_text=self.title)
+
+        # Apply theme layout if provided
+        if self.figure_layout:
+            fig.update_layout(**self.figure_layout)
+
         return fig
 
 
@@ -367,4 +372,9 @@ class FeatureImportancePreset(StaticChartBlock):
             title=self.title,
         )
         fig.update_layout(yaxis_title="Feature")
+
+        # Apply theme layout if provided
+        if self.figure_layout:
+            fig.update_layout(**self.figure_layout)
+
         return fig

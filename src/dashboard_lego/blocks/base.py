@@ -4,7 +4,7 @@ This module defines the abstract base class for all dashboard blocks.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
 
 from dash.development.base_component import Component
 
@@ -13,6 +13,9 @@ from dashboard_lego.core.datasource import BaseDataSource
 from dashboard_lego.core.state import StateManager
 from dashboard_lego.utils.exceptions import BlockError, ConfigurationError
 from dashboard_lego.utils.logger import get_logger
+
+if TYPE_CHECKING:
+    from dashboard_lego.core.theme import ThemeConfig
 
 
 class BaseBlock(ABC):
@@ -70,6 +73,9 @@ class BaseBlock(ABC):
         self.subscribes: Optional[Dict[str, Callable]] = kwargs.get("subscribes")
         self.allow_duplicate_output: bool = kwargs.get("allow_duplicate_output", False)
 
+        # Theme configuration - will be set by DashboardPage
+        self.theme_config: Optional["ThemeConfig"] = None
+
         self.logger.debug(
             f"Block initialized: publishes={bool(self.publishes)}, "
             f"subscribes={bool(self.subscribes)}, "
@@ -91,13 +97,15 @@ class BaseBlock(ABC):
         try:
             # Register as a publisher
             if self.publishes:
-                self.logger.debug(f"Registering {len(self.publishes)} publishers")
+                self.logger.info(
+                    f"📢 Block {self.block_id} publishing {len(self.publishes)} state(s)"
+                )
                 for pub_info in self.publishes:
                     state_id = pub_info["state_id"]
                     component_prop = pub_info["component_prop"]
                     publisher_component_id = self._generate_id(state_id.split("-")[-1])
                     self.logger.debug(
-                        f"Registering publisher: {state_id} -> "
+                        f"  📡 Publisher: {state_id} -> "
                         f"{publisher_component_id}.{component_prop}"
                     )
                     state_manager.register_publisher(
@@ -106,13 +114,16 @@ class BaseBlock(ABC):
 
             # Register as a subscriber
             if self.subscribes:
-                self.logger.debug(f"Registering {len(self.subscribes)} subscriptions")
+                self.logger.info(
+                    f"📻 Block {self.block_id} subscribing to {len(self.subscribes)} state(s)"
+                )
                 for state_id, callback_fn in self.subscribes.items():
                     subscriber_component_id = self._generate_id("container")
                     subscriber_component_prop = self._get_component_prop()
                     self.logger.debug(
-                        f"Registering subscriber: {state_id} -> "
-                        f"{subscriber_component_id}.{subscriber_component_prop}"
+                        f"  📥 Subscriber: {state_id} -> "
+                        f"{subscriber_component_id}.{subscriber_component_prop} "
+                        f"(callback: {callback_fn.__name__})"
                     )
                     state_manager.register_subscriber(
                         state_id,
@@ -122,7 +133,7 @@ class BaseBlock(ABC):
                     )
 
             self.logger.info(
-                f"State interactions registered successfully for " f"{self.block_id}"
+                f"✅ State interactions registered successfully for {self.block_id}"
             )
         except Exception as e:
             self.logger.error(
@@ -132,6 +143,73 @@ class BaseBlock(ABC):
             raise BlockError(
                 f"Failed to register state interactions for " f"{self.block_id}: {e}"
             ) from e
+
+    def _set_theme_config(self, theme_config: "ThemeConfig") -> None:
+        """
+        Sets the theme configuration for this block.
+
+            :hierarchy: [Feature | Theme System | Block Theme Integration]
+            :relates-to:
+             - motivated_by: "PRD: Blocks must access theme for automatic styling"
+             - implements: "method: '_set_theme_config'"
+             - uses: ["class: 'ThemeConfig'"]
+
+            :rationale: "Called by DashboardPage to inject theme into all blocks."
+            :contract:
+             - pre: "theme_config is a valid ThemeConfig instance"
+             - post: "Block can access theme for styling decisions"
+
+        Args:
+            theme_config: ThemeConfig instance to use for styling
+        """
+        self.theme_config = theme_config
+        self.logger.debug(
+            f"Theme '{theme_config.name}' applied to block {self.block_id}"
+        )
+
+    def _get_themed_style(
+        self,
+        component_type: str,
+        element: str,
+        overrides: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Gets theme-based styling with optional user overrides.
+
+            :hierarchy: [Feature | Theme System | Styled Component Helper]
+            :relates-to:
+             - motivated_by: "PRD: Merge theme styles with user customizations"
+             - implements: "method: '_get_themed_style'"
+             - uses: ["method: 'get_component_style'"]
+
+            :rationale: "Provides consistent theme application with override capability."
+            :contract:
+             - pre: "component_type and element are valid style keys"
+             - post: "Returns merged style dict with overrides taking precedence"
+
+        Args:
+            component_type: Type of component (e.g., 'card', 'kpi', 'navigation')
+            element: Specific element within component (e.g., 'background', 'title')
+            overrides: Optional user-provided style overrides
+
+        Returns:
+            Dictionary with merged theme styles and overrides
+        """
+        # Start with theme styles if available
+        if self.theme_config:
+            base_style = self.theme_config.get_component_style(component_type, element)
+        else:
+            base_style = {}
+
+        # Merge with user overrides (overrides take precedence)
+        if overrides:
+            merged_style = {**base_style, **overrides}
+            self.logger.debug(
+                f"Applied themed style for {component_type}.{element} with {len(overrides)} overrides"
+            )
+            return merged_style
+
+        return base_style
 
     def _generate_id(self, component_name: str) -> str:
         """

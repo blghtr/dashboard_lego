@@ -213,8 +213,8 @@ class StateManager:
             for output_key, state_infos in output_subscriptions.items():
                 component_id, component_prop = output_key
 
-                self.logger.debug(
-                    f"Creating callback for output: {component_id}.{component_prop} "
+                self.logger.info(
+                    f"🔧 Creating callback for output: {component_id}.{component_prop} "
                     f"with {len(state_infos)} input state(s)"
                 )
 
@@ -227,18 +227,29 @@ class StateManager:
                     for info in state_infos
                 ]
 
+                # Debug: log all inputs for this callback
+                for idx, (input_obj, state_info) in enumerate(zip(inputs, state_infos)):
+                    self.logger.debug(
+                        f"  📥 Input[{idx}]: {input_obj.component_id}.{input_obj.component_property} "
+                        f"(state_id: {state_info['state_id']})"
+                    )
+
                 # Create single Output for this subscriber
                 output = Output(component_id, component_prop)
+                self.logger.debug(
+                    f"  📤 Output: {output.component_id}.{output.component_property}"
+                )
 
                 # Create callback that handles multiple inputs
                 callback_func = self._create_multi_input_callback(state_infos)
 
                 # Register callback with Dash
+                self.logger.debug("  🔗 Registering callback with Dash...")
                 app.callback(output, inputs)(callback_func)
                 callback_count += 1
 
-                self.logger.debug(
-                    f"Registered callback: {len(inputs)} inputs -> "
+                self.logger.info(
+                    f"✅ Registered callback #{callback_count}: {len(inputs)} inputs -> "
                     f"{component_id}.{component_prop}"
                 )
 
@@ -286,12 +297,12 @@ class StateManager:
 
                 if not inputs:
                     self.logger.debug(
-                        f"Block {block.block_id} has no control inputs, skipping callback"
+                        f"⏭️  Block {block.block_id} has no control inputs, skipping callback"
                     )
                     continue
 
-                self.logger.debug(
-                    f"Creating callback for block: {block.block_id} "
+                self.logger.info(
+                    f"🔧 Creating block-centric callback for: {block.block_id} "
                     f"({len(inputs)} inputs -> {output_id}.{output_prop})"
                 )
 
@@ -300,16 +311,29 @@ class StateManager:
                     Input(component_id, prop) for component_id, prop in inputs
                 ]
 
+                # Debug: log all inputs for this block
+                for idx, (comp_id, prop) in enumerate(inputs):
+                    self.logger.debug(f"  📥 Input[{idx}]: {comp_id}.{prop}")
+
                 # Create Output object with allow_duplicate support
                 allow_duplicate = getattr(block, "allow_duplicate_output", False)
                 output_object = Output(
                     output_id, output_prop, allow_duplicate=allow_duplicate
+                )
+                self.logger.debug(
+                    f"  📤 Output: {output_id}.{output_prop} "
+                    f"(allow_duplicate={allow_duplicate})"
                 )
 
                 # Create callback function with enhanced error handling
                 def create_block_callback(block_ref):
                     def block_callback(*values):
                         try:
+                            self.logger.debug(
+                                f"🎬 Block callback triggered for {block_ref.block_id} "
+                                f"with {len(values)} input values"
+                            )
+
                             # Convert input values to control values dict
                             control_values = {}
                             for i, (component_id, prop) in enumerate(
@@ -318,6 +342,10 @@ class StateManager:
                                 # Extract control name from component_id (last part after -)
                                 control_name = component_id.split("-")[-1]
                                 control_values[control_name] = values[i]
+                                self.logger.debug(
+                                    f"  🎛️  Control {control_name} = {values[i]} "
+                                    f"(from {component_id}.{prop})"
+                                )
 
                             # Call the block's update method
                             return block_ref.update_from_controls(control_values)
@@ -333,12 +361,13 @@ class StateManager:
 
                 # Register the callback with enhanced error handling
                 try:
+                    self.logger.debug("🔗 Registering block callback with Dash...")
                     app.callback(output_object, input_objects)(
                         create_block_callback(block)
                     )
                     callback_count += 1
-                    self.logger.debug(
-                        f"Successfully registered callback for block: {block.block_id}"
+                    self.logger.info(
+                        f"✅ Registered block callback #{callback_count} for: {block.block_id}"
                     )
                 except Exception as callback_error:
                     self.logger.error(
@@ -524,23 +553,41 @@ class StateManager:
             we just call it once with the first value that triggered the callback.
 
             """
-            self.logger.debug(
-                f"Multi-input callback triggered with {len(values)} values"
+            self.logger.info(
+                f"🔔 Multi-input callback triggered with {len(values)} values"
             )
+            self.logger.debug(f"Values: {values}")
+            self.logger.debug(f"Value types: {[type(v) for v in values]}")
+
+            # Log state_ids and values mapping for debugging
+            state_mapping = {}
+            for idx, info in enumerate(state_infos):
+                if idx < len(values):
+                    state_id = info["state_id"]
+                    value = values[idx]
+                    state_mapping[state_id] = value
+                    self.logger.info(
+                        f"🎯 State mapping: {state_id} = {value} (type: {type(value).__name__})"
+                    )
+                else:
+                    self.logger.warning(f"⚠️ No value for state_id: {info['state_id']}")
+
+            self.logger.info(f"📋 Complete state mapping: {state_mapping}")
 
             try:
                 # All state_infos have the same callback_fn (same subscriber block)
                 # Just call it with the first triggering value
                 # Dash's callback context can be used if block needs to know which input triggered
                 callback_fn = state_infos[0]["callback_fn"]
+                self.logger.debug(f"📞 Calling callback_fn: {callback_fn.__name__}")
                 result = callback_fn(*values)
 
-                self.logger.debug("Multi-input callback completed successfully")
+                self.logger.info("✅ Multi-input callback completed successfully")
                 return result
 
             except Exception as e:
                 self.logger.error(
-                    f"Error in multi-input callback execution: {e}", exc_info=True
+                    f"❌ Error in multi-input callback execution: {e}", exc_info=True
                 )
                 return None
 

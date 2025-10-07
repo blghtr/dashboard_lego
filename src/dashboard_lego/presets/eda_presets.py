@@ -106,6 +106,11 @@ class CorrelationHeatmapPreset(StaticChartBlock):
             title="Correlation Matrix",
         )
         fig.update_xaxes(side="top")
+
+        # Apply theme layout if provided
+        if self.figure_layout:
+            fig.update_layout(**self.figure_layout)
+
         return fig
 
 
@@ -142,24 +147,16 @@ class GroupedHistogramPreset(InteractiveChartBlock):
         controls_row_style: Optional[Dict[str, Any]] = None,
         controls_row_className: Optional[str] = None,
     ):
-        # Inspect the dataframe to find numerical and categorical columns
-        df = datasource.get_processed_data()
-        numerical_cols = df.select_dtypes(include=["float64", "int64"]).columns.tolist()
-        categorical_cols = ["None"] + df.select_dtypes(
-            include=["object", "category"]
-        ).columns.tolist()
+        # Store datasource for later use in _build_controls
+        self._datasource = datasource
 
-        if not numerical_cols:
-            raise ValueError(
-                "GroupedHistogramPreset requires a datasource with at least one numerical column."
-            )
-
+        # Create basic controls that will be updated after datasource is initialized
         controls = {
             "x_col": Control(
                 component=dcc.Dropdown,
                 props={
-                    "options": numerical_cols,
-                    "value": numerical_cols[0],
+                    "options": [],  # Will be populated later
+                    "value": None,
                     "clearable": False,
                     "style": {"minWidth": "150px"},
                 },
@@ -167,8 +164,8 @@ class GroupedHistogramPreset(InteractiveChartBlock):
             "group_by": Control(
                 component=dcc.Dropdown,
                 props={
-                    "options": categorical_cols,
-                    "value": categorical_cols[0],
+                    "options": ["None"],  # Will be populated later
+                    "value": "None",
                     "clearable": False,
                     "style": {"minWidth": "150px"},
                 },
@@ -194,6 +191,38 @@ class GroupedHistogramPreset(InteractiveChartBlock):
             controls_row_className=controls_row_className,
         )
 
+    def _update_controls_from_data(self):
+        """Update control options based on the datasource data."""
+        try:
+            df = self._datasource.get_processed_data()
+            if df.empty:
+                return
+
+            numerical_cols = df.select_dtypes(
+                include=["float64", "int64"]
+            ).columns.tolist()
+            categorical_cols = ["None"] + df.select_dtypes(
+                include=["object", "category"]
+            ).columns.tolist()
+
+            if not numerical_cols:
+                return
+
+            # Update x_col control
+            if "x_col" in self.controls:
+                self.controls["x_col"].props["options"] = numerical_cols
+                if self.controls["x_col"].props["value"] is None:
+                    self.controls["x_col"].props["value"] = numerical_cols[0]
+
+            # Update group_by control
+            if "group_by" in self.controls:
+                self.controls["group_by"].props["options"] = categorical_cols
+                if self.controls["group_by"].props["value"] not in categorical_cols:
+                    self.controls["group_by"].props["value"] = "None"
+
+        except Exception as e:
+            self.logger.warning(f"Failed to update controls from data: {e}")
+
     def _create_histogram(self, df: pd.DataFrame, ctx) -> go.Figure:
         """
         Generates a histogram based on the selected control values.
@@ -214,7 +243,27 @@ class GroupedHistogramPreset(InteractiveChartBlock):
             barmode="overlay",
         )
         fig.update_traces(opacity=0.75)
+
+        # Apply theme layout if provided
+        if self.figure_layout:
+            fig.update_layout(**self.figure_layout)
+
         return fig
+
+    def layout(self):
+        """Override layout to update controls from data before rendering."""
+        # Update controls based on datasource data
+        self._update_controls_from_data()
+        return super().layout()
+
+    def list_control_inputs(self) -> list[tuple[str, str]]:
+        """
+        Returns empty list to prevent duplicate callbacks.
+
+        GroupedHistogramPreset uses state-based callbacks (publishes/subscribes)
+        and doesn't need block-centric callbacks to avoid "Duplicate callback outputs" error.
+        """
+        return []
 
 
 class MissingValuesPreset(StaticChartBlock):
@@ -315,6 +364,11 @@ class MissingValuesPreset(StaticChartBlock):
             title="Percentage of Missing Values per Column",
         )
         fig.update_layout(showlegend=False)
+
+        # Apply theme layout if provided
+        if self.figure_layout:
+            fig.update_layout(**self.figure_layout)
+
         return fig
 
 

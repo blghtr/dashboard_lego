@@ -129,7 +129,16 @@ class DashboardPage:
         self.title = title
         self.theme = theme
         self.navigation = navigation
-        self.theme_config = theme_config or ThemeConfig.light_theme()
+
+        # Auto-derive theme_config from dbc theme if not explicitly provided
+        if theme_config is None:
+            self.logger.debug(f"Auto-deriving ThemeConfig from theme: {theme}")
+            self.theme_config = ThemeConfig.from_dbc_theme(theme)
+        else:
+            self.theme_config = theme_config
+
+        self.logger.info(f"Using theme: {self.theme_config.name}")
+
         self.layout_structure = blocks or []
         self.state_manager = StateManager()
 
@@ -177,13 +186,16 @@ class DashboardPage:
                 self.logger.error(f"Failed to process page structure: {e}")
                 raise
 
-            # Register all blocks with the state manager
+            # Register all blocks with the state manager and inject theme
             self.logger.debug("Registering blocks with state manager")
             self.logger.debug(
                 f"Registering {len(self.blocks)} blocks with state manager"
             )
             for block in self.blocks:
                 self.logger.debug(f"Registering block: {block.block_id}")
+                # Inject theme configuration
+                block._set_theme_config(self.theme_config)
+                # Register state interactions
                 block._register_state_interactions(self.state_manager)
         else:
             # Navigation mode: blocks will be created and registered lazily
@@ -466,22 +478,29 @@ class DashboardPage:
         )
         sidebar_width = max(16, min(24, max_title_length * 0.8 + 8))  # Dynamic width
 
-        # Default sidebar style with better colors and spacing
+        # Get base styles from theme config
+        base_sidebar_style = self.theme_config.get_component_style(
+            "navigation", "sidebar"
+        )
+        base_content_style = self.theme_config.get_component_style(
+            "navigation", "content"
+        )
+        # Note: nav_link styles now handled via CSS classes, not inline styles
+
+        # Default sidebar style with layout-specific properties
         default_sidebar_style = {
+            **base_sidebar_style,  # Apply theme styles first
             "position": "fixed",
             "top": 0,
             "left": 0,
             "bottom": 0,
             "width": f"{sidebar_width}rem",
-            "padding": "2rem 1.5rem",
-            "backgroundColor": "#2c3e50",  # Dark blue-gray
-            "color": "#ecf0f1",  # Light text
             "overflowY": "auto",
             "boxShadow": "2px 0 5px rgba(0,0,0,0.1)",
             "zIndex": 1000,
         }
 
-        # Apply custom sidebar style overrides
+        # Apply custom sidebar style overrides (user customization has highest priority)
         sidebar_style = {
             **default_sidebar_style,
             **(self.navigation.sidebar_style or {}),
@@ -489,53 +508,44 @@ class DashboardPage:
 
         # Default content area style with margin to avoid sidebar overlap
         default_content_style = {
+            **base_content_style,  # Apply theme styles first
             "marginLeft": f"{sidebar_width + 1}rem",
             "marginRight": "2rem",
-            "padding": "2rem 1rem",
             "minHeight": "100vh",
-            "backgroundColor": "#ffffff",
         }
 
-        # Apply custom content style overrides
+        # Apply custom content style overrides (user customization has highest priority)
         content_style = {
             **default_content_style,
             **(self.navigation.content_style or {}),
         }
 
-        # Default nav link style
-        default_nav_link_style = {
-            "color": "#ecf0f1",
-            "borderRadius": "8px",
-            "padding": "0.75rem 1rem",
-            "transition": "all 0.3s ease",
-            "cursor": "pointer",  # Make it clear these are clickable
-            "display": "block",  # Ensure proper layout
-        }
-
-        # Apply custom nav link style overrides
-        nav_link_style = {
-            **default_nav_link_style,
-            **(self.navigation.nav_link_style or {}),
-        }
-
-        # Default nav link className
-        nav_link_className = self.navigation.nav_link_className or "mb-2"
-
-        # Create navigation links with customizable styling
+        # Create navigation links with CSS class-based styling
+        # Note: Inline styles removed to allow CSS classes to work properly
         nav_links = []
         for idx, section in enumerate(self.navigation.sections):
-            # Apply active style if this is the active section
-            if (
-                idx == self.navigation.default_section
-                and self.navigation.nav_link_active_style
-            ):
-                link_style = {**nav_link_style, **self.navigation.nav_link_active_style}
-                link_className = (
-                    self.navigation.nav_link_active_className or nav_link_className
+            # Determine className based on whether this is the active section
+            # Use themed-nav-link* classes which are styled via CSS variables
+            if idx == self.navigation.default_section:
+                # Active section - use active class
+                initial_class = (
+                    self.navigation.nav_link_active_className
+                    or "themed-nav-link-active"
                 )
             else:
-                link_style = nav_link_style
-                link_className = nav_link_className
+                # Inactive section - use default class
+                initial_class = self.navigation.nav_link_className or "themed-nav-link"
+
+            # Build NavLink props
+            # Note: Do NOT apply inline styles here, even if provided via NavigationConfig,
+            # because inline styles cannot be updated by callbacks and would override className
+            # Users should use CSS class overrides via nav_link_className parameters
+            nav_link_props = {
+                "id": f"nav-item-{idx}",
+                "href": "#",
+                "n_clicks": 0,
+                "className": initial_class,
+            }
 
             nav_links.append(
                 dbc.NavLink(
@@ -543,12 +553,7 @@ class DashboardPage:
                         html.I(className="fas fa-chart-bar me-2"),  # Icon
                         section.title,
                     ],
-                    id=f"nav-item-{idx}",
-                    href="#",  # As shown in docs for NavLink with n_clicks
-                    active=idx == self.navigation.default_section,
-                    n_clicks=0,
-                    className=link_className,
-                    style=link_style,
+                    **nav_link_props,
                 )
             )
 
@@ -727,6 +732,8 @@ class DashboardPage:
                         f"All layout items must be of type BaseBlock in section '{section.title}'"
                     )
                 section_blocks.append(block)
+                # Inject theme configuration
+                block._set_theme_config(self.theme_config)
                 # Register block with state manager
                 block._register_state_interactions(self.state_manager)
 
@@ -806,35 +813,48 @@ class DashboardPage:
 
         :hierarchy: [Architecture | Error Handling | DashboardPage]
         :relates-to:
-         - motivated_by: "Architectural Conclusion: Comprehensive error handling
-           prevents silent failures and improves debugging"
+         - motivated_by: "Bug Fix: Error handling wrapper must preserve original callback registration"
          - implements: "method: '_setup_callback_error_handling'"
          - uses: ["attribute: 'logger'"]
 
-        :rationale: "Intercepts Dash callback errors and logs them properly for debugging."
+        :rationale: "Wraps callback functions with error handling while preserving Dash's callback registration."
         :contract:
          - pre: "Dash app instance is provided."
-         - post: "Callback error handling is configured for the app."
+         - post: "Callback error handling is configured without breaking callback registration."
 
         Args:
             app: The Dash app instance.
         """
         from dash.exceptions import PreventUpdate
 
+        # Save the original callback decorator
+        original_callback = app.callback
+
         def enhanced_callback(*args, **kwargs):
-            """Enhanced callback decorator with error handling."""
+            """Enhanced callback decorator that wraps functions with error handling."""
 
             def decorator(func):
                 def wrapper(*callback_args, **callback_kwargs):
                     try:
-                        return func(*callback_args, **callback_kwargs)
+                        self.logger.debug(
+                            f"🎬 Callback '{func.__name__}' triggered with "
+                            f"{len(callback_args)} args, {len(callback_kwargs)} kwargs"
+                        )
+                        result = func(*callback_args, **callback_kwargs)
+                        self.logger.debug(
+                            f"✅ Callback '{func.__name__}' completed successfully"
+                        )
+                        return result
                     except PreventUpdate:
                         # Re-raise PreventUpdate as it's intentional
+                        self.logger.debug(
+                            f"⏭️  Callback '{func.__name__}' prevented update"
+                        )
                         raise
                     except Exception as e:
                         # Log the error with context
                         self.logger.error(
-                            f"Callback error in function '{func.__name__}': {e}",
+                            f"❌ Callback error in function '{func.__name__}': {e}",
                             exc_info=True,
                         )
 
@@ -864,14 +884,15 @@ class DashboardPage:
                         # For other outputs, return error message
                         return f"Error: {error_msg}"
 
-                return wrapper
+                # CRITICAL: Call original_callback to actually register with Dash!
+                return original_callback(*args, **kwargs)(wrapper)
 
             return decorator
 
-        # Replace the callback decorator
+        # Replace the callback decorator with our wrapper
         app.callback = enhanced_callback
 
-        self.logger.debug("Enhanced callback error handling configured")
+        self.logger.debug("✅ Enhanced callback error handling configured")
 
     def _register_navigation_callbacks(self, app: Any):
         """
@@ -897,7 +918,7 @@ class DashboardPage:
                 Output("active-section-store", "data"),
             ]
             + [
-                Output(f"nav-item-{i}", "active")
+                Output(f"nav-item-{i}", "className")
                 for i in range(len(self.navigation.sections))
             ],
             [
@@ -955,11 +976,187 @@ class DashboardPage:
                     )
                 ]
 
-            # Update active states for nav items
-            active_states = [
-                i == section_idx for i in range(len(self.navigation.sections))
-            ]
+            # Update className for nav items based on active state
+            # Use themed-nav-link* classes which are styled via CSS variables
+            nav_class_names = []
+            for i in range(len(self.navigation.sections)):
+                if i == section_idx:
+                    # Active state - use active className (defaults to themed-nav-link-active)
+                    active_class = (
+                        self.navigation.nav_link_active_className
+                        or "themed-nav-link-active"
+                    )
+                    nav_class_names.append(active_class)
+                else:
+                    # Inactive state - use default className (defaults to themed-nav-link)
+                    default_class = (
+                        self.navigation.nav_link_className or "themed-nav-link"
+                    )
+                    nav_class_names.append(default_class)
 
-            return [content, section_idx] + active_states
+            self.logger.info(
+                f"🎯 Setting nav classNames: {nav_class_names} (section_idx={section_idx})"
+            )
+
+            return [content, section_idx] + nav_class_names
 
         self.logger.info("Navigation callbacks registered")
+
+    def get_theme_html_template(self) -> str:
+        """
+        Generate HTML template with theme CSS variables and Bootstrap data-bs-theme.
+
+        This method creates a complete HTML template that applies the theme configuration
+        to the Dash application. It includes:
+        - Bootstrap theme mode (data-bs-theme attribute)
+        - CSS custom properties from theme config
+        - Dark theme dropdown fixes if needed
+
+        :hierarchy: [Feature | Theme System | HTML Template Generation]
+        :relates-to:
+         - motivated_by: "Theme system should be automatically applied without manual CSS injection"
+         - implements: "method: 'get_theme_html_template'"
+         - uses: ["method: 'to_css_variables'"]
+
+        :rationale: "Provides a single method to generate themed HTML, eliminating manual CSS magic."
+        :contract:
+         - pre: "Theme config is initialized"
+         - post: "Returns complete HTML template string for app.index_string"
+
+        Returns:
+            HTML string with theme styling for app.index_string
+
+        Example:
+            >>> page = DashboardPage(title="Dashboard", blocks=[], theme_config=ThemeConfig.dark_theme())
+            >>> app.index_string = page.get_theme_html_template()
+        """
+        # Get CSS variables from theme
+        css_vars = self.theme_config.to_css_variables()
+        css_vars_str = ";\n                ".join(
+            f"{k}: {v}" for k, v in css_vars.items()
+        )
+
+        # Determine Bootstrap theme mode
+        bs_theme = "dark" if self.theme_config.name.lower() == "dark" else "light"
+
+        # Generate dropdown fix CSS for dark theme
+        dropdown_css = ""
+        if bs_theme == "dark":
+            dropdown_css = """
+            /* Fix dropdown menus for dark theme */
+            .dropdown-menu {
+                background-color: var(--bs-dark) !important;
+                border: 1px solid var(--bs-border-color) !important;
+            }
+            .dropdown-item {
+                color: var(--bs-body-color) !important;
+            }
+            .dropdown-item:hover {
+                background-color: var(--bs-secondary) !important;
+                color: var(--bs-body-color) !important;
+            }
+            /* Fix Select component dropdowns */
+            .Select-menu-outer {
+                background-color: var(--bs-dark) !important;
+                border: 1px solid var(--bs-border-color) !important;
+            }
+            .Select-option {
+                background-color: var(--bs-dark) !important;
+                color: var(--bs-body-color) !important;
+            }
+            .Select-option:hover {
+                background-color: var(--bs-secondary) !important;
+            }"""
+
+        # Navigation CSS classes using theme CSS variables
+        nav_css = """
+            /* Navigation link styles using theme variables */
+            .themed-nav-link {
+                color: var(--theme-nav-text);
+                background-color: transparent;
+                padding: var(--theme-spacing-md);
+                border-radius: var(--theme-border-radius);
+                text-decoration: none;
+                transition: all 0.3s ease;
+                display: block;
+            }
+            .themed-nav-link:hover {
+                background-color: var(--theme-nav-hover);
+            }
+            .themed-nav-link-active {
+                background-color: var(--theme-nav-active) !important;
+                color: var(--theme-white) !important;
+            }"""
+
+        return f"""<!DOCTYPE html>
+<html data-bs-theme="{bs_theme}">
+    <head>
+        {{{{%metas%}}}}
+        <title>{{{{%title%}}}}</title>
+        {{{{%favicon%}}}}
+        {{{{%css%}}}}
+        <style>
+            :root {{
+                {css_vars_str}
+            }}{dropdown_css}{nav_css}
+        </style>
+    </head>
+    <body>
+        {{{{%app_entry%}}}}
+        <footer>
+            {{{{%config%}}}}
+            {{{{%scripts%}}}}
+            {{{{%renderer%}}}}
+        </footer>
+    </body>
+</html>"""
+
+    def create_app(self, **kwargs) -> Any:
+        """
+        Create Dash app with theme automatically applied.
+
+        This is a convenience method that creates a fully configured Dash app with:
+        - Theme applied via HTML template
+        - Layout built and set
+        - Callbacks registered
+
+        :hierarchy: [Feature | App Creation | Convenience Method]
+        :relates-to:
+         - motivated_by: "Simplify dashboard creation with automatic theme application"
+         - implements: "method: 'create_app'"
+         - uses: ["method: 'get_theme_html_template'", "method: 'build_layout'", "method: 'register_callbacks'"]
+
+        :rationale: "Provides one-line app creation for common use cases."
+        :contract:
+         - pre: "Page is fully configured with blocks/navigation and theme"
+         - post: "Returns ready-to-run Dash app instance"
+
+        Args:
+            **kwargs: Additional arguments for Dash() constructor (e.g., suppress_callback_exceptions)
+
+        Returns:
+            Configured Dash app instance ready to run
+
+        Example:
+            >>> page = DashboardPage(title="My Dashboard", blocks=[[chart1, chart2]])
+            >>> app = page.create_app()
+            >>> app.run(debug=True)
+        """
+        from dash import Dash
+
+        self.logger.info(f"Creating Dash app with {self.theme_config.name} theme")
+
+        # Create Dash app with theme stylesheet
+        app = Dash(__name__, external_stylesheets=[self.theme], **kwargs)
+
+        # Apply theme HTML template
+        app.index_string = self.get_theme_html_template()
+
+        # Build and set layout
+        app.layout = self.build_layout()
+
+        # Register all callbacks
+        self.register_callbacks(app)
+
+        self.logger.info("Dash app created and configured successfully")
+        return app

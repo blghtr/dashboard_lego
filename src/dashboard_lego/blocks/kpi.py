@@ -3,7 +3,7 @@ This module defines the KPIBlock for displaying key performance indicators.
 
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 import dash_bootstrap_components as dbc
 from dash import dcc, html
@@ -11,6 +11,9 @@ from dash.development.base_component import Component
 
 from dashboard_lego.blocks.base import BaseBlock
 from dashboard_lego.utils.formatting import format_number
+
+if TYPE_CHECKING:
+    from dashboard_lego.core.theme import ThemeConfig
 
 
 def _create_kpi_card(
@@ -25,47 +28,94 @@ def _create_kpi_card(
     value_className: Optional[str] = None,
     title_style: Optional[Dict[str, Any]] = None,
     title_className: Optional[str] = None,
+    # Theme integration
+    theme_config: Optional["ThemeConfig"] = None,
 ) -> dbc.Col:
     """
-    Creates a KPI card with customizable styling.
+    Creates a KPI card with theme-aware styling.
 
     :hierarchy: [Blocks | KPIs | KPIBlock | Card Creation]
     :relates-to:
-     - motivated_by: "PRD: Need customizable styling for KPI cards"
-     - implements: "function: '_create_kpi_card' with style overrides"
-     - uses: ["component: 'dbc.Card'", "component: 'html.H4'",
-              "component: 'html.P'"]
+     - motivated_by: "PRD: Automatic theme application to KPI cards"
+     - implements: "function: '_create_kpi_card' with theme integration"
+     - uses: ["component: 'dbc.Card'", "component: 'html.H4'", "component: 'html.P'"]
 
-    :rationale: "Enhanced with style customization parameters to allow
-     fine-grained control over KPI card appearance while maintaining
-     backward compatibility."
+    :rationale: "Uses theme system for colors and typography while maintaining user override capability."
     :contract:
-     - pre: "Title, value, and icon strings are provided."
-     - post: "Returns a styled KPI card component with customizable
-       appearance."
+     - pre: "Title, value, and icon strings are provided, theme_config may be available."
+     - post: "Returns a themed KPI card component with automatic styling."
 
     """
-    # Build card props with style overrides
-    default_card_class = f"text-center text-white bg-{color} m-2"
-    card_props = {
-        "className": kpi_card_className or default_card_class,
-    }
-    if kpi_card_style:
-        card_props["style"] = kpi_card_style
+    # Get theme-aware styles for KPI
+    if theme_config:
+        # Get theme colors for the specified color name
+        color_map = {
+            "primary": theme_config.colors.primary,
+            "secondary": theme_config.colors.secondary,
+            "success": theme_config.colors.success,
+            "danger": theme_config.colors.danger,
+            "warning": theme_config.colors.warning,
+            "info": theme_config.colors.info,
+        }
+        bg_color = color_map.get(color, theme_config.colors.primary)
 
-    # Build value props with style overrides
+        # Build themed card style
+        default_card_style = {
+            "backgroundColor": bg_color,
+            "color": theme_config.colors.white,
+            "textAlign": "center",
+            "border": f"1px solid {theme_config.colors.border}",
+            "borderRadius": theme_config.spacing.border_radius,
+            "padding": theme_config.spacing.card_padding,
+            "margin": theme_config.spacing.sm,
+        }
+        card_style = {**default_card_style, **(kpi_card_style or {})}
+
+        # Build themed value style
+        default_value_style = {
+            "fontSize": theme_config.typography.font_size_h2,
+            "fontWeight": theme_config.typography.font_weight_bold,
+        }
+        themed_value_style = {**default_value_style, **(value_style or {})}
+
+        # Build themed title style
+        default_title_style = {
+            "fontSize": theme_config.typography.font_size_sm,
+        }
+        themed_title_style = {**default_title_style, **(title_style or {})}
+    else:
+        # Fallback to Bootstrap classes if no theme available
+        card_style = kpi_card_style
+        themed_value_style = value_style
+        themed_title_style = title_style
+
+    # Build card props
+    if theme_config:
+        card_props = {
+            "className": kpi_card_className or "text-center m-2",
+            "style": card_style,
+        }
+    else:
+        default_card_class = f"text-center text-white bg-{color} m-2"
+        card_props = {
+            "className": kpi_card_className or default_card_class,
+        }
+        if kpi_card_style:
+            card_props["style"] = kpi_card_style
+
+    # Build value props
     value_props = {
         "className": value_className or "card-title",
     }
-    if value_style:
-        value_props["style"] = value_style
+    if themed_value_style:
+        value_props["style"] = themed_value_style
 
-    # Build title props with style overrides
+    # Build title props
     title_props = {
         "className": title_className or "card-text",
     }
-    if title_style:
-        title_props["style"] = title_style
+    if themed_title_style:
+        title_props["style"] = themed_title_style
 
     return dbc.Col(
         dbc.Card(
@@ -184,6 +234,8 @@ class KPIBlock(BaseBlock):
                         value_className=self.value_className,
                         title_style=self.title_style,
                         title_className=self.title_className,
+                        # Pass theme configuration
+                        theme_config=self.theme_config,
                     )
                 )
             return dbc.Row(cards)

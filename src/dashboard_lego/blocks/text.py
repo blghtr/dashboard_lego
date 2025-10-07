@@ -153,31 +153,32 @@ class TextBlock(BaseBlock):
 
     def layout(self) -> Component:
         """
-        Defines the initial layout of the block with customizable styling.
+        Defines the initial layout of the block with theme-aware styling.
 
         :hierarchy: [Blocks | Text | TextBlock | Layout]
         :relates-to:
-         - motivated_by: "PRD: Need customizable styling for text blocks"
-         - implements: "method: 'layout' with style overrides"
-         - uses: ["attribute: 'card_style'", "attribute: 'loading_type'"]
+         - motivated_by: "PRD: Automatic theme application to text blocks"
+         - implements: "method: 'layout' with theme integration"
+         - uses: ["method: '_get_themed_style'", "attribute: 'card_style'"]
 
-        :rationale: "Applied style customization parameters to card and loading
-         components."
+        :rationale: "Uses theme system for consistent styling with user override capability."
         :contract:
-         - pre: "Block is properly initialized with style parameters."
-         - post: "Returns a styled Card component with customizable
-           appearance."
+         - pre: "Block is properly initialized, theme_config may be available."
+         - post: "Returns a themed Card component with automatic styling."
 
         """
         # Initialize with current content instead of empty container
         initial_content = self._update_content()
 
-        # Build card props with style overrides
+        # Build card props with theme-aware style
+        themed_card_style = self._get_themed_style(
+            "card", "background", self.card_style
+        )
         card_props = {
             "className": self.card_className or "mb-4",
         }
-        if self.card_style:
-            card_props["style"] = self.card_style
+        if themed_card_style:
+            card_props["style"] = themed_card_style
 
         return dbc.Card(
             dcc.Loading(

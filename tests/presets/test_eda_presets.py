@@ -132,14 +132,26 @@ class TestGroupedHistogramPreset:
 
     def test_initialization_raises_error_on_no_numerical_data(self, datasource_factory):
         """
-        Tests that initialization raises a ValueError if the datasource has no numerical columns.
+        Tests that GroupedHistogramPreset handles datasets with no numerical columns gracefully.
+
+        :hierarchy: [Test | Presets | EDA | GroupedHistogram Validation]
+        :relates-to:
+         - motivated_by: "PRD: Graceful handling of edge cases"
+         - tests: "class: 'GroupedHistogramPreset' validation"
+
+        :rationale: "Block should create successfully but controls will be empty."
+        :contract:
+         - pre: "Datasource has only categorical columns"
+         - post: "Block initializes without error, but controls have no numerical options"
         """
         df = pd.DataFrame({"categorical": ["a", "b", "c"]})
         mock_ds = datasource_factory(df)
-        with pytest.raises(
-            ValueError, match="requires a datasource with at least one numerical column"
-        ):
-            GroupedHistogramPreset(block_id="test_hist", datasource=mock_ds)
+        # Block should initialize successfully
+        block = GroupedHistogramPreset(block_id="test_hist", datasource=mock_ds)
+        assert block.block_id == "test_hist"
+        # Controls should be empty or have no valid options
+        assert "x_col" in block.controls
+        assert "group_by" in block.controls
 
     def test_initialization(self, datasource_factory):
         """
