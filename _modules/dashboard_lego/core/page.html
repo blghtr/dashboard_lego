@@ -566,11 +566,11 @@
             <span class="s2">&quot;bottom&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
             <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">sidebar_width</span><span class="si">}</span><span class="s2">rem&quot;</span><span class="p">,</span>
             <span class="s2">&quot;padding&quot;</span><span class="p">:</span> <span class="s2">&quot;2rem 1.5rem&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;background-color&quot;</span><span class="p">:</span> <span class="s2">&quot;#2c3e50&quot;</span><span class="p">,</span>  <span class="c1"># Dark blue-gray</span>
+            <span class="s2">&quot;backgroundColor&quot;</span><span class="p">:</span> <span class="s2">&quot;#2c3e50&quot;</span><span class="p">,</span>  <span class="c1"># Dark blue-gray</span>
             <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;#ecf0f1&quot;</span><span class="p">,</span>  <span class="c1"># Light text</span>
-            <span class="s2">&quot;overflow-y&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;box-shadow&quot;</span><span class="p">:</span> <span class="s2">&quot;2px 0 5px rgba(0,0,0,0.1)&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;z-index&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
+            <span class="s2">&quot;overflowY&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;boxShadow&quot;</span><span class="p">:</span> <span class="s2">&quot;2px 0 5px rgba(0,0,0,0.1)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;zIndex&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="c1"># Apply custom sidebar style overrides</span>
@@ -581,11 +581,11 @@
 
         <span class="c1"># Default content area style with margin to avoid sidebar overlap</span>
         <span class="n">default_content_style</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;margin-left&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">sidebar_width</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">rem&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;margin-right&quot;</span><span class="p">:</span> <span class="s2">&quot;2rem&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;marginLeft&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">sidebar_width</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">rem&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;marginRight&quot;</span><span class="p">:</span> <span class="s2">&quot;2rem&quot;</span><span class="p">,</span>
             <span class="s2">&quot;padding&quot;</span><span class="p">:</span> <span class="s2">&quot;2rem 1rem&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;min-height&quot;</span><span class="p">:</span> <span class="s2">&quot;100vh&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;background-color&quot;</span><span class="p">:</span> <span class="s2">&quot;#ffffff&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;minHeight&quot;</span><span class="p">:</span> <span class="s2">&quot;100vh&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;backgroundColor&quot;</span><span class="p">:</span> <span class="s2">&quot;#ffffff&quot;</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="c1"># Apply custom content style overrides</span>
@@ -597,9 +597,11 @@
         <span class="c1"># Default nav link style</span>
         <span class="n">default_nav_link_style</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;#ecf0f1&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;border-radius&quot;</span><span class="p">:</span> <span class="s2">&quot;8px&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;borderRadius&quot;</span><span class="p">:</span> <span class="s2">&quot;8px&quot;</span><span class="p">,</span>
             <span class="s2">&quot;padding&quot;</span><span class="p">:</span> <span class="s2">&quot;0.75rem 1rem&quot;</span><span class="p">,</span>
             <span class="s2">&quot;transition&quot;</span><span class="p">:</span> <span class="s2">&quot;all 0.3s ease&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;cursor&quot;</span><span class="p">:</span> <span class="s2">&quot;pointer&quot;</span><span class="p">,</span>  <span class="c1"># Make it clear these are clickable</span>
+            <span class="s2">&quot;display&quot;</span><span class="p">:</span> <span class="s2">&quot;block&quot;</span><span class="p">,</span>  <span class="c1"># Ensure proper layout</span>
         <span class="p">}</span>
 
         <span class="c1"># Apply custom nav link style overrides</span>
@@ -634,7 +636,7 @@
                         <span class="n">section</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
                     <span class="p">],</span>
                     <span class="nb">id</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;nav-item-</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                    <span class="n">href</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;#section-</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="n">href</span><span class="o">=</span><span class="s2">&quot;#&quot;</span><span class="p">,</span>  <span class="c1"># As shown in docs for NavLink with n_clicks</span>
                     <span class="n">active</span><span class="o">=</span><span class="n">idx</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="o">.</span><span class="n">default_section</span><span class="p">,</span>
                     <span class="n">n_clicks</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                     <span class="n">className</span><span class="o">=</span><span class="n">link_className</span><span class="p">,</span>
@@ -657,7 +659,7 @@
                     <span class="p">],</span>
                     <span class="n">className</span><span class="o">=</span><span class="s2">&quot;mb-4&quot;</span><span class="p">,</span>
                 <span class="p">),</span>
-                <span class="n">html</span><span class="o">.</span><span class="n">Hr</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;border-color&quot;</span><span class="p">:</span> <span class="s2">&quot;#34495e&quot;</span><span class="p">,</span> <span class="s2">&quot;margin&quot;</span><span class="p">:</span> <span class="s2">&quot;1.5rem 0&quot;</span><span class="p">}),</span>
+                <span class="n">html</span><span class="o">.</span><span class="n">Hr</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;borderColor&quot;</span><span class="p">:</span> <span class="s2">&quot;#34495e&quot;</span><span class="p">,</span> <span class="s2">&quot;margin&quot;</span><span class="p">:</span> <span class="s2">&quot;1.5rem 0&quot;</span><span class="p">}),</span>
                 <span class="n">html</span><span class="o">.</span><span class="n">P</span><span class="p">(</span>
                     <span class="s2">&quot;Navigate between sections&quot;</span><span class="p">,</span>
                     <span class="n">className</span><span class="o">=</span><span class="s2">&quot;text-muted small mb-3&quot;</span><span class="p">,</span>
@@ -675,10 +677,33 @@
             <span class="n">className</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="o">.</span><span class="n">sidebar_className</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="c1"># Content area for dynamic content</span>
+        <span class="c1"># Load initial content for the default section</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">initial_content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_section_content</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="o">.</span><span class="n">default_section</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Loaded initial content for default section </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="o">.</span><span class="n">default_section</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Failed to load initial section </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="o">.</span><span class="n">default_section</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="n">initial_content</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">dbc</span><span class="o">.</span><span class="n">Alert</span><span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="n">html</span><span class="o">.</span><span class="n">H4</span><span class="p">(</span><span class="s2">&quot;Error Loading Section&quot;</span><span class="p">,</span> <span class="n">className</span><span class="o">=</span><span class="s2">&quot;alert-heading&quot;</span><span class="p">),</span>
+                        <span class="n">html</span><span class="o">.</span><span class="n">P</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load initial section: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">),</span>
+                    <span class="p">],</span>
+                    <span class="n">color</span><span class="o">=</span><span class="s2">&quot;danger&quot;</span><span class="p">,</span>
+                    <span class="n">className</span><span class="o">=</span><span class="s2">&quot;m-3&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">]</span>
+
+        <span class="c1"># Content area for dynamic content with initial content loaded</span>
         <span class="n">content_area</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">Div</span><span class="p">(</span>
             <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;nav-content-area&quot;</span><span class="p">,</span>
-            <span class="n">children</span><span class="o">=</span><span class="p">[],</span>
+            <span class="n">children</span><span class="o">=</span><span class="n">initial_content</span><span class="p">,</span>
             <span class="n">style</span><span class="o">=</span><span class="n">content_style</span><span class="p">,</span>
             <span class="n">className</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="o">.</span><span class="n">content_className</span><span class="p">,</span>
         <span class="p">)</span>
@@ -843,13 +868,14 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Registering callbacks with Dash app&quot;</span><span class="p">)</span>
 
-        <span class="c1"># Set up comprehensive error handling for Dash callbacks</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_callback_error_handling</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
-
         <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># Navigation-specific callbacks</span>
+            <span class="c1"># Navigation-specific callbacks MUST be registered BEFORE error handling wrapper</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_register_navigation_callbacks</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+
+            <span class="c1"># Set up comprehensive error handling for Dash callbacks</span>
+            <span class="c1"># NOTE: This replaces app.callback, so must be done AFTER navigation callbacks</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_setup_callback_error_handling</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
 
             <span class="c1"># OLD MECHANISM: State-based callbacks for StaticChartBlock</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">state_manager</span><span class="o">.</span><span class="n">generate_callbacks</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
@@ -976,26 +1002,40 @@
                 <span class="n">Input</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;nav-item-</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;n_clicks&quot;</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="o">.</span><span class="n">sections</span><span class="p">))</span>
             <span class="p">],</span>
-            <span class="n">prevent_initial_call</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="k">def</span><span class="w"> </span><span class="nf">update_navigation</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">update_navigation</span><span class="p">(</span><span class="o">*</span><span class="n">n_clicks_list</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            Updates content area and navigation link states on user clicks.</span>
 
 <span class="sd">            &quot;&quot;&quot;</span>
             <span class="n">ctx</span> <span class="o">=</span> <span class="n">callback_context</span>
 
-            <span class="c1"># On initial call, load default section</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=== Navigation callback fired ===&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;n_clicks values: </span><span class="si">{</span><span class="n">n_clicks_list</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ctx.triggered: </span><span class="si">{</span><span class="n">ctx</span><span class="o">.</span><span class="n">triggered</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="c1"># On initial call (no trigger or prop_id is &quot;.&quot;)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">ctx</span><span class="o">.</span><span class="n">triggered</span> <span class="ow">or</span> <span class="n">ctx</span><span class="o">.</span><span class="n">triggered</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;prop_id&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;.&quot;</span><span class="p">:</span>
                 <span class="n">section_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="o">.</span><span class="n">default_section</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initial load: section </span><span class="si">{</span><span class="n">section_idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initial load: loading default section </span><span class="si">{</span><span class="n">section_idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Find which nav item was clicked</span>
+                <span class="n">triggered_prop_id</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">triggered</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;prop_id&quot;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Callback triggered by: </span><span class="si">{</span><span class="n">triggered_prop_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
                 <span class="c1"># Extract clicked item index from triggered id</span>
-                <span class="n">triggered_id</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">triggered</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;prop_id&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-                <span class="n">section_idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">triggered_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Navigation click: switching to section </span><span class="si">{</span><span class="n">section_idx</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="p">)</span>
+                <span class="k">if</span> <span class="s2">&quot;nav-item-&quot;</span> <span class="ow">in</span> <span class="n">triggered_prop_id</span><span class="p">:</span>
+                    <span class="n">item_id</span> <span class="o">=</span> <span class="n">triggered_prop_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">section_idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">item_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;✅ Navigation click: switching to section </span><span class="si">{</span><span class="n">section_idx</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Fallback to default</span>
+                    <span class="n">section_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="o">.</span><span class="n">default_section</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;⚠️ Unknown trigger: </span><span class="si">{</span><span class="n">triggered_prop_id</span><span class="si">}</span><span class="s2">, using default&quot;</span>
+                    <span class="p">)</span>
 
             <span class="c1"># Load section content</span>
             <span class="k">try</span><span class="p">:</span>
