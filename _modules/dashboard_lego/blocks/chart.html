@@ -85,7 +85,7 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Type</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">dash_bootstrap_components</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dbc</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">plotly.graph_objects</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">go</span>
@@ -145,7 +145,7 @@
         <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span>
         <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">chart_generator</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
-        <span class="n">subscribes_to</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">subscribes_to</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
         <span class="c1"># Style customization parameters</span>
         <span class="n">card_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">card_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -171,10 +171,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">graph_style</span> <span class="o">=</span> <span class="n">graph_style</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">figure_layout</span> <span class="o">=</span> <span class="n">figure_layout</span> <span class="ow">or</span> <span class="p">{}</span>
 
+        <span class="c1"># Normalize subscribes_to to list and build subscribes dict</span>
+        <span class="n">state_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_subscribes_to</span><span class="p">(</span><span class="n">subscribes_to</span><span class="p">)</span>
+        <span class="n">subscribes_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">state_id</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_chart</span> <span class="k">for</span> <span class="n">state_id</span> <span class="ow">in</span> <span class="n">state_ids</span><span class="p">}</span>
+
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">block_id</span><span class="p">,</span>
             <span class="n">datasource</span><span class="p">,</span>
-            <span class="n">subscribes</span><span class="o">=</span><span class="p">{</span><span class="n">subscribes_to</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_chart</span><span class="p">},</span>
+            <span class="n">subscribes</span><span class="o">=</span><span class="n">subscribes_dict</span><span class="p">,</span>
             <span class="n">allow_duplicate_output</span><span class="o">=</span><span class="n">allow_duplicate_output</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Static chart </span><span class="si">{</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> with title: </span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
@@ -334,7 +338,7 @@
         <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">chart_generator</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
         <span class="n">controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">],</span>
-        <span class="n">subscribes_to</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">subscribes_to</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="c1"># Style customization parameters (inherited from StaticChartBlock)</span>
         <span class="n">card_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">card_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -375,7 +379,9 @@
             <span class="p">{</span><span class="s2">&quot;state_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_id</span><span class="p">(</span><span class="n">key</span><span class="p">),</span> <span class="s2">&quot;component_prop&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">}</span>
             <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span>
         <span class="p">]</span>
-        <span class="n">all_subscriptions</span> <span class="o">=</span> <span class="p">(</span><span class="n">subscribes_to</span> <span class="ow">or</span> <span class="p">[])</span> <span class="o">+</span> <span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;state_id&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">publishes</span><span class="p">]</span>
+        <span class="c1"># Normalize subscribes_to to list before concatenation</span>
+        <span class="n">external_subscriptions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_subscribes_to</span><span class="p">(</span><span class="n">subscribes_to</span><span class="p">)</span>
+        <span class="n">all_subscriptions</span> <span class="o">=</span> <span class="n">external_subscriptions</span> <span class="o">+</span> <span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;state_id&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">publishes</span><span class="p">]</span>
 
         <span class="c1"># Set the state interaction attributes on the instance</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">publishes</span> <span class="o">=</span> <span class="n">publishes</span>

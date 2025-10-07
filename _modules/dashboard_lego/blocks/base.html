@@ -85,7 +85,7 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">dash.development.base_component</span><span class="w"> </span><span class="kn">import</span> <span class="n">Component</span>
 
@@ -227,6 +227,42 @@
         <span class="n">component_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">component_name</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Generated component ID: </span><span class="si">{</span><span class="n">component_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">component_id</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_normalize_subscribes_to</span><span class="p">(</span>
+        <span class="n">subscribes_to</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Normalizes the subscribes_to parameter to a list of state IDs.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Base | Multi-State Subscription Support]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Bug Fix: Support subscribing to multiple states to</span>
+<span class="sd">           enable complex dashboard patterns with multi-filter dependencies&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_normalize_subscribes_to&#39;&quot;</span>
+
+<span class="sd">        :rationale: &quot;Provides consistent handling of subscribes_to parameter</span>
+<span class="sd">         across all block types, accepting both single strings and lists.&quot;</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;subscribes_to can be a string, list of strings, or None.&quot;</span>
+<span class="sd">         - post: &quot;Returns a list of state IDs (empty list if None).&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            subscribes_to: Can be a single state ID (str), a list of state IDs,</span>
+<span class="sd">                          or None.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A list of state IDs. Returns empty list if input is None.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">subscribes_to</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subscribes_to</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">subscribes_to</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subscribes_to</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">subscribes_to</span>
+        <span class="c1"># Fallback for unexpected types</span>
+        <span class="k">return</span> <span class="p">[]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_component_prop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>

@@ -243,6 +243,21 @@
 <span class="sd">        Traverses the dependency graph and registers all necessary callbacks</span>
 <span class="sd">        with the Dash app.</span>
 
+<span class="sd">        This method now supports multi-state subscriptions by grouping</span>
+<span class="sd">        subscribers by their output target and creating callbacks with</span>
+<span class="sd">        multiple Input sources.</span>
+
+<span class="sd">        :hierarchy: [Feature | Multi-State Subscription | StateManager]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Bug Fix: Support subscribing to multiple states&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;generate_callbacks&#39; with multi-input support&quot;</span>
+
+<span class="sd">        :rationale: &quot;Group subscriptions by output target to create one callback</span>
+<span class="sd">         per subscriber with multiple inputs, avoiding duplicate output errors.&quot;</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;Dependency graph is populated with publishers and subscribers.&quot;</span>
+<span class="sd">         - post: &quot;One callback per unique output target with all its input states.&quot;</span>
+
 <span class="sd">        Args:</span>
 <span class="sd">            app: The Dash app instance.</span>
 
@@ -253,37 +268,73 @@
         <span class="n">callback_count</span> <span class="o">=</span> <span class="mi">0</span>
 
         <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Group subscriptions by output target (component_id, component_prop)</span>
+            <span class="c1"># to support multi-state subscriptions</span>
+            <span class="n">output_subscriptions</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># {(comp_id, comp_prop): [state_info]}</span>
+
             <span class="k">for</span> <span class="n">state_id</span><span class="p">,</span> <span class="n">connections</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dependency_graph</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">publisher</span> <span class="o">=</span> <span class="n">connections</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;publisher&quot;</span><span class="p">)</span>
                 <span class="n">subscribers</span> <span class="o">=</span> <span class="n">connections</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;subscribers&quot;</span><span class="p">)</span>
 
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">publisher</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">subscribers</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">publisher</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Skipping state </span><span class="si">{</span><span class="n">state_id</span><span class="si">}</span><span class="s2">: missing publisher or &quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;subscribers (publisher=</span><span class="si">{</span><span class="nb">bool</span><span class="p">(</span><span class="n">publisher</span><span class="p">)</span><span class="si">}</span><span class="s2">, &quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;subscribers=&quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">subscribers</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">subscribers</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">)&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;Skipping state </span><span class="si">{</span><span class="n">state_id</span><span class="si">}</span><span class="s2">: no publisher registered&quot;</span>
                     <span class="p">)</span>
                     <span class="k">continue</span>
 
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">subscribers</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Skipping state </span><span class="si">{</span><span class="n">state_id</span><span class="si">}</span><span class="s2">: no subscribers registered&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># Add each subscriber to the grouped structure</span>
+                <span class="k">for</span> <span class="n">sub</span> <span class="ow">in</span> <span class="n">subscribers</span><span class="p">:</span>
+                    <span class="n">output_key</span> <span class="o">=</span> <span class="p">(</span><span class="n">sub</span><span class="p">[</span><span class="s2">&quot;component_id&quot;</span><span class="p">],</span> <span class="n">sub</span><span class="p">[</span><span class="s2">&quot;component_prop&quot;</span><span class="p">])</span>
+
+                    <span class="k">if</span> <span class="n">output_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">output_subscriptions</span><span class="p">:</span>
+                        <span class="n">output_subscriptions</span><span class="p">[</span><span class="n">output_key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+                    <span class="n">output_subscriptions</span><span class="p">[</span><span class="n">output_key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="p">{</span>
+                            <span class="s2">&quot;state_id&quot;</span><span class="p">:</span> <span class="n">state_id</span><span class="p">,</span>
+                            <span class="s2">&quot;publisher&quot;</span><span class="p">:</span> <span class="n">publisher</span><span class="p">,</span>
+                            <span class="s2">&quot;callback_fn&quot;</span><span class="p">:</span> <span class="n">sub</span><span class="p">[</span><span class="s2">&quot;callback_fn&quot;</span><span class="p">],</span>
+                        <span class="p">}</span>
+                    <span class="p">)</span>
+
+            <span class="c1"># Create one callback per unique output target</span>
+            <span class="k">for</span> <span class="n">output_key</span><span class="p">,</span> <span class="n">state_infos</span> <span class="ow">in</span> <span class="n">output_subscriptions</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">component_id</span><span class="p">,</span> <span class="n">component_prop</span> <span class="o">=</span> <span class="n">output_key</span>
+
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Creating callback for state: </span><span class="si">{</span><span class="n">state_id</span><span class="si">}</span><span class="s2"> &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">subscribers</span><span class="p">)</span><span class="si">}</span><span class="s2"> subscribers)&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Creating callback for output: </span><span class="si">{</span><span class="n">component_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">component_prop</span><span class="si">}</span><span class="s2"> &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">state_infos</span><span class="p">)</span><span class="si">}</span><span class="s2"> input state(s)&quot;</span>
                 <span class="p">)</span>
 
-                <span class="n">outputs</span> <span class="o">=</span> <span class="p">[</span>
-                    <span class="n">Output</span><span class="p">(</span><span class="n">sub</span><span class="p">[</span><span class="s2">&quot;component_id&quot;</span><span class="p">],</span> <span class="n">sub</span><span class="p">[</span><span class="s2">&quot;component_prop&quot;</span><span class="p">])</span>
-                    <span class="k">for</span> <span class="n">sub</span> <span class="ow">in</span> <span class="n">subscribers</span>
+                <span class="c1"># Create Input for each state this output subscribes to</span>
+                <span class="n">inputs</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">Input</span><span class="p">(</span>
+                        <span class="n">info</span><span class="p">[</span><span class="s2">&quot;publisher&quot;</span><span class="p">][</span><span class="s2">&quot;component_id&quot;</span><span class="p">],</span>
+                        <span class="n">info</span><span class="p">[</span><span class="s2">&quot;publisher&quot;</span><span class="p">][</span><span class="s2">&quot;component_prop&quot;</span><span class="p">],</span>
+                    <span class="p">)</span>
+                    <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">state_infos</span>
                 <span class="p">]</span>
-                <span class="n">inputs</span> <span class="o">=</span> <span class="p">[</span><span class="n">Input</span><span class="p">(</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;component_id&quot;</span><span class="p">],</span> <span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;component_prop&quot;</span><span class="p">])]</span>
 
-                <span class="c1"># Use the factory to create a unique callback function</span>
-                <span class="c1"># for this state</span>
-                <span class="n">callback_func</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_callback_wrapper</span><span class="p">(</span><span class="n">subscribers</span><span class="p">)</span>
+                <span class="c1"># Create single Output for this subscriber</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="n">Output</span><span class="p">(</span><span class="n">component_id</span><span class="p">,</span> <span class="n">component_prop</span><span class="p">)</span>
 
-                <span class="c1"># Dynamically register the callback with Dash</span>
-                <span class="n">app</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">inputs</span><span class="p">)(</span><span class="n">callback_func</span><span class="p">)</span>
+                <span class="c1"># Create callback that handles multiple inputs</span>
+                <span class="n">callback_func</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_multi_input_callback</span><span class="p">(</span><span class="n">state_infos</span><span class="p">)</span>
+
+                <span class="c1"># Register callback with Dash</span>
+                <span class="n">app</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">inputs</span><span class="p">)(</span><span class="n">callback_func</span><span class="p">)</span>
                 <span class="n">callback_count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Registered callback: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span><span class="si">}</span><span class="s2"> inputs -&gt; &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">component_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">component_prop</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Successfully registered </span><span class="si">{</span><span class="n">callback_count</span><span class="si">}</span><span class="s2"> callbacks&quot;</span><span class="p">)</span>
 
@@ -538,11 +589,69 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error creating fallback output: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">None</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_multi_input_callback</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">state_infos</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a callback function that handles multiple input states.</span>
+
+<span class="sd">        :hierarchy: [Feature | Multi-State Subscription | Callback Creation]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Bug Fix: Support blocks subscribing to multiple states&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_create_multi_input_callback&#39;&quot;</span>
+
+<span class="sd">        :rationale: &quot;When a block subscribes to multiple states, the callback</span>
+<span class="sd">         receives multiple input values and must call the block&#39;s update function.&quot;</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;state_infos contains callback_fn and state metadata for each input.&quot;</span>
+<span class="sd">         - post: &quot;Returns a function that processes all input values.&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            state_infos: List of dicts with &#39;state_id&#39;, &#39;publisher&#39;, &#39;callback_fn&#39;.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A callback function that accepts multiple input values.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">multi_input_callback</span><span class="p">(</span><span class="o">*</span><span class="n">values</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Callback that receives multiple input values from different states.</span>
+
+<span class="sd">            Since all state_infos point to the same callback_fn (same subscriber),</span>
+<span class="sd">            we just call it once with the first value that triggered the callback.</span>
+
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Multi-input callback triggered with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="si">}</span><span class="s2"> values&quot;</span>
+            <span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># All state_infos have the same callback_fn (same subscriber block)</span>
+                <span class="c1"># Just call it with the first triggering value</span>
+                <span class="c1"># Dash&#39;s callback context can be used if block needs to know which input triggered</span>
+                <span class="n">callback_fn</span> <span class="o">=</span> <span class="n">state_infos</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;callback_fn&quot;</span><span class="p">]</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">callback_fn</span><span class="p">(</span><span class="o">*</span><span class="n">values</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Multi-input callback completed successfully&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">result</span>
+
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Error in multi-input callback execution: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span>
+                <span class="p">)</span>
+                <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="n">multi_input_callback</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">_create_callback_wrapper</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subscribers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        A factory that creates a unique callback function for a list</span>
 <span class="sd">        of subscribers. This approach is used to correctly handle</span>
 <span class="sd">        closures in a loop.</span>
+
+<span class="sd">        NOTE: This is the old method used when multiple subscribers react to</span>
+<span class="sd">        one state. Now deprecated in favor of _create_multi_input_callback.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            subscribers: A list of subscriber dictionaries for a</span>

@@ -942,7 +942,29 @@ value.</p></li>
 <span class="sig-name descname"><span class="pre">generate_callbacks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/state.html#StateManager.generate_callbacks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.state.StateManager.generate_callbacks" title="Link to this definition"></a></dt>
 <dd><p>Traverses the dependency graph and registers all necessary callbacks
 with the Dash app.</p>
+<p>This method now supports multi-state subscriptions by grouping
+subscribers by their output target and creating callbacks with
+multiple Input sources.</p>
 <dl class="field-list simple">
+<dt class="field-odd">Hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Feature | Multi-State Subscription | StateManager]</p>
+</dd>
+<dt class="field-even">Relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Bug Fix: Support subscribing to multiple states”</p></li>
+<li><p>implements: “method: ‘generate_callbacks’ with multi-input support”</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Group subscriptions by output target to create one callback
+per subscriber with multiple inputs, avoiding duplicate output errors.”</p>
+</dd>
+<dt class="field-even">Contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “Dependency graph is populated with publishers and subscribers.”</p></li>
+<li><p>post: “One callback per unique output target with all its input states.”</p></li>
+</ul>
+</dd>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>app</strong> – The Dash app instance.</p>
 </dd>
@@ -1091,7 +1113,29 @@ value.</p></li>
 <span class="sig-name descname"><span class="pre">generate_callbacks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/state.html#StateManager.generate_callbacks"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Traverses the dependency graph and registers all necessary callbacks
 with the Dash app.</p>
+<p>This method now supports multi-state subscriptions by grouping
+subscribers by their output target and creating callbacks with
+multiple Input sources.</p>
 <dl class="field-list simple">
+<dt class="field-odd">Hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Feature | Multi-State Subscription | StateManager]</p>
+</dd>
+<dt class="field-even">Relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Bug Fix: Support subscribing to multiple states”</p></li>
+<li><p>implements: “method: ‘generate_callbacks’ with multi-input support”</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Group subscriptions by output target to create one callback
+per subscriber with multiple inputs, avoiding duplicate output errors.”</p>
+</dd>
+<dt class="field-even">Contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “Dependency graph is populated with publishers and subscribers.”</p></li>
+<li><p>post: “One callback per unique output target with all its input states.”</p></li>
+</ul>
+</dd>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>app</strong> – The Dash app instance.</p>
 </dd>
