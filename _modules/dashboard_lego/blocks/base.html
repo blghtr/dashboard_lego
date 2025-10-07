@@ -85,7 +85,7 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">dash.development.base_component</span><span class="w"> </span><span class="kn">import</span> <span class="n">Component</span>
 
@@ -94,6 +94,9 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.state</span><span class="w"> </span><span class="kn">import</span> <span class="n">StateManager</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockError</span><span class="p">,</span> <span class="n">ConfigurationError</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.theme</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThemeConfig</span>
 
 
 <div class="viewcode-block" id="BaseBlock">
@@ -155,6 +158,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;subscribes&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">allow_duplicate_output</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;allow_duplicate_output&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
+        <span class="c1"># Theme configuration - will be set by DashboardPage</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;ThemeConfig&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;Block initialized: publishes=</span><span class="si">{</span><span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">publishes</span><span class="p">)</span><span class="si">}</span><span class="s2">, &quot;</span>
             <span class="sa">f</span><span class="s2">&quot;subscribes=</span><span class="si">{</span><span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="p">)</span><span class="si">}</span><span class="s2">, &quot;</span>
@@ -177,13 +183,15 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># Register as a publisher</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">publishes</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Registering </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">publishes</span><span class="p">)</span><span class="si">}</span><span class="s2"> publishers&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;📢 Block </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> publishing </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">publishes</span><span class="p">)</span><span class="si">}</span><span class="s2"> state(s)&quot;</span>
+                <span class="p">)</span>
                 <span class="k">for</span> <span class="n">pub_info</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">publishes</span><span class="p">:</span>
                     <span class="n">state_id</span> <span class="o">=</span> <span class="n">pub_info</span><span class="p">[</span><span class="s2">&quot;state_id&quot;</span><span class="p">]</span>
                     <span class="n">component_prop</span> <span class="o">=</span> <span class="n">pub_info</span><span class="p">[</span><span class="s2">&quot;component_prop&quot;</span><span class="p">]</span>
                     <span class="n">publisher_component_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_id</span><span class="p">(</span><span class="n">state_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Registering publisher: </span><span class="si">{</span><span class="n">state_id</span><span class="si">}</span><span class="s2"> -&gt; &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;  📡 Publisher: </span><span class="si">{</span><span class="n">state_id</span><span class="si">}</span><span class="s2"> -&gt; &quot;</span>
                         <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">publisher_component_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">component_prop</span><span class="si">}</span><span class="s2">&quot;</span>
                     <span class="p">)</span>
                     <span class="n">state_manager</span><span class="o">.</span><span class="n">register_publisher</span><span class="p">(</span>
@@ -192,13 +200,16 @@
 
             <span class="c1"># Register as a subscriber</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Registering </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="p">)</span><span class="si">}</span><span class="s2"> subscriptions&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;📻 Block </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> subscribing to </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="p">)</span><span class="si">}</span><span class="s2"> state(s)&quot;</span>
+                <span class="p">)</span>
                 <span class="k">for</span> <span class="n">state_id</span><span class="p">,</span> <span class="n">callback_fn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                     <span class="n">subscriber_component_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_id</span><span class="p">(</span><span class="s2">&quot;container&quot;</span><span class="p">)</span>
                     <span class="n">subscriber_component_prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_component_prop</span><span class="p">()</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Registering subscriber: </span><span class="si">{</span><span class="n">state_id</span><span class="si">}</span><span class="s2"> -&gt; &quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">subscriber_component_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">subscriber_component_prop</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;  📥 Subscriber: </span><span class="si">{</span><span class="n">state_id</span><span class="si">}</span><span class="s2"> -&gt; &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">subscriber_component_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">subscriber_component_prop</span><span class="si">}</span><span class="s2"> &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;(callback: </span><span class="si">{</span><span class="n">callback_fn</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">)&quot;</span>
                     <span class="p">)</span>
                     <span class="n">state_manager</span><span class="o">.</span><span class="n">register_subscriber</span><span class="p">(</span>
                         <span class="n">state_id</span><span class="p">,</span>
@@ -208,7 +219,7 @@
                     <span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;State interactions registered successfully for &quot;</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;✅ State interactions registered successfully for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
@@ -218,6 +229,73 @@
             <span class="k">raise</span> <span class="n">BlockError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Failed to register state interactions for &quot;</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_set_theme_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theme_config</span><span class="p">:</span> <span class="s2">&quot;ThemeConfig&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the theme configuration for this block.</span>
+
+<span class="sd">            :hierarchy: [Feature | Theme System | Block Theme Integration]</span>
+<span class="sd">            :relates-to:</span>
+<span class="sd">             - motivated_by: &quot;PRD: Blocks must access theme for automatic styling&quot;</span>
+<span class="sd">             - implements: &quot;method: &#39;_set_theme_config&#39;&quot;</span>
+<span class="sd">             - uses: [&quot;class: &#39;ThemeConfig&#39;&quot;]</span>
+
+<span class="sd">            :rationale: &quot;Called by DashboardPage to inject theme into all blocks.&quot;</span>
+<span class="sd">            :contract:</span>
+<span class="sd">             - pre: &quot;theme_config is a valid ThemeConfig instance&quot;</span>
+<span class="sd">             - post: &quot;Block can access theme for styling decisions&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            theme_config: ThemeConfig instance to use for styling</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span> <span class="o">=</span> <span class="n">theme_config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Theme &#39;</span><span class="si">{</span><span class="n">theme_config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; applied to block </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_themed_style</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">component_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">element</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">overrides</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets theme-based styling with optional user overrides.</span>
+
+<span class="sd">            :hierarchy: [Feature | Theme System | Styled Component Helper]</span>
+<span class="sd">            :relates-to:</span>
+<span class="sd">             - motivated_by: &quot;PRD: Merge theme styles with user customizations&quot;</span>
+<span class="sd">             - implements: &quot;method: &#39;_get_themed_style&#39;&quot;</span>
+<span class="sd">             - uses: [&quot;method: &#39;get_component_style&#39;&quot;]</span>
+
+<span class="sd">            :rationale: &quot;Provides consistent theme application with override capability.&quot;</span>
+<span class="sd">            :contract:</span>
+<span class="sd">             - pre: &quot;component_type and element are valid style keys&quot;</span>
+<span class="sd">             - post: &quot;Returns merged style dict with overrides taking precedence&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            component_type: Type of component (e.g., &#39;card&#39;, &#39;kpi&#39;, &#39;navigation&#39;)</span>
+<span class="sd">            element: Specific element within component (e.g., &#39;background&#39;, &#39;title&#39;)</span>
+<span class="sd">            overrides: Optional user-provided style overrides</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary with merged theme styles and overrides</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Start with theme styles if available</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="p">:</span>
+            <span class="n">base_style</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">get_component_style</span><span class="p">(</span><span class="n">component_type</span><span class="p">,</span> <span class="n">element</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">base_style</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># Merge with user overrides (overrides take precedence)</span>
+        <span class="k">if</span> <span class="n">overrides</span><span class="p">:</span>
+            <span class="n">merged_style</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">base_style</span><span class="p">,</span> <span class="o">**</span><span class="n">overrides</span><span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Applied themed style for </span><span class="si">{</span><span class="n">component_type</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">element</span><span class="si">}</span><span class="s2"> with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">overrides</span><span class="p">)</span><span class="si">}</span><span class="s2"> overrides&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">merged_style</span>
+
+        <span class="k">return</span> <span class="n">base_style</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_generate_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">component_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>

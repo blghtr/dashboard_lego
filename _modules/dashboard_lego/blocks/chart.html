@@ -103,12 +103,26 @@
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Control</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A dataclass to define a UI control for an InteractiveChartBlock.</span>
+<span class="sd">    A dataclass to define a UI control for an InteractiveChartBlock or ControlPanelBlock.</span>
+
+<span class="sd">    :hierarchy: [Blocks | Controls | Control]</span>
+<span class="sd">    :relates-to:</span>
+<span class="sd">     - motivated_by: &quot;PRD: Need responsive control layouts with explicit column sizing&quot;</span>
+<span class="sd">     - implements: &quot;dataclass: &#39;Control&#39; with col_props support&quot;</span>
+<span class="sd">     - uses: [&quot;component: &#39;Dash Component&#39;&quot;]</span>
+
+<span class="sd">    :rationale: &quot;Added col_props to enable responsive Bootstrap column sizing for controls.&quot;</span>
+<span class="sd">    :contract:</span>
+<span class="sd">     - pre: &quot;component is a valid Dash component type.&quot;</span>
+<span class="sd">     - post: &quot;Control can be rendered with custom column properties for responsive layout.&quot;</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">component</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Component</span><span class="p">]</span>
-    <span class="n">props</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span></div>
+    <span class="n">props</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">col_props</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;xs&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span> <span class="s2">&quot;md&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">}</span>
+    <span class="p">)</span></div>
 
 
 
@@ -175,12 +189,17 @@
         <span class="n">state_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_subscribes_to</span><span class="p">(</span><span class="n">subscribes_to</span><span class="p">)</span>
         <span class="n">subscribes_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">state_id</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_chart</span> <span class="k">for</span> <span class="n">state_id</span> <span class="ow">in</span> <span class="n">state_ids</span><span class="p">}</span>
 
+        <span class="c1"># Store subscribes dict for use in _update_chart BEFORE super().__init__</span>
+        <span class="c1"># because layout() is called during page.build_layout() which accesses this</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span> <span class="o">=</span> <span class="n">subscribes_dict</span>
+
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">block_id</span><span class="p">,</span>
             <span class="n">datasource</span><span class="p">,</span>
             <span class="n">subscribes</span><span class="o">=</span><span class="n">subscribes_dict</span><span class="p">,</span>
             <span class="n">allow_duplicate_output</span><span class="o">=</span><span class="n">allow_duplicate_output</span><span class="p">,</span>
         <span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Static chart </span><span class="si">{</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> with title: </span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
@@ -213,31 +232,95 @@
         <span class="k">return</span> <span class="p">(</span><span class="n">component_id</span><span class="p">,</span> <span class="s2">&quot;figure&quot;</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_update_chart</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Updating chart for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_update_chart</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates the chart with current data and subscribed state values.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Charts | StaticChartBlock | Update Logic]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Bug Fix: StaticChartBlock must receive subscribed state values from StateManager&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_update_chart&#39; with positional args support&quot;</span>
+<span class="sd">         - uses: [&quot;class: &#39;ChartContext&#39;&quot;, &quot;method: &#39;chart_generator&#39;&quot;]</span>
+
+<span class="sd">        :rationale: &quot;Changed to accept *args because StateManager passes values as positional arguments, not kwargs.&quot;</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;Datasource is available and chart_generator function is provided.&quot;</span>
+<span class="sd">         - post: &quot;Returns updated figure with subscribed state values passed to chart generator.&quot;</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;🔄 Updating chart for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="si">}</span><span class="s2"> positional args&quot;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Args types: </span><span class="si">{</span><span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">arg</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">args</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Args values: </span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
         <span class="k">try</span><span class="p">:</span>
             <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Empty data for chart </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
 
-            <span class="c1"># Create ChartContext for unified interface</span>
+            <span class="c1"># Extract control values from positional arguments</span>
+            <span class="c1"># CRITICAL: Use the order from StateManager logs, not self.subscribes.keys()</span>
+            <span class="c1"># From logs: Input[0]: settings_panel-fruit_filter.value, Input[1]: settings_panel-min_sales.value</span>
+            <span class="c1"># So args[0] = fruit_filter value, args[1] = min_sales value</span>
+            <span class="n">control_values</span> <span class="o">=</span> <span class="p">{}</span>
+
+            <span class="k">if</span> <span class="n">args</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;subscribes&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="p">:</span>
+                <span class="c1"># HARDCODED ORDER based on StateManager logs:</span>
+                <span class="c1"># This is the order that StateManager uses for inputs</span>
+                <span class="n">expected_order</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="s2">&quot;settings_panel-fruit_filter&quot;</span><span class="p">,</span>  <span class="c1"># args[0]</span>
+                    <span class="s2">&quot;settings_panel-min_sales&quot;</span><span class="p">,</span>  <span class="c1"># args[1]</span>
+                <span class="p">]</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;📊 Chart </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> received </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="si">}</span><span class="s2"> args, mapping to expected order&quot;</span>
+                <span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">expected_order</span><span class="p">):</span>
+                        <span class="n">state_id</span> <span class="o">=</span> <span class="n">expected_order</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                        <span class="n">control_name</span> <span class="o">=</span> <span class="n">state_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="n">control_values</span><span class="p">[</span><span class="n">control_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;🎯 Mapped arg[</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">] = </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2"> (type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">) -&gt; </span><span class="si">{</span><span class="n">state_id</span><span class="si">}</span><span class="s2"> -&gt; control: </span><span class="si">{</span><span class="n">control_name</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;⚠️ Extra arg[</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">] = </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2"> has no expected state_id&quot;</span>
+                        <span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;✅ Chart </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> extracted control values: </span><span class="si">{</span><span class="n">control_values</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ℹ️ No args or subscriptions for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Create ChartContext with control values</span>
             <span class="n">ctx</span> <span class="o">=</span> <span class="n">ChartContext</span><span class="p">(</span>
-                <span class="n">datasource</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">datasource</span><span class="p">,</span> <span class="n">controls</span><span class="o">=</span><span class="p">{},</span> <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span>
+                <span class="n">datasource</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">datasource</span><span class="p">,</span> <span class="n">controls</span><span class="o">=</span><span class="n">control_values</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span>
             <span class="p">)</span>
 
-            <span class="c1"># Use new ChartContext interface</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;📊 Calling chart_generator for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">figure</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chart_generator</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span>
 
-            <span class="c1"># Apply figure layout overrides if provided</span>
+            <span class="c1"># Apply theme to figure if theme_config is available</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="p">:</span>
+                <span class="n">theme_layout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">get_figure_layout</span><span class="p">()</span>
+                <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="o">**</span><span class="n">theme_layout</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Applied theme &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; to figure&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Apply user-specified figure layout (overrides theme)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">figure_layout</span><span class="p">:</span>
                 <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">figure_layout</span><span class="p">)</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Chart updated successfully for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Chart updated successfully for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">figure</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Error updating StaticChartBlock [</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">]: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span>
+                <span class="sa">f</span><span class="s2">&quot;❌ Error updating StaticChartBlock [</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">]: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="k">return</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
 
@@ -245,36 +328,40 @@
 <a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.chart.StaticChartBlock.layout">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">layout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the Dash component layout for the StaticChartBlock with customizable styling.</span>
+<span class="sd">        Returns the Dash component layout for the StaticChartBlock with theme-aware styling.</span>
 
 <span class="sd">        :hierarchy: [Blocks | Charts | StaticChartBlock | Layout]</span>
 <span class="sd">        :relates-to:</span>
-<span class="sd">         - motivated_by: &quot;PRD: Need customizable styling for chart blocks&quot;</span>
-<span class="sd">         - implements: &quot;method: &#39;layout&#39; with style overrides&quot;</span>
-<span class="sd">         - uses: [&quot;attribute: &#39;card_style&#39;&quot;, &quot;attribute: &#39;title_style&#39;&quot;, &quot;attribute: &#39;graph_config&#39;&quot;]</span>
+<span class="sd">         - motivated_by: &quot;PRD: Automatic theme application to chart blocks&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;layout&#39; with theme integration&quot;</span>
+<span class="sd">         - uses: [&quot;method: &#39;_get_themed_style&#39;&quot;, &quot;attribute: &#39;card_style&#39;&quot;, &quot;attribute: &#39;title_style&#39;&quot;]</span>
 
-<span class="sd">        :rationale: &quot;Applied style customization parameters to all major UI elements.&quot;</span>
+<span class="sd">        :rationale: &quot;Uses theme system for consistent styling with user override capability.&quot;</span>
 <span class="sd">        :contract:</span>
-<span class="sd">         - pre: &quot;Block is properly initialized with style parameters.&quot;</span>
-<span class="sd">         - post: &quot;Returns a styled Card component with customizable appearance.&quot;</span>
+<span class="sd">         - pre: &quot;Block is properly initialized, theme_config may be available.&quot;</span>
+<span class="sd">         - post: &quot;Returns a themed Card component with automatic styling.&quot;</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Initialize with current chart instead of empty container</span>
         <span class="n">initial_chart</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_chart</span><span class="p">()</span>
 
-        <span class="c1"># Build card props with style overrides</span>
+        <span class="c1"># Build card props with theme-aware style</span>
+        <span class="n">themed_card_style</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_themed_style</span><span class="p">(</span>
+            <span class="s2">&quot;card&quot;</span><span class="p">,</span> <span class="s2">&quot;background&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_style</span>
+        <span class="p">)</span>
         <span class="n">card_props</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_className</span> <span class="ow">or</span> <span class="s2">&quot;mb-4&quot;</span><span class="p">,</span>
         <span class="p">}</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_style</span><span class="p">:</span>
-            <span class="n">card_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_style</span>
+        <span class="k">if</span> <span class="n">themed_card_style</span><span class="p">:</span>
+            <span class="n">card_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">themed_card_style</span>
 
-        <span class="c1"># Build title props with style overrides</span>
+        <span class="c1"># Build title props with theme-aware style</span>
+        <span class="n">themed_title_style</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_themed_style</span><span class="p">(</span><span class="s2">&quot;card&quot;</span><span class="p">,</span> <span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_style</span><span class="p">)</span>
         <span class="n">title_props</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_className</span> <span class="ow">or</span> <span class="s2">&quot;card-title&quot;</span><span class="p">,</span>
         <span class="p">}</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_style</span><span class="p">:</span>
-            <span class="n">title_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_style</span>
+        <span class="k">if</span> <span class="n">themed_title_style</span><span class="p">:</span>
+            <span class="n">title_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">themed_title_style</span>
 
         <span class="c1"># Build graph props with style overrides</span>
         <span class="n">graph_props</span> <span class="o">=</span> <span class="p">{</span>
@@ -438,7 +525,15 @@
             <span class="c1"># Use new ChartContext interface</span>
             <span class="n">figure</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chart_generator</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span>
 
-            <span class="c1"># Apply figure layout overrides if provided</span>
+            <span class="c1"># Apply theme to figure if theme_config is available</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="p">:</span>
+                <span class="n">theme_layout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">get_figure_layout</span><span class="p">()</span>
+                <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="o">**</span><span class="n">theme_layout</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Applied theme &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; to interactive chart&quot;</span>
+                <span class="p">)</span>
+
+            <span class="c1"># Apply user-specified figure layout (overrides theme)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">figure_layout</span><span class="p">:</span>
                 <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">figure_layout</span><span class="p">)</span>
 
@@ -537,18 +632,18 @@
 <a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.chart.InteractiveChartBlock.layout">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">layout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the Dash component layout for the InteractiveChartBlock with customizable styling.</span>
+<span class="sd">        Returns the Dash component layout for the InteractiveChartBlock with theme-aware styling.</span>
 
 <span class="sd">        :hierarchy: [Blocks | Charts | InteractiveChartBlock | Layout]</span>
 <span class="sd">        :relates-to:</span>
-<span class="sd">         - motivated_by: &quot;PRD: Need customizable styling for interactive chart blocks&quot;</span>
-<span class="sd">         - implements: &quot;method: &#39;layout&#39; with style overrides&quot;</span>
-<span class="sd">         - uses: [&quot;attribute: &#39;card_style&#39;&quot;, &quot;attribute: &#39;title_style&#39;&quot;, &quot;attribute: &#39;controls_row_style&#39;&quot;]</span>
+<span class="sd">         - motivated_by: &quot;PRD: Automatic theme application to interactive chart blocks&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;layout&#39; with theme integration&quot;</span>
+<span class="sd">         - uses: [&quot;method: &#39;_get_themed_style&#39;&quot;, &quot;attribute: &#39;card_style&#39;&quot;, &quot;attribute: &#39;title_style&#39;&quot;]</span>
 
-<span class="sd">        :rationale: &quot;Applied style customization parameters to all major UI elements including controls.&quot;</span>
+<span class="sd">        :rationale: &quot;Uses theme system for consistent styling with user override capability.&quot;</span>
 <span class="sd">        :contract:</span>
-<span class="sd">         - pre: &quot;Block is properly initialized with style parameters.&quot;</span>
-<span class="sd">         - post: &quot;Returns a styled Card component with customizable appearance and controls.&quot;</span>
+<span class="sd">         - pre: &quot;Block is properly initialized, theme_config may be available.&quot;</span>
+<span class="sd">         - post: &quot;Returns a themed Card component with automatic styling and controls.&quot;</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Initialize with current chart data using default control values</span>
@@ -560,19 +655,23 @@
 
         <span class="n">initial_chart</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_chart</span><span class="p">(</span><span class="o">**</span><span class="n">initial_control_values</span><span class="p">)</span>
 
-        <span class="c1"># Build card props with style overrides</span>
+        <span class="c1"># Build card props with theme-aware style</span>
+        <span class="n">themed_card_style</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_themed_style</span><span class="p">(</span>
+            <span class="s2">&quot;card&quot;</span><span class="p">,</span> <span class="s2">&quot;background&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_style</span>
+        <span class="p">)</span>
         <span class="n">card_props</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_className</span> <span class="ow">or</span> <span class="s2">&quot;mb-4&quot;</span><span class="p">,</span>
         <span class="p">}</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_style</span><span class="p">:</span>
-            <span class="n">card_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_style</span>
+        <span class="k">if</span> <span class="n">themed_card_style</span><span class="p">:</span>
+            <span class="n">card_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">themed_card_style</span>
 
-        <span class="c1"># Build title props with style overrides</span>
+        <span class="c1"># Build title props with theme-aware style</span>
+        <span class="n">themed_title_style</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_themed_style</span><span class="p">(</span><span class="s2">&quot;card&quot;</span><span class="p">,</span> <span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_style</span><span class="p">)</span>
         <span class="n">title_props</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_className</span> <span class="ow">or</span> <span class="s2">&quot;card-title&quot;</span><span class="p">,</span>
         <span class="p">}</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_style</span><span class="p">:</span>
-            <span class="n">title_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_style</span>
+        <span class="k">if</span> <span class="n">themed_title_style</span><span class="p">:</span>
+            <span class="n">title_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">themed_title_style</span>
 
         <span class="c1"># Build controls row props with style overrides</span>
         <span class="n">controls_row_props</span> <span class="o">=</span> <span class="p">{</span>
@@ -590,13 +689,21 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph_style</span><span class="p">:</span>
             <span class="n">graph_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph_style</span>
 
-        <span class="n">control_elements</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">dbc</span><span class="o">.</span><span class="n">Col</span><span class="p">(</span>
-                <span class="n">control</span><span class="o">.</span><span class="n">component</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_generate_id</span><span class="p">(</span><span class="n">key</span><span class="p">),</span> <span class="o">**</span><span class="n">control</span><span class="o">.</span><span class="n">props</span><span class="p">),</span>
-                <span class="n">width</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+        <span class="n">control_elements</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">control</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># Use col_props from Control, with fallback to defaults</span>
+            <span class="n">col_props</span> <span class="o">=</span> <span class="n">control</span><span class="o">.</span><span class="n">col_props</span> <span class="ow">or</span> <span class="p">{</span><span class="s2">&quot;xs&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span> <span class="s2">&quot;md&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">}</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;🎨 Building interactive control &#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39; with col_props: </span><span class="si">{</span><span class="n">col_props</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
-            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">control</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-        <span class="p">]</span>
+
+            <span class="n">control_elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">dbc</span><span class="o">.</span><span class="n">Col</span><span class="p">(</span>
+                    <span class="n">control</span><span class="o">.</span><span class="n">component</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_generate_id</span><span class="p">(</span><span class="n">key</span><span class="p">),</span> <span class="o">**</span><span class="n">control</span><span class="o">.</span><span class="n">props</span><span class="p">),</span>
+                    <span class="o">**</span><span class="n">col_props</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Card</span><span class="p">(</span>
             <span class="n">dbc</span><span class="o">.</span><span class="n">CardBody</span><span class="p">(</span>
@@ -608,6 +715,329 @@
                         <span class="nb">type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">loading_type</span><span class="p">,</span>
                         <span class="n">children</span><span class="o">=</span><span class="n">dcc</span><span class="o">.</span><span class="n">Graph</span><span class="p">(</span><span class="o">**</span><span class="n">graph_props</span><span class="p">),</span>
                     <span class="p">),</span>
+                <span class="p">]</span>
+            <span class="p">),</span>
+            <span class="o">**</span><span class="n">card_props</span><span class="p">,</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ControlPanelBlock">
+<a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.chart.ControlPanelBlock">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ControlPanelBlock</span><span class="p">(</span><span class="n">BaseBlock</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A block for displaying only UI controls (sliders, dropdowns, etc.) without any chart visualization.</span>
+
+<span class="sd">    This block is primarily a publisher of control values to state, but can also subscribe</span>
+<span class="sd">    to external states for synchronized control updates.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Controls | ControlPanelBlock]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;PRD: Need standalone control panels for dashboard settings</span>
+<span class="sd">           and filters without chart visualization&quot;</span>
+<span class="sd">         - implements: &quot;block: &#39;ControlPanelBlock&#39;&quot;</span>
+<span class="sd">         - uses: [&quot;interface: &#39;BaseBlock&#39;&quot;, &quot;dataclass: &#39;Control&#39;&quot;]</span>
+
+<span class="sd">        :rationale: &quot;Separated control panel functionality from InteractiveChartBlock</span>
+<span class="sd">         to follow Single Responsibility Principle. Enables pure control panels</span>
+<span class="sd">         for global settings.&quot;</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;A dictionary of `controls` must be provided.&quot;</span>
+<span class="sd">         - post: &quot;The block renders UI controls that publish their values to state,</span>
+<span class="sd">           with optional initialization from datasource.&quot;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ControlPanelBlock.__init__">
+<a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.chart.ControlPanelBlock.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span>
+        <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">],</span>
+        <span class="n">subscribes_to</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">value_initializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="c1"># Style customization parameters</span>
+        <span class="n">card_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">card_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">title_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">title_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">controls_row_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">controls_row_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">container_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">container_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the ControlPanelBlock.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            block_id: A unique identifier for this block instance.</span>
+<span class="sd">            datasource: An instance of a class that implements the BaseDataSource interface.</span>
+<span class="sd">            title: The title for the control panel.</span>
+<span class="sd">            controls: Dictionary mapping control names to Control objects.</span>
+<span class="sd">            subscribes_to: Optional state ID(s) to subscribe to for control updates.</span>
+<span class="sd">            value_initializer: Optional function that takes a DataFrame and returns</span>
+<span class="sd">                             a dictionary of control_name -&gt; initial_value mappings.</span>
+<span class="sd">            card_style: Optional style dictionary for the card component.</span>
+<span class="sd">            card_className: Optional CSS class name for the card component.</span>
+<span class="sd">            title_style: Optional style dictionary for the title component.</span>
+<span class="sd">            title_className: Optional CSS class name for the title component.</span>
+<span class="sd">            controls_row_style: Optional style dictionary for the controls row.</span>
+<span class="sd">            controls_row_className: Optional CSS class name for the controls row.</span>
+<span class="sd">            container_style: Optional style dictionary for the container.</span>
+<span class="sd">            container_className: Optional CSS class name for the container.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">title</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controls</span> <span class="o">=</span> <span class="n">controls</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value_initializer</span> <span class="o">=</span> <span class="n">value_initializer</span>
+
+        <span class="c1"># Store style customization parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">card_style</span> <span class="o">=</span> <span class="n">card_style</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">card_className</span> <span class="o">=</span> <span class="n">card_className</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title_style</span> <span class="o">=</span> <span class="n">title_style</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title_className</span> <span class="o">=</span> <span class="n">title_className</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controls_row_style</span> <span class="o">=</span> <span class="n">controls_row_style</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controls_row_className</span> <span class="o">=</span> <span class="n">controls_row_className</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">container_style</span> <span class="o">=</span> <span class="n">container_style</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">container_className</span> <span class="o">=</span> <span class="n">container_className</span>
+
+        <span class="c1"># Call super() FIRST to set self.block_id</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">block_id</span><span class="p">,</span> <span class="n">datasource</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Control panel </span><span class="si">{</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> with title: </span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2">, controls: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">controls</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Initialize control values from datasource if value_initializer is provided</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initial_control_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_control_values</span><span class="p">()</span>
+
+        <span class="c1"># Set up state interactions</span>
+        <span class="c1"># Publishes: each control publishes its value to state</span>
+        <span class="n">publishes</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;state_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_id</span><span class="p">(</span><span class="n">key</span><span class="p">),</span> <span class="s2">&quot;component_prop&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">}</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span>
+        <span class="p">]</span>
+
+        <span class="c1"># Subscribes: optionally subscribe to external states</span>
+        <span class="n">subscribes_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">subscribes_to</span><span class="p">:</span>
+            <span class="n">external_subscriptions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_subscribes_to</span><span class="p">(</span><span class="n">subscribes_to</span><span class="p">)</span>
+            <span class="n">subscribes_dict</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">state</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_controls</span> <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">external_subscriptions</span>
+            <span class="p">}</span>
+
+        <span class="c1"># Set the state interaction attributes on the instance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">publishes</span> <span class="o">=</span> <span class="n">publishes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span> <span class="o">=</span> <span class="n">subscribes_dict</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_initialize_control_values</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes control values from datasource using value_initializer.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Controls | ControlPanelBlock | Initialization]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;PRD: Control panels should be able to initialize</span>
+<span class="sd">           their values dynamically from datasource&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_initialize_control_values&#39;&quot;</span>
+<span class="sd">         - uses: [&quot;attribute: &#39;value_initializer&#39;&quot;, &quot;method: &#39;datasource.get_processed_data&#39;&quot;]</span>
+
+<span class="sd">        :rationale: &quot;Enables dynamic initialization of control values based on data,</span>
+<span class="sd">         such as setting slider ranges based on data min/max.&quot;</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;Datasource is available; value_initializer is optional.&quot;</span>
+<span class="sd">         - post: &quot;Returns dictionary of control_name -&gt; value mappings, or empty dict.&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary mapping control names to their initial values.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">value_initializer</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{}</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Empty data for control panel </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="p">{}</span>
+
+            <span class="n">initialized_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">value_initializer</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initialized control values: </span><span class="si">{</span><span class="n">initialized_values</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">initialized_values</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Error initializing control values for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="p">{}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_update_controls</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates the control panel in response to external state changes.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Controls | ControlPanelBlock | Update Logic]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;PRD: Control panels should be able to react to</span>
+<span class="sd">           external state changes for synchronized updates&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_update_controls&#39;&quot;</span>
+<span class="sd">         - uses: [&quot;method: &#39;layout&#39;&quot;]</span>
+
+<span class="sd">        :rationale: &quot;Allows control panels to be updated based on external states,</span>
+<span class="sd">         enabling scenarios like resetting controls or synchronized multi-panel UIs.&quot;</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;Block is properly initialized.&quot;</span>
+<span class="sd">         - post: &quot;Returns updated control panel layout.&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Updated Dash component with current control values.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Updating control panel for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Re-initialize control values if needed</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_initial_control_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_control_values</span><span class="p">()</span>
+
+            <span class="c1"># Return the control elements (no need to recreate entire layout)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_control_elements</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Error updating ControlPanelBlock [</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">]: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">Div</span><span class="p">(</span><span class="s2">&quot;Error updating controls&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_control_elements</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Builds the control elements row with responsive column sizing.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Controls | ControlPanelBlock | Layout Helper]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;PRD: Need responsive control layouts with explicit column sizing&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_build_control_elements&#39; with col_props support&quot;</span>
+<span class="sd">         - uses: [&quot;attribute: &#39;controls&#39;&quot;, &quot;dataclass: &#39;Control&#39;&quot;]</span>
+
+<span class="sd">        :rationale: &quot;Enhanced to use col_props from Control dataclass for responsive Bootstrap layout.&quot;</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;Controls are defined and block_id is set.&quot;</span>
+<span class="sd">         - post: &quot;Returns Row component with responsive control elements.&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dbc.Row component containing all controls with responsive column sizing.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">control_elements</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">control</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># Merge initial values with control props if available</span>
+            <span class="n">control_props</span> <span class="o">=</span> <span class="n">control</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_control_values</span><span class="p">:</span>
+                <span class="n">control_props</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_control_values</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+            <span class="c1"># Use col_props from Control, with fallback to defaults</span>
+            <span class="n">col_props</span> <span class="o">=</span> <span class="n">control</span><span class="o">.</span><span class="n">col_props</span> <span class="ow">or</span> <span class="p">{</span><span class="s2">&quot;xs&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span> <span class="s2">&quot;md&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">}</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;🎨 Building control &#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39; with col_props: </span><span class="si">{</span><span class="n">col_props</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+            <span class="n">control_elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">dbc</span><span class="o">.</span><span class="n">Col</span><span class="p">(</span>
+                    <span class="n">control</span><span class="o">.</span><span class="n">component</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_generate_id</span><span class="p">(</span><span class="n">key</span><span class="p">),</span> <span class="o">**</span><span class="n">control_props</span><span class="p">),</span>
+                    <span class="o">**</span><span class="n">col_props</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Build controls row props with style overrides</span>
+        <span class="n">controls_row_props</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls_row_className</span> <span class="ow">or</span> <span class="s2">&quot;mb-3 align-items-center&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls_row_style</span><span class="p">:</span>
+            <span class="n">controls_row_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls_row_style</span>
+
+        <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span><span class="n">control_elements</span><span class="p">,</span> <span class="o">**</span><span class="n">controls_row_props</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ControlPanelBlock.list_control_inputs">
+<a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.chart.ControlPanelBlock.list_control_inputs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">list_control_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns empty list because ControlPanelBlock does not need block-centric callbacks.</span>
+
+<span class="sd">        :hierarchy: [Architecture | Block-centric Callbacks | ControlPanelBlock]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Bug Fix: ControlPanelBlock should not have block-centric callbacks&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;list_control_inputs&#39;&quot;</span>
+
+<span class="sd">        :rationale: &quot;ControlPanelBlock only publishes values, it doesn&#39;t need to update from external controls.</span>
+<span class="sd">                    Block-centric callbacks would create circular dependencies and break the UI.&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;Block is properly initialized.&quot;</span>
+<span class="sd">         - post: &quot;Returns empty list to prevent block-centric callback registration.&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Empty list to prevent block-centric callback registration.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># ControlPanelBlock only publishes values, it doesn&#39;t need block-centric callbacks</span>
+        <span class="c1"># because it would create circular dependencies and break the UI</span>
+        <span class="k">return</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="ControlPanelBlock.layout">
+<a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.chart.ControlPanelBlock.layout">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">layout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the Dash component layout for the ControlPanelBlock with theme-aware styling.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Controls | ControlPanelBlock | Layout]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;PRD: Automatic theme application to control panel blocks&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;layout&#39; with theme integration&quot;</span>
+<span class="sd">         - uses: [&quot;method: &#39;_get_themed_style&#39;&quot;, &quot;attribute: &#39;card_style&#39;&quot;, &quot;attribute: &#39;title_style&#39;&quot;]</span>
+
+<span class="sd">        :rationale: &quot;Uses theme system for consistent styling with user override capability.&quot;</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;Block is properly initialized, theme_config may be available.&quot;</span>
+<span class="sd">         - post: &quot;Returns a themed Card component with automatic styling and controls.&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dash Card component containing the control panel.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Build card props with theme-aware style</span>
+        <span class="n">themed_card_style</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_themed_style</span><span class="p">(</span>
+            <span class="s2">&quot;card&quot;</span><span class="p">,</span> <span class="s2">&quot;background&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_style</span>
+        <span class="p">)</span>
+        <span class="n">card_props</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_className</span> <span class="ow">or</span> <span class="s2">&quot;mb-4&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">themed_card_style</span><span class="p">:</span>
+            <span class="n">card_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">themed_card_style</span>
+
+        <span class="c1"># Build title props with theme-aware style</span>
+        <span class="n">themed_title_style</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_themed_style</span><span class="p">(</span><span class="s2">&quot;card&quot;</span><span class="p">,</span> <span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_style</span><span class="p">)</span>
+        <span class="n">title_props</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_className</span> <span class="ow">or</span> <span class="s2">&quot;card-title&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">themed_title_style</span><span class="p">:</span>
+            <span class="n">title_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">themed_title_style</span>
+
+        <span class="c1"># Build container props with style overrides</span>
+        <span class="n">container_props</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_id</span><span class="p">(</span><span class="s2">&quot;container&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;children&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_control_elements</span><span class="p">(),</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">container_style</span><span class="p">:</span>
+            <span class="n">container_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">container_style</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">container_className</span><span class="p">:</span>
+            <span class="n">container_props</span><span class="p">[</span><span class="s2">&quot;className&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">container_className</span>
+
+        <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Card</span><span class="p">(</span>
+            <span class="n">dbc</span><span class="o">.</span><span class="n">CardBody</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="n">html</span><span class="o">.</span><span class="n">H4</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="o">**</span><span class="n">title_props</span><span class="p">),</span>
+                    <span class="n">html</span><span class="o">.</span><span class="n">Div</span><span class="p">(</span><span class="o">**</span><span class="n">container_props</span><span class="p">),</span>
                 <span class="p">]</span>
             <span class="p">),</span>
             <span class="o">**</span><span class="n">card_props</span><span class="p">,</span>

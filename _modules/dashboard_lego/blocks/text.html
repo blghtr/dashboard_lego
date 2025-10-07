@@ -241,31 +241,32 @@
 <a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.text.TextBlock.layout">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">layout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Defines the initial layout of the block with customizable styling.</span>
+<span class="sd">        Defines the initial layout of the block with theme-aware styling.</span>
 
 <span class="sd">        :hierarchy: [Blocks | Text | TextBlock | Layout]</span>
 <span class="sd">        :relates-to:</span>
-<span class="sd">         - motivated_by: &quot;PRD: Need customizable styling for text blocks&quot;</span>
-<span class="sd">         - implements: &quot;method: &#39;layout&#39; with style overrides&quot;</span>
-<span class="sd">         - uses: [&quot;attribute: &#39;card_style&#39;&quot;, &quot;attribute: &#39;loading_type&#39;&quot;]</span>
+<span class="sd">         - motivated_by: &quot;PRD: Automatic theme application to text blocks&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;layout&#39; with theme integration&quot;</span>
+<span class="sd">         - uses: [&quot;method: &#39;_get_themed_style&#39;&quot;, &quot;attribute: &#39;card_style&#39;&quot;]</span>
 
-<span class="sd">        :rationale: &quot;Applied style customization parameters to card and loading</span>
-<span class="sd">         components.&quot;</span>
+<span class="sd">        :rationale: &quot;Uses theme system for consistent styling with user override capability.&quot;</span>
 <span class="sd">        :contract:</span>
-<span class="sd">         - pre: &quot;Block is properly initialized with style parameters.&quot;</span>
-<span class="sd">         - post: &quot;Returns a styled Card component with customizable</span>
-<span class="sd">           appearance.&quot;</span>
+<span class="sd">         - pre: &quot;Block is properly initialized, theme_config may be available.&quot;</span>
+<span class="sd">         - post: &quot;Returns a themed Card component with automatic styling.&quot;</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Initialize with current content instead of empty container</span>
         <span class="n">initial_content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_content</span><span class="p">()</span>
 
-        <span class="c1"># Build card props with style overrides</span>
+        <span class="c1"># Build card props with theme-aware style</span>
+        <span class="n">themed_card_style</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_themed_style</span><span class="p">(</span>
+            <span class="s2">&quot;card&quot;</span><span class="p">,</span> <span class="s2">&quot;background&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_style</span>
+        <span class="p">)</span>
         <span class="n">card_props</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_className</span> <span class="ow">or</span> <span class="s2">&quot;mb-4&quot;</span><span class="p">,</span>
         <span class="p">}</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_style</span><span class="p">:</span>
-            <span class="n">card_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_style</span>
+        <span class="k">if</span> <span class="n">themed_card_style</span><span class="p">:</span>
+            <span class="n">card_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">themed_card_style</span>
 
         <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Card</span><span class="p">(</span>
             <span class="n">dcc</span><span class="o">.</span><span class="n">Loading</span><span class="p">(</span>

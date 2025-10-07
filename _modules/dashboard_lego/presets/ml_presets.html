@@ -325,6 +325,11 @@
             <span class="n">color_continuous_scale</span><span class="o">=</span><span class="s2">&quot;Blues&quot;</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title_text</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">)</span>
+
+        <span class="c1"># Apply theme layout if provided</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">figure_layout</span><span class="p">:</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">figure_layout</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="n">fig</span></div>
 
 
@@ -480,6 +485,11 @@
             <span class="n">title</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">yaxis_title</span><span class="o">=</span><span class="s2">&quot;Feature&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Apply theme layout if provided</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">figure_layout</span><span class="p">:</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">figure_layout</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="n">fig</span></div>
 
 </pre></div>

@@ -307,8 +307,8 @@
             <span class="k">for</span> <span class="n">output_key</span><span class="p">,</span> <span class="n">state_infos</span> <span class="ow">in</span> <span class="n">output_subscriptions</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">component_id</span><span class="p">,</span> <span class="n">component_prop</span> <span class="o">=</span> <span class="n">output_key</span>
 
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Creating callback for output: </span><span class="si">{</span><span class="n">component_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">component_prop</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;🔧 Creating callback for output: </span><span class="si">{</span><span class="n">component_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">component_prop</span><span class="si">}</span><span class="s2"> &quot;</span>
                     <span class="sa">f</span><span class="s2">&quot;with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">state_infos</span><span class="p">)</span><span class="si">}</span><span class="s2"> input state(s)&quot;</span>
                 <span class="p">)</span>
 
@@ -321,18 +321,29 @@
                     <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">state_infos</span>
                 <span class="p">]</span>
 
+                <span class="c1"># Debug: log all inputs for this callback</span>
+                <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">input_obj</span><span class="p">,</span> <span class="n">state_info</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">state_infos</span><span class="p">)):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;  📥 Input[</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">]: </span><span class="si">{</span><span class="n">input_obj</span><span class="o">.</span><span class="n">component_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">input_obj</span><span class="o">.</span><span class="n">component_property</span><span class="si">}</span><span class="s2"> &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;(state_id: </span><span class="si">{</span><span class="n">state_info</span><span class="p">[</span><span class="s1">&#39;state_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span>
+                    <span class="p">)</span>
+
                 <span class="c1"># Create single Output for this subscriber</span>
                 <span class="n">output</span> <span class="o">=</span> <span class="n">Output</span><span class="p">(</span><span class="n">component_id</span><span class="p">,</span> <span class="n">component_prop</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;  📤 Output: </span><span class="si">{</span><span class="n">output</span><span class="o">.</span><span class="n">component_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">output</span><span class="o">.</span><span class="n">component_property</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
 
                 <span class="c1"># Create callback that handles multiple inputs</span>
                 <span class="n">callback_func</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_multi_input_callback</span><span class="p">(</span><span class="n">state_infos</span><span class="p">)</span>
 
                 <span class="c1"># Register callback with Dash</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;  🔗 Registering callback with Dash...&quot;</span><span class="p">)</span>
                 <span class="n">app</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">inputs</span><span class="p">)(</span><span class="n">callback_func</span><span class="p">)</span>
                 <span class="n">callback_count</span> <span class="o">+=</span> <span class="mi">1</span>
 
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Registered callback: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span><span class="si">}</span><span class="s2"> inputs -&gt; &quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;✅ Registered callback #</span><span class="si">{</span><span class="n">callback_count</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span><span class="si">}</span><span class="s2"> inputs -&gt; &quot;</span>
                     <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">component_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">component_prop</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
 
@@ -383,12 +394,12 @@
 
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">inputs</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Block </span><span class="si">{</span><span class="n">block</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> has no control inputs, skipping callback&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;⏭️  Block </span><span class="si">{</span><span class="n">block</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> has no control inputs, skipping callback&quot;</span>
                     <span class="p">)</span>
                     <span class="k">continue</span>
 
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Creating callback for block: </span><span class="si">{</span><span class="n">block</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;🔧 Creating block-centric callback for: </span><span class="si">{</span><span class="n">block</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> &quot;</span>
                     <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span><span class="si">}</span><span class="s2"> inputs -&gt; </span><span class="si">{</span><span class="n">output_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">output_prop</span><span class="si">}</span><span class="s2">)&quot;</span>
                 <span class="p">)</span>
 
@@ -397,16 +408,29 @@
                     <span class="n">Input</span><span class="p">(</span><span class="n">component_id</span><span class="p">,</span> <span class="n">prop</span><span class="p">)</span> <span class="k">for</span> <span class="n">component_id</span><span class="p">,</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">inputs</span>
                 <span class="p">]</span>
 
+                <span class="c1"># Debug: log all inputs for this block</span>
+                <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">comp_id</span><span class="p">,</span> <span class="n">prop</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">inputs</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  📥 Input[</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">]: </span><span class="si">{</span><span class="n">comp_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">prop</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
                 <span class="c1"># Create Output object with allow_duplicate support</span>
                 <span class="n">allow_duplicate</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="s2">&quot;allow_duplicate_output&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
                 <span class="n">output_object</span> <span class="o">=</span> <span class="n">Output</span><span class="p">(</span>
                     <span class="n">output_id</span><span class="p">,</span> <span class="n">output_prop</span><span class="p">,</span> <span class="n">allow_duplicate</span><span class="o">=</span><span class="n">allow_duplicate</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;  📤 Output: </span><span class="si">{</span><span class="n">output_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">output_prop</span><span class="si">}</span><span class="s2"> &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;(allow_duplicate=</span><span class="si">{</span><span class="n">allow_duplicate</span><span class="si">}</span><span class="s2">)&quot;</span>
                 <span class="p">)</span>
 
                 <span class="c1"># Create callback function with enhanced error handling</span>
                 <span class="k">def</span><span class="w"> </span><span class="nf">create_block_callback</span><span class="p">(</span><span class="n">block_ref</span><span class="p">):</span>
                     <span class="k">def</span><span class="w"> </span><span class="nf">block_callback</span><span class="p">(</span><span class="o">*</span><span class="n">values</span><span class="p">):</span>
                         <span class="k">try</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                                <span class="sa">f</span><span class="s2">&quot;🎬 Block callback triggered for </span><span class="si">{</span><span class="n">block_ref</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> &quot;</span>
+                                <span class="sa">f</span><span class="s2">&quot;with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="si">}</span><span class="s2"> input values&quot;</span>
+                            <span class="p">)</span>
+
                             <span class="c1"># Convert input values to control values dict</span>
                             <span class="n">control_values</span> <span class="o">=</span> <span class="p">{}</span>
                             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">component_id</span><span class="p">,</span> <span class="n">prop</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
@@ -415,6 +439,10 @@
                                 <span class="c1"># Extract control name from component_id (last part after -)</span>
                                 <span class="n">control_name</span> <span class="o">=</span> <span class="n">component_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
                                 <span class="n">control_values</span><span class="p">[</span><span class="n">control_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                                    <span class="sa">f</span><span class="s2">&quot;  🎛️  Control </span><span class="si">{</span><span class="n">control_name</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2"> &quot;</span>
+                                    <span class="sa">f</span><span class="s2">&quot;(from </span><span class="si">{</span><span class="n">component_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">prop</span><span class="si">}</span><span class="s2">)&quot;</span>
+                                <span class="p">)</span>
 
                             <span class="c1"># Call the block&#39;s update method</span>
                             <span class="k">return</span> <span class="n">block_ref</span><span class="o">.</span><span class="n">update_from_controls</span><span class="p">(</span><span class="n">control_values</span><span class="p">)</span>
@@ -430,12 +458,13 @@
 
                 <span class="c1"># Register the callback with enhanced error handling</span>
                 <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;🔗 Registering block callback with Dash...&quot;</span><span class="p">)</span>
                     <span class="n">app</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span><span class="n">output_object</span><span class="p">,</span> <span class="n">input_objects</span><span class="p">)(</span>
                         <span class="n">create_block_callback</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
                     <span class="p">)</span>
                     <span class="n">callback_count</span> <span class="o">+=</span> <span class="mi">1</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Successfully registered callback for block: </span><span class="si">{</span><span class="n">block</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;✅ Registered block callback #</span><span class="si">{</span><span class="n">callback_count</span><span class="si">}</span><span class="s2"> for: </span><span class="si">{</span><span class="n">block</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">&quot;</span>
                     <span class="p">)</span>
                 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">callback_error</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
@@ -622,23 +651,41 @@
 <span class="sd">            we just call it once with the first value that triggered the callback.</span>
 
 <span class="sd">            &quot;&quot;&quot;</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Multi-input callback triggered with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="si">}</span><span class="s2"> values&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;🔔 Multi-input callback triggered with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="si">}</span><span class="s2"> values&quot;</span>
             <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Values: </span><span class="si">{</span><span class="n">values</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Value types: </span><span class="si">{</span><span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">v</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">values</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Log state_ids and values mapping for debugging</span>
+            <span class="n">state_mapping</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">info</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">state_infos</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">):</span>
+                    <span class="n">state_id</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;state_id&quot;</span><span class="p">]</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                    <span class="n">state_mapping</span><span class="p">[</span><span class="n">state_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;🎯 State mapping: </span><span class="si">{</span><span class="n">state_id</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2"> (type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">)&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ No value for state_id: </span><span class="si">{</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;state_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;📋 Complete state mapping: </span><span class="si">{</span><span class="n">state_mapping</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
             <span class="k">try</span><span class="p">:</span>
                 <span class="c1"># All state_infos have the same callback_fn (same subscriber block)</span>
                 <span class="c1"># Just call it with the first triggering value</span>
                 <span class="c1"># Dash&#39;s callback context can be used if block needs to know which input triggered</span>
                 <span class="n">callback_fn</span> <span class="o">=</span> <span class="n">state_infos</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;callback_fn&quot;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;📞 Calling callback_fn: </span><span class="si">{</span><span class="n">callback_fn</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="n">result</span> <span class="o">=</span> <span class="n">callback_fn</span><span class="p">(</span><span class="o">*</span><span class="n">values</span><span class="p">)</span>
 
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Multi-input callback completed successfully&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Multi-input callback completed successfully&quot;</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">result</span>
 
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Error in multi-input callback execution: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span>
+                    <span class="sa">f</span><span class="s2">&quot;❌ Error in multi-input callback execution: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span>
                 <span class="p">)</span>
                 <span class="k">return</span> <span class="kc">None</span>
 

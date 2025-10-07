@@ -84,7 +84,7 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">dash_bootstrap_components</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dbc</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dash</span><span class="w"> </span><span class="kn">import</span> <span class="n">dcc</span><span class="p">,</span> <span class="n">html</span>
@@ -92,6 +92,9 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseBlock</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.formatting</span><span class="w"> </span><span class="kn">import</span> <span class="n">format_number</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.theme</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThemeConfig</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_create_kpi_card</span><span class="p">(</span>
@@ -106,47 +109,94 @@
     <span class="n">value_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">title_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">title_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="c1"># Theme integration</span>
+    <span class="n">theme_config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;ThemeConfig&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Col</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Creates a KPI card with customizable styling.</span>
+<span class="sd">    Creates a KPI card with theme-aware styling.</span>
 
 <span class="sd">    :hierarchy: [Blocks | KPIs | KPIBlock | Card Creation]</span>
 <span class="sd">    :relates-to:</span>
-<span class="sd">     - motivated_by: &quot;PRD: Need customizable styling for KPI cards&quot;</span>
-<span class="sd">     - implements: &quot;function: &#39;_create_kpi_card&#39; with style overrides&quot;</span>
-<span class="sd">     - uses: [&quot;component: &#39;dbc.Card&#39;&quot;, &quot;component: &#39;html.H4&#39;&quot;,</span>
-<span class="sd">              &quot;component: &#39;html.P&#39;&quot;]</span>
+<span class="sd">     - motivated_by: &quot;PRD: Automatic theme application to KPI cards&quot;</span>
+<span class="sd">     - implements: &quot;function: &#39;_create_kpi_card&#39; with theme integration&quot;</span>
+<span class="sd">     - uses: [&quot;component: &#39;dbc.Card&#39;&quot;, &quot;component: &#39;html.H4&#39;&quot;, &quot;component: &#39;html.P&#39;&quot;]</span>
 
-<span class="sd">    :rationale: &quot;Enhanced with style customization parameters to allow</span>
-<span class="sd">     fine-grained control over KPI card appearance while maintaining</span>
-<span class="sd">     backward compatibility.&quot;</span>
+<span class="sd">    :rationale: &quot;Uses theme system for colors and typography while maintaining user override capability.&quot;</span>
 <span class="sd">    :contract:</span>
-<span class="sd">     - pre: &quot;Title, value, and icon strings are provided.&quot;</span>
-<span class="sd">     - post: &quot;Returns a styled KPI card component with customizable</span>
-<span class="sd">       appearance.&quot;</span>
+<span class="sd">     - pre: &quot;Title, value, and icon strings are provided, theme_config may be available.&quot;</span>
+<span class="sd">     - post: &quot;Returns a themed KPI card component with automatic styling.&quot;</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Build card props with style overrides</span>
-    <span class="n">default_card_class</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;text-center text-white bg-</span><span class="si">{</span><span class="n">color</span><span class="si">}</span><span class="s2"> m-2&quot;</span>
-    <span class="n">card_props</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="n">kpi_card_className</span> <span class="ow">or</span> <span class="n">default_card_class</span><span class="p">,</span>
-    <span class="p">}</span>
-    <span class="k">if</span> <span class="n">kpi_card_style</span><span class="p">:</span>
-        <span class="n">card_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kpi_card_style</span>
+    <span class="c1"># Get theme-aware styles for KPI</span>
+    <span class="k">if</span> <span class="n">theme_config</span><span class="p">:</span>
+        <span class="c1"># Get theme colors for the specified color name</span>
+        <span class="n">color_map</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;primary&quot;</span><span class="p">:</span> <span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">primary</span><span class="p">,</span>
+            <span class="s2">&quot;secondary&quot;</span><span class="p">:</span> <span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">secondary</span><span class="p">,</span>
+            <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">success</span><span class="p">,</span>
+            <span class="s2">&quot;danger&quot;</span><span class="p">:</span> <span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">danger</span><span class="p">,</span>
+            <span class="s2">&quot;warning&quot;</span><span class="p">:</span> <span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">warning</span><span class="p">,</span>
+            <span class="s2">&quot;info&quot;</span><span class="p">:</span> <span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">info</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">bg_color</span> <span class="o">=</span> <span class="n">color_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">color</span><span class="p">,</span> <span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">primary</span><span class="p">)</span>
 
-    <span class="c1"># Build value props with style overrides</span>
+        <span class="c1"># Build themed card style</span>
+        <span class="n">default_card_style</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;backgroundColor&quot;</span><span class="p">:</span> <span class="n">bg_color</span><span class="p">,</span>
+            <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">white</span><span class="p">,</span>
+            <span class="s2">&quot;textAlign&quot;</span><span class="p">:</span> <span class="s2">&quot;center&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;border&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;1px solid </span><span class="si">{</span><span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">border</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;borderRadius&quot;</span><span class="p">:</span> <span class="n">theme_config</span><span class="o">.</span><span class="n">spacing</span><span class="o">.</span><span class="n">border_radius</span><span class="p">,</span>
+            <span class="s2">&quot;padding&quot;</span><span class="p">:</span> <span class="n">theme_config</span><span class="o">.</span><span class="n">spacing</span><span class="o">.</span><span class="n">card_padding</span><span class="p">,</span>
+            <span class="s2">&quot;margin&quot;</span><span class="p">:</span> <span class="n">theme_config</span><span class="o">.</span><span class="n">spacing</span><span class="o">.</span><span class="n">sm</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">card_style</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">default_card_style</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">kpi_card_style</span> <span class="ow">or</span> <span class="p">{})}</span>
+
+        <span class="c1"># Build themed value style</span>
+        <span class="n">default_value_style</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;fontSize&quot;</span><span class="p">:</span> <span class="n">theme_config</span><span class="o">.</span><span class="n">typography</span><span class="o">.</span><span class="n">font_size_h2</span><span class="p">,</span>
+            <span class="s2">&quot;fontWeight&quot;</span><span class="p">:</span> <span class="n">theme_config</span><span class="o">.</span><span class="n">typography</span><span class="o">.</span><span class="n">font_weight_bold</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">themed_value_style</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">default_value_style</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">value_style</span> <span class="ow">or</span> <span class="p">{})}</span>
+
+        <span class="c1"># Build themed title style</span>
+        <span class="n">default_title_style</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;fontSize&quot;</span><span class="p">:</span> <span class="n">theme_config</span><span class="o">.</span><span class="n">typography</span><span class="o">.</span><span class="n">font_size_sm</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">themed_title_style</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">default_title_style</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">title_style</span> <span class="ow">or</span> <span class="p">{})}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Fallback to Bootstrap classes if no theme available</span>
+        <span class="n">card_style</span> <span class="o">=</span> <span class="n">kpi_card_style</span>
+        <span class="n">themed_value_style</span> <span class="o">=</span> <span class="n">value_style</span>
+        <span class="n">themed_title_style</span> <span class="o">=</span> <span class="n">title_style</span>
+
+    <span class="c1"># Build card props</span>
+    <span class="k">if</span> <span class="n">theme_config</span><span class="p">:</span>
+        <span class="n">card_props</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="n">kpi_card_className</span> <span class="ow">or</span> <span class="s2">&quot;text-center m-2&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="n">card_style</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">default_card_class</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;text-center text-white bg-</span><span class="si">{</span><span class="n">color</span><span class="si">}</span><span class="s2"> m-2&quot;</span>
+        <span class="n">card_props</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="n">kpi_card_className</span> <span class="ow">or</span> <span class="n">default_card_class</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">kpi_card_style</span><span class="p">:</span>
+            <span class="n">card_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kpi_card_style</span>
+
+    <span class="c1"># Build value props</span>
     <span class="n">value_props</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="n">value_className</span> <span class="ow">or</span> <span class="s2">&quot;card-title&quot;</span><span class="p">,</span>
     <span class="p">}</span>
-    <span class="k">if</span> <span class="n">value_style</span><span class="p">:</span>
-        <span class="n">value_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value_style</span>
+    <span class="k">if</span> <span class="n">themed_value_style</span><span class="p">:</span>
+        <span class="n">value_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">themed_value_style</span>
 
-    <span class="c1"># Build title props with style overrides</span>
+    <span class="c1"># Build title props</span>
     <span class="n">title_props</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="n">title_className</span> <span class="ow">or</span> <span class="s2">&quot;card-text&quot;</span><span class="p">,</span>
     <span class="p">}</span>
-    <span class="k">if</span> <span class="n">title_style</span><span class="p">:</span>
-        <span class="n">title_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">title_style</span>
+    <span class="k">if</span> <span class="n">themed_title_style</span><span class="p">:</span>
+        <span class="n">title_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">themed_title_style</span>
 
     <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Col</span><span class="p">(</span>
         <span class="n">dbc</span><span class="o">.</span><span class="n">Card</span><span class="p">(</span>
@@ -270,6 +320,8 @@
                         <span class="n">value_className</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">value_className</span><span class="p">,</span>
                         <span class="n">title_style</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">title_style</span><span class="p">,</span>
                         <span class="n">title_className</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">title_className</span><span class="p">,</span>
+                        <span class="c1"># Pass theme configuration</span>
+                        <span class="n">theme_config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="p">,</span>
                     <span class="p">)</span>
                 <span class="p">)</span>
             <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span><span class="n">cards</span><span class="p">)</span>
