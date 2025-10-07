@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2025-10-07
+
+### Added
+- **Theme-Aware Styling System**
+  - Integration of theme configuration into `BaseBlock` and related classes
+  - Automatic styling based on user-defined themes in `create_eda_section` and `create_ml_section`
+  - New control panel styles and layouts for improved user interaction
+  - Sample datasets: `sample_feature_importance.csv` and `sample_theme_data.csv`
+
+### Changed
+- Enhanced responsiveness and visual consistency across dashboard components
+- Improved control panel layouts for better user experience
+
+## [0.12.0] - 2025-10-06
+
+### Fixed
+- Corrected syntax in `_normalize_subscribes_to` method signature (trailing comma for style consistency)
+
+## [0.11.2] - 2025-10-05
+
+### Added
+- **Multi-State Subscriptions Support**
+  - `BaseBlock` and subclasses now accept both single state IDs and lists of state IDs for `subscribes_to` parameter
+  - New `_normalize_subscribes_to` method for consistent subscription handling
+  - Enhanced `StateManager` to manage multi-state subscriptions
+  - Integration tests for multi-state subscription behavior
+
+### Changed
+- Improved flexibility for complex data interactions across dashboard blocks
+
+## [0.11.0] - 2025-10-02
+
+### Added
+- **Enhanced Output and Error Management**
+  - New `allow_duplicate_output` parameter in `BaseBlock` and `StaticChartBlock`
+  - Comprehensive error handling for Dash callbacks in `DashboardPage`
+  - Enhanced `StateManager` with duplicate output validation and detailed logging
+  - New `_get_fallback_output` method for safe outputs when errors occur
+  - Sample navigation data file: `sample_nav_data.csv`
+
+### Changed
+- Updated `DashboardPage` styles to use camelCase for CSS properties
+- Enhanced documentation structure with improved Sphinx configuration
+- Improved error handling in content loading process
+
+### Fixed
+- Documentation paths for src-layout structure
+- API documentation to include proper dashboard_lego namespace
+
 ## [0.10.0] - 2025-10-01
 
 ### Added
