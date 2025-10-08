@@ -43,16 +43,35 @@ class CsvDataSource(BaseDataSource):
         self.logger.info(f"CSV datasource initialized for file: {file_path}")
         self.logger.debug(f"Read options: {self.read_csv_options}")
 
-    def _load_data(self, params: Dict[str, Any]) -> pd.DataFrame:
+    def _load_raw_data(self, params: Dict[str, Any]) -> pd.DataFrame:
         """
-        Loads the data from the CSV file and applies filters.
+        Load raw data from CSV file (NO filtering).
 
-        This method is called by the caching layer in the base class.
-        Filters are expected to be passed in the `params` dictionary
-        as a list of strings under the key 'filters'.
+        :hierarchy: [Core | DataSources | CsvDataSource | Load Stage]
+        :relates-to:
+         - motivated_by: "Refactor: Separate data loading from filtering"
+         - implements: "method: '_load_raw_data'"
 
+        :contract:
+         - pre: "file_path points to valid CSV file"
+         - post: "Returns raw DataFrame from CSV"
+         - invariant: "Does NOT apply filters"
+
+        Args:
+            params: Parameters for CSV loading (not used for filtering).
+                   Reserved for future use (e.g., column selection).
+
+        Returns:
+            Raw DataFrame from CSV file
+
+        Raises:
+            DataLoadError: If file not found or loading fails
+
+        Note:
+            Filtering logic has been removed and should be handled by DataFilter.
+            This method only loads the raw CSV data.
         """
-        self.logger.debug(f"Loading CSV data from: {self.file_path}")
+        self.logger.debug(f"Loading raw CSV data from: {self.file_path}")
 
         try:
             df = pd.read_csv(self.file_path, **self.read_csv_options)
@@ -63,20 +82,7 @@ class CsvDataSource(BaseDataSource):
 
             if df.empty:
                 self.logger.warning("CSV file is empty")
-                return df
 
-            filters = params.get("filters")
-            if filters:
-                self.logger.debug(f"Applying {len(filters)} filters")
-                for i, f in enumerate(filters):
-                    if f:  # Ensure filter string is not empty
-                        self.logger.debug(f"Applying filter {i+1}: {f}")
-                        df = df.query(f)
-                        self.logger.debug(f"After filter {i+1}: {len(df)} rows")
-
-            self.logger.info(
-                f"Final dataset: {len(df)} rows, {len(df.columns)} columns"
-            )
             return df
 
         except FileNotFoundError as e:

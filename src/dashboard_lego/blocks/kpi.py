@@ -206,13 +206,28 @@ class KPIBlock(BaseBlock):
          - uses: ["function: '_create_kpi_card'", "method: 'format_number'"]
 
         :rationale: "Enhanced to pass style customization parameters to
-         individual KPI cards."
+         individual KPI cards. Refreshes datasource with control values before
+         reading KPIs."
         :contract:
          - pre: "Datasource is available and KPI definitions are set."
          - post: "Returns a Row of styled KPI cards with current data."
 
         """
         try:
+            # NEW: Extract control values and refresh datasource
+            if args and self.subscribes:
+                # Build params dict from subscribed state values
+                params = {}
+                state_ids = list(self.subscribes.keys())
+                for idx, value in enumerate(args):
+                    if idx < len(state_ids):
+                        params[state_ids[idx]] = value
+
+                self.logger.debug(
+                    f"Refreshing datasource for {self.block_id} with params: {params}"
+                )
+                self.datasource.init_data(params)
+
             kpi_data = self.datasource.get_kpis()
             if not kpi_data:
                 return dbc.Alert("Нет данных для KPI.", color="warning")

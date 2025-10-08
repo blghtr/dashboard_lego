@@ -146,66 +146,36 @@ class StaticChartBlock(BaseBlock):
 
         :hierarchy: [Blocks | Charts | StaticChartBlock | Update Logic]
         :relates-to:
-         - motivated_by: "Bug Fix: StaticChartBlock must receive subscribed state values from StateManager"
-         - implements: "method: '_update_chart' with positional args support"
-         - uses: ["class: 'ChartContext'", "method: 'chart_generator'"]
-
-        :rationale: "Changed to accept *args because StateManager passes values as positional arguments, not kwargs."
+         - motivated_by: "Bug Fix: StaticChartBlock must handle generic state updates, not hardcoded ones."
+         - implements: "method: '_update_chart' with generic *args handling"
         :contract:
          - pre: "Datasource is available and chart_generator function is provided."
          - post: "Returns updated figure with subscribed state values passed to chart generator."
-
         """
         self.logger.info(
             f"🔄 Updating chart for {self.block_id} with {len(args)} positional args"
         )
-        self.logger.debug(f"Args types: {[type(arg) for arg in args]}")
-        self.logger.debug(f"Args values: {args}")
-
         try:
+            params = {}
+            if args and hasattr(self, "subscribes") and self.subscribes:
+                state_ids = list(self.subscribes.keys())
+                for idx, value in enumerate(args):
+                    if idx < len(state_ids):
+                        params[state_ids[idx]] = value
+
+                self.logger.debug(
+                    f"Refreshing datasource for {self.block_id} with params: {params}"
+                )
+                self.datasource.init_data(params)
+
             df = self.datasource.get_processed_data()
             if df.empty:
                 self.logger.warning(f"Empty data for chart {self.block_id}")
                 return go.Figure()
 
-            # Extract control values from positional arguments
-            # CRITICAL: Use the order from StateManager logs, not self.subscribes.keys()
-            # From logs: Input[0]: settings_panel-fruit_filter.value, Input[1]: settings_panel-min_sales.value
-            # So args[0] = fruit_filter value, args[1] = min_sales value
-            control_values = {}
+            # For static charts, the context controls are the state values themselves
+            control_values = params
 
-            if args and hasattr(self, "subscribes") and self.subscribes:
-                # HARDCODED ORDER based on StateManager logs:
-                # This is the order that StateManager uses for inputs
-                expected_order = [
-                    "settings_panel-fruit_filter",  # args[0]
-                    "settings_panel-min_sales",  # args[1]
-                ]
-
-                self.logger.info(
-                    f"📊 Chart {self.block_id} received {len(args)} args, mapping to expected order"
-                )
-
-                for idx, value in enumerate(args):
-                    if idx < len(expected_order):
-                        state_id = expected_order[idx]
-                        control_name = state_id.split("-")[-1]
-                        control_values[control_name] = value
-                        self.logger.info(
-                            f"🎯 Mapped arg[{idx}] = {value} (type: {type(value).__name__}) -> {state_id} -> control: {control_name}"
-                        )
-                    else:
-                        self.logger.warning(
-                            f"⚠️ Extra arg[{idx}] = {value} has no expected state_id"
-                        )
-
-                self.logger.info(
-                    f"✅ Chart {self.block_id} extracted control values: {control_values}"
-                )
-            else:
-                self.logger.info(f"ℹ️ No args or subscriptions for {self.block_id}")
-
-            # Create ChartContext with control values
             ctx = ChartContext(
                 datasource=self.datasource, controls=control_values, logger=self.logger
             )
@@ -213,13 +183,11 @@ class StaticChartBlock(BaseBlock):
             self.logger.debug(f"📊 Calling chart_generator for {self.block_id}")
             figure = self.chart_generator(df, ctx)
 
-            # Apply theme to figure if theme_config is available
             if self.theme_config:
                 theme_layout = self.theme_config.get_figure_layout()
                 figure.update_layout(**theme_layout)
                 self.logger.debug(f"Applied theme '{self.theme_config.name}' to figure")
 
-            # Apply user-specified figure layout (overrides theme)
             if self.figure_layout:
                 figure.update_layout(**self.figure_layout)
 
@@ -342,6 +310,7 @@ class InteractiveChartBlock(BaseBlock):
         self.title = title
         self.chart_generator = chart_generator
         self.controls = controls
+        self._external_subscribes_to = subscribes_to
 
         # Store style customization parameters
         self.card_style = card_style
@@ -355,24 +324,11 @@ class InteractiveChartBlock(BaseBlock):
         self.controls_row_style = controls_row_style
         self.controls_row_className = controls_row_className
 
-        # Call super() FIRST to set self.block_id
+        # Call super() without state interaction logic
         super().__init__(block_id, datasource)
         self.logger.debug(
             f"Interactive chart {block_id} with title: {title}, controls: {list(controls.keys())}"
         )
-
-        # Now that block_id is set, we can safely generate state interactions
-        publishes = [
-            {"state_id": self._generate_id(key), "component_prop": "value"}
-            for key in self.controls
-        ]
-        # Normalize subscribes_to to list before concatenation
-        external_subscriptions = self._normalize_subscribes_to(subscribes_to)
-        all_subscriptions = external_subscriptions + [p["state_id"] for p in publishes]
-
-        # Set the state interaction attributes on the instance
-        self.publishes = publishes
-        self.subscribes = {state: self._update_chart for state in all_subscriptions}
 
     def _get_component_prop(self) -> str:
         """Override to use 'figure' property for Graph components."""
@@ -401,27 +357,60 @@ class InteractiveChartBlock(BaseBlock):
         return (component_id, "figure")
 
     def _update_chart(self, *args, **kwargs) -> go.Figure:
+        """
+        Updates the chart with current data and subscribed state values.
+        This method handles two calling conventions:
+        1. From layout(): Called with **kwargs representing initial control values.
+        2. From StateManager: Called with *args representing all subscribed state values.
+        """
         self.logger.debug(
-            f"Updating interactive chart for {self.block_id} " f"with kwargs: {kwargs}"
+            f"Updating interactive chart for {self.block_id} with {len(args)} args and {len(kwargs)} kwargs"
         )
         try:
+            params = {}
+            control_values = {}
+
+            if kwargs and not args:
+                # Called from layout() with initial control values
+                self.logger.debug(f"Initial layout call with kwargs: {kwargs}")
+                control_values = kwargs
+                # The params for the datasource are just the initial control values
+                params = {f"{self.block_id}-{k}": v for k, v in kwargs.items()}
+            elif args:
+                # Called from StateManager callback with positional args
+                self.logger.debug(f"Callback call with args: {args}")
+                all_subscription_keys = list(self.subscribes.keys())
+                for i, value in enumerate(args):
+                    if i < len(all_subscription_keys):
+                        state_id = all_subscription_keys[i]
+                        params[state_id] = value
+
+                # Filter params to get just this block's own control values
+                control_values = {
+                    key.split("-", 1)[-1]: value
+                    for key, value in params.items()
+                    if key.startswith(self.block_id)
+                }
+
+            # Refresh datasource with all available parameters
+            if params:
+                self.logger.debug(
+                    f"Refreshing datasource for {self.block_id} with params: {params}"
+                )
+                self.datasource.init_data(params)
+
             df = self.datasource.get_processed_data()
             if df.empty:
                 self.logger.warning(f"Empty data for chart {self.block_id}")
                 return go.Figure()
 
-            control_values = {k.split("-")[-1]: v for k, v in kwargs.items()}
-            self.logger.debug(f"Control values: {control_values}")
+            self.logger.debug(f"Control values for chart_generator: {control_values}")
 
-            # Create ChartContext for unified interface
             ctx = ChartContext(
                 datasource=self.datasource, controls=control_values, logger=self.logger
             )
-
-            # Use new ChartContext interface
             figure = self.chart_generator(df, ctx)
 
-            # Apply theme to figure if theme_config is available
             if self.theme_config:
                 theme_layout = self.theme_config.get_figure_layout()
                 figure.update_layout(**theme_layout)
@@ -429,7 +418,6 @@ class InteractiveChartBlock(BaseBlock):
                     f"Applied theme '{self.theme_config.name}' to interactive chart"
                 )
 
-            # Apply user-specified figure layout (overrides theme)
             if self.figure_layout:
                 figure.update_layout(**self.figure_layout)
 
@@ -446,21 +434,41 @@ class InteractiveChartBlock(BaseBlock):
 
     def _register_state_interactions(self, state_manager: StateManager):
         """
-        Registers publishers and subscribers for interactive chart controls.
-        Uses the base class implementation to handle both publishers and subscribers.
+        Lazily defines and registers state interactions.
 
-        :hierarchy: [Architecture | State Management | InteractiveChartBlock]
+        This method is called by DashboardPage after the navigation context
+        (self.navigation_mode, self.section_index) has been set. It moves
+        the creation of `publishes` and `subscribes` attributes out of
+        `__init__` to ensure that state and component IDs are generated
+        with the correct context.
+
+        :hierarchy: [Blocks | Charts | InteractiveChartBlock | State Registration]
         :relates-to:
-         - motivated_by: "PRD: Interactive charts need to respond to their own controls"
-         - implements: "method: '_register_state_interactions' override"
-         - uses: ["method: 'BaseBlock._register_state_interactions'"]
-
-        :rationale: "Use base class implementation to register both publishers and subscribers."
+         - motivated_by: "Refactoring to fix timing issue with lazy-loaded navigation sections"
+         - implements: "Lazy state interaction setup for InteractiveChartBlock"
         :contract:
-         - pre: "StateManager is initialized and ready to accept registrations."
-         - post: "Both control publishers and subscribers are registered."
+         - pre: "self.navigation_mode and self.section_index are set by DashboardPage."
+         - post: "self.publishes and self.subscribes are populated; state interactions are registered with StateManager."
+        :complexity: 3
+        :decision_cache: "Chose lazy setup in _register_state_interactions over passing context into __init__ to keep block constructors clean and decouple them from page-level logic."
         """
-        # Use the base class implementation which handles both publishers and subscribers
+        # Generate publishes list with string state_ids
+        self.publishes = [
+            {"state_id": f"{self.block_id}-{key}", "component_prop": "value"}
+            for key in self.controls
+        ]
+
+        # Combine internal and external subscriptions
+        external_subscriptions = self._normalize_subscribes_to(
+            self._external_subscribes_to
+        )
+        internal_subscriptions = [p["state_id"] for p in self.publishes]
+        all_subscriptions = external_subscriptions + internal_subscriptions
+
+        # The keys for self.subscribes must be strings
+        self.subscribes = {state: self._update_chart for state in all_subscriptions}
+
+        # Now call the parent method to perform the actual registration
         super()._register_state_interactions(state_manager)
 
     def list_control_inputs(self) -> list[tuple[str, str]]:
@@ -651,30 +659,10 @@ class ControlPanelBlock(BaseBlock):
         container_style: Optional[Dict[str, Any]] = None,
         container_className: Optional[str] = None,
     ):
-        """
-        Initializes the ControlPanelBlock.
-
-        Args:
-            block_id: A unique identifier for this block instance.
-            datasource: An instance of a class that implements the BaseDataSource interface.
-            title: The title for the control panel.
-            controls: Dictionary mapping control names to Control objects.
-            subscribes_to: Optional state ID(s) to subscribe to for control updates.
-            value_initializer: Optional function that takes a DataFrame and returns
-                             a dictionary of control_name -> initial_value mappings.
-            card_style: Optional style dictionary for the card component.
-            card_className: Optional CSS class name for the card component.
-            title_style: Optional style dictionary for the title component.
-            title_className: Optional CSS class name for the title component.
-            controls_row_style: Optional style dictionary for the controls row.
-            controls_row_className: Optional CSS class name for the controls row.
-            container_style: Optional style dictionary for the container.
-            container_className: Optional CSS class name for the container.
-
-        """
         self.title = title
         self.controls = controls
         self.value_initializer = value_initializer
+        self._external_subscribes_to = subscribes_to
 
         # Store style customization parameters
         self.card_style = card_style
@@ -686,7 +674,7 @@ class ControlPanelBlock(BaseBlock):
         self.container_style = container_style
         self.container_className = container_className
 
-        # Call super() FIRST to set self.block_id
+        # Call super() without state interaction logic
         super().__init__(block_id, datasource)
         self.logger.debug(
             f"Control panel {block_id} with title: {title}, controls: {list(controls.keys())}"
@@ -695,24 +683,44 @@ class ControlPanelBlock(BaseBlock):
         # Initialize control values from datasource if value_initializer is provided
         self._initial_control_values = self._initialize_control_values()
 
-        # Set up state interactions
+    def _register_state_interactions(self, state_manager: StateManager):
+        """
+        Lazily defines and registers state interactions.
+
+        This method is called by DashboardPage after the navigation context
+        (self.navigation_mode, self.section_index) has been set. It moves
+        the creation of `publishes` and `subscribes` attributes out of
+        `__init__` to ensure that state and component IDs are generated
+        with the correct context.
+
+        :hierarchy: [Blocks | Controls | ControlPanelBlock | State Registration]
+        :relates-to:
+         - motivated_by: "Refactoring to fix timing issue with lazy-loaded navigation sections"
+         - implements: "Lazy state interaction setup for ControlPanelBlock"
+        :contract:
+         - pre: "self.navigation_mode and self.section_index are set by DashboardPage."
+         - post: "self.publishes and self.subscribes are populated; state interactions are registered with StateManager."
+        :complexity: 3
+        :decision_cache: "Chose lazy setup in _register_state_interactions over passing context into __init__ to keep block constructors clean and decouple them from page-level logic."
+        """
         # Publishes: each control publishes its value to state
-        publishes = [
-            {"state_id": self._generate_id(key), "component_prop": "value"}
+        self.publishes = [
+            {"state_id": f"{self.block_id}-{key}", "component_prop": "value"}
             for key in self.controls
         ]
 
         # Subscribes: optionally subscribe to external states
         subscribes_dict = {}
-        if subscribes_to:
-            external_subscriptions = self._normalize_subscribes_to(subscribes_to)
+        if self._external_subscribes_to:
+            external_subscriptions = self._normalize_subscribes_to(
+                self._external_subscribes_to
+            )
             subscribes_dict = {
                 state: self._update_controls for state in external_subscriptions
             }
-
-        # Set the state interaction attributes on the instance
-        self.publishes = publishes
         self.subscribes = subscribes_dict
+
+        super()._register_state_interactions(state_manager)
 
     def _initialize_control_values(self) -> Dict[str, Any]:
         """

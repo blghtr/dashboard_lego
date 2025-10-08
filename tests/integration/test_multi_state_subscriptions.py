@@ -251,7 +251,7 @@ def test_text_block_subscribes_to_multiple_states(datasource_factory):
     assert "summary-container" in text_component_ids
 
 
-def test_interactive_chart_with_external_and_own_states(datasource_factory):
+def test_interactive_chart_with_external_and_own_states(datasource_factory, mocker):
     """
     Test InteractiveChartBlock subscribing to external states AND its own controls.
 
@@ -299,15 +299,15 @@ def test_interactive_chart_with_external_and_own_states(datasource_factory):
         subscribes_to="external-category",  # Subscribe to external state
     )
 
-    # Verify subscriptions are set up correctly
-    assert len(interactive_chart.subscribes) == 2  # 1 external + 1 own
-    assert "external-category" in interactive_chart.subscribes
-    assert "chart-metric" in interactive_chart.subscribes
-
     # Register with StateManager
     state_manager = StateManager()
     external_filter._register_state_interactions(state_manager)
     interactive_chart._register_state_interactions(state_manager)
+
+    # Verify subscriptions are set up correctly
+    assert len(interactive_chart.subscribes) == 2  # 1 external + 1 own
+    assert "external-category" in interactive_chart.subscribes
+    assert "chart-metric" in interactive_chart.subscribes
 
     # Verify external state has the chart as subscriber
     external_subscribers = state_manager.dependency_graph["external-category"][
@@ -321,3 +321,126 @@ def test_interactive_chart_with_external_and_own_states(datasource_factory):
     own_subscribers = state_manager.dependency_graph["chart-metric"]["subscribers"]
     chart_ids = [sub["component_id"] for sub in own_subscribers]
     assert "chart-container" in chart_ids
+
+
+def test_interactive_chart_refreshes_datasource_with_all_states(mocker):
+    """
+    Verify InteractiveChartBlock calls datasource.init_data with all states.
+
+    :hierarchy: [Testing | Integration Tests | Multi-State | DataSource Refresh]
+    :covers:
+     - object: "InteractiveChartBlock._update_chart"
+     - requirement: "Bug Fix: InteractiveChartBlock must propagate external state to DataSource"
+
+    :scenario: "An InteractiveChartBlock subscribes to an external filter. When the
+     external filter's value is passed to _update_chart, the block should call
+     datasource.init_data with both the external and its own internal control values."
+    :strategy: "Mocker is used to spy on datasource.init_data and assert it was
+     called with the expected combined parameters."
+    :contract:
+     - pre: "Block subscribes to 'external-state' and has its own 'internal-state'."
+     - post: "datasource.init_data is called with {'external-state': 'ext_val', 'chart-internal-state': 'int_val'}."
+    """
+    # 1. Setup
+    datasource = SimpleDataSource()
+    mock_init_data = mocker.spy(datasource, "init_data")
+
+    chart = InteractiveChartBlock(
+        block_id="chart",
+        datasource=datasource,
+        title="Test Chart",
+        chart_generator=lambda df, ctx: go.Figure(),
+        controls={
+            "internal-state": Control(component=dcc.Input, props={"value": "int_val"})
+        },
+        subscribes_to="external-state",
+    )
+
+    # Manually register state to populate `chart.subscribes`
+    state_manager = StateManager()
+    chart._register_state_interactions(state_manager)
+
+    # The order of inputs is external, then internal
+    # Dash will call the callback with positional args in this order
+    callback_args = ("ext_val", "int_val")
+
+    # 2. Action
+    chart._update_chart(*callback_args)
+
+    # 3. Verification
+    expected_params = {
+        "external-state": "ext_val",
+        "chart-internal-state": "int_val",
+    }
+    mock_init_data.assert_called_once_with(expected_params)
+
+    def test_interactive_chart_with_external_and_own_states(datasource_factory, mocker):
+        """
+        Test InteractiveChartBlock subscribing to external states AND its own controls.
+
+        :hierarchy: [Testing | Integration Tests | Multi-State | Interactive]
+        :covers:
+         - object: "InteractiveChartBlock with external and own subscriptions"
+         - requirement: "Bug Fix: Interactive chart should handle both external
+           and internal state subscriptions"
+
+        :scenario: "InteractiveChartBlock has its own controls AND subscribes to
+         external filter states."
+        :strategy: "Verify block subscribes to both external states and own controls."
+        :contract:
+         - pre: "External states and own controls exist."
+         - post: "Block subscribes to all states (external + own)."
+
+        """
+        datasource = SimpleDataSource()
+
+        # External filter block
+        external_filter = InteractiveChartBlock(
+            block_id="external",
+            datasource=datasource,
+            title="External Filter",
+            chart_generator=lambda df, ctx: go.Figure(),
+            controls={
+                "category": Control(
+                    component=dcc.Dropdown, props={"options": ["A", "B"], "value": "A"}
+                ),
+            },
+        )
+
+        # Interactive chart with its own controls AND subscribing to external filter
+        interactive_chart = InteractiveChartBlock(
+            block_id="chart",
+            datasource=datasource,
+            title="Chart with Controls",
+            chart_generator=lambda df, ctx: go.Figure(),
+            controls={
+                "metric": Control(
+                    component=dcc.Dropdown,
+                    props={"options": ["sales", "profit"], "value": "sales"},
+                ),
+            },
+            subscribes_to="external-category",  # Subscribe to external state
+        )
+
+        # Register with StateManager
+        state_manager = StateManager()
+        external_filter._register_state_interactions(state_manager)
+        interactive_chart._register_state_interactions(state_manager)
+
+        # Verify subscriptions are set up correctly
+        assert len(interactive_chart.subscribes) == 2  # 1 external + 1 own
+        assert "external-category" in interactive_chart.subscribes
+        assert "chart-metric" in interactive_chart.subscribes
+
+        # Verify external state has the chart as subscriber
+        external_subscribers = state_manager.dependency_graph["external-category"][
+            "subscribers"
+        ]
+        chart_ids = [sub["component_id"] for sub in external_subscribers]
+        assert "chart-container" in chart_ids
+
+        # Verify chart's own control is also registered
+        assert "chart-metric" in state_manager.dependency_graph
+        own_subscribers = state_manager.dependency_graph["chart-metric"]["subscribers"]
+        chart_ids = [sub["component_id"] for sub in own_subscribers]
+        assert "chart-container" in chart_ids

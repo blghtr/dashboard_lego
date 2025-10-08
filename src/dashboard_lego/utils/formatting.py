@@ -3,7 +3,45 @@ This module provides utility functions for formatting values.
 
 """
 
+import json
 from typing import Any
+
+import numpy as np
+
+
+class NumpyEncoder(json.JSONEncoder):
+    """
+    Custom JSON encoder for NumPy types.
+    This encoder handles the serialization of common NumPy data types that are
+    not natively supported by the standard `json` library. It converts NumPy
+    integers, floats, booleans, and arrays into their standard Python equivalents.
+
+        :hierarchy: [Utils | Formatting | NumpyEncoder]
+        :relates-to:
+          - motivated_by: "Bug: `TypeError` during cache key generation for NumPy types."
+          - implements: "utility: 'NumpyEncoder'"
+
+        :contract:
+          - pre: "Input object `obj` can be a standard type or a NumPy type."
+          - post: "Returns a JSON-serializable representation of the object."
+
+    """
+
+    def default(self, obj: Any) -> Any:
+        """
+        Overrides the default JSON encoding behavior to handle NumPy types.
+
+        Args:
+            obj: The object to encode.
+
+        Returns:
+            A serializable representation of the object.
+        """
+        if isinstance(obj, (np.integer, np.floating, np.bool_)):
+            return obj.item()
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super(NumpyEncoder, self).default(obj)
 
 
 def format_number(value: Any) -> str:

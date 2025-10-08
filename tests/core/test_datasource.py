@@ -7,6 +7,7 @@ import shutil
 import time
 from typing import Any, Dict, List
 
+import numpy as np
 import pandas as pd
 import pytest
 from diskcache import Cache
@@ -196,3 +197,29 @@ def test_get_processed_data_before_init():
     data = source.get_processed_data()
     assert isinstance(data, pd.DataFrame)
     assert data.empty
+
+
+def test_datasource_numpy_serialization(mocker):
+    """
+    Tests that the datasource can handle numpy numeric types during cache key generation.
+
+        :scenario: Call `init_data` with a parameter of type `np.int64`.
+        :strategy: Direct call and assertion that no `TypeError` is raised.     :contract:
+          - pre: "`init_data` is called with a `np.int64` value in `params`."
+          - post: "The operation completes without a `TypeError`."
+
+    """
+    source = ConcreteDataSource()
+    spy = mocker.spy(source, "_get_cache_key")
+
+    # Simulate a parameter that might come from a pandas DataFrame
+    params = {"value": np.int64(42)}
+
+    try:
+        source.init_data(params)
+        # The real test is that the line above does not raise a TypeError
+        assert True
+    except TypeError:
+        pytest.fail("TypeError was raised during numpy serialization")
+
+    spy.assert_called_once_with(params)

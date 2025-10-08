@@ -3,7 +3,9 @@ This module defines the StateManager for handling interactivity between blocks.
 
 """
 
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Union
+
+from dash.dependencies import MATCH, Input, Output
 
 from dashboard_lego.utils.exceptions import StateError
 from dashboard_lego.utils.logger import get_logger
@@ -67,6 +69,8 @@ class StateManager:
         self.logger = get_logger(__name__, StateManager)
         self.logger.info("Initializing StateManager")
         self.dependency_graph: Dict[str, Dict[str, Any]] = {}
+        # Track registered outputs for idempotency (navigation lazy-loading support)
+        self._registered_outputs = set()  # Set of (component_id, component_prop) tuples
 
     def register_publisher(self, state_id: str, component_id: str, component_prop: str):
         """
@@ -144,6 +148,28 @@ class StateManager:
             f"{len(self.dependency_graph[state_id]['subscribers'])})"
         )
 
+    @staticmethod
+    def _make_hashable_key(component_id: Union[str, Dict], component_prop: str):
+        """
+        Convert component ID (string or dict) to hashable tuple for dict keys.
+
+        :hierarchy: [Core | StateManager | Helper]
+        :relates-to:
+         - motivated_by: "Pattern matching IDs (dicts) cannot be dict keys"
+
+        Args:
+            component_id: String ID or pattern matching dict ID
+            component_prop: Component property name
+
+        Returns:
+            Hashable tuple representation of the ID
+        """
+        if isinstance(component_id, dict):
+            # Convert dict to sorted tuple of items for hashability
+            id_tuple = tuple(sorted(component_id.items()))
+            return (id_tuple, component_prop)
+        return (component_id, component_prop)
+
     def generate_callbacks(self, app: Any):
         """
         Traverses the dependency graph and registers all necessary callbacks
@@ -168,8 +194,6 @@ class StateManager:
             app: The Dash app instance.
 
         """
-        from dash import Input, Output
-
         self.logger.info("Generating callbacks from dependency graph")
         callback_count = 0
 
@@ -196,7 +220,9 @@ class StateManager:
 
                 # Add each subscriber to the grouped structure
                 for sub in subscribers:
-                    output_key = (sub["component_id"], sub["component_prop"])
+                    output_key = self._make_hashable_key(
+                        sub["component_id"], sub["component_prop"]
+                    )
 
                     if output_key not in output_subscriptions:
                         output_subscriptions[output_key] = []
@@ -211,7 +237,21 @@ class StateManager:
 
             # Create one callback per unique output target
             for output_key, state_infos in output_subscriptions.items():
-                component_id, component_prop = output_key
+                # Decode hashable key back to component_id and prop
+                if isinstance(output_key[0], tuple):
+                    # Was a dict ID, reconstruct it
+                    component_id = dict(output_key[0])
+                    component_prop = output_key[1]
+                else:
+                    # Was a string ID
+                    component_id, component_prop = output_key
+
+                # NEW: Skip if already registered (idempotency for navigation lazy-loading)
+                if output_key in self._registered_outputs:
+                    self.logger.debug(
+                        f"⏭️  Callback for {component_id}.{component_prop} already registered, skipping"
+                    )
+                    continue
 
                 self.logger.info(
                     f"🔧 Creating callback for output: {component_id}.{component_prop} "
@@ -219,13 +259,13 @@ class StateManager:
                 )
 
                 # Create Input for each state this output subscribes to
-                inputs = [
-                    Input(
-                        info["publisher"]["component_id"],
-                        info["publisher"]["component_prop"],
-                    )
-                    for info in state_infos
-                ]
+                inputs = []
+                for info in state_infos:
+                    pub_id = info["publisher"]["component_id"]
+                    # Pattern matching: replace section index with MATCH for dict IDs
+                    if isinstance(pub_id, dict):
+                        pub_id = {**pub_id, "section": MATCH}
+                    inputs.append(Input(pub_id, info["publisher"]["component_prop"]))
 
                 # Debug: log all inputs for this callback
                 for idx, (input_obj, state_info) in enumerate(zip(inputs, state_infos)):
@@ -235,7 +275,11 @@ class StateManager:
                     )
 
                 # Create single Output for this subscriber
-                output = Output(component_id, component_prop)
+                # Pattern matching: replace section index with MATCH for dict IDs
+                output_id = component_id
+                if isinstance(output_id, dict):
+                    output_id = {**output_id, "section": MATCH}
+                output = Output(output_id, component_prop)
                 self.logger.debug(
                     f"  📤 Output: {output.component_id}.{output.component_property}"
                 )
@@ -247,6 +291,9 @@ class StateManager:
                 self.logger.debug("  🔗 Registering callback with Dash...")
                 app.callback(output, inputs)(callback_func)
                 callback_count += 1
+
+                # Track this output as registered
+                self._registered_outputs.add(output_key)
 
                 self.logger.info(
                     f"✅ Registered callback #{callback_count}: {len(inputs)} inputs -> "
@@ -279,8 +326,6 @@ class StateManager:
             app: The Dash app instance.
             blocks: List of blocks to register callbacks for.
         """
-        from dash import Input, Output
-
         self.logger.info("Binding block-centric callbacks")
         callback_count = 0
 
@@ -291,6 +336,14 @@ class StateManager:
             for block in blocks:
                 # Get the block's output target
                 output_id, output_prop = block.output_target()
+                output_key = self._make_hashable_key(output_id, output_prop)
+
+                # NEW: Skip if already registered (idempotency for navigation lazy-loading)
+                if output_key in self._registered_outputs:
+                    self.logger.debug(
+                        f"⏭️  Callback for {block.block_id} ({output_id}.{output_prop}) already registered, skipping"
+                    )
+                    continue
 
                 # Get all control inputs for this block
                 inputs = block.list_control_inputs()
@@ -306,22 +359,29 @@ class StateManager:
                     f"({len(inputs)} inputs -> {output_id}.{output_prop})"
                 )
 
-                # Create Input objects
-                input_objects = [
-                    Input(component_id, prop) for component_id, prop in inputs
-                ]
+                # Create Input objects with pattern matching support
+                input_objects = []
+                for component_id, prop in inputs:
+                    # Pattern matching: replace section index with MATCH for dict IDs
+                    if isinstance(component_id, dict):
+                        component_id = {**component_id, "section": MATCH}
+                    input_objects.append(Input(component_id, prop))
 
                 # Debug: log all inputs for this block
                 for idx, (comp_id, prop) in enumerate(inputs):
                     self.logger.debug(f"  📥 Input[{idx}]: {comp_id}.{prop}")
 
-                # Create Output object with allow_duplicate support
+                # Create Output object with allow_duplicate and pattern matching support
                 allow_duplicate = getattr(block, "allow_duplicate_output", False)
+                # Pattern matching: replace section index with MATCH for dict IDs
+                output_id_pm = output_id
+                if isinstance(output_id_pm, dict):
+                    output_id_pm = {**output_id_pm, "section": MATCH}
                 output_object = Output(
-                    output_id, output_prop, allow_duplicate=allow_duplicate
+                    output_id_pm, output_prop, allow_duplicate=allow_duplicate
                 )
                 self.logger.debug(
-                    f"  📤 Output: {output_id}.{output_prop} "
+                    f"  📤 Output: {output_id_pm}.{output_prop} "
                     f"(allow_duplicate={allow_duplicate})"
                 )
 
@@ -340,7 +400,12 @@ class StateManager:
                                 block_ref.list_control_inputs()
                             ):
                                 # Extract control name from component_id (last part after -)
-                                control_name = component_id.split("-")[-1]
+                                # Handle both string IDs and pattern matching dict IDs
+                                if isinstance(component_id, dict):
+                                    id_str = component_id["type"]
+                                else:
+                                    id_str = component_id
+                                control_name = id_str.split("-")[-1]
                                 control_values[control_name] = values[i]
                                 self.logger.debug(
                                     f"  🎛️  Control {control_name} = {values[i]} "
@@ -366,6 +431,10 @@ class StateManager:
                         create_block_callback(block)
                     )
                     callback_count += 1
+
+                    # Track this output as registered
+                    self._registered_outputs.add(output_key)
+
                     self.logger.info(
                         f"✅ Registered block callback #{callback_count} for: {block.block_id}"
                     )
@@ -413,7 +482,7 @@ class StateManager:
         for block in blocks:
             try:
                 output_id, output_prop = block.output_target()
-                output_key = (output_id, output_prop)
+                output_key = self._make_hashable_key(output_id, output_prop)
                 allow_duplicate = getattr(block, "allow_duplicate_output", False)
 
                 if output_key in output_targets:

@@ -732,6 +732,11 @@ class DashboardPage:
                         f"All layout items must be of type BaseBlock in section '{section.title}'"
                     )
                 section_blocks.append(block)
+
+                # Inject navigation context for pattern matching callbacks
+                block.navigation_mode = True
+                block.section_index = section_index
+
                 # Inject theme configuration
                 block._set_theme_config(self.theme_config)
                 # Register block with state manager
@@ -746,6 +751,15 @@ class DashboardPage:
         self.logger.info(
             f"Section {section_index} loaded: {len(section_blocks)} blocks registered"
         )
+
+        # NEW: Dynamically register callbacks for lazy-loaded sections
+        if hasattr(self, "_app_instance") and self._app_instance is not None:
+            self.logger.info(
+                f"Registering callbacks for lazy-loaded section {section_index}"
+            )
+            self.state_manager.generate_callbacks(self._app_instance)
+            self.state_manager.bind_callbacks(self._app_instance, section_blocks)
+            self.logger.info(f"Callbacks registered for section {section_index}")
 
         # Render rows
         rows = []
@@ -782,6 +796,9 @@ class DashboardPage:
             # Navigation-specific callbacks MUST be registered BEFORE error handling wrapper
             if self.navigation:
                 self._register_navigation_callbacks(app)
+
+            # Store app reference for lazy-loaded sections
+            self._app_instance = app
 
             # Set up comprehensive error handling for Dash callbacks
             # NOTE: This replaces app.callback, so must be done AFTER navigation callbacks

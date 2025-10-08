@@ -35,13 +35,40 @@ class ParquetDataSource(BaseDataSource):
 
         self.logger.info(f"Parquet datasource initialized for file: {file_path}")
 
-    def _load_data(self, params: dict) -> pd.DataFrame:
-        """Loads data from the Parquet file, applying column selection and filters."""
-        self.logger.debug(f"Loading Parquet data from: {self.file_path}")
+    def _load_raw_data(self, params: dict) -> pd.DataFrame:
+        """
+        Load raw data from Parquet file (NO filtering).
+
+        :hierarchy: [Core | DataSources | ParquetDataSource | Load Stage]
+        :relates-to:
+         - motivated_by: "Refactor: Separate data loading from filtering"
+         - implements: "method: '_load_raw_data'"
+
+        :contract:
+         - pre: "file_path points to valid Parquet file"
+         - post: "Returns raw DataFrame from Parquet"
+         - invariant: "Does NOT apply filters"
+
+        Args:
+            params: Parameters for Parquet loading (e.g., column selection).
+                   Can include 'columns' for selective column loading.
+
+        Returns:
+            Raw DataFrame from Parquet file
+
+        Raises:
+            DataLoadError: If file not found or loading fails
+
+        Note:
+            Filtering logic has been removed and should be handled by DataFilter.
+            Column selection is still supported as it affects data loading performance.
+        """
+        self.logger.debug(f"Loading raw Parquet data from: {self.file_path}")
 
         try:
             columns = params.get("columns")
-            self.logger.debug(f"Column selection: {columns}")
+            if columns:
+                self.logger.debug(f"Column selection: {columns}")
 
             df = pd.read_parquet(self.file_path, columns=columns)
             self.logger.info(
@@ -51,20 +78,7 @@ class ParquetDataSource(BaseDataSource):
 
             if df.empty:
                 self.logger.warning("Parquet file is empty")
-                return df
 
-            filters = params.get("filters")
-            if filters:
-                self.logger.debug(f"Applying {len(filters)} filters")
-                for i, f in enumerate(filters):
-                    if f:
-                        self.logger.debug(f"Applying filter {i+1}: {f}")
-                        df = df.query(f)
-                        self.logger.debug(f"After filter {i+1}: {len(df)} rows")
-
-            self.logger.info(
-                f"Final dataset: {len(df)} rows, {len(df.columns)} columns"
-            )
             return df
 
         except FileNotFoundError as e:

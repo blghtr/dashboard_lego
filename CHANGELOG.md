@@ -7,6 +7,118 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0] - 2025-10-08
+
+### Breaking Changes
+
+**IMPORTANT:** This release introduces breaking changes to the `BaseDataSource` API.
+
+- **`_load_data()` replaced with `_load_raw_data()`**: Custom datasources must rename their `_load_data()` method to `_load_raw_data()`.
+- **DataSources no longer handle filtering internally**: Filtering logic should be moved to custom `DataFilter` classes.
+- **Pipeline architecture**: Data now flows through a 3-stage pipeline: Load → Preprocess → Filter.
+
+### Migration Guide
+
+#### For Custom DataSources
+
+**Before (v0.14.0):**
+```python
+def _load_data(self, params):
+    df = pd.read_csv(self.file_path)
+    if 'category' in params:
+        df = df[df['Category'] == params['category']]  # Filtering in _load_data
+    return df
+```
+
+**After (v0.15.0):**
+```python
+# 1. Rename _load_data to _load_raw_data and remove filtering
+def _load_raw_data(self, params):
+    return pd.read_csv(self.file_path)  # Just load, no filtering
+
+# 2. Create custom DataFilter for filtering logic
+class CategoryFilter(DataFilter):
+    def filter(self, data, params):
+        df = data.copy()
+        if 'category' in params:
+            df = df[df['Category'] == params['category']]
+        return df
+
+# 3. Pass filter to datasource
+datasource = MyDataSource(
+    file_path="data.csv",
+    data_filter=CategoryFilter(),
+    param_classifier=lambda k: 'filter' if k == 'category' else 'preprocess'
+)
+```
+
+### Added
+
+- **Pipeline Architecture**: 3-stage data processing pipeline with staged caching
+  - `PreProcessor` class for data transformation (feature engineering, aggregations)
+  - `DataFilter` class for data filtering (category filters, range filters)
+  - `DataProcessingContext` for parameter classification
+  - Staged caching: filter changes don't trigger preprocessing
+
+- **New Core Classes**:
+  - `dashboard_lego.core.PreProcessor` - Base class for data preprocessing
+  - `dashboard_lego.core.DataFilter` - Base class for data filtering
+  - `dashboard_lego.core.DataProcessingContext` - Pipeline parameter context
+
+- **BaseDataSource Enhancements**:
+  - New constructor params: `preprocessor`, `data_filter`, `param_classifier`
+  - `get_preprocessed_data()` method for accessing preprocessed data before filtering
+  - `get_data()` method for accessing raw data before preprocessing
+  - Staged caching for better performance
+
+- **Examples**:
+  - `12_sales_filter_example.py` - Custom DataFilter demonstration
+  - `13_sales_preprocessor_example.py` - Custom PreProcessor demonstration
+  - `14_complete_pipeline_example.py` - Full dashboard with pipeline
+
+### Changed
+
+- **BaseDataSource**: Refactored to implement 3-stage pipeline with staged caching
+- **CsvDataSource**: Updated to use `_load_raw_data()`, removed internal filtering
+- **ParquetDataSource**: Updated to use `_load_raw_data()`, removed internal filtering
+- **SqlDataSource**: Updated to use `_load_raw_data()`, removed internal filtering
+- **core/__init__.py**: Now exports `PreProcessor`, `DataFilter`, `DataProcessingContext`
+
+### Benefits
+
+- **Better Performance**: Changing filters doesn't trigger data reloading or preprocessing
+- **Separation of Concerns**: Clear boundaries between loading, transformation, and filtering
+- **Composability**: Mix and match preprocessors and filters
+- **Clearer Code**: Each component has a single responsibility
+
+### Technical Details
+
+**Pipeline Flow:**
+```
+Raw Data (cached by preprocessing params)
+  ↓
+Preprocessed Data (cached by preprocessing params)
+  ↓
+Filtered Data (cached by all params)
+```
+
+**Cache Strategy:**
+- Stage 1 (Raw): Cached by preprocessing params only
+- Stage 2 (Preprocess): Cached by preprocessing params only
+- Stage 3 (Filter): Cached by all params combined
+
+This means changing filter params only triggers Stage 3, reusing cached results from Stages 1 and 2.
+
+## [0.14.0] - 2025-10-08
+
+### Changed
+- Refactored `InteractiveChartBlock` and `ControlPanelBlock` to delay state interaction setup, improving compatibility with lazy-loaded navigation sections.
+- Updated `DASHBOARD_LEGO_GUIDE.md` to align with recent code changes and improve accuracy.
+
+### Fixed
+- Corrected an issue where `InteractiveChartBlock` would not update correctly because its update method was not handling positional arguments from the `StateManager`.
+- Fixed a bug in the `02_interactive_dashboard.py` example where data was not being filtered due to an incorrect parameter key.
+
 ## [0.13.0] - 2025-10-07
 
 ### Added

@@ -69,9 +69,13 @@ class BaseBlock(ABC):
 
         self.block_id = block_id
         self.datasource = datasource
-        self.publishes: Optional[List[Dict[str, str]]] = kwargs.get("publishes")
-        self.subscribes: Optional[Dict[str, Callable]] = kwargs.get("subscribes")
+        self.publishes: List[Dict[str, str]] = kwargs.get("publishes") or []
+        self.subscribes: Dict[str, Callable] = kwargs.get("subscribes") or {}
         self.allow_duplicate_output: bool = kwargs.get("allow_duplicate_output", False)
+
+        # Navigation context for pattern matching callbacks
+        self.navigation_mode: bool = kwargs.get("navigation_mode", False)
+        self.section_index: Optional[int] = kwargs.get("section_index", None)
 
         # Theme configuration - will be set by DashboardPage
         self.theme_config: Optional["ThemeConfig"] = None
@@ -211,13 +215,32 @@ class BaseBlock(ABC):
 
         return base_style
 
-    def _generate_id(self, component_name: str) -> str:
+    def _generate_id(self, component_name: str) -> Union[str, Dict[str, Any]]:
         """
         Generates a unique ID for a component within the block.
 
+        For navigation mode with lazy-loaded sections, returns dict ID for pattern matching.
+
+        :hierarchy: [Blocks | Base | ID Generation]
+        :relates-to:
+         - motivated_by: "Fix lazy-loaded section callbacks using Dash pattern matching"
+         - implements: "method: '_generate_id' with pattern matching support"
+
+        Returns:
+            str: Simple ID for non-navigation mode (e.g., "block_id-component")
+            Dict: Pattern-matching ID for navigation mode (e.g., {'type': 'block_id-component', 'section': 0})
         """
-        component_id = f"{self.block_id}-{component_name}"
-        self.logger.debug(f"Generated component ID: {component_id}")
+        if self.navigation_mode and self.section_index is not None:
+            component_id = {
+                "type": f"{self.block_id}-{component_name}",
+                "section": self.section_index,
+            }
+            self.logger.debug(
+                f"Generated pattern-matching component ID: {component_id}"
+            )
+        else:
+            component_id = f"{self.block_id}-{component_name}"
+            self.logger.debug(f"Generated component ID: {component_id}")
         return component_id
 
     @staticmethod

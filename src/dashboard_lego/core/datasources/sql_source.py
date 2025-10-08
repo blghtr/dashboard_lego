@@ -61,16 +61,34 @@ class SqlDataSource(BaseDataSource):
             f"Query: {query[:100]}..." if len(query) > 100 else f"Query: {query}"
         )
 
-    def _load_data(self, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
+    def _load_raw_data(self, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
         """
-        Loads data from the database by executing the query.
+        Load raw data from SQL database (NO filtering).
+
+        :hierarchy: [Core | DataSources | SqlDataSource | Load Stage]
+        :relates-to:
+         - motivated_by: "Refactor: Separate data loading from filtering"
+         - implements: "method: '_load_raw_data'"
+
+        :contract:
+         - pre: "connection_uri is valid, query is valid SQL"
+         - post: "Returns raw DataFrame from SQL query"
+         - invariant: "Does NOT apply filters"
 
         Args:
             params: Optional dictionary of parameters to bind to the SQL query.
+                   These are SQL query parameters (e.g., :param_name in query),
+                   NOT filtering parameters for the DataFrame.
 
         Returns:
-            A pandas DataFrame with the query results.
+            Raw DataFrame from SQL query results
 
+        Raises:
+            DataLoadError: If connection fails or query fails
+
+        Note:
+            Filtering logic has been removed and should be handled by DataFilter.
+            SQL query parameters are still supported as they affect data loading.
         """
         self.logger.debug(f"Executing SQL query with params: {params}")
 

@@ -10,8 +10,10 @@ Dashboard Lego allows you to build complex dashboards from independent, reusable
 
 - **Modular Architecture**: Build dashboards from independent blocks (KPIs, charts, text)
 - **Reactive State Management**: Built-in state manager for easy interactivity between blocks (filters, drill-down, etc.)
+- **Navigation System**: Multi-section dashboards with sidebar/tab navigation and lazy-loaded sections
 - **Flexible Grid System**: Position blocks in any configuration using a grid system based on `dash-bootstrap-components`
-- **Data Caching**: Built-in caching at the data source level for improved performance
+- **Theme System**: Comprehensive theming with pre-built themes (light, dark, and 10+ Bootstrap themes) and custom theme support
+- **Data Caching**: Built-in disk-based caching at the data source level for improved performance
 - **Easy Extension**: Easily create custom blocks and data sources by inheriting from base classes
 - **Presets & Layouts**: Pre-built EDA and ML visualization blocks, plus layout presets for common dashboard patterns
 - **Comprehensive Testing**: Full test coverage with unit, integration, and performance tests
@@ -48,11 +50,11 @@ import plotly.express as px
 import pandas as pd
 import plotly.graph_objects as go
 
-from core.datasource import BaseDataSource
-from core.page import DashboardPage
-from blocks.kpi import KPIBlock
-from blocks.chart import StaticChartBlock
-from presets.layouts import one_column
+from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.page import DashboardPage
+from dashboard_lego.blocks.kpi import KPIBlock
+from dashboard_lego.blocks.chart import StaticChartBlock
+from dashboard_lego.presets.layouts import one_column
 
 # 1. Define a data source
 class SalesDataSource(BaseDataSource):
@@ -124,6 +126,8 @@ To run this example:
 python examples/01_simple_dashboard.py
 ```
 
+For a comprehensive API reference with detailed contracts, hierarchies, and advanced patterns, see **[DASHBOARD_LEGO_GUIDE.md](DASHBOARD_LEGO_GUIDE.md)**.
+
 ## 🔗 Interactivity
 
 `dashboard-lego` makes it easy to link blocks together. One block can publish its state (e.g., a filter value), and other blocks can subscribe to that state and update accordingly.
@@ -191,6 +195,11 @@ uv run pytest --cov=dashboard_lego --cov-report=html
 
 ## 📚 Documentation
 
+### API Reference Guide
+
+For AI agents, LLMs, and developers, we provide a comprehensive API reference:
+- **[Dashboard Lego API Guide](DASHBOARD_LEGO_GUIDE.md)**: Complete, machine-parseable API documentation with contracts, hierarchies, and examples for all modules
+
 ### Building Documentation Locally
 
 ```bash
@@ -211,6 +220,7 @@ make check
 
 ### Documentation Structure
 
+- **API Reference**: `DASHBOARD_LEGO_GUIDE.md` - Comprehensive API documentation
 - **API Documentation**: Automatically generated from docstrings
 - **User Guides**: Installation, quick start, and concepts
 - **Examples**: Check the `examples/` directory for various use cases

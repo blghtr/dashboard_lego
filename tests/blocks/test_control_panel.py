@@ -97,137 +97,145 @@ def basic_controls():
         ),
     }
 
+    def test_control_panel_creation(datasource, basic_controls, mocker):
+        """
+        Test that ControlPanelBlock can be created with basic parameters.
 
-def test_control_panel_creation(datasource, basic_controls):
-    """
-    Test that ControlPanelBlock can be created with basic parameters.
+        :hierarchy: [Tests | Blocks | ControlPanelBlock | Creation]
+        :covers:
+         - object: "class: ControlPanelBlock.__init__"
+         - requirement: "ControlPanelBlock should initialize correctly"
 
-    :hierarchy: [Tests | Blocks | ControlPanelBlock | Creation]
-    :covers:
-     - object: "class: ControlPanelBlock.__init__"
-     - requirement: "ControlPanelBlock should initialize correctly"
+        :scenario: "Creates a ControlPanelBlock with minimal required parameters."
+        :strategy: "Instantiate with datasource, title, and controls."
+        :contract:
+         - pre: "Valid datasource and controls are provided."
+         - post: "Block is created with correct attributes and state interactions."
 
-    :scenario: "Creates a ControlPanelBlock with minimal required parameters."
-    :strategy: "Instantiate with datasource, title, and controls."
-    :contract:
-     - pre: "Valid datasource and controls are provided."
-     - post: "Block is created with correct attributes and state interactions."
+        """
+        block = ControlPanelBlock(
+            block_id="test_panel",
+            datasource=datasource,
+            title="Test Panel",
+            controls=basic_controls,
+        )
 
-    """
-    block = ControlPanelBlock(
-        block_id="test_panel",
-        datasource=datasource,
-        title="Test Panel",
-        controls=basic_controls,
-    )
+        assert block.block_id == "test_panel"
+        assert block.title == "Test Panel"
+        assert len(block.controls) == 2
+        assert "slider" in block.controls
+        assert "dropdown" in block.controls
 
-    assert block.block_id == "test_panel"
-    assert block.title == "Test Panel"
-    assert len(block.controls) == 2
-    assert "slider" in block.controls
-    assert "dropdown" in block.controls
+        # Manually register state to populate publishes list
+        mock_state_manager = mocker.MagicMock(spec=StateManager)
+        block._register_state_interactions(mock_state_manager)
 
-    # Check that publishes are set up correctly
-    assert block.publishes is not None
-    assert len(block.publishes) == 2
-    assert any(p["state_id"] == "test_panel-slider" for p in block.publishes)
-    assert any(p["state_id"] == "test_panel-dropdown" for p in block.publishes)
+        # Check that publishes are set up correctly
+        assert block.publishes is not None
+        assert len(block.publishes) == 2
+        assert any(p["state_id"] == "test_panel-slider" for p in block.publishes)
+        assert any(p["state_id"] == "test_panel-dropdown" for p in block.publishes)
 
+    def test_control_panel_with_value_initializer(datasource, basic_controls):
+        """
+        Test that ControlPanelBlock can initialize values from datasource.
 
-def test_control_panel_with_value_initializer(datasource, basic_controls):
-    """
-    Test that ControlPanelBlock can initialize values from datasource.
+        :hierarchy: [Tests | Blocks | ControlPanelBlock | Initialization]
+        :covers:
+         - object: "method: ControlPanelBlock._initialize_control_values"
+         - requirement: "Control values should be initialized from datasource"
 
-    :hierarchy: [Tests | Blocks | ControlPanelBlock | Initialization]
-    :covers:
-     - object: "method: ControlPanelBlock._initialize_control_values"
-     - requirement: "Control values should be initialized from datasource"
+        :scenario: "Creates a ControlPanelBlock with value_initializer function."
+        :strategy: "Define value_initializer that computes values from DataFrame."
+        :contract:
+         - pre: "Datasource contains valid data."
+         - post: "Control values are initialized based on datasource data."
 
-    :scenario: "Creates a ControlPanelBlock with value_initializer function."
-    :strategy: "Define value_initializer that computes values from DataFrame."
-    :contract:
-     - pre: "Datasource contains valid data."
-     - post: "Control values are initialized based on datasource data."
+        """
 
-    """
+        def value_initializer(df):
+            return {
+                "slider": int(df["value"].mean()),
+                "dropdown": df["category"].iloc[0],
+            }
 
-    def value_initializer(df):
-        return {
-            "slider": int(df["value"].mean()),
-            "dropdown": df["category"].iloc[0],
-        }
+        block = ControlPanelBlock(
+            block_id="test_panel",
+            datasource=datasource,
+            title="Test Panel",
+            controls=basic_controls,
+            value_initializer=value_initializer,
+        )
 
-    block = ControlPanelBlock(
-        block_id="test_panel",
-        datasource=datasource,
-        title="Test Panel",
-        controls=basic_controls,
-        value_initializer=value_initializer,
-    )
+        # Check that initial values were computed
+        assert block._initial_control_values["slider"] == 25  # mean of [10, 20, 30, 40]
+        assert block._initial_control_values["dropdown"] == "A"
 
-    # Check that initial values were computed
-    assert block._initial_control_values["slider"] == 25  # mean of [10, 20, 30, 40]
-    assert block._initial_control_values["dropdown"] == "A"
+    def test_control_panel_with_subscribes_to(datasource, basic_controls, mocker):
+        """
+        Test that ControlPanelBlock can subscribe to external states.
 
+        :hierarchy: [Tests | Blocks | ControlPanelBlock | Subscriptions]
+        :covers:
+         - object: "parameter: subscribes_to"
+         - requirement: "Control panels should be able to subscribe to external states"
 
-def test_control_panel_with_subscribes_to(datasource, basic_controls):
-    """
-    Test that ControlPanelBlock can subscribe to external states.
+        :scenario: "Creates a ControlPanelBlock that subscribes to an external state."
+        :strategy: "Pass subscribes_to parameter and verify subscription setup."
+        :contract:
+         - pre: "Valid state ID is provided."
+         - post: "Block subscribes to the specified state."
 
-    :hierarchy: [Tests | Blocks | ControlPanelBlock | Subscriptions]
-    :covers:
-     - object: "parameter: subscribes_to"
-     - requirement: "Control panels should be able to subscribe to external states"
+        """
+        block = ControlPanelBlock(
+            block_id="test_panel",
+            datasource=datasource,
+            title="Test Panel",
+            controls=basic_controls,
+            subscribes_to="external_state",
+        )
 
-    :scenario: "Creates a ControlPanelBlock that subscribes to an external state."
-    :strategy: "Pass subscribes_to parameter and verify subscription setup."
-    :contract:
-     - pre: "Valid state ID is provided."
-     - post: "Block subscribes to the specified state."
+        # Manually register state to populate subscribes list
+        mock_state_manager = mocker.MagicMock(spec=StateManager)
+        block._register_state_interactions(mock_state_manager)
 
-    """
-    block = ControlPanelBlock(
-        block_id="test_panel",
-        datasource=datasource,
-        title="Test Panel",
-        controls=basic_controls,
-        subscribes_to="external_state",
-    )
+        # Check that subscribes are set up correctly
+        assert block.subscribes is not None
+        assert "external_state" in block.subscribes
+        assert callable(block.subscribes["external_state"])
 
-    # Check that subscribes are set up correctly
-    assert block.subscribes is not None
-    assert "external_state" in block.subscribes
-    assert callable(block.subscribes["external_state"])
+    def test_control_panel_with_multiple_subscribes(datasource, basic_controls, mocker):
+        """
+        Test that ControlPanelBlock can subscribe to multiple external states.
 
+        :hierarchy: [Tests | Blocks | ControlPanelBlock | Multi-Subscriptions]
+        :covers:
+         - object: "parameter: subscribes_to (list)"
+         - requirement: "Control panels should support multiple state subscriptions"
 
-def test_control_panel_with_multiple_subscribes(datasource, basic_controls):
-    """
-    Test that ControlPanelBlock can subscribe to multiple external states.
+        :scenario: "Creates a ControlPanelBlock that subscribes to multiple states."
+        :strategy: "Pass list of state IDs and verify all subscriptions."
+        :contract:
+         - pre: "List of valid state IDs is provided."
+         - post: "Block subscribes to all specified states."
 
-    :hierarchy: [Tests | Blocks | ControlPanelBlock | Multi-Subscriptions]
-    :covers:
-     - object: "parameter: subscribes_to (list)"
-     - requirement: "Control panels should support multiple state subscriptions"
+        """
+        block = ControlPanelBlock(
+            block_id="test_panel",
+            datasource=datasource,
+            title="Test Panel",
+            controls=basic_controls,
+            subscribes_to=["state1", "state2"],
+        )
 
-    :scenario: "Creates a ControlPanelBlock that subscribes to multiple states."
-    :strategy: "Pass list of state IDs and verify all subscriptions."
-    :contract:
-     - pre: "List of valid state IDs is provided."
-     - post: "Block subscribes to all specified states."
+        # Manually register state to populate subscribes list
+        mock_state_manager = mocker.MagicMock(spec=StateManager)
+        block._register_state_interactions(mock_state_manager)
 
-    """
-    block = ControlPanelBlock(
-        block_id="test_panel",
-        datasource=datasource,
-        title="Test Panel",
-        controls=basic_controls,
-        subscribes_to=["state1", "state2"],
-    )
-
-    # Check that subscribes are set up correctly
-    assert block.subscribes is not None
-    assert "state1" in block.subscribes
-    assert "state2" in block.subscribes
+        # Check that subscribes are set up correctly
+        assert block.subscribes is not None
+        assert "state1" in block.subscribes
+        assert "state2" in block.subscribes
 
 
 def test_control_panel_style_customization(datasource, basic_controls):
