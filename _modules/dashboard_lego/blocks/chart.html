@@ -238,66 +238,36 @@
 
 <span class="sd">        :hierarchy: [Blocks | Charts | StaticChartBlock | Update Logic]</span>
 <span class="sd">        :relates-to:</span>
-<span class="sd">         - motivated_by: &quot;Bug Fix: StaticChartBlock must receive subscribed state values from StateManager&quot;</span>
-<span class="sd">         - implements: &quot;method: &#39;_update_chart&#39; with positional args support&quot;</span>
-<span class="sd">         - uses: [&quot;class: &#39;ChartContext&#39;&quot;, &quot;method: &#39;chart_generator&#39;&quot;]</span>
-
-<span class="sd">        :rationale: &quot;Changed to accept *args because StateManager passes values as positional arguments, not kwargs.&quot;</span>
+<span class="sd">         - motivated_by: &quot;Bug Fix: StaticChartBlock must handle generic state updates, not hardcoded ones.&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_update_chart&#39; with generic *args handling&quot;</span>
 <span class="sd">        :contract:</span>
 <span class="sd">         - pre: &quot;Datasource is available and chart_generator function is provided.&quot;</span>
 <span class="sd">         - post: &quot;Returns updated figure with subscribed state values passed to chart generator.&quot;</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;🔄 Updating chart for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="si">}</span><span class="s2"> positional args&quot;</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Args types: </span><span class="si">{</span><span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">arg</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">args</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Args values: </span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
         <span class="k">try</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">if</span> <span class="n">args</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;subscribes&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="p">:</span>
+                <span class="n">state_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">state_ids</span><span class="p">):</span>
+                        <span class="n">params</span><span class="p">[</span><span class="n">state_ids</span><span class="p">[</span><span class="n">idx</span><span class="p">]]</span> <span class="o">=</span> <span class="n">value</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Refreshing datasource for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> with params: </span><span class="si">{</span><span class="n">params</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">datasource</span><span class="o">.</span><span class="n">init_data</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
             <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Empty data for chart </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
 
-            <span class="c1"># Extract control values from positional arguments</span>
-            <span class="c1"># CRITICAL: Use the order from StateManager logs, not self.subscribes.keys()</span>
-            <span class="c1"># From logs: Input[0]: settings_panel-fruit_filter.value, Input[1]: settings_panel-min_sales.value</span>
-            <span class="c1"># So args[0] = fruit_filter value, args[1] = min_sales value</span>
-            <span class="n">control_values</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="c1"># For static charts, the context controls are the state values themselves</span>
+            <span class="n">control_values</span> <span class="o">=</span> <span class="n">params</span>
 
-            <span class="k">if</span> <span class="n">args</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;subscribes&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="p">:</span>
-                <span class="c1"># HARDCODED ORDER based on StateManager logs:</span>
-                <span class="c1"># This is the order that StateManager uses for inputs</span>
-                <span class="n">expected_order</span> <span class="o">=</span> <span class="p">[</span>
-                    <span class="s2">&quot;settings_panel-fruit_filter&quot;</span><span class="p">,</span>  <span class="c1"># args[0]</span>
-                    <span class="s2">&quot;settings_panel-min_sales&quot;</span><span class="p">,</span>  <span class="c1"># args[1]</span>
-                <span class="p">]</span>
-
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;📊 Chart </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> received </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="si">}</span><span class="s2"> args, mapping to expected order&quot;</span>
-                <span class="p">)</span>
-
-                <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
-                    <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">expected_order</span><span class="p">):</span>
-                        <span class="n">state_id</span> <span class="o">=</span> <span class="n">expected_order</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
-                        <span class="n">control_name</span> <span class="o">=</span> <span class="n">state_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-                        <span class="n">control_values</span><span class="p">[</span><span class="n">control_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;🎯 Mapped arg[</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">] = </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2"> (type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">) -&gt; </span><span class="si">{</span><span class="n">state_id</span><span class="si">}</span><span class="s2"> -&gt; control: </span><span class="si">{</span><span class="n">control_name</span><span class="si">}</span><span class="s2">&quot;</span>
-                        <span class="p">)</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;⚠️ Extra arg[</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">] = </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2"> has no expected state_id&quot;</span>
-                        <span class="p">)</span>
-
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;✅ Chart </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> extracted control values: </span><span class="si">{</span><span class="n">control_values</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ℹ️ No args or subscriptions for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-            <span class="c1"># Create ChartContext with control values</span>
             <span class="n">ctx</span> <span class="o">=</span> <span class="n">ChartContext</span><span class="p">(</span>
                 <span class="n">datasource</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">datasource</span><span class="p">,</span> <span class="n">controls</span><span class="o">=</span><span class="n">control_values</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span>
             <span class="p">)</span>
@@ -305,13 +275,11 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;📊 Calling chart_generator for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">figure</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chart_generator</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span>
 
-            <span class="c1"># Apply theme to figure if theme_config is available</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="p">:</span>
                 <span class="n">theme_layout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">get_figure_layout</span><span class="p">()</span>
                 <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="o">**</span><span class="n">theme_layout</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Applied theme &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; to figure&quot;</span><span class="p">)</span>
 
-            <span class="c1"># Apply user-specified figure layout (overrides theme)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">figure_layout</span><span class="p">:</span>
                 <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">figure_layout</span><span class="p">)</span>
 
@@ -442,6 +410,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">title</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">chart_generator</span> <span class="o">=</span> <span class="n">chart_generator</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">controls</span> <span class="o">=</span> <span class="n">controls</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_external_subscribes_to</span> <span class="o">=</span> <span class="n">subscribes_to</span>
 
         <span class="c1"># Store style customization parameters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">card_style</span> <span class="o">=</span> <span class="n">card_style</span>
@@ -455,24 +424,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">controls_row_style</span> <span class="o">=</span> <span class="n">controls_row_style</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">controls_row_className</span> <span class="o">=</span> <span class="n">controls_row_className</span>
 
-        <span class="c1"># Call super() FIRST to set self.block_id</span>
+        <span class="c1"># Call super() without state interaction logic</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">block_id</span><span class="p">,</span> <span class="n">datasource</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;Interactive chart </span><span class="si">{</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> with title: </span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2">, controls: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">controls</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="p">)</span>
-
-        <span class="c1"># Now that block_id is set, we can safely generate state interactions</span>
-        <span class="n">publishes</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="p">{</span><span class="s2">&quot;state_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_id</span><span class="p">(</span><span class="n">key</span><span class="p">),</span> <span class="s2">&quot;component_prop&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">}</span>
-            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span>
-        <span class="p">]</span>
-        <span class="c1"># Normalize subscribes_to to list before concatenation</span>
-        <span class="n">external_subscriptions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_subscribes_to</span><span class="p">(</span><span class="n">subscribes_to</span><span class="p">)</span>
-        <span class="n">all_subscriptions</span> <span class="o">=</span> <span class="n">external_subscriptions</span> <span class="o">+</span> <span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;state_id&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">publishes</span><span class="p">]</span>
-
-        <span class="c1"># Set the state interaction attributes on the instance</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">publishes</span> <span class="o">=</span> <span class="n">publishes</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span> <span class="o">=</span> <span class="p">{</span><span class="n">state</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_chart</span> <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">all_subscriptions</span><span class="p">}</span></div>
+        <span class="p">)</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_component_prop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -505,27 +461,60 @@
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_update_chart</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates the chart with current data and subscribed state values.</span>
+<span class="sd">        This method handles two calling conventions:</span>
+<span class="sd">        1. From layout(): Called with **kwargs representing initial control values.</span>
+<span class="sd">        2. From StateManager: Called with *args representing all subscribed state values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Updating interactive chart for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> &quot;</span> <span class="sa">f</span><span class="s2">&quot;with kwargs: </span><span class="si">{</span><span class="n">kwargs</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Updating interactive chart for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="si">}</span><span class="s2"> args and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span><span class="si">}</span><span class="s2"> kwargs&quot;</span>
         <span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">control_values</span> <span class="o">=</span> <span class="p">{}</span>
+
+            <span class="k">if</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">args</span><span class="p">:</span>
+                <span class="c1"># Called from layout() with initial control values</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initial layout call with kwargs: </span><span class="si">{</span><span class="n">kwargs</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">control_values</span> <span class="o">=</span> <span class="n">kwargs</span>
+                <span class="c1"># The params for the datasource are just the initial control values</span>
+                <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="k">elif</span> <span class="n">args</span><span class="p">:</span>
+                <span class="c1"># Called from StateManager callback with positional args</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Callback call with args: </span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">all_subscription_keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_subscription_keys</span><span class="p">):</span>
+                        <span class="n">state_id</span> <span class="o">=</span> <span class="n">all_subscription_keys</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                        <span class="n">params</span><span class="p">[</span><span class="n">state_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+                <span class="c1"># Filter params to get just this block&#39;s own control values</span>
+                <span class="n">control_values</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="n">key</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span> <span class="n">value</span>
+                    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="p">)</span>
+                <span class="p">}</span>
+
+            <span class="c1"># Refresh datasource with all available parameters</span>
+            <span class="k">if</span> <span class="n">params</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Refreshing datasource for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> with params: </span><span class="si">{</span><span class="n">params</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">datasource</span><span class="o">.</span><span class="n">init_data</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
             <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Empty data for chart </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
 
-            <span class="n">control_values</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Control values: </span><span class="si">{</span><span class="n">control_values</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Control values for chart_generator: </span><span class="si">{</span><span class="n">control_values</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-            <span class="c1"># Create ChartContext for unified interface</span>
             <span class="n">ctx</span> <span class="o">=</span> <span class="n">ChartContext</span><span class="p">(</span>
                 <span class="n">datasource</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">datasource</span><span class="p">,</span> <span class="n">controls</span><span class="o">=</span><span class="n">control_values</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span>
             <span class="p">)</span>
-
-            <span class="c1"># Use new ChartContext interface</span>
             <span class="n">figure</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chart_generator</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span>
 
-            <span class="c1"># Apply theme to figure if theme_config is available</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="p">:</span>
                 <span class="n">theme_layout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">get_figure_layout</span><span class="p">()</span>
                 <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="o">**</span><span class="n">theme_layout</span><span class="p">)</span>
@@ -533,7 +522,6 @@
                     <span class="sa">f</span><span class="s2">&quot;Applied theme &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; to interactive chart&quot;</span>
                 <span class="p">)</span>
 
-            <span class="c1"># Apply user-specified figure layout (overrides theme)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">figure_layout</span><span class="p">:</span>
                 <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">figure_layout</span><span class="p">)</span>
 
@@ -550,21 +538,41 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_register_state_interactions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_manager</span><span class="p">:</span> <span class="n">StateManager</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Registers publishers and subscribers for interactive chart controls.</span>
-<span class="sd">        Uses the base class implementation to handle both publishers and subscribers.</span>
+<span class="sd">        Lazily defines and registers state interactions.</span>
 
-<span class="sd">        :hierarchy: [Architecture | State Management | InteractiveChartBlock]</span>
+<span class="sd">        This method is called by DashboardPage after the navigation context</span>
+<span class="sd">        (self.navigation_mode, self.section_index) has been set. It moves</span>
+<span class="sd">        the creation of `publishes` and `subscribes` attributes out of</span>
+<span class="sd">        `__init__` to ensure that state and component IDs are generated</span>
+<span class="sd">        with the correct context.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Charts | InteractiveChartBlock | State Registration]</span>
 <span class="sd">        :relates-to:</span>
-<span class="sd">         - motivated_by: &quot;PRD: Interactive charts need to respond to their own controls&quot;</span>
-<span class="sd">         - implements: &quot;method: &#39;_register_state_interactions&#39; override&quot;</span>
-<span class="sd">         - uses: [&quot;method: &#39;BaseBlock._register_state_interactions&#39;&quot;]</span>
-
-<span class="sd">        :rationale: &quot;Use base class implementation to register both publishers and subscribers.&quot;</span>
+<span class="sd">         - motivated_by: &quot;Refactoring to fix timing issue with lazy-loaded navigation sections&quot;</span>
+<span class="sd">         - implements: &quot;Lazy state interaction setup for InteractiveChartBlock&quot;</span>
 <span class="sd">        :contract:</span>
-<span class="sd">         - pre: &quot;StateManager is initialized and ready to accept registrations.&quot;</span>
-<span class="sd">         - post: &quot;Both control publishers and subscribers are registered.&quot;</span>
+<span class="sd">         - pre: &quot;self.navigation_mode and self.section_index are set by DashboardPage.&quot;</span>
+<span class="sd">         - post: &quot;self.publishes and self.subscribes are populated; state interactions are registered with StateManager.&quot;</span>
+<span class="sd">        :complexity: 3</span>
+<span class="sd">        :decision_cache: &quot;Chose lazy setup in _register_state_interactions over passing context into __init__ to keep block constructors clean and decouple them from page-level logic.&quot;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Use the base class implementation which handles both publishers and subscribers</span>
+        <span class="c1"># Generate publishes list with string state_ids</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">publishes</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;state_id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;component_prop&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">}</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span>
+        <span class="p">]</span>
+
+        <span class="c1"># Combine internal and external subscriptions</span>
+        <span class="n">external_subscriptions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_subscribes_to</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_external_subscribes_to</span>
+        <span class="p">)</span>
+        <span class="n">internal_subscriptions</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;state_id&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">publishes</span><span class="p">]</span>
+        <span class="n">all_subscriptions</span> <span class="o">=</span> <span class="n">external_subscriptions</span> <span class="o">+</span> <span class="n">internal_subscriptions</span>
+
+        <span class="c1"># The keys for self.subscribes must be strings</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span> <span class="o">=</span> <span class="p">{</span><span class="n">state</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_chart</span> <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">all_subscriptions</span><span class="p">}</span>
+
+        <span class="c1"># Now call the parent method to perform the actual registration</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_register_state_interactions</span><span class="p">(</span><span class="n">state_manager</span><span class="p">)</span>
 
 <div class="viewcode-block" id="InteractiveChartBlock.list_control_inputs">
@@ -769,30 +777,10 @@
         <span class="n">container_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">container_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the ControlPanelBlock.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            block_id: A unique identifier for this block instance.</span>
-<span class="sd">            datasource: An instance of a class that implements the BaseDataSource interface.</span>
-<span class="sd">            title: The title for the control panel.</span>
-<span class="sd">            controls: Dictionary mapping control names to Control objects.</span>
-<span class="sd">            subscribes_to: Optional state ID(s) to subscribe to for control updates.</span>
-<span class="sd">            value_initializer: Optional function that takes a DataFrame and returns</span>
-<span class="sd">                             a dictionary of control_name -&gt; initial_value mappings.</span>
-<span class="sd">            card_style: Optional style dictionary for the card component.</span>
-<span class="sd">            card_className: Optional CSS class name for the card component.</span>
-<span class="sd">            title_style: Optional style dictionary for the title component.</span>
-<span class="sd">            title_className: Optional CSS class name for the title component.</span>
-<span class="sd">            controls_row_style: Optional style dictionary for the controls row.</span>
-<span class="sd">            controls_row_className: Optional CSS class name for the controls row.</span>
-<span class="sd">            container_style: Optional style dictionary for the container.</span>
-<span class="sd">            container_className: Optional CSS class name for the container.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">title</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">controls</span> <span class="o">=</span> <span class="n">controls</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">value_initializer</span> <span class="o">=</span> <span class="n">value_initializer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_external_subscribes_to</span> <span class="o">=</span> <span class="n">subscribes_to</span>
 
         <span class="c1"># Store style customization parameters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">card_style</span> <span class="o">=</span> <span class="n">card_style</span>
@@ -804,34 +792,54 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">container_style</span> <span class="o">=</span> <span class="n">container_style</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">container_className</span> <span class="o">=</span> <span class="n">container_className</span>
 
-        <span class="c1"># Call super() FIRST to set self.block_id</span>
+        <span class="c1"># Call super() without state interaction logic</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">block_id</span><span class="p">,</span> <span class="n">datasource</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;Control panel </span><span class="si">{</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> with title: </span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2">, controls: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">controls</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
 
         <span class="c1"># Initialize control values from datasource if value_initializer is provided</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_initial_control_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_control_values</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initial_control_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_control_values</span><span class="p">()</span></div>
 
-        <span class="c1"># Set up state interactions</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_register_state_interactions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_manager</span><span class="p">:</span> <span class="n">StateManager</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Lazily defines and registers state interactions.</span>
+
+<span class="sd">        This method is called by DashboardPage after the navigation context</span>
+<span class="sd">        (self.navigation_mode, self.section_index) has been set. It moves</span>
+<span class="sd">        the creation of `publishes` and `subscribes` attributes out of</span>
+<span class="sd">        `__init__` to ensure that state and component IDs are generated</span>
+<span class="sd">        with the correct context.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Controls | ControlPanelBlock | State Registration]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Refactoring to fix timing issue with lazy-loaded navigation sections&quot;</span>
+<span class="sd">         - implements: &quot;Lazy state interaction setup for ControlPanelBlock&quot;</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;self.navigation_mode and self.section_index are set by DashboardPage.&quot;</span>
+<span class="sd">         - post: &quot;self.publishes and self.subscribes are populated; state interactions are registered with StateManager.&quot;</span>
+<span class="sd">        :complexity: 3</span>
+<span class="sd">        :decision_cache: &quot;Chose lazy setup in _register_state_interactions over passing context into __init__ to keep block constructors clean and decouple them from page-level logic.&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Publishes: each control publishes its value to state</span>
-        <span class="n">publishes</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="p">{</span><span class="s2">&quot;state_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_id</span><span class="p">(</span><span class="n">key</span><span class="p">),</span> <span class="s2">&quot;component_prop&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">publishes</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;state_id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;component_prop&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">}</span>
             <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span>
         <span class="p">]</span>
 
         <span class="c1"># Subscribes: optionally subscribe to external states</span>
         <span class="n">subscribes_dict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="n">subscribes_to</span><span class="p">:</span>
-            <span class="n">external_subscriptions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_subscribes_to</span><span class="p">(</span><span class="n">subscribes_to</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_external_subscribes_to</span><span class="p">:</span>
+            <span class="n">external_subscriptions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_subscribes_to</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_external_subscribes_to</span>
+            <span class="p">)</span>
             <span class="n">subscribes_dict</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="n">state</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_controls</span> <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">external_subscriptions</span>
             <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span> <span class="o">=</span> <span class="n">subscribes_dict</span>
 
-        <span class="c1"># Set the state interaction attributes on the instance</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">publishes</span> <span class="o">=</span> <span class="n">publishes</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span> <span class="o">=</span> <span class="n">subscribes_dict</span></div>
-
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_register_state_interactions</span><span class="p">(</span><span class="n">state_manager</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_initialize_control_values</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>

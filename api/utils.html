@@ -56,6 +56,7 @@
 <li class="toctree-l2"><a class="reference internal" href="presets.html">Presets Module</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Utils Module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#module-dashboard_lego.utils.formatting">Formatting Utilities</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dashboard_lego.utils.formatting.NumpyEncoder"><code class="docutils literal notranslate"><span class="pre">NumpyEncoder</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dashboard_lego.utils.formatting.format_number"><code class="docutils literal notranslate"><span class="pre">format_number()</span></code></a></li>
 </ul>
 </li>
@@ -117,6 +118,49 @@
 <section id="module-dashboard_lego.utils.formatting">
 <span id="formatting-utilities"></span><h2>Formatting Utilities<a class="headerlink" href="#module-dashboard_lego.utils.formatting" title="Link to this heading"></a></h2>
 <p>This module provides utility functions for formatting values.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="dashboard_lego.utils.formatting.NumpyEncoder">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.utils.formatting.</span></span><span class="sig-name descname"><span class="pre">NumpyEncoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">skipkeys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensure_ascii</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_circular</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allow_nan</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sort_keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separators</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/utils/formatting.html#NumpyEncoder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.utils.formatting.NumpyEncoder" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/json.html#json.JSONEncoder" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">JSONEncoder</span></code></a></p>
+<p>Custom JSON encoder for NumPy types.
+This encoder handles the serialization of common NumPy data types that are
+not natively supported by the standard <cite>json</cite> library. It converts NumPy
+integers, floats, booleans, and arrays into their standard Python equivalents.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Utils | Formatting | NumpyEncoder]</p>
+</dd>
+<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Bug: <cite>TypeError</cite> during cache key generation for NumPy types.”</p></li>
+<li><p>implements: “utility: ‘NumpyEncoder’”</p></li>
+</ul>
+</dd>
+<dt class="field-odd">contract<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p>pre: “Input object <cite>obj</cite> can be a standard type or a NumPy type.”</p></li>
+<li><p>post: “Returns a JSON-serializable representation of the object.”</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.utils.formatting.NumpyEncoder.default">
+<span class="sig-name descname"><span class="pre">default</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/utils/formatting.html#NumpyEncoder.default"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.utils.formatting.NumpyEncoder.default" title="Link to this definition"></a></dt>
+<dd><p>Overrides the default JSON encoding behavior to handle NumPy types.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>obj</strong> – The object to encode.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A serializable representation of the object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="dashboard_lego.utils.formatting.format_number">
 <span class="sig-prename descclassname"><span class="pre">dashboard_lego.utils.formatting.</span></span><span class="sig-name descname"><span class="pre">format_number</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/utils/formatting.html#format_number"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.utils.formatting.format_number" title="Link to this definition"></a></dt>

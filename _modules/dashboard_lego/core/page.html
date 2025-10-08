@@ -827,6 +827,11 @@
                         <span class="sa">f</span><span class="s2">&quot;All layout items must be of type BaseBlock in section &#39;</span><span class="si">{</span><span class="n">section</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
                     <span class="p">)</span>
                 <span class="n">section_blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
+
+                <span class="c1"># Inject navigation context for pattern matching callbacks</span>
+                <span class="n">block</span><span class="o">.</span><span class="n">navigation_mode</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">block</span><span class="o">.</span><span class="n">section_index</span> <span class="o">=</span> <span class="n">section_index</span>
+
                 <span class="c1"># Inject theme configuration</span>
                 <span class="n">block</span><span class="o">.</span><span class="n">_set_theme_config</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="p">)</span>
                 <span class="c1"># Register block with state manager</span>
@@ -841,6 +846,15 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;Section </span><span class="si">{</span><span class="n">section_index</span><span class="si">}</span><span class="s2"> loaded: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">section_blocks</span><span class="p">)</span><span class="si">}</span><span class="s2"> blocks registered&quot;</span>
         <span class="p">)</span>
+
+        <span class="c1"># NEW: Dynamically register callbacks for lazy-loaded sections</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_app_instance&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_app_instance</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Registering callbacks for lazy-loaded section </span><span class="si">{</span><span class="n">section_index</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state_manager</span><span class="o">.</span><span class="n">generate_callbacks</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_app_instance</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state_manager</span><span class="o">.</span><span class="n">bind_callbacks</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_app_instance</span><span class="p">,</span> <span class="n">section_blocks</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Callbacks registered for section </span><span class="si">{</span><span class="n">section_index</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="c1"># Render rows</span>
         <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
@@ -879,6 +893,9 @@
             <span class="c1"># Navigation-specific callbacks MUST be registered BEFORE error handling wrapper</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_register_navigation_callbacks</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+
+            <span class="c1"># Store app reference for lazy-loaded sections</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_app_instance</span> <span class="o">=</span> <span class="n">app</span>
 
             <span class="c1"># Set up comprehensive error handling for Dash callbacks</span>
             <span class="c1"># NOTE: This replaces app.callback, so must be done AFTER navigation callbacks</span>

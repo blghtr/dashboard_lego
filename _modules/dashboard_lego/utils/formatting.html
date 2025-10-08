@@ -84,7 +84,51 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+
+<div class="viewcode-block" id="NumpyEncoder">
+<a class="viewcode-back" href="../../../api/utils.html#dashboard_lego.utils.formatting.NumpyEncoder">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">NumpyEncoder</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">JSONEncoder</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Custom JSON encoder for NumPy types.</span>
+<span class="sd">    This encoder handles the serialization of common NumPy data types that are</span>
+<span class="sd">    not natively supported by the standard `json` library. It converts NumPy</span>
+<span class="sd">    integers, floats, booleans, and arrays into their standard Python equivalents.</span>
+
+<span class="sd">        :hierarchy: [Utils | Formatting | NumpyEncoder]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">          - motivated_by: &quot;Bug: `TypeError` during cache key generation for NumPy types.&quot;</span>
+<span class="sd">          - implements: &quot;utility: &#39;NumpyEncoder&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">          - pre: &quot;Input object `obj` can be a standard type or a NumPy type.&quot;</span>
+<span class="sd">          - post: &quot;Returns a JSON-serializable representation of the object.&quot;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="NumpyEncoder.default">
+<a class="viewcode-back" href="../../../api/utils.html#dashboard_lego.utils.formatting.NumpyEncoder.default">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Overrides the default JSON encoding behavior to handle NumPy types.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            obj: The object to encode.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A serializable representation of the object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">NumpyEncoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span></div>
+</div>
+
 
 
 <div class="viewcode-block" id="format_number">

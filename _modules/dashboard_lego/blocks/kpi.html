@@ -292,13 +292,28 @@
 <span class="sd">         - uses: [&quot;function: &#39;_create_kpi_card&#39;&quot;, &quot;method: &#39;format_number&#39;&quot;]</span>
 
 <span class="sd">        :rationale: &quot;Enhanced to pass style customization parameters to</span>
-<span class="sd">         individual KPI cards.&quot;</span>
+<span class="sd">         individual KPI cards. Refreshes datasource with control values before</span>
+<span class="sd">         reading KPIs.&quot;</span>
 <span class="sd">        :contract:</span>
 <span class="sd">         - pre: &quot;Datasource is available and KPI definitions are set.&quot;</span>
 <span class="sd">         - post: &quot;Returns a Row of styled KPI cards with current data.&quot;</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># NEW: Extract control values and refresh datasource</span>
+            <span class="k">if</span> <span class="n">args</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="p">:</span>
+                <span class="c1"># Build params dict from subscribed state values</span>
+                <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="n">state_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">state_ids</span><span class="p">):</span>
+                        <span class="n">params</span><span class="p">[</span><span class="n">state_ids</span><span class="p">[</span><span class="n">idx</span><span class="p">]]</span> <span class="o">=</span> <span class="n">value</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Refreshing datasource for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> with params: </span><span class="si">{</span><span class="n">params</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">datasource</span><span class="o">.</span><span class="n">init_data</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
             <span class="n">kpi_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">datasource</span><span class="o">.</span><span class="n">get_kpis</span><span class="p">()</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">kpi_data</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Alert</span><span class="p">(</span><span class="s2">&quot;Нет данных для KPI.&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;warning&quot;</span><span class="p">)</span>

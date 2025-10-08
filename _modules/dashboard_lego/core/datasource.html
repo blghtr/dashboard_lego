@@ -80,18 +80,32 @@
              
   <h1>Source code for dashboard_lego.core.datasource</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">This module defines the abstract interface for data sources.</span>
+<span class="sd">This module defines the abstract interface for data sources with pipeline architecture.</span>
 
+<span class="sd">:hierarchy: [Core | DataSources | BaseDataSource]</span>
+<span class="sd">:relates-to:</span>
+<span class="sd"> - motivated_by: &quot;Refactor: Implement staged data processing pipeline (Load -&gt; Preprocess -&gt; Filter)&quot;</span>
+<span class="sd"> - implements: &quot;interface: &#39;BaseDataSource&#39; with pipeline&quot;</span>
+<span class="sd"> - uses: [&quot;library: &#39;diskcache&#39;&quot;, &quot;class: &#39;PreProcessor&#39;&quot;, &quot;class: &#39;DataFilter&#39;&quot;]</span>
+
+<span class="sd">:contract:</span>
+<span class="sd"> - pre: &quot;Subclass implements _load_raw_data() instead of _load_data()&quot;</span>
+<span class="sd"> - post: &quot;Data flows through: load → preprocess → filter → cache&quot;</span>
+<span class="sd"> - invariant: &quot;Each stage has separate caching based on relevant params only&quot;</span>
+
+<span class="sd">:complexity: 8</span>
+<span class="sd">:decision_cache: &quot;Chose staged pipeline over monolithic _load_data for better caching and separation of concerns&quot;</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">diskcache</span><span class="w"> </span><span class="kn">import</span> <span class="n">Cache</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">CacheError</span><span class="p">,</span> <span class="n">DataLoadError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.formatting</span><span class="w"> </span><span class="kn">import</span> <span class="n">NumpyEncoder</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
 
 
@@ -99,145 +113,395 @@
 <a class="viewcode-back" href="../../../api/core.html#dashboard_lego.core.datasource.BaseDataSource">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseDataSource</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    An abstract base class that defines the contract for data sources.</span>
-<span class="sd">    This base class includes a transparent caching layer to prevent</span>
-<span class="sd">    re-loading data.</span>
+<span class="sd">    Abstract base class with data processing pipeline.</span>
 
-<span class="sd">        :hierarchy: [Core | DataSources | BaseDataSource]</span>
-<span class="sd">        :relates-to:</span>
-<span class="sd">          - motivated_by: &quot;Architectural Conclusion: Disk-based caching improves performance by avoiding repeated data loading operations&quot;</span>
-<span class="sd">          - implements: &quot;interface: &#39;BaseDataSource&#39;&quot;</span>
-<span class="sd">          - uses: [&quot;library: &#39;diskcache&#39;&quot;]</span>
+<span class="sd">    Pipeline stages:</span>
+<span class="sd">    1. Load raw data (_load_raw_data)</span>
+<span class="sd">    2. Preprocess (PreProcessor.process)</span>
+<span class="sd">    3. Filter (DataFilter.filter)</span>
+<span class="sd">    4. Cache result at each stage</span>
 
-<span class="sd">        :rationale: &quot;Replaced cachetools with diskcache to support both in-memory and persistent disk-based caching, configured via constructor arguments.&quot;</span>
-<span class="sd">        :contract:</span>
-<span class="sd">          - pre: &quot;A concrete implementation of this class must be provided.&quot;</span>
-<span class="sd">          - post: &quot;Dashboard blocks can reliably request data, benefiting from a configurable caching layer.&quot;</span>
+<span class="sd">    Each stage can be cached independently based on its relevant params only,</span>
+<span class="sd">    enabling efficient updates when only filtering changes.</span>
 
+<span class="sd">    :hierarchy: [Core | DataSources | BaseDataSource]</span>
+<span class="sd">    :relates-to:</span>
+<span class="sd">     - motivated_by: &quot;Refactor: Staged pipeline for better caching and separation of concerns&quot;</span>
+<span class="sd">     - implements: &quot;interface: &#39;BaseDataSource&#39; with pipeline&quot;</span>
+<span class="sd">     - uses: [&quot;library: &#39;diskcache&#39;&quot;, &quot;class: &#39;PreProcessor&#39;&quot;, &quot;class: &#39;DataFilter&#39;&quot;]</span>
 
+<span class="sd">    :rationale: &quot;Staged pipeline allows caching at each level, so filtering changes don&#39;t trigger preprocessing&quot;</span>
+<span class="sd">    :contract:</span>
+<span class="sd">     - pre: &quot;Subclass implements _load_raw_data()&quot;</span>
+<span class="sd">     - post: &quot;Data flows through 3-stage pipeline with independent caching&quot;</span>
+<span class="sd">     - invariant: &quot;get_processed_data() always returns filtered data&quot;</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="BaseDataSource.__init__">
 <a class="viewcode-back" href="../../../api/core.html#dashboard_lego.core.datasource.BaseDataSource.__init__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cache_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">cache_ttl</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">300</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cache_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">cache_ttl</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">300</span><span class="p">,</span>
+        <span class="n">preprocessor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">data_filter</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">param_classifier</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the BaseDataSource with a configurable cache.</span>
+<span class="sd">        Initialize datasource with pipeline components.</span>
+
+<span class="sd">        :hierarchy: [Core | DataSources | BaseDataSource | Initialization]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Need configurable pipeline components&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;__init__&#39; with pipeline support&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;All parameters are optional with sensible defaults&quot;</span>
+<span class="sd">         - post: &quot;DataSource ready with complete pipeline&quot;</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            cache_dir: Directory for the disk cache. If None, an in-memory</span>
-<span class="sd">                       cache is used.</span>
-<span class="sd">            cache_ttl: The time-to-live for each item in seconds.</span>
-
+<span class="sd">            cache_dir: Directory for disk cache. If None, uses in-memory cache.</span>
+<span class="sd">            cache_ttl: Time-to-live for cache entries in seconds.</span>
+<span class="sd">            preprocessor: PreProcessor instance for data transformation.</span>
+<span class="sd">                        If None, creates default (no-op) preprocessor.</span>
+<span class="sd">            data_filter: DataFilter instance for data filtering.</span>
+<span class="sd">                       If None, creates default (no-op) filter.</span>
+<span class="sd">            param_classifier: Function to classify params as &#39;preprocess&#39; or &#39;filter&#39;.</span>
+<span class="sd">                            Signature: (param_key: str) -&gt; str</span>
+<span class="sd">                            If None, all params treated as preprocessing params.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">BaseDataSource</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Initializing datasource with cache_dir=</span><span class="si">{</span><span class="n">cache_dir</span><span class="si">}</span><span class="s2">, &quot;</span> <span class="sa">f</span><span class="s2">&quot;ttl=</span><span class="si">{</span><span class="n">cache_ttl</span><span class="si">}</span><span class="s2">s&quot;</span>
-        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Initializing datasource with pipeline architecture&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Initialize cache</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">Cache</span><span class="p">(</span><span class="n">directory</span><span class="o">=</span><span class="n">cache_dir</span><span class="p">,</span> <span class="n">expire</span><span class="o">=</span><span class="n">cache_ttl</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Cache initialized successfully&quot;</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to initialize cache: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">CacheError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cache initialization failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+        <span class="c1"># Import here to avoid circular imports</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.data_filter</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataFilter</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.preprocessor</span><span class="w"> </span><span class="kn">import</span> <span class="n">PreProcessor</span>
+
+        <span class="c1"># Initialize pipeline components</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">preprocessor</span> <span class="o">=</span> <span class="n">preprocessor</span> <span class="ow">or</span> <span class="n">PreProcessor</span><span class="p">(</span><span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_filter</span> <span class="o">=</span> <span class="n">data_filter</span> <span class="ow">or</span> <span class="n">DataFilter</span><span class="p">(</span><span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">param_classifier</span> <span class="o">=</span> <span class="n">param_classifier</span>
+
+        <span class="c1"># Data storage for each pipeline stage</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_raw_data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_preprocessed_data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_filtered_data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Legacy support: keep _data attribute pointing to filtered data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;DataSource initialized: cache_dir=</span><span class="si">{</span><span class="n">cache_dir</span><span class="si">}</span><span class="s2">, ttl=</span><span class="si">{</span><span class="n">cache_ttl</span><span class="si">}</span><span class="s2">s, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;preprocessor=</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">preprocessor</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;filter=</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_filter</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span></div>
 
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_cache_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_cache_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates a stable, hashable cache key from a dictionary of parameters.</span>
+<span class="sd">        Create cache key for specific pipeline stage.</span>
 
+<span class="sd">        :hierarchy: [Core | DataSources | BaseDataSource | Caching]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Need stage-specific cache keys for independent caching&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_get_cache_key&#39; with stage support&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;stage is valid string, params is dict&quot;</span>
+<span class="sd">         - post: &quot;Returns stable cache key unique to stage + params&quot;</span>
+<span class="sd">         - invariant: &quot;Same stage + params always produces same key&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            stage: Pipeline stage (&#39;raw&#39;, &#39;preprocessed&#39;, &#39;filtered&#39;)</span>
+<span class="sd">            params: Parameters relevant to this stage</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Stable cache key string</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">params</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s2">&quot;default&quot;</span>
-        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">stage</span><span class="si">}</span><span class="s2">_default&quot;</span>
+        <span class="n">params_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">NumpyEncoder</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">stage</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">params_json</span><span class="si">}</span><span class="s2">&quot;</span>
 
 <div class="viewcode-block" id="BaseDataSource.init_data">
 <a class="viewcode-back" href="../../../api/core.html#dashboard_lego.core.datasource.BaseDataSource.init_data">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">init_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes or recalculates the data based on the given parameters.</span>
-<span class="sd">        This method acts as a caching wrapper around the `_load_data` method.</span>
+<span class="sd">        Initialize data through 3-stage pipeline with staged caching.</span>
+
+<span class="sd">        Pipeline flow:</span>
+<span class="sd">        1. Classify params → preprocessing_params, filtering_params</span>
+<span class="sd">        2. Load raw data (cached by preprocessing params)</span>
+<span class="sd">        3. Preprocess (cached by preprocessing params)</span>
+<span class="sd">        4. Filter (cached by all params for final result)</span>
+
+<span class="sd">        :hierarchy: [Core | DataSources | BaseDataSource | Pipeline Orchestration]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Refactor: Implement staged pipeline for better caching&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;init_data&#39; with 3-stage pipeline&quot;</span>
+<span class="sd">         - uses: [&quot;class: &#39;DataProcessingContext&#39;&quot;, &quot;class: &#39;PreProcessor&#39;&quot;, &quot;class: &#39;DataFilter&#39;&quot;]</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;params can be None or dict&quot;</span>
+<span class="sd">         - post: &quot;Data flows through complete pipeline; _filtered_data is set&quot;</span>
+<span class="sd">         - invariant: &quot;Filtering changes don&#39;t trigger preprocessing&quot;</span>
+
+<span class="sd">        :complexity: 7</span>
+<span class="sd">        :decision_cache: &quot;Staged caching enables efficient filter-only updates&quot;</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            params: A dictionary containing all necessary parameters for</span>
-<span class="sd">                    data processing.</span>
+<span class="sd">            params: Control parameters from UI. Can contain both preprocessing</span>
+<span class="sd">                   and filtering parameters, which will be classified automatically.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            True if initialization was successful, False otherwise.</span>
-
+<span class="sd">            True if successful, False otherwise</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">params</span> <span class="o">=</span> <span class="n">params</span> <span class="ow">or</span> <span class="p">{}</span>
-        <span class="n">cache_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cache_key</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;init_data called with cache_key=</span><span class="si">{</span><span class="n">cache_key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔄 init_data called with params: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">cache_key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">:</span>
-                <span class="c1"># Cache Hit</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cache hit for key=</span><span class="si">{</span><span class="n">cache_key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">cache_key</span><span class="p">]</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loaded </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows from cache&quot;</span><span class="p">)</span>
-                <span class="k">return</span> <span class="kc">True</span>
+            <span class="c1"># Import here to avoid circular imports</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.processing_context</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataProcessingContext</span>
+
+            <span class="c1"># Create processing context to classify params</span>
+            <span class="n">context</span> <span class="o">=</span> <span class="n">DataProcessingContext</span><span class="o">.</span><span class="n">from_params</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_classifier</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Context created: preprocess=</span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">context</span><span class="o">.</span><span class="n">preprocessing_params</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;filter=</span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">context</span><span class="o">.</span><span class="n">filtering_params</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Stage 1: Load raw data (cached by preprocessing params only)</span>
+            <span class="n">raw_cache_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cache_key</span><span class="p">(</span><span class="s2">&quot;raw&quot;</span><span class="p">,</span> <span class="n">context</span><span class="o">.</span><span class="n">preprocessing_params</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">raw_cache_key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Stage 1 cache hit: raw data (</span><span class="si">{</span><span class="n">raw_cache_key</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_raw_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">raw_cache_key</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loaded </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw_data</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows from cache&quot;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># Cache Miss</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cache miss for key=</span><span class="si">{</span><span class="n">cache_key</span><span class="si">}</span><span class="s2">, loading data&quot;</span><span class="p">)</span>
-                <span class="n">loaded_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">loaded_data</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;📥 Stage 1 cache miss: loading raw data&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_raw_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_raw_data</span><span class="p">(</span><span class="n">context</span><span class="o">.</span><span class="n">preprocessing_params</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw_data</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
                     <span class="k">raise</span> <span class="n">DataLoadError</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;_load_data must return a DataFrame, got &quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">loaded_data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;_load_raw_data must return DataFrame, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw_data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
                     <span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">loaded_data</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">cache_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">loaded_data</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">raw_cache_key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw_data</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Data loaded successfully: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">loaded_data</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows, &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">loaded_data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span><span class="si">}</span><span class="s2"> columns&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Raw data loaded: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw_data</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows, &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw_data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span><span class="si">}</span><span class="s2"> columns&quot;</span>
                 <span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Data cached with key=</span><span class="si">{</span><span class="n">cache_key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                <span class="k">return</span> <span class="kc">True</span>
+
+            <span class="c1"># Stage 2: Preprocess (cached by preprocessing params)</span>
+            <span class="n">preprocess_cache_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cache_key</span><span class="p">(</span>
+                <span class="s2">&quot;preprocessed&quot;</span><span class="p">,</span> <span class="n">context</span><span class="o">.</span><span class="n">preprocessing_params</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">preprocess_cache_key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;✅ Stage 2 cache hit: preprocessed data (</span><span class="si">{</span><span class="n">preprocess_cache_key</span><span class="si">}</span><span class="s2">)&quot;</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_preprocessed_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">preprocess_cache_key</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Loaded </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_preprocessed_data</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows from cache&quot;</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;⚙️ Stage 2 cache miss: preprocessing data&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_preprocessed_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocessor</span><span class="o">.</span><span class="n">process</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_raw_data</span><span class="p">,</span> <span class="n">context</span><span class="o">.</span><span class="n">preprocessing_params</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_preprocessed_data</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="n">DataLoadError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;PreProcessor.process must return DataFrame, &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_preprocessed_data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">preprocess_cache_key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_preprocessed_data</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Data preprocessed: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_preprocessed_data</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows&quot;</span>
+                <span class="p">)</span>
+
+            <span class="c1"># Stage 3: Filter (cached by ALL params)</span>
+            <span class="n">filter_cache_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cache_key</span><span class="p">(</span><span class="s2">&quot;filtered&quot;</span><span class="p">,</span> <span class="n">context</span><span class="o">.</span><span class="n">raw_params</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">filter_cache_key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;✅ Stage 3 cache hit: filtered data (</span><span class="si">{</span><span class="n">filter_cache_key</span><span class="si">}</span><span class="s2">)&quot;</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_filtered_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">filter_cache_key</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loaded </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_filtered_data</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows from cache&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;🔍 Stage 3 cache miss: filtering data&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_filtered_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_filter</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_preprocessed_data</span><span class="p">,</span> <span class="n">context</span><span class="o">.</span><span class="n">filtering_params</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_filtered_data</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="n">DataLoadError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;DataFilter.filter must return DataFrame, &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_filtered_data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">filter_cache_key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filtered_data</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Data filtered: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_filtered_data</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;(from </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_preprocessed_data</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span>
+                <span class="p">)</span>
+
+            <span class="c1"># Legacy support: keep _data pointing to filtered data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filtered_data</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;✅ Pipeline complete: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_filtered_data</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows in final dataset&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
         <span class="k">except</span> <span class="n">DataLoadError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="c1"># Log the error and set empty data</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DataLoadError loading data for key </span><span class="si">{</span><span class="n">cache_key</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>  <span class="c1"># Ensure data is empty on error</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DataLoadError in pipeline: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_raw_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_preprocessed_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_filtered_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
             <span class="k">return</span> <span class="kc">False</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Error loading data for key </span><span class="si">{</span><span class="n">cache_key</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span>
-            <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>  <span class="c1"># Ensure data is empty on error</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error in pipeline: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_raw_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_preprocessed_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_filtered_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
             <span class="k">return</span> <span class="kc">False</span></div>
 
 
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_load_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_load_raw_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        The method that concrete subclasses must implement to load data.</span>
+<span class="sd">        Load raw data from source (NO filtering, NO preprocessing).</span>
+
+<span class="sd">        :hierarchy: [Core | DataSources | BaseDataSource | Load Stage]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Refactor: Separate raw data loading from transformation&quot;</span>
+<span class="sd">         - implements: &quot;abstract method: &#39;_load_raw_data&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;params contains preprocessing params only&quot;</span>
+<span class="sd">         - post: &quot;Returns raw DataFrame from data source&quot;</span>
+<span class="sd">         - invariant: &quot;Does NOT apply filters - that&#39;s DataFilter&#39;s job&quot;</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            params: A dictionary containing all necessary parameters for</span>
-<span class="sd">                     data processing.</span>
+<span class="sd">            params: Parameters that affect data loading (NOT filtering params).</span>
+<span class="sd">                   For example: file path, SQL query parameters, column selection.</span>
+<span class="sd">                   Filtering params like category or price range should be handled</span>
+<span class="sd">                   by DataFilter, not here.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            A pandas DataFrame with the loaded data.</span>
+<span class="sd">            Raw pandas DataFrame</span>
 
+<span class="sd">        Raises:</span>
+<span class="sd">            DataLoadError: If loading fails</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            This replaces the old _load_data() method.</span>
+<span class="sd">            ONLY handle data LOADING here, not filtering or transformation.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; def _load_raw_data(self, params):</span>
+<span class="sd">            ...     # Good: Just load the data</span>
+<span class="sd">            ...     return pd.read_csv(self.file_path)</span>
+<span class="sd">            ...</span>
+<span class="sd">            ...     # Bad: Don&#39;t do filtering here</span>
+<span class="sd">            ...     # df = pd.read_csv(self.file_path)</span>
+<span class="sd">            ...     # if &#39;category&#39; in params:</span>
+<span class="sd">            ...     #     df = df[df[&#39;Category&#39;] == params[&#39;category&#39;]]  # NO!</span>
+<span class="sd">            ...     # return df</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span>
+
+<div class="viewcode-block" id="BaseDataSource.get_data">
+<a class="viewcode-back" href="../../../api/core.html#dashboard_lego.core.datasource.BaseDataSource.get_data">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get currently loaded raw data.</span>
+
+<span class="sd">        :hierarchy: [Core | DataSources | BaseDataSource | Data Access]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Need access to raw data before preprocessing&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;get_data&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;init_data() may or may not have been called&quot;</span>
+<span class="sd">         - post: &quot;Returns raw DataFrame or empty DataFrame&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Raw DataFrame or empty DataFrame if not initialized</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;get_data called before init_data, returning empty DataFrame&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw_data</span></div>
+
+
+<div class="viewcode-block" id="BaseDataSource.get_preprocessed_data">
+<a class="viewcode-back" href="../../../api/core.html#dashboard_lego.core.datasource.BaseDataSource.get_preprocessed_data">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_preprocessed_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get preprocessed data (after PreProcessor, before DataFilter).</span>
+
+<span class="sd">        :hierarchy: [Core | DataSources | BaseDataSource | Data Access]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Need access to preprocessed data before filtering&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;get_preprocessed_data&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;init_data() may or may not have been called&quot;</span>
+<span class="sd">         - post: &quot;Returns preprocessed DataFrame or empty DataFrame&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Preprocessed DataFrame or empty DataFrame if not initialized</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            Useful for operations that need the full dataset before filtering,</span>
+<span class="sd">            such as generating filter options from all available values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_preprocessed_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;get_preprocessed_data called before init_data, returning empty DataFrame&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_preprocessed_data</span></div>
+
 
 <div class="viewcode-block" id="BaseDataSource.get_processed_data">
 <a class="viewcode-back" href="../../../api/core.html#dashboard_lego.core.datasource.BaseDataSource.get_processed_data">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_processed_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the main processed pandas DataFrame.</span>
+<span class="sd">        Get final filtered data (end of pipeline).</span>
 
+<span class="sd">        :hierarchy: [Core | DataSources | BaseDataSource | Data Access]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Primary data access method for blocks&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;get_processed_data&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;init_data() may or may not have been called&quot;</span>
+<span class="sd">         - post: &quot;Returns filtered DataFrame or empty DataFrame&quot;</span>
+<span class="sd">         - invariant: &quot;Returns final pipeline output&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Filtered DataFrame or empty DataFrame if not initialized</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            This is the primary method blocks should use to get data.</span>
+<span class="sd">            It returns the fully processed result after all pipeline stages.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="c1"># This case handles when get_processed_data is called before</span>
-            <span class="c1"># init_data. For now, we return an empty DataFrame to avoid errors.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filtered_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s2">&quot;get_processed_data called before init_data, &quot;</span>
-                <span class="s2">&quot;returning empty DataFrame&quot;</span>
+                <span class="s2">&quot;get_processed_data called before init_data, returning empty DataFrame&quot;</span>
             <span class="p">)</span>
             <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filtered_data</span></div>
 
 
 <div class="viewcode-block" id="BaseDataSource.get_kpis">

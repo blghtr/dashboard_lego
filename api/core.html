@@ -114,47 +114,97 @@
 <p>The core module contains the fundamental classes for building dashboards with Dashboard Lego.</p>
 <section id="module-dashboard_lego.core.datasource">
 <span id="data-sources"></span><h2>Data Sources<a class="headerlink" href="#module-dashboard_lego.core.datasource" title="Link to this heading"></a></h2>
-<p>This module defines the abstract interface for data sources.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="dashboard_lego.core.datasource.BaseDataSource">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.core.datasource.</span></span><span class="sig-name descname"><span class="pre">BaseDataSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cache_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_ttl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasource.BaseDataSource" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></a></p>
-<p>An abstract base class that defines the contract for data sources.
-This base class includes a transparent caching layer to prevent
-re-loading data.</p>
-<blockquote>
-<div><dl class="field-list simple">
+<p>This module defines the abstract interface for data sources with pipeline architecture.</p>
+<dl class="field-list simple">
 <dt class="field-odd">hierarchy<span class="colon">:</span></dt>
 <dd class="field-odd"><p>[Core | DataSources | BaseDataSource]</p>
 </dd>
 <dt class="field-even">relates-to<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p>motivated_by: “Architectural Conclusion: Disk-based caching improves performance by avoiding repeated data loading operations”</p></li>
-<li><p>implements: “interface: ‘BaseDataSource’”</p></li>
-<li><p>uses: [“library: ‘diskcache’”]</p></li>
+<li><p>motivated_by: “Refactor: Implement staged data processing pipeline (Load -&gt; Preprocess -&gt; Filter)”</p></li>
+<li><p>implements: “interface: ‘BaseDataSource’ with pipeline”</p></li>
+<li><p>uses: [“library: ‘diskcache’”, “class: ‘PreProcessor’”, “class: ‘DataFilter’”]</p></li>
 </ul>
 </dd>
-<dt class="field-odd">rationale<span class="colon">:</span></dt>
-<dd class="field-odd"><p>“Replaced cachetools with diskcache to support both in-memory and persistent disk-based caching, configured via constructor arguments.”</p>
+<dt class="field-odd">contract<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p>pre: “Subclass implements _load_raw_data() instead of _load_data()”</p></li>
+<li><p>post: “Data flows through: load → preprocess → filter → cache”</p></li>
+<li><p>invariant: “Each stage has separate caching based on relevant params only”</p></li>
+</ul>
 </dd>
-<dt class="field-even">contract<span class="colon">:</span></dt>
+<dt class="field-even">complexity<span class="colon">:</span></dt>
+<dd class="field-even"><p>8</p>
+</dd>
+<dt class="field-odd">decision_cache<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Chose staged pipeline over monolithic _load_data for better caching and separation of concerns”</p>
+</dd>
+</dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="dashboard_lego.core.datasource.BaseDataSource">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.core.datasource.</span></span><span class="sig-name descname"><span class="pre">BaseDataSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cache_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_ttl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preprocessor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_filter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param_classifier</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasource.BaseDataSource" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></a></p>
+<p>Abstract base class with data processing pipeline.</p>
+<p>Pipeline stages:
+1. Load raw data (_load_raw_data)
+2. Preprocess (PreProcessor.process)
+3. Filter (DataFilter.filter)
+4. Cache result at each stage</p>
+<p>Each stage can be cached independently based on its relevant params only,
+enabling efficient updates when only filtering changes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Core | DataSources | BaseDataSource]</p>
+</dd>
+<dt class="field-even">Relates-to<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p>pre: “A concrete implementation of this class must be provided.”</p></li>
-<li><p>post: “Dashboard blocks can reliably request data, benefiting from a configurable caching layer.”</p></li>
+<li><p>motivated_by: “Refactor: Staged pipeline for better caching and separation of concerns”</p></li>
+<li><p>implements: “interface: ‘BaseDataSource’ with pipeline”</p></li>
+<li><p>uses: [“library: ‘diskcache’”, “class: ‘PreProcessor’”, “class: ‘DataFilter’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Staged pipeline allows caching at each level, so filtering changes don’t trigger preprocessing”</p>
+</dd>
+<dt class="field-even">Contract<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>pre: “Subclass implements _load_raw_data()”</p></li>
+<li><p>post: “Data flows through 3-stage pipeline with independent caching”</p></li>
+<li><p>invariant: “get_processed_data() always returns filtered data”</p></li>
 </ul>
 </dd>
 </dl>
-</div></blockquote>
 <dl class="py method">
 <dt class="sig sig-object py" id="dashboard_lego.core.datasource.BaseDataSource.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cache_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_ttl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasource.BaseDataSource.__init__" title="Link to this definition"></a></dt>
-<dd><p>Initializes the BaseDataSource with a configurable cache.</p>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cache_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_ttl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preprocessor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_filter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param_classifier</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasource.BaseDataSource.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize datasource with pipeline components.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dt class="field-odd">Hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Core | DataSources | BaseDataSource | Initialization]</p>
+</dd>
+<dt class="field-even">Relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Need configurable pipeline components”</p></li>
+<li><p>implements: “method: ‘__init__’ with pipeline support”</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Contract<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cache_dir</strong> – Directory for the disk cache. If None, an in-memory
-cache is used.</p></li>
-<li><p><strong>cache_ttl</strong> – The time-to-live for each item in seconds.</p></li>
+<li><p>pre: “All parameters are optional with sensible defaults”</p></li>
+<li><p>post: “DataSource ready with complete pipeline”</p></li>
+</ul>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>cache_dir</strong> – Directory for disk cache. If None, uses in-memory cache.</p></li>
+<li><p><strong>cache_ttl</strong> – Time-to-live for cache entries in seconds.</p></li>
+<li><p><strong>preprocessor</strong> – PreProcessor instance for data transformation.
+If None, creates default (no-op) preprocessor.</p></li>
+<li><p><strong>data_filter</strong> – DataFilter instance for data filtering.
+If None, creates default (no-op) filter.</p></li>
+<li><p><strong>param_classifier</strong> – Function to classify params as ‘preprocess’ or ‘filter’.
+Signature: (param_key: str) -&gt; str
+If None, all params treated as preprocessing params.</p></li>
 </ul>
 </dd>
 </dl>
@@ -163,23 +213,133 @@ cache is used.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="dashboard_lego.core.datasource.BaseDataSource.init_data">
 <span class="sig-name descname"><span class="pre">init_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource.init_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasource.BaseDataSource.init_data" title="Link to this definition"></a></dt>
-<dd><p>Initializes or recalculates the data based on the given parameters.
-This method acts as a caching wrapper around the <cite>_load_data</cite> method.</p>
+<dd><p>Initialize data through 3-stage pipeline with staged caching.</p>
+<p>Pipeline flow:
+1. Classify params → preprocessing_params, filtering_params
+2. Load raw data (cached by preprocessing params)
+3. Preprocess (cached by preprocessing params)
+4. Filter (cached by all params for final result)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>params</strong> – A dictionary containing all necessary parameters for
-data processing.</p>
+<dt class="field-odd">Hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Core | DataSources | BaseDataSource | Pipeline Orchestration]</p>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>True if initialization was successful, False otherwise.</p>
+<dt class="field-even">Relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Refactor: Implement staged pipeline for better caching”</p></li>
+<li><p>implements: “method: ‘init_data’ with 3-stage pipeline”</p></li>
+<li><p>uses: [“class: ‘DataProcessingContext’”, “class: ‘PreProcessor’”, “class: ‘DataFilter’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Contract<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p>pre: “params can be None or dict”</p></li>
+<li><p>post: “Data flows through complete pipeline; _filtered_data is set”</p></li>
+<li><p>invariant: “Filtering changes don’t trigger preprocessing”</p></li>
+</ul>
+</dd>
+<dt class="field-even">Complexity<span class="colon">:</span></dt>
+<dd class="field-even"><p>7</p>
+</dd>
+<dt class="field-odd">Decision_cache<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Staged caching enables efficient filter-only updates”</p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>params</strong> – Control parameters from UI. Can contain both preprocessing
+and filtering parameters, which will be classified automatically.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if successful, False otherwise</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.datasource.BaseDataSource.get_data">
+<span class="sig-name descname"><span class="pre">get_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.3.3)"><span class="pre">DataFrame</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource.get_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasource.BaseDataSource.get_data" title="Link to this definition"></a></dt>
+<dd><p>Get currently loaded raw data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Core | DataSources | BaseDataSource | Data Access]</p>
+</dd>
+<dt class="field-even">Relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Need access to raw data before preprocessing”</p></li>
+<li><p>implements: “method: ‘get_data’”</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Contract<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p>pre: “init_data() may or may not have been called”</p></li>
+<li><p>post: “Returns raw DataFrame or empty DataFrame”</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Raw DataFrame or empty DataFrame if not initialized</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.core.datasource.BaseDataSource.get_preprocessed_data">
+<span class="sig-name descname"><span class="pre">get_preprocessed_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.3.3)"><span class="pre">DataFrame</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource.get_preprocessed_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasource.BaseDataSource.get_preprocessed_data" title="Link to this definition"></a></dt>
+<dd><p>Get preprocessed data (after PreProcessor, before DataFilter).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Core | DataSources | BaseDataSource | Data Access]</p>
+</dd>
+<dt class="field-even">Relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Need access to preprocessed data before filtering”</p></li>
+<li><p>implements: “method: ‘get_preprocessed_data’”</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Contract<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p>pre: “init_data() may or may not have been called”</p></li>
+<li><p>post: “Returns preprocessed DataFrame or empty DataFrame”</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Preprocessed DataFrame or empty DataFrame if not initialized</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Useful for operations that need the full dataset before filtering,
+such as generating filter options from all available values.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="dashboard_lego.core.datasource.BaseDataSource.get_processed_data">
 <span class="sig-name descname"><span class="pre">get_processed_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.3.3)"><span class="pre">DataFrame</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource.get_processed_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasource.BaseDataSource.get_processed_data" title="Link to this definition"></a></dt>
-<dd><p>Returns the main processed pandas DataFrame.</p>
+<dd><p>Get final filtered data (end of pipeline).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Core | DataSources | BaseDataSource | Data Access]</p>
+</dd>
+<dt class="field-even">Relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Primary data access method for blocks”</p></li>
+<li><p>implements: “method: ‘get_processed_data’”</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Contract<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p>pre: “init_data() may or may not have been called”</p></li>
+<li><p>post: “Returns filtered DataFrame or empty DataFrame”</p></li>
+<li><p>invariant: “Returns final pipeline output”</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Filtered DataFrame or empty DataFrame if not initialized</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is the primary method blocks should use to get data.
+It returns the fully processed result after all pipeline stages.</p>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -204,44 +364,69 @@ data processing.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.core.datasource.</span></span><span class="sig-name descname"><span class="pre">BaseDataSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cache_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_ttl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.core.datasource.</span></span><span class="sig-name descname"><span class="pre">BaseDataSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cache_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_ttl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preprocessor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_filter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param_classifier</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></a></p>
-<p>An abstract base class that defines the contract for data sources.
-This base class includes a transparent caching layer to prevent
-re-loading data.</p>
-<blockquote>
-<div><dl class="field-list simple">
-<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<p>Abstract base class with data processing pipeline.</p>
+<p>Pipeline stages:
+1. Load raw data (_load_raw_data)
+2. Preprocess (PreProcessor.process)
+3. Filter (DataFilter.filter)
+4. Cache result at each stage</p>
+<p>Each stage can be cached independently based on its relevant params only,
+enabling efficient updates when only filtering changes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Hierarchy<span class="colon">:</span></dt>
 <dd class="field-odd"><p>[Core | DataSources | BaseDataSource]</p>
 </dd>
-<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dt class="field-even">Relates-to<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p>motivated_by: “Architectural Conclusion: Disk-based caching improves performance by avoiding repeated data loading operations”</p></li>
-<li><p>implements: “interface: ‘BaseDataSource’”</p></li>
-<li><p>uses: [“library: ‘diskcache’”]</p></li>
+<li><p>motivated_by: “Refactor: Staged pipeline for better caching and separation of concerns”</p></li>
+<li><p>implements: “interface: ‘BaseDataSource’ with pipeline”</p></li>
+<li><p>uses: [“library: ‘diskcache’”, “class: ‘PreProcessor’”, “class: ‘DataFilter’”]</p></li>
 </ul>
 </dd>
-<dt class="field-odd">rationale<span class="colon">:</span></dt>
-<dd class="field-odd"><p>“Replaced cachetools with diskcache to support both in-memory and persistent disk-based caching, configured via constructor arguments.”</p>
+<dt class="field-odd">Rationale<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Staged pipeline allows caching at each level, so filtering changes don’t trigger preprocessing”</p>
 </dd>
-<dt class="field-even">contract<span class="colon">:</span></dt>
+<dt class="field-even">Contract<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p>pre: “A concrete implementation of this class must be provided.”</p></li>
-<li><p>post: “Dashboard blocks can reliably request data, benefiting from a configurable caching layer.”</p></li>
+<li><p>pre: “Subclass implements _load_raw_data()”</p></li>
+<li><p>post: “Data flows through 3-stage pipeline with independent caching”</p></li>
+<li><p>invariant: “get_processed_data() always returns filtered data”</p></li>
 </ul>
 </dd>
 </dl>
-</div></blockquote>
 <dl class="py method">
 <dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cache_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_ttl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
-<dd><p>Initializes the BaseDataSource with a configurable cache.</p>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cache_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_ttl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preprocessor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_filter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param_classifier</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Initialize datasource with pipeline components.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dt class="field-odd">Hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Core | DataSources | BaseDataSource | Initialization]</p>
+</dd>
+<dt class="field-even">Relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Need configurable pipeline components”</p></li>
+<li><p>implements: “method: ‘__init__’ with pipeline support”</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Contract<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cache_dir</strong> – Directory for the disk cache. If None, an in-memory
-cache is used.</p></li>
-<li><p><strong>cache_ttl</strong> – The time-to-live for each item in seconds.</p></li>
+<li><p>pre: “All parameters are optional with sensible defaults”</p></li>
+<li><p>post: “DataSource ready with complete pipeline”</p></li>
+</ul>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>cache_dir</strong> – Directory for disk cache. If None, uses in-memory cache.</p></li>
+<li><p><strong>cache_ttl</strong> – Time-to-live for cache entries in seconds.</p></li>
+<li><p><strong>preprocessor</strong> – PreProcessor instance for data transformation.
+If None, creates default (no-op) preprocessor.</p></li>
+<li><p><strong>data_filter</strong> – DataFilter instance for data filtering.
+If None, creates default (no-op) filter.</p></li>
+<li><p><strong>param_classifier</strong> – Function to classify params as ‘preprocess’ or ‘filter’.
+Signature: (param_key: str) -&gt; str
+If None, all params treated as preprocessing params.</p></li>
 </ul>
 </dd>
 </dl>
@@ -250,23 +435,133 @@ cache is used.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py">
 <span class="sig-name descname"><span class="pre">init_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource.init_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
-<dd><p>Initializes or recalculates the data based on the given parameters.
-This method acts as a caching wrapper around the <cite>_load_data</cite> method.</p>
+<dd><p>Initialize data through 3-stage pipeline with staged caching.</p>
+<p>Pipeline flow:
+1. Classify params → preprocessing_params, filtering_params
+2. Load raw data (cached by preprocessing params)
+3. Preprocess (cached by preprocessing params)
+4. Filter (cached by all params for final result)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>params</strong> – A dictionary containing all necessary parameters for
-data processing.</p>
+<dt class="field-odd">Hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Core | DataSources | BaseDataSource | Pipeline Orchestration]</p>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>True if initialization was successful, False otherwise.</p>
+<dt class="field-even">Relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Refactor: Implement staged pipeline for better caching”</p></li>
+<li><p>implements: “method: ‘init_data’ with 3-stage pipeline”</p></li>
+<li><p>uses: [“class: ‘DataProcessingContext’”, “class: ‘PreProcessor’”, “class: ‘DataFilter’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Contract<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p>pre: “params can be None or dict”</p></li>
+<li><p>post: “Data flows through complete pipeline; _filtered_data is set”</p></li>
+<li><p>invariant: “Filtering changes don’t trigger preprocessing”</p></li>
+</ul>
+</dd>
+<dt class="field-even">Complexity<span class="colon">:</span></dt>
+<dd class="field-even"><p>7</p>
+</dd>
+<dt class="field-odd">Decision_cache<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Staged caching enables efficient filter-only updates”</p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>params</strong> – Control parameters from UI. Can contain both preprocessing
+and filtering parameters, which will be classified automatically.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if successful, False otherwise</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">get_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.3.3)"><span class="pre">DataFrame</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource.get_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Get currently loaded raw data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Core | DataSources | BaseDataSource | Data Access]</p>
+</dd>
+<dt class="field-even">Relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Need access to raw data before preprocessing”</p></li>
+<li><p>implements: “method: ‘get_data’”</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Contract<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p>pre: “init_data() may or may not have been called”</p></li>
+<li><p>post: “Returns raw DataFrame or empty DataFrame”</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Raw DataFrame or empty DataFrame if not initialized</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">get_preprocessed_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.3.3)"><span class="pre">DataFrame</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource.get_preprocessed_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Get preprocessed data (after PreProcessor, before DataFilter).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Core | DataSources | BaseDataSource | Data Access]</p>
+</dd>
+<dt class="field-even">Relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Need access to preprocessed data before filtering”</p></li>
+<li><p>implements: “method: ‘get_preprocessed_data’”</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Contract<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p>pre: “init_data() may or may not have been called”</p></li>
+<li><p>post: “Returns preprocessed DataFrame or empty DataFrame”</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Preprocessed DataFrame or empty DataFrame if not initialized</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Useful for operations that need the full dataset before filtering,
+such as generating filter options from all available values.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
 <span class="sig-name descname"><span class="pre">get_processed_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.3.3)"><span class="pre">DataFrame</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/core/datasource.html#BaseDataSource.get_processed_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
-<dd><p>Returns the main processed pandas DataFrame.</p>
+<dd><p>Get final filtered data (end of pipeline).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Core | DataSources | BaseDataSource | Data Access]</p>
+</dd>
+<dt class="field-even">Relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Primary data access method for blocks”</p></li>
+<li><p>implements: “method: ‘get_processed_data’”</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Contract<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p>pre: “init_data() may or may not have been called”</p></li>
+<li><p>post: “Returns filtered DataFrame or empty DataFrame”</p></li>
+<li><p>invariant: “Returns final pipeline output”</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Filtered DataFrame or empty DataFrame if not initialized</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is the primary method blocks should use to get data.
+It returns the fully processed result after all pipeline stages.</p>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -372,13 +667,34 @@ columnar storage for large datasets with better compression”</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="dashboard_lego.core.datasources.parquet_source.ParquetDataSource.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/core/datasources/parquet_source.html#ParquetDataSource.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.core.datasources.parquet_source.ParquetDataSource.__init__" title="Link to this definition"></a></dt>
-<dd><p>Initializes the BaseDataSource with a configurable cache.</p>
+<dd><p>Initialize datasource with pipeline components.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dt class="field-odd">Hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Core | DataSources | BaseDataSource | Initialization]</p>
+</dd>
+<dt class="field-even">Relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Need configurable pipeline components”</p></li>
+<li><p>implements: “method: ‘__init__’ with pipeline support”</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Contract<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cache_dir</strong> – Directory for the disk cache. If None, an in-memory
-cache is used.</p></li>
-<li><p><strong>cache_ttl</strong> – The time-to-live for each item in seconds.</p></li>
+<li><p>pre: “All parameters are optional with sensible defaults”</p></li>
+<li><p>post: “DataSource ready with complete pipeline”</p></li>
+</ul>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>cache_dir</strong> – Directory for disk cache. If None, uses in-memory cache.</p></li>
+<li><p><strong>cache_ttl</strong> – Time-to-live for cache entries in seconds.</p></li>
+<li><p><strong>preprocessor</strong> – PreProcessor instance for data transformation.
+If None, creates default (no-op) preprocessor.</p></li>
+<li><p><strong>data_filter</strong> – DataFilter instance for data filtering.
+If None, creates default (no-op) filter.</p></li>
+<li><p><strong>param_classifier</strong> – Function to classify params as ‘preprocess’ or ‘filter’.
+Signature: (param_key: str) -&gt; str
+If None, all params treated as preprocessing params.</p></li>
 </ul>
 </dd>
 </dl>

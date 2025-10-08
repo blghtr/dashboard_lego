@@ -84,7 +84,9 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dash.dependencies</span><span class="w"> </span><span class="kn">import</span> <span class="n">MATCH</span><span class="p">,</span> <span class="n">Input</span><span class="p">,</span> <span class="n">Output</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">StateError</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
@@ -151,7 +153,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">StateManager</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Initializing StateManager&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dependency_graph</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dependency_graph</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Track registered outputs for idempotency (navigation lazy-loading support)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_registered_outputs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>  <span class="c1"># Set of (component_id, component_prop) tuples</span></div>
 
 
 <div class="viewcode-block" id="StateManager.register_publisher">
@@ -236,6 +240,28 @@
         <span class="p">)</span></div>
 
 
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_make_hashable_key</span><span class="p">(</span><span class="n">component_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">],</span> <span class="n">component_prop</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert component ID (string or dict) to hashable tuple for dict keys.</span>
+
+<span class="sd">        :hierarchy: [Core | StateManager | Helper]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Pattern matching IDs (dicts) cannot be dict keys&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            component_id: String ID or pattern matching dict ID</span>
+<span class="sd">            component_prop: Component property name</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Hashable tuple representation of the ID</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">component_id</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="c1"># Convert dict to sorted tuple of items for hashability</span>
+            <span class="n">id_tuple</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">component_id</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">id_tuple</span><span class="p">,</span> <span class="n">component_prop</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">component_id</span><span class="p">,</span> <span class="n">component_prop</span><span class="p">)</span>
+
 <div class="viewcode-block" id="StateManager.generate_callbacks">
 <a class="viewcode-back" href="../../../api/core.html#dashboard_lego.core.state.StateManager.generate_callbacks">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">generate_callbacks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
@@ -262,8 +288,6 @@
 <span class="sd">            app: The Dash app instance.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">dash</span><span class="w"> </span><span class="kn">import</span> <span class="n">Input</span><span class="p">,</span> <span class="n">Output</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Generating callbacks from dependency graph&quot;</span><span class="p">)</span>
         <span class="n">callback_count</span> <span class="o">=</span> <span class="mi">0</span>
 
@@ -290,7 +314,9 @@
 
                 <span class="c1"># Add each subscriber to the grouped structure</span>
                 <span class="k">for</span> <span class="n">sub</span> <span class="ow">in</span> <span class="n">subscribers</span><span class="p">:</span>
-                    <span class="n">output_key</span> <span class="o">=</span> <span class="p">(</span><span class="n">sub</span><span class="p">[</span><span class="s2">&quot;component_id&quot;</span><span class="p">],</span> <span class="n">sub</span><span class="p">[</span><span class="s2">&quot;component_prop&quot;</span><span class="p">])</span>
+                    <span class="n">output_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_hashable_key</span><span class="p">(</span>
+                        <span class="n">sub</span><span class="p">[</span><span class="s2">&quot;component_id&quot;</span><span class="p">],</span> <span class="n">sub</span><span class="p">[</span><span class="s2">&quot;component_prop&quot;</span><span class="p">]</span>
+                    <span class="p">)</span>
 
                     <span class="k">if</span> <span class="n">output_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">output_subscriptions</span><span class="p">:</span>
                         <span class="n">output_subscriptions</span><span class="p">[</span><span class="n">output_key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
@@ -305,7 +331,21 @@
 
             <span class="c1"># Create one callback per unique output target</span>
             <span class="k">for</span> <span class="n">output_key</span><span class="p">,</span> <span class="n">state_infos</span> <span class="ow">in</span> <span class="n">output_subscriptions</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="n">component_id</span><span class="p">,</span> <span class="n">component_prop</span> <span class="o">=</span> <span class="n">output_key</span>
+                <span class="c1"># Decode hashable key back to component_id and prop</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output_key</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">):</span>
+                    <span class="c1"># Was a dict ID, reconstruct it</span>
+                    <span class="n">component_id</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">output_key</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="n">component_prop</span> <span class="o">=</span> <span class="n">output_key</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Was a string ID</span>
+                    <span class="n">component_id</span><span class="p">,</span> <span class="n">component_prop</span> <span class="o">=</span> <span class="n">output_key</span>
+
+                <span class="c1"># NEW: Skip if already registered (idempotency for navigation lazy-loading)</span>
+                <span class="k">if</span> <span class="n">output_key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_registered_outputs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;⏭️  Callback for </span><span class="si">{</span><span class="n">component_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">component_prop</span><span class="si">}</span><span class="s2"> already registered, skipping&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">continue</span>
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">&quot;🔧 Creating callback for output: </span><span class="si">{</span><span class="n">component_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">component_prop</span><span class="si">}</span><span class="s2"> &quot;</span>
@@ -313,13 +353,13 @@
                 <span class="p">)</span>
 
                 <span class="c1"># Create Input for each state this output subscribes to</span>
-                <span class="n">inputs</span> <span class="o">=</span> <span class="p">[</span>
-                    <span class="n">Input</span><span class="p">(</span>
-                        <span class="n">info</span><span class="p">[</span><span class="s2">&quot;publisher&quot;</span><span class="p">][</span><span class="s2">&quot;component_id&quot;</span><span class="p">],</span>
-                        <span class="n">info</span><span class="p">[</span><span class="s2">&quot;publisher&quot;</span><span class="p">][</span><span class="s2">&quot;component_prop&quot;</span><span class="p">],</span>
-                    <span class="p">)</span>
-                    <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">state_infos</span>
-                <span class="p">]</span>
+                <span class="n">inputs</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">state_infos</span><span class="p">:</span>
+                    <span class="n">pub_id</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;publisher&quot;</span><span class="p">][</span><span class="s2">&quot;component_id&quot;</span><span class="p">]</span>
+                    <span class="c1"># Pattern matching: replace section index with MATCH for dict IDs</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pub_id</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                        <span class="n">pub_id</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">pub_id</span><span class="p">,</span> <span class="s2">&quot;section&quot;</span><span class="p">:</span> <span class="n">MATCH</span><span class="p">}</span>
+                    <span class="n">inputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Input</span><span class="p">(</span><span class="n">pub_id</span><span class="p">,</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;publisher&quot;</span><span class="p">][</span><span class="s2">&quot;component_prop&quot;</span><span class="p">]))</span>
 
                 <span class="c1"># Debug: log all inputs for this callback</span>
                 <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">input_obj</span><span class="p">,</span> <span class="n">state_info</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">state_infos</span><span class="p">)):</span>
@@ -329,7 +369,11 @@
                     <span class="p">)</span>
 
                 <span class="c1"># Create single Output for this subscriber</span>
-                <span class="n">output</span> <span class="o">=</span> <span class="n">Output</span><span class="p">(</span><span class="n">component_id</span><span class="p">,</span> <span class="n">component_prop</span><span class="p">)</span>
+                <span class="c1"># Pattern matching: replace section index with MATCH for dict IDs</span>
+                <span class="n">output_id</span> <span class="o">=</span> <span class="n">component_id</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output_id</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                    <span class="n">output_id</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">output_id</span><span class="p">,</span> <span class="s2">&quot;section&quot;</span><span class="p">:</span> <span class="n">MATCH</span><span class="p">}</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="n">Output</span><span class="p">(</span><span class="n">output_id</span><span class="p">,</span> <span class="n">component_prop</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">&quot;  📤 Output: </span><span class="si">{</span><span class="n">output</span><span class="o">.</span><span class="n">component_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">output</span><span class="o">.</span><span class="n">component_property</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
@@ -341,6 +385,9 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;  🔗 Registering callback with Dash...&quot;</span><span class="p">)</span>
                 <span class="n">app</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">inputs</span><span class="p">)(</span><span class="n">callback_func</span><span class="p">)</span>
                 <span class="n">callback_count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                <span class="c1"># Track this output as registered</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_registered_outputs</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">output_key</span><span class="p">)</span>
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">&quot;✅ Registered callback #</span><span class="si">{</span><span class="n">callback_count</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span><span class="si">}</span><span class="s2"> inputs -&gt; &quot;</span>
@@ -376,8 +423,6 @@
 <span class="sd">            app: The Dash app instance.</span>
 <span class="sd">            blocks: List of blocks to register callbacks for.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">dash</span><span class="w"> </span><span class="kn">import</span> <span class="n">Input</span><span class="p">,</span> <span class="n">Output</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Binding block-centric callbacks&quot;</span><span class="p">)</span>
         <span class="n">callback_count</span> <span class="o">=</span> <span class="mi">0</span>
 
@@ -388,6 +433,14 @@
             <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="n">blocks</span><span class="p">:</span>
                 <span class="c1"># Get the block&#39;s output target</span>
                 <span class="n">output_id</span><span class="p">,</span> <span class="n">output_prop</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">output_target</span><span class="p">()</span>
+                <span class="n">output_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_hashable_key</span><span class="p">(</span><span class="n">output_id</span><span class="p">,</span> <span class="n">output_prop</span><span class="p">)</span>
+
+                <span class="c1"># NEW: Skip if already registered (idempotency for navigation lazy-loading)</span>
+                <span class="k">if</span> <span class="n">output_key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_registered_outputs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;⏭️  Callback for </span><span class="si">{</span><span class="n">block</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">output_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">output_prop</span><span class="si">}</span><span class="s2">) already registered, skipping&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">continue</span>
 
                 <span class="c1"># Get all control inputs for this block</span>
                 <span class="n">inputs</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">list_control_inputs</span><span class="p">()</span>
@@ -403,22 +456,29 @@
                     <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span><span class="si">}</span><span class="s2"> inputs -&gt; </span><span class="si">{</span><span class="n">output_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">output_prop</span><span class="si">}</span><span class="s2">)&quot;</span>
                 <span class="p">)</span>
 
-                <span class="c1"># Create Input objects</span>
-                <span class="n">input_objects</span> <span class="o">=</span> <span class="p">[</span>
-                    <span class="n">Input</span><span class="p">(</span><span class="n">component_id</span><span class="p">,</span> <span class="n">prop</span><span class="p">)</span> <span class="k">for</span> <span class="n">component_id</span><span class="p">,</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">inputs</span>
-                <span class="p">]</span>
+                <span class="c1"># Create Input objects with pattern matching support</span>
+                <span class="n">input_objects</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">component_id</span><span class="p">,</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">inputs</span><span class="p">:</span>
+                    <span class="c1"># Pattern matching: replace section index with MATCH for dict IDs</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">component_id</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                        <span class="n">component_id</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">component_id</span><span class="p">,</span> <span class="s2">&quot;section&quot;</span><span class="p">:</span> <span class="n">MATCH</span><span class="p">}</span>
+                    <span class="n">input_objects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Input</span><span class="p">(</span><span class="n">component_id</span><span class="p">,</span> <span class="n">prop</span><span class="p">))</span>
 
                 <span class="c1"># Debug: log all inputs for this block</span>
                 <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">comp_id</span><span class="p">,</span> <span class="n">prop</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">inputs</span><span class="p">):</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  📥 Input[</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">]: </span><span class="si">{</span><span class="n">comp_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">prop</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-                <span class="c1"># Create Output object with allow_duplicate support</span>
+                <span class="c1"># Create Output object with allow_duplicate and pattern matching support</span>
                 <span class="n">allow_duplicate</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="s2">&quot;allow_duplicate_output&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+                <span class="c1"># Pattern matching: replace section index with MATCH for dict IDs</span>
+                <span class="n">output_id_pm</span> <span class="o">=</span> <span class="n">output_id</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output_id_pm</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                    <span class="n">output_id_pm</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">output_id_pm</span><span class="p">,</span> <span class="s2">&quot;section&quot;</span><span class="p">:</span> <span class="n">MATCH</span><span class="p">}</span>
                 <span class="n">output_object</span> <span class="o">=</span> <span class="n">Output</span><span class="p">(</span>
-                    <span class="n">output_id</span><span class="p">,</span> <span class="n">output_prop</span><span class="p">,</span> <span class="n">allow_duplicate</span><span class="o">=</span><span class="n">allow_duplicate</span>
+                    <span class="n">output_id_pm</span><span class="p">,</span> <span class="n">output_prop</span><span class="p">,</span> <span class="n">allow_duplicate</span><span class="o">=</span><span class="n">allow_duplicate</span>
                 <span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;  📤 Output: </span><span class="si">{</span><span class="n">output_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">output_prop</span><span class="si">}</span><span class="s2"> &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;  📤 Output: </span><span class="si">{</span><span class="n">output_id_pm</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">output_prop</span><span class="si">}</span><span class="s2"> &quot;</span>
                     <span class="sa">f</span><span class="s2">&quot;(allow_duplicate=</span><span class="si">{</span><span class="n">allow_duplicate</span><span class="si">}</span><span class="s2">)&quot;</span>
                 <span class="p">)</span>
 
@@ -437,7 +497,12 @@
                                 <span class="n">block_ref</span><span class="o">.</span><span class="n">list_control_inputs</span><span class="p">()</span>
                             <span class="p">):</span>
                                 <span class="c1"># Extract control name from component_id (last part after -)</span>
-                                <span class="n">control_name</span> <span class="o">=</span> <span class="n">component_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                                <span class="c1"># Handle both string IDs and pattern matching dict IDs</span>
+                                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">component_id</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                                    <span class="n">id_str</span> <span class="o">=</span> <span class="n">component_id</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span>
+                                <span class="k">else</span><span class="p">:</span>
+                                    <span class="n">id_str</span> <span class="o">=</span> <span class="n">component_id</span>
+                                <span class="n">control_name</span> <span class="o">=</span> <span class="n">id_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
                                 <span class="n">control_values</span><span class="p">[</span><span class="n">control_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
                                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
                                     <span class="sa">f</span><span class="s2">&quot;  🎛️  Control </span><span class="si">{</span><span class="n">control_name</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2"> &quot;</span>
@@ -463,6 +528,10 @@
                         <span class="n">create_block_callback</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
                     <span class="p">)</span>
                     <span class="n">callback_count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                    <span class="c1"># Track this output as registered</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_registered_outputs</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">output_key</span><span class="p">)</span>
+
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                         <span class="sa">f</span><span class="s2">&quot;✅ Registered block callback #</span><span class="si">{</span><span class="n">callback_count</span><span class="si">}</span><span class="s2"> for: </span><span class="si">{</span><span class="n">block</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">&quot;</span>
                     <span class="p">)</span>
@@ -511,7 +580,7 @@
         <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="n">blocks</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">output_id</span><span class="p">,</span> <span class="n">output_prop</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">output_target</span><span class="p">()</span>
-                <span class="n">output_key</span> <span class="o">=</span> <span class="p">(</span><span class="n">output_id</span><span class="p">,</span> <span class="n">output_prop</span><span class="p">)</span>
+                <span class="n">output_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_hashable_key</span><span class="p">(</span><span class="n">output_id</span><span class="p">,</span> <span class="n">output_prop</span><span class="p">)</span>
                 <span class="n">allow_duplicate</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="s2">&quot;allow_duplicate_output&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">output_key</span> <span class="ow">in</span> <span class="n">output_targets</span><span class="p">:</span>
