@@ -36,7 +36,7 @@ class SimpleDataSource(BaseDataSource):
     def __init__(self):
         super().__init__()
 
-    def _load_data(self, params: dict) -> pd.DataFrame:
+    def _load_raw_data(self, params: dict) -> pd.DataFrame:
         """Return test data."""
         return pd.DataFrame({"value": [1, 2, 3], "category": ["A", "B", "C"]})
 

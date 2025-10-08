@@ -71,7 +71,7 @@ class TestSimpleDashboardE2E:
         try:
             # Create custom data source
             class TestDataSource(BaseDataSource):
-                def _load_data(self, params: dict) -> pd.DataFrame:
+                def _load_raw_data(self, params: dict) -> pd.DataFrame:
                     return pd.read_csv(csv_path)
 
                 def get_kpis(self) -> dict:
@@ -156,7 +156,7 @@ class TestSimpleDashboardE2E:
         try:
             # Create data source
             class CSVDataSource(BaseDataSource):
-                def _load_data(self, params: dict) -> pd.DataFrame:
+                def _load_raw_data(self, params: dict) -> pd.DataFrame:
                     return pd.read_csv(csv_path)
 
                 def get_kpis(self) -> dict:
@@ -215,7 +215,7 @@ class TestSimpleDashboardE2E:
         try:
             # Create comprehensive data source
             class MultiBlockDataSource(BaseDataSource):
-                def _load_data(self, params: dict) -> pd.DataFrame:
+                def _load_raw_data(self, params: dict) -> pd.DataFrame:
                     return pd.read_csv(csv_path)
 
                 def get_kpis(self) -> dict:
@@ -326,7 +326,7 @@ class TestPresetDashboardE2E:
         try:
             # Create data source for EDA
             class EDADataSource(BaseDataSource):
-                def _load_data(self, params: dict) -> pd.DataFrame:
+                def _load_raw_data(self, params: dict) -> pd.DataFrame:
                     return pd.read_csv(csv_path)
 
                 def get_kpis(self) -> dict:
@@ -380,7 +380,7 @@ class TestPresetDashboardE2E:
         try:
             # Create data source for ML
             class MLDataSource(BaseDataSource):
-                def _load_data(self, params: dict) -> pd.DataFrame:
+                def _load_raw_data(self, params: dict) -> pd.DataFrame:
                     return pd.read_csv(csv_path)
 
                 def get_kpis(self) -> dict:

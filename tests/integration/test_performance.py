@@ -81,7 +81,7 @@ class TestLargeDatasetPerformance:
         try:
             # Create data source
             class LargeDataSource(BaseDataSource):
-                def _load_data(self, params: dict) -> pd.DataFrame:
+                def _load_raw_data(self, params: dict) -> pd.DataFrame:
                     return pd.read_csv(csv_path)
 
                 def get_kpis(self) -> dict:
@@ -149,7 +149,7 @@ class TestLargeDatasetPerformance:
         try:
             # Create data source
             class ProcessingDataSource(BaseDataSource):
-                def _load_data(self, params: dict) -> pd.DataFrame:
+                def _load_raw_data(self, params: dict) -> pd.DataFrame:
                     return pd.read_csv(csv_path)
 
                 def get_kpis(self) -> dict:
@@ -259,7 +259,7 @@ class TestCachePerformance:
         try:
             # Create data source with caching
             class CacheDataSource(BaseDataSource):
-                def _load_data(self, params: dict) -> pd.DataFrame:
+                def _load_raw_data(self, params: dict) -> pd.DataFrame:
                     # Simulate some processing time
                     time.sleep(0.1)
                     return pd.read_csv(csv_path)
@@ -350,7 +350,7 @@ class TestMemoryPerformance:
         try:
             # Create data source
             class PerformanceDataSource(BaseDataSource):
-                def _load_data(self, params: dict) -> pd.DataFrame:
+                def _load_raw_data(self, params: dict) -> pd.DataFrame:
                     return pd.read_csv(csv_path)
 
                 def get_kpis(self) -> dict:
@@ -435,7 +435,7 @@ class TestMemoryPerformance:
         try:
             # Create data source
             class StateDataSource(BaseDataSource):
-                def _load_data(self, params: dict) -> pd.DataFrame:
+                def _load_raw_data(self, params: dict) -> pd.DataFrame:
                     return pd.read_csv(csv_path)
 
                 def get_kpis(self) -> dict:

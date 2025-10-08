@@ -47,12 +47,19 @@ def datasource_factory():
     """
 
     def _factory(df: pd.DataFrame):
+        """
+        Create a mock datasource with the given DataFrame.
+
+        :hierarchy: [Testing | Fixtures | datasource_factory | Factory]
+        :relates-to:
+         - motivated_by: "EDA preset tests need mock datasources"
+        """
         mock_ds = MagicMock(spec=BaseDataSource)
         mock_ds.get_processed_data.return_value = df
         # Mock the init_data method to reflect the data loading
         mock_ds.init_data.return_value = True
-        # When _load_data is called, it will use the provided df
-        mock_ds._load_data.return_value = df
+        # When _load_raw_data is called, it will use the provided df
+        mock_ds._load_raw_data.return_value = df
         return mock_ds
 
     return _factory

@@ -100,11 +100,45 @@ def test_parquet_source_with_filters(sample_parquet_path):
     :hierarchy: [Testing | Unit Tests | Core | DataSources | ParquetDataSource | Filtering]
     :scenario: "Given a filter expression, the datasource returns a filtered DataFrame."
     :contract:
+     - pre: "Filter param with custom filter and classifier"
      - post: "The returned DataFrame contains only rows matching the filter."
 
+    :decision_cache: "Use custom DataFilter and param_classifier to handle 'filters' parameter"
     """
-    # Arrange
-    source = ParquetDataSource(file_path=sample_parquet_path)
+    from dashboard_lego.core.data_filter import DataFilter
+
+    # Arrange - Custom filter that handles 'filters' parameter
+    class QueryFilter(DataFilter):
+        """
+        Custom filter that applies pandas query strings.
+
+        :hierarchy: [Tests | Core | DataSources | Parquet | QueryFilter]
+        :relates-to:
+         - motivated_by: "Test needs custom filter for pandas query expressions"
+        """
+
+        def filter(self, df, params):
+            """Apply pandas query filters."""
+            if not params or "filters" not in params:
+                return df
+
+            result = df.copy()
+            for query in params["filters"]:
+                result = result.query(query)
+            return result
+
+    # Custom classifier to ensure filters go to filtering stage
+    def filter_classifier(key):
+        """Classify param keys: 'filters' -> filter, others -> preprocess."""
+        if key == "filters":
+            return "filter"
+        return "preprocess"
+
+    source = ParquetDataSource(
+        file_path=sample_parquet_path,
+        data_filter=QueryFilter(),
+        param_classifier=filter_classifier,
+    )
     filter_expression = "col1 > 2"
     expected_df = pd.DataFrame(
         {"col1": [3, 4], "col2": ["c", "d"], "col3": [30.3, 40.4]}
@@ -143,19 +177,21 @@ def test_parquet_source_columns_selection(sample_parquet_path):
 
 def test_parquet_source_caching(sample_parquet_path):
     """
-    Tests that the data is cached and _load_data is not called on subsequent requests.
+    Tests that the data is cached and _load_raw_data is not called on subsequent requests.
 
     :hierarchy: [Testing | Unit Tests | Core | DataSources | ParquetDataSource | Caching]
-    :scenario: "When init_data is called multiple times with the same params, _load_data is only called once."
+    :scenario: "When init_data is called multiple times with the same params, _load_raw_data is only called once."
     :contract:
-     - post: "_load_data is invoked only on the first call."
-
+     - pre: "init_data called multiple times with identical params"
+     - post: "_load_raw_data is invoked only on the first call (stage 1 cache hit)."
     """
     # Arrange
     source = ParquetDataSource(file_path=sample_parquet_path)
 
     # Act
-    with patch.object(source, "_load_data", wraps=source._load_data) as mock_load:
+    with patch.object(
+        source, "_load_raw_data", wraps=source._load_raw_data
+    ) as mock_load:
         source.init_data(params={"columns": ["col1"]})
         source.init_data(params={"columns": ["col1"]})
 
@@ -165,26 +201,32 @@ def test_parquet_source_caching(sample_parquet_path):
 
 def test_parquet_source_caching_with_different_params(sample_parquet_path):
     """
-    Tests that changing params results in a new cache entry.
+    Tests that changing columns params affects raw data loading in Parquet.
 
     :hierarchy: [Testing | Unit Tests | Core | DataSources | ParquetDataSource | Caching]
-    :scenario: "When init_data is called with different params, _load_data is called each time."
+    :scenario: "When init_data is called with different columns, raw data is reloaded."
     :contract:
-     - post: "_load_data is invoked for each unique set of parameters."
+     - pre: "init_data called with different columns params"
+     - post: "Raw data loaded for each unique column set (Parquet optimization)"
 
+    :decision_cache: "Parquet 'columns' param affects stage 1 because Parquet can read specific columns"
     """
     # Arrange
     source = ParquetDataSource(file_path=sample_parquet_path)
 
     # Act
-    with patch.object(source, "_load_data", wraps=source._load_data) as mock_load:
-        source.init_data(params={"columns": ["col1"]})  # First call
+    with patch.object(
+        source, "_load_raw_data", wraps=source._load_raw_data
+    ) as mock_load:
+        source.init_data(params={"columns": ["col1"]})  # First call - loads col1
         source.init_data(
             params={"columns": ["col2"]}
-        )  # Second call with different params
-        source.init_data(params={"columns": ["col1"]})  # Third call, same as first
+        )  # Second call - loads col2 (different columns!)
+        source.init_data(
+            params={"columns": ["col1"]}
+        )  # Third call - cache hit for col1
 
-        # Assert
+        # Assert - Parquet loads different columns separately (2 unique column sets)
         assert mock_load.call_count == 2
 
 

@@ -136,16 +136,18 @@ def test_sql_source_caching(db_uri):
     Tests that query results are cached.
 
     :hierarchy: [Testing | Unit Tests | Core | DataSources | SqlDataSource | Caching]
-    :scenario: "When init_data is called multiple times with the same params, _load_data is only called once."
+    :scenario: "When init_data is called multiple times with the same params, _load_raw_data is only called once."
     :contract:
-     - post: "_load_data is invoked only on the first call."
-
+     - pre: "init_data called multiple times with identical params"
+     - post: "_load_raw_data is invoked only on the first call (stage 1 cache hit)."
     """
     # Arrange
     source = SqlDataSource(connection_uri=db_uri, query="SELECT * FROM test_table")
 
     # Act
-    with patch.object(source, "_load_data", wraps=source._load_data) as mock_load:
+    with patch.object(
+        source, "_load_raw_data", wraps=source._load_raw_data
+    ) as mock_load:
         source.init_data()
         source.init_data()
 
@@ -155,25 +157,31 @@ def test_sql_source_caching(db_uri):
 
 def test_sql_source_caching_with_different_params(db_uri):
     """
-    Tests that changing params results in a new cache entry.
+    Tests that changing query params affects raw data loading in SQL.
 
     :hierarchy: [Testing | Unit Tests | Core | DataSources | SqlDataSource | Caching]
-    :scenario: "When init_data is called with different params, _load_data is called each time."
+    :scenario: "When init_data is called with different query params, raw data is reloaded."
     :contract:
-     - post: "_load_data is invoked for each unique set of parameters."
+     - pre: "init_data called with different SQL query params"
+     - post: "Raw data loaded for each unique query param set (SQL executes different queries)"
 
+    :decision_cache: "SQL query params affect stage 1 because they change the SQL query itself"
     """
     # Arrange
     query = "SELECT * FROM test_table WHERE col1 > :val"
     source = SqlDataSource(connection_uri=db_uri, query=query)
 
     # Act
-    with patch.object(source, "_load_data", wraps=source._load_data) as mock_load:
-        source.init_data(params={"val": 1})  # First call
-        source.init_data(params={"val": 2})  # Second call with different params
-        source.init_data(params={"val": 1})  # Third call, same as first
+    with patch.object(
+        source, "_load_raw_data", wraps=source._load_raw_data
+    ) as mock_load:
+        source.init_data(params={"val": 1})  # First call - query with val=1
+        source.init_data(
+            params={"val": 2}
+        )  # Second call - query with val=2 (different!)
+        source.init_data(params={"val": 1})  # Third call - cache hit for val=1
 
-        # Assert
+        # Assert - SQL executes 2 different queries (2 unique param sets)
         assert mock_load.call_count == 2
 
 

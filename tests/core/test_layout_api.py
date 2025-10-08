@@ -34,7 +34,7 @@ class _DummyBlock(BaseBlock):
 
 
 class _DummySource(BaseDataSource):
-    def _load_data(self, params: dict):
+    def _load_raw_data(self, params: dict):
         return None
 
     def get_filter_options(self, filter_name: str):

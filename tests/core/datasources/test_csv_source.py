@@ -98,15 +98,49 @@ def test_csv_source_with_filters(sample_csv_path):
 
     :hierarchy: [Testing | Unit Tests | Core | Datasources | CsvDataSource | Filtering]
     :covers:
-     - object: "CsvDataSource._load_data"
+     - object: "CsvDataSource with pipeline filtering"
      - requirement: "The data source must support filtering via pandas query strings."
     :scenario: "Given a filter query, the data source returns a DataFrame containing only the filtered rows."
     :contract:
-     - pre: "A valid filter query is passed to the get_data method."
+     - pre: "A valid filter query is passed with custom filter and classifier."
      - post: "The returned DataFrame's shape and content match the expected filtered result."
+
+    :decision_cache: "Use custom DataFilter and param_classifier to handle 'filters' parameter"
     """
-    # Arrange
-    source = CsvDataSource(file_path=sample_csv_path)
+    from dashboard_lego.core.data_filter import DataFilter
+
+    # Arrange - Custom filter that handles 'filters' parameter
+    class QueryFilter(DataFilter):
+        """
+        Custom filter that applies pandas query strings.
+
+        :hierarchy: [Tests | Core | DataSources | CSV | QueryFilter]
+        :relates-to:
+         - motivated_by: "Test needs custom filter for pandas query expressions"
+        """
+
+        def filter(self, df, params):
+            """Apply pandas query filters."""
+            if not params or "filters" not in params:
+                return df
+
+            result = df.copy()
+            for query in params["filters"]:
+                result = result.query(query)
+            return result
+
+    # Custom classifier to route 'filters' to filtering stage
+    def filter_classifier(key):
+        """Classify param keys: 'filters' -> filter, others -> preprocess."""
+        if key == "filters":
+            return "filter"
+        return "preprocess"
+
+    source = CsvDataSource(
+        file_path=sample_csv_path,
+        data_filter=QueryFilter(),
+        param_classifier=filter_classifier,
+    )
     filters = ["col1 > 2", "col3 == True"]
 
     # Act
@@ -125,18 +159,20 @@ def test_csv_source_caching(sample_csv_path):
 
     :hierarchy: [Testing | Unit Tests | Core | Datasources | CsvDataSource | Caching]
     :covers:
-     - object: "BaseDataSource.get_data"
+     - object: "BaseDataSource pipeline caching"
      - requirement: "The data source should cache results to avoid redundant file reads."
-    :scenario: "When get_data() is called multiple times with the same parameters, the underlying _load_data method should only be called once."
+    :scenario: "When init_data() is called multiple times with the same parameters, the underlying _load_raw_data method should only be called once."
     :contract:
-     - pre: "get_data() is called."
-     - post: "_load_data is called once. Subsequent calls to get_data() do not trigger _load_data again."
+     - pre: "init_data() is called multiple times with identical params."
+     - post: "_load_raw_data is called once (stage 1 cache hit). Subsequent calls use cached data."
     """
     # Arrange
     source = CsvDataSource(file_path=sample_csv_path)
 
     # Act
-    with patch.object(source, "_load_data", wraps=source._load_data) as mock_load_data:
+    with patch.object(
+        source, "_load_raw_data", wraps=source._load_raw_data
+    ) as mock_load_data:
         source.init_data()  # First call, should trigger load
         source.init_data()  # Second call, should use cache
         source.init_data()  # Third call, should use cache
