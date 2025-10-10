@@ -47,7 +47,7 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Quick Start Guide</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#creating-your-first-dashboard">Creating Your First Dashboard</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#step-1-define-a-data-source">Step 1: Define a Data Source</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-1-define-a-data-builder">Step 1: Define a Data Builder</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-2-create-dashboard-blocks">Step 2: Create Dashboard Blocks</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-3-create-dashboard-page">Step 3: Create Dashboard Page</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-4-run-the-application">Step 4: Run the Application</a></li>
@@ -100,91 +100,77 @@
 <section id="creating-your-first-dashboard">
 <h2>Creating Your First Dashboard<a class="headerlink" href="#creating-your-first-dashboard" title="Link to this heading"></a></h2>
 <p>Let’s create a simple sales dashboard step by step.</p>
-<section id="step-1-define-a-data-source">
-<h3>Step 1: Define a Data Source<a class="headerlink" href="#step-1-define-a-data-source" title="Link to this heading"></a></h3>
-<p>First, create a data source by inheriting from <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDataSource</span></code>:</p>
+<section id="step-1-define-a-data-builder">
+<h3>Step 1: Define a Data Builder<a class="headerlink" href="#step-1-define-a-data-builder" title="Link to this heading"></a></h3>
+<p>v0.15+ uses composition instead of inheritance. Create a <code class="xref py py-class docutils literal notranslate"><span class="pre">DataBuilder</span></code>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.datasource</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseDataSource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataBuilder</span><span class="p">,</span> <span class="n">BaseDataSource</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">SalesDataSource</span><span class="p">(</span><span class="n">BaseDataSource</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SalesDataBuilder</span><span class="p">(</span><span class="n">DataBuilder</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">file_path</span> <span class="o">=</span> <span class="n">file_path</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_path</span> <span class="o">=</span> <span class="n">file_path</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_load_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load data from CSV file.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load CSV and optionally add calculated fields.&quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="c1"># Add any calculated columns here if needed</span>
+        <span class="k">return</span> <span class="n">df</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_kpis</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate key performance indicators.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">{}</span>
-        <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;total_sales&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="s2">&quot;Sales&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span>
-            <span class="s2">&quot;total_units&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="s2">&quot;UnitsSold&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="p">}</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_filter_options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Provide filter options (not used in this example).&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">[]</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Provide data summary (not used in this example).&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+<span class="c1"># Create datasource using composition (no inheritance!)</span>
+<span class="n">datasource</span> <span class="o">=</span> <span class="n">BaseDataSource</span><span class="p">(</span>
+    <span class="n">data_builder</span><span class="o">=</span><span class="n">SalesDataBuilder</span><span class="p">(</span><span class="s2">&quot;sample_data.csv&quot;</span><span class="p">)</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </section>
 <section id="step-2-create-dashboard-blocks">
 <h3>Step 2: Create Dashboard Blocks<a class="headerlink" href="#step-2-create-dashboard-blocks" title="Link to this heading"></a></h3>
-<p>Create blocks for displaying your data:</p>
+<p>Create blocks using v0.15+ API:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">plotly.express</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">px</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.graph_objects</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">go</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.kpi</span><span class="w"> </span><span class="kn">import</span> <span class="n">KPIBlock</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.chart</span><span class="w"> </span><span class="kn">import</span> <span class="n">StaticChartBlock</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">MetricsBlock</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.typed_chart</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedChartBlock</span>
 
-<span class="c1"># Initialize data source</span>
-<span class="n">datasource</span> <span class="o">=</span> <span class="n">SalesDataSource</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="s2">&quot;sample_data.csv&quot;</span><span class="p">)</span>
-<span class="n">datasource</span><span class="o">.</span><span class="n">init_data</span><span class="p">()</span>
-
-<span class="c1"># Create KPI block</span>
-<span class="n">kpi_block</span> <span class="o">=</span> <span class="n">KPIBlock</span><span class="p">(</span>
-    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;sales_kpis&quot;</span><span class="p">,</span>
+<span class="c1"># MetricsBlock replaces get_kpis() pattern (v0.15+)</span>
+<span class="n">metrics_block</span> <span class="o">=</span> <span class="n">MetricsBlock</span><span class="p">(</span>
+    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;sales_metrics&quot;</span><span class="p">,</span>
     <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
-    <span class="n">kpi_definitions</span><span class="o">=</span><span class="p">[</span>
-        <span class="p">{</span><span class="s2">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;total_sales&quot;</span><span class="p">,</span> <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Total Sales&quot;</span><span class="p">,</span> <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">},</span>
-        <span class="p">{</span><span class="s2">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;total_units&quot;</span><span class="p">,</span> <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Total Units Sold&quot;</span><span class="p">,</span> <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;info&quot;</span><span class="p">},</span>
-    <span class="p">],</span>
-    <span class="n">subscribes_to</span><span class="o">=</span><span class="s2">&quot;dummy_state&quot;</span>  <span class="c1"># Not used in static dashboard</span>
-<span class="p">)</span>
-
-<span class="c1"># Define chart function</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">plot_sales_by_fruit</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a bar chart of sales by fruit.&quot;&quot;&quot;</span>
-    <span class="n">sales_by_fruit</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;Fruit&quot;</span><span class="p">)[</span><span class="s2">&quot;Sales&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
-    <span class="k">return</span> <span class="n">px</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">sales_by_fruit</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="s2">&quot;Fruit&quot;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&quot;Sales&quot;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Sales by Fruit&quot;</span><span class="p">)</span>
-
-<span class="c1"># Create chart block</span>
-<span class="n">chart_block</span> <span class="o">=</span> <span class="n">StaticChartBlock</span><span class="p">(</span>
-    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;sales_chart&quot;</span><span class="p">,</span>
-    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
-    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Fruit Sales&quot;</span><span class="p">,</span>
-    <span class="n">chart_generator</span><span class="o">=</span><span class="n">plot_sales_by_fruit</span><span class="p">,</span>
+    <span class="n">metrics_spec</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;total_sales&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;column&quot;</span><span class="p">:</span> <span class="s2">&quot;Sales&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;agg&quot;</span><span class="p">:</span> <span class="s2">&quot;sum&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Total Sales&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;total_units&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;column&quot;</span><span class="p">:</span> <span class="s2">&quot;UnitsSold&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;agg&quot;</span><span class="p">:</span> <span class="s2">&quot;sum&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Total Units Sold&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;info&quot;</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
     <span class="n">subscribes_to</span><span class="o">=</span><span class="s2">&quot;dummy_state&quot;</span>
 <span class="p">)</span>
 
-<span class="c1"># Optional: Create block with data transformation (v0.16.0+)</span>
-<span class="c1"># This aggregates data before visualization</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.typed_chart</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedChartBlock</span>
-
-<span class="n">aggregated_chart</span> <span class="o">=</span> <span class="n">TypedChartBlock</span><span class="p">(</span>
-    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;sales_by_category&quot;</span><span class="p">,</span>
+<span class="c1"># TypedChartBlock with plot registry (v0.15+)</span>
+<span class="n">chart_block</span> <span class="o">=</span> <span class="n">TypedChartBlock</span><span class="p">(</span>
+    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;sales_chart&quot;</span><span class="p">,</span>
     <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
-    <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span>
-    <span class="n">plot_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;Fruit&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="s1">&#39;total_sales&#39;</span><span class="p">},</span>
-    <span class="n">transform_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;Fruit&#39;</span><span class="p">)[</span><span class="s1">&#39;Sales&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;total_sales&#39;</span><span class="p">)</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;bar&quot;</span><span class="p">,</span>  <span class="c1"># Built-in plot type</span>
+    <span class="n">plot_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="s2">&quot;Fruit&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="s2">&quot;Sales&quot;</span><span class="p">},</span>
+    <span class="n">plot_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Sales by Fruit&quot;</span><span class="p">},</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Fruit Sales&quot;</span><span class="p">,</span>
+    <span class="n">subscribes_to</span><span class="o">=</span><span class="s2">&quot;dummy_state&quot;</span><span class="p">,</span>
+    <span class="c1"># Optional: transform data at block level (v0.15+)</span>
+    <span class="n">transform_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;Fruit&quot;</span><span class="p">)[</span><span class="s2">&quot;Sales&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
 <span class="p">)</span>
-<span class="c1"># See concepts.rst for more on block-level transformations</span>
 </pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>v0.15 introduces <code class="docutils literal notranslate"><span class="pre">MetricsBlock</span></code> and <code class="docutils literal notranslate"><span class="pre">TypedChartBlock</span></code> which replace
+the legacy <code class="docutils literal notranslate"><span class="pre">get_kpis()</span></code> method and <code class="docutils literal notranslate"><span class="pre">StaticChartBlock</span></code>.
+See <a class="reference internal" href="concepts.html"><span class="doc">Core Concepts</span></a> for more on block-level transformations.</p>
 </div>
 </section>
 <section id="step-3-create-dashboard-page">
@@ -197,7 +183,7 @@
 <span class="c1"># Create dashboard page using layout presets</span>
 <span class="n">dashboard_page</span> <span class="o">=</span> <span class="n">DashboardPage</span><span class="p">(</span>
     <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Simple Sales Dashboard&quot;</span><span class="p">,</span>
-    <span class="n">blocks</span><span class="o">=</span><span class="n">one_column</span><span class="p">([</span><span class="n">kpi_block</span><span class="p">,</span> <span class="n">chart_block</span><span class="p">]),</span>  <span class="c1"># Stack blocks vertically</span>
+    <span class="n">blocks</span><span class="o">=</span><span class="n">one_column</span><span class="p">([</span><span class="n">metrics_block</span><span class="p">,</span> <span class="n">chart_block</span><span class="p">]),</span>  <span class="c1"># Stack blocks vertically</span>
     <span class="n">theme</span><span class="o">=</span><span class="n">dbc</span><span class="o">.</span><span class="n">themes</span><span class="o">.</span><span class="n">LUX</span>
 <span class="p">)</span>
 </pre></div>

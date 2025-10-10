@@ -235,8 +235,19 @@ uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </sp
 <h2>Creating Presets<a class="headerlink" href="#creating-presets" title="Link to this heading"></a></h2>
 <section id="eda-presets">
 <h3>EDA Presets<a class="headerlink" href="#eda-presets" title="Link to this heading"></a></h3>
-<p>Create presets for common exploratory data analysis tasks:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyEDAPreset</span><span class="p">(</span><span class="n">StaticChartBlock</span><span class="p">):</span>
+<p>Create presets for common exploratory data analysis tasks using v0.15+ API:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.typed_chart</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedChartBlock</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.plot_registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_plot_type</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.express</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">px</span>
+
+<span class="c1"># Register custom plot function</span>
+<span class="nd">@register_plot_type</span><span class="p">(</span><span class="s1">&#39;my_custom_plot&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">my_custom_plot</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Custom plot function for EDA.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">px</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<span class="c1"># Create preset using TypedChartBlock</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MyEDAPreset</span><span class="p">(</span><span class="n">TypedChartBlock</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Description of what this preset does.</span>
 
@@ -244,30 +255,44 @@ uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </sp
 <span class="sd">    :relates-to:</span>
 <span class="sd">     - motivated_by: &quot;Common EDA pattern for [specific analysis]&quot;</span>
 <span class="sd">     - implements: &quot;preset: &#39;MyEDAPreset&#39;&quot;</span>
-<span class="sd">     - uses: [&quot;block: &#39;StaticChartBlock&#39;&quot;]</span>
+<span class="sd">     - uses: [&quot;block: &#39;TypedChartBlock&#39;&quot;]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_create_chart</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the specific chart for this EDA preset.&quot;&quot;&quot;</span>
-        <span class="c1"># Implementation here</span>
-        <span class="k">pass</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_id</span><span class="p">,</span> <span class="n">datasource</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">block_id</span><span class="o">=</span><span class="n">block_id</span><span class="p">,</span>
+            <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+            <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;my_custom_plot&#39;</span><span class="p">,</span>
+            <span class="n">plot_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;col1&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="s1">&#39;col2&#39;</span><span class="p">},</span>
+            <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
 </pre></div>
 </div>
 </section>
 <section id="ml-presets">
 <h3>ML Presets<a class="headerlink" href="#ml-presets" title="Link to this heading"></a></h3>
-<p>Create presets for machine learning visualizations:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyMLPreset</span><span class="p">(</span><span class="n">KPIBlock</span><span class="p">):</span>
+<p>Create presets for machine learning visualizations using MetricsBlock:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">MetricsBlock</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyMLPreset</span><span class="p">(</span><span class="n">MetricsBlock</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    ML-specific preset for [specific ML visualization].</span>
+<span class="sd">    ML-specific preset for [specific ML metrics].</span>
 
 <span class="sd">    :hierarchy: [Presets | ML | MyMLPreset]</span>
 <span class="sd">    :relates-to:</span>
-<span class="sd">     - motivated_by: &quot;ML workflow requires [specific visualization]&quot;</span>
+<span class="sd">     - motivated_by: &quot;ML workflow requires [specific metrics]&quot;</span>
 <span class="sd">     - implements: &quot;preset: &#39;MyMLPreset&#39;&quot;</span>
-<span class="sd">     - uses: [&quot;block: &#39;KPIBlock&#39;&quot;]</span>
+<span class="sd">     - uses: [&quot;block: &#39;MetricsBlock&#39;&quot;]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">pass</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_id</span><span class="p">,</span> <span class="n">datasource</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">block_id</span><span class="o">=</span><span class="n">block_id</span><span class="p">,</span>
+            <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+            <span class="n">metrics_spec</span><span class="o">=</span><span class="p">{</span>
+                <span class="s1">&#39;accuracy&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;column&#39;</span><span class="p">:</span> <span class="s1">&#39;predictions&#39;</span><span class="p">,</span> <span class="s1">&#39;agg&#39;</span><span class="p">:</span> <span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;Accuracy&#39;</span><span class="p">},</span>
+                <span class="s1">&#39;f1_score&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;column&#39;</span><span class="p">:</span> <span class="s1">&#39;f1&#39;</span><span class="p">,</span> <span class="s1">&#39;agg&#39;</span><span class="p">:</span> <span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;F1 Score&#39;</span><span class="p">}</span>
+            <span class="p">},</span>
+            <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
 </pre></div>
 </div>
 </section>

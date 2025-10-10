@@ -47,30 +47,43 @@ Create a simple dashboard:
 
    import dash
    import dash_bootstrap_components as dbc
-   import plotly.express as px
    import pandas as pd
-   from dashboard_lego import DashboardPage, KPIBlock, StaticChartBlock
-   from dashboard_lego.core.datasource import BaseDataSource
+   from dashboard_lego import DashboardPage
+   from dashboard_lego.core import BaseDataSource, DataBuilder
+   from dashboard_lego.blocks.metrics import MetricsBlock
 
-   # Define your data source
-   class MyDataSource(BaseDataSource):
-       def _load_data(self, params: dict) -> pd.DataFrame:
-           return pd.read_csv("your_data.csv")
+   # Define DataBuilder (v0.15+ pattern)
+   class MyDataBuilder(DataBuilder):
+       def __init__(self, file_path):
+           super().__init__()
+           self.file_path = file_path
 
-       def get_kpis(self) -> dict:
-           return {"total": len(self._data)}
+       def build(self, params):
+           return pd.read_csv(self.file_path)
 
-   # Create blocks
-   kpi_block = KPIBlock(
-       block_id="my_kpis",
-       datasource=MyDataSource(),
-       kpi_definitions=[{"key": "total", "title": "Total Records"}]
+   # Create datasource using composition
+   datasource = BaseDataSource(
+       data_builder=MyDataBuilder("your_data.csv")
+   )
+
+   # Create blocks using v0.15+ API
+   metrics_block = MetricsBlock(
+       block_id="my_metrics",
+       datasource=datasource,
+       metrics_spec={
+           "total": {
+               "column": "id",  # Count rows
+               "agg": "count",
+               "title": "Total Records"
+           }
+       },
+       subscribes_to="dummy_state"
    )
 
    # Create dashboard
    page = DashboardPage(
        title="My Dashboard",
-       blocks=[[kpi_block]]
+       blocks=[[metrics_block]]
    )
 
    # Run the app
