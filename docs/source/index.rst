@@ -105,6 +105,12 @@ Contents
 
 .. toctree::
    :maxdepth: 2
+   :caption: Comprehensive Guide
+
+   guide/index
+
+.. toctree::
+   :maxdepth: 2
    :caption: API Reference
 
    api/modules

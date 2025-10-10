@@ -283,16 +283,6 @@ We welcome contributions! Please see `CONTRIBUTING.md` for detailed information 
 
 This project is distributed under the MIT License. See the `LICENSE` file for details.
 
-## 🚀 Roadmap
-
-- [ ] Enhanced chart types and customization options
-- [ ] Real-time data streaming capabilities
-- [ ] Advanced theming and styling system
-- [ ] Export functionality (PDF, PNG, etc.)
-- [ ] Web-based dashboard builder interface
-- [ ] Additional ML visualization presets
-- [ ] Database connection presets
-- [ ] Mobile-responsive optimizations
 
 ---
 
