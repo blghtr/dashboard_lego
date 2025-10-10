@@ -80,126 +80,89 @@
              
   <h1>Source code for dashboard_lego.core.datasources.parquet_source</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">This module defines the ParquetDataSource for loading data from Parquet files.</span>
+<span class="sd">Parquet data source with built-in DataBuilder.</span>
 
+<span class="sd">:hierarchy: [Core | DataSources | ParquetDataSource]</span>
+<span class="sd">:contract:</span>
+<span class="sd"> - pre: &quot;file_path to Parquet provided&quot;</span>
+<span class="sd"> - post: &quot;Parquet loaded and cached&quot;</span>
+
+<span class="sd">:complexity: 2</span>
 <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.data_builder</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataBuilder</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.datasource</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseDataSource</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoadError</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
+
+
+<div class="viewcode-block" id="ParquetDataBuilder">
+<a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.datasources.parquet_source.ParquetDataBuilder">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ParquetDataBuilder</span><span class="p">(</span><span class="n">DataBuilder</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    DataBuilder for Parquet files.</span>
+
+<span class="sd">    :hierarchy: [Core | DataSources | ParquetDataBuilder]</span>
+<span class="sd">    :contract:</span>
+<span class="sd">     - pre: &quot;file_path exists&quot;</span>
+<span class="sd">     - post: &quot;Returns loaded DataFrame&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ParquetDataBuilder.__init__">
+<a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.datasources.parquet_source.ParquetDataBuilder.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_path</span> <span class="o">=</span> <span class="n">file_path</span></div>
+
+
+<div class="viewcode-block" id="ParquetDataBuilder.build">
+<a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.datasources.parquet_source.ParquetDataBuilder.build">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load Parquet file.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[ParquetDataBuilder] Loading </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Support column selection for performance</span>
+            <span class="n">columns</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;columns&quot;</span><span class="p">)</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[ParquetDataBuilder] Loaded </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">df</span>
+        <span class="k">except</span> <span class="ne">FileNotFoundError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parquet file not found: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">DataLoadError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parquet file not found: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error loading Parquet: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">DataLoadError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load Parquet: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span></div>
+</div>
+
 
 
 <div class="viewcode-block" id="ParquetDataSource">
 <a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.datasources.parquet_source.ParquetDataSource">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ParquetDataSource</span><span class="p">(</span><span class="n">BaseDataSource</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A data source for loading data from a Parquet file.</span>
+<span class="sd">    Parquet data source.</span>
 
-<span class="sd">        :hierarchy: [Core | DataSources | ParquetDataSource]</span>
-<span class="sd">        :relates-to:</span>
-<span class="sd">          - motivated_by: &quot;Architectural Conclusion: Parquet format provides efficient</span>
-<span class="sd">            columnar storage for large datasets with better compression&quot;</span>
-<span class="sd">          - implements: &quot;datasource: &#39;ParquetDataSource&#39;&quot;</span>
-<span class="sd">          - uses: [&quot;class: &#39;BaseDataSource&#39;&quot;]</span>
-
-<span class="sd">        :rationale: &quot;A dedicated class for Parquet files provides a clean separation of concerns and is consistent with the existing datasource architecture.&quot;</span>
-<span class="sd">        :contract:</span>
-<span class="sd">          - pre: &quot;The file_path must point to a valid Parquet file.&quot;</span>
-<span class="sd">          - post: &quot;The data is loaded into a pandas DataFrame.&quot;</span>
-
+<span class="sd">    :hierarchy: [Core | DataSources | ParquetDataSource]</span>
+<span class="sd">    :complexity: 2</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="ParquetDataSource.__init__">
 <a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.datasources.parquet_source.ParquetDataSource.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">ParquetDataSource</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">file_path</span> <span class="o">=</span> <span class="n">file_path</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parquet datasource initialized for file: </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
-
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_load_raw_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Load raw data from Parquet file (NO filtering).</span>
-
-<span class="sd">        :hierarchy: [Core | DataSources | ParquetDataSource | Load Stage]</span>
-<span class="sd">        :relates-to:</span>
-<span class="sd">         - motivated_by: &quot;Refactor: Separate data loading from filtering&quot;</span>
-<span class="sd">         - implements: &quot;method: &#39;_load_raw_data&#39;&quot;</span>
-
-<span class="sd">        :contract:</span>
-<span class="sd">         - pre: &quot;file_path points to valid Parquet file&quot;</span>
-<span class="sd">         - post: &quot;Returns raw DataFrame from Parquet&quot;</span>
-<span class="sd">         - invariant: &quot;Does NOT apply filters&quot;</span>
+<span class="sd">        Initialize Parquet datasource.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            params: Parameters for Parquet loading (e.g., column selection).</span>
-<span class="sd">                   Can include &#39;columns&#39; for selective column loading.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            Raw DataFrame from Parquet file</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            DataLoadError: If file not found or loading fails</span>
-
-<span class="sd">        Note:</span>
-<span class="sd">            Filtering logic has been removed and should be handled by DataFilter.</span>
-<span class="sd">            Column selection is still supported as it affects data loading performance.</span>
+<span class="sd">            file_path: Path to Parquet file</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading raw Parquet data from: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># Create builder</span>
+        <span class="n">builder</span> <span class="o">=</span> <span class="n">ParquetDataBuilder</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
 
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">columns</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;columns&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">columns</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Column selection: </span><span class="si">{</span><span class="n">columns</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-            <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Parquet loaded successfully: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows, &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span><span class="si">}</span><span class="s2"> columns&quot;</span>
-            <span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Parquet file is empty&quot;</span><span class="p">)</span>
-
-            <span class="k">return</span> <span class="n">df</span>
-
-        <span class="k">except</span> <span class="ne">FileNotFoundError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parquet file not found: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">DataLoadError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parquet file not found: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error loading Parquet: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">DataLoadError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Failed to load Parquet from </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
-
-<div class="viewcode-block" id="ParquetDataSource.get_kpis">
-<a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.datasources.parquet_source.ParquetDataSource.get_kpis">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_kpis</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">{}</span></div>
-
-
-<div class="viewcode-block" id="ParquetDataSource.get_filter_options">
-<a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.datasources.parquet_source.ParquetDataSource.get_filter_options">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_filter_options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">[]</span></div>
-
-
-<div class="viewcode-block" id="ParquetDataSource.get_summary">
-<a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.datasources.parquet_source.ParquetDataSource.get_summary">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
-            <span class="n">summary</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Parquet data loaded from </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="si">}</span><span class="s2">. &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;Shape: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Generated summary: </span><span class="si">{</span><span class="n">summary</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">summary</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;No data loaded for summary&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="s2">&quot;No data loaded.&quot;</span></div>
+        <span class="c1"># Pass to parent</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data_builder</span><span class="o">=</span><span class="n">builder</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

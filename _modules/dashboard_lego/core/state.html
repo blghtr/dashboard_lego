@@ -86,7 +86,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">dash.dependencies</span><span class="w"> </span><span class="kn">import</span> <span class="n">MATCH</span><span class="p">,</span> <span class="n">Input</span><span class="p">,</span> <span class="n">Output</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dash.dependencies</span><span class="w"> </span><span class="kn">import</span> <span class="n">MATCH</span><span class="p">,</span> <span class="n">Input</span><span class="p">,</span> <span class="n">Output</span><span class="p">,</span> <span class="n">State</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">StateError</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
@@ -264,10 +264,14 @@
 
 <div class="viewcode-block" id="StateManager.generate_callbacks">
 <a class="viewcode-back" href="../../../api/core.html#dashboard_lego.core.state.StateManager.generate_callbacks">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">generate_callbacks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_callbacks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">blocks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Traverses the dependency graph and registers all necessary callbacks</span>
 <span class="sd">        with the Dash app.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            app: Dash app instance</span>
+<span class="sd">            blocks: List of blocks (to check for controls)</span>
 
 <span class="sd">        This method now supports multi-state subscriptions by grouping</span>
 <span class="sd">        subscribers by their output target and creating callbacks with</span>
@@ -290,6 +294,14 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Generating callbacks from dependency graph&quot;</span><span class="p">)</span>
         <span class="n">callback_count</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># Build block lookup by output target</span>
+        <span class="n">blocks_by_output</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">blocks</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="n">blocks</span><span class="p">:</span>
+                <span class="n">output_id</span><span class="p">,</span> <span class="n">output_prop</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">output_target</span><span class="p">()</span>
+                <span class="n">output_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_hashable_key</span><span class="p">(</span><span class="n">output_id</span><span class="p">,</span> <span class="n">output_prop</span><span class="p">)</span>
+                <span class="n">blocks_by_output</span><span class="p">[</span><span class="n">output_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">block</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># Group subscriptions by output target (component_id, component_prop)</span>
@@ -340,6 +352,16 @@
                     <span class="c1"># Was a string ID</span>
                     <span class="n">component_id</span><span class="p">,</span> <span class="n">component_prop</span> <span class="o">=</span> <span class="n">output_key</span>
 
+                <span class="c1"># CRITICAL: Skip blocks with controls - they will be handled by bind_callbacks</span>
+                <span class="c1"># with combined Input(exact session controls) + Input(MATCH own controls)</span>
+                <span class="n">block</span> <span class="o">=</span> <span class="n">blocks_by_output</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">output_key</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">block</span> <span class="ow">and</span> <span class="n">block</span><span class="o">.</span><span class="n">list_control_inputs</span><span class="p">():</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;⏭️  Block </span><span class="si">{</span><span class="n">block</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> has controls - &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;will use combined callback (state-centric skipped)&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">continue</span>
+
                 <span class="c1"># NEW: Skip if already registered (idempotency for navigation lazy-loading)</span>
                 <span class="k">if</span> <span class="n">output_key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_registered_outputs</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
@@ -356,9 +378,9 @@
                 <span class="n">inputs</span> <span class="o">=</span> <span class="p">[]</span>
                 <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">state_infos</span><span class="p">:</span>
                     <span class="n">pub_id</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;publisher&quot;</span><span class="p">][</span><span class="s2">&quot;component_id&quot;</span><span class="p">]</span>
-                    <span class="c1"># Pattern matching: replace section index with MATCH for dict IDs</span>
-                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pub_id</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-                        <span class="n">pub_id</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">pub_id</span><span class="p">,</span> <span class="s2">&quot;section&quot;</span><span class="p">:</span> <span class="n">MATCH</span><span class="p">}</span>
+                    <span class="c1"># CRITICAL: Keep publisher IDs EXACT (no MATCH conversion)</span>
+                    <span class="c1"># This allows cross-section subscriptions (section 0 → section 1+)</span>
+                    <span class="c1"># Dash supports: Input(exact_id) → Output(MATCH_id)</span>
                     <span class="n">inputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Input</span><span class="p">(</span><span class="n">pub_id</span><span class="p">,</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;publisher&quot;</span><span class="p">][</span><span class="s2">&quot;component_prop&quot;</span><span class="p">]))</span>
 
                 <span class="c1"># Debug: log all inputs for this callback</span>
@@ -370,9 +392,11 @@
 
                 <span class="c1"># Create single Output for this subscriber</span>
                 <span class="c1"># Pattern matching: replace section index with MATCH for dict IDs</span>
+                <span class="c1"># CRITICAL: Maintain key order (section first, then type)</span>
                 <span class="n">output_id</span> <span class="o">=</span> <span class="n">component_id</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output_id</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-                    <span class="n">output_id</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">output_id</span><span class="p">,</span> <span class="s2">&quot;section&quot;</span><span class="p">:</span> <span class="n">MATCH</span><span class="p">}</span>
+                    <span class="n">output_id</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;section&quot;</span><span class="p">:</span> <span class="n">MATCH</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">component_id</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)}</span>
+
                 <span class="n">output</span> <span class="o">=</span> <span class="n">Output</span><span class="p">(</span><span class="n">output_id</span><span class="p">,</span> <span class="n">component_prop</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">&quot;  📤 Output: </span><span class="si">{</span><span class="n">output</span><span class="o">.</span><span class="n">component_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">output</span><span class="o">.</span><span class="n">component_property</span><span class="si">}</span><span class="s2">&quot;</span>
@@ -382,6 +406,8 @@
                 <span class="n">callback_func</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_multi_input_callback</span><span class="p">(</span><span class="n">state_infos</span><span class="p">)</span>
 
                 <span class="c1"># Register callback with Dash</span>
+                <span class="c1"># CRITICAL: State-centric callbacks should NOT use prevent_initial_call</span>
+                <span class="c1"># (they need to trigger on session control changes)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;  🔗 Registering callback with Dash...&quot;</span><span class="p">)</span>
                 <span class="n">app</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">inputs</span><span class="p">)(</span><span class="n">callback_func</span><span class="p">)</span>
                 <span class="n">callback_count</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -435,45 +461,95 @@
                 <span class="n">output_id</span><span class="p">,</span> <span class="n">output_prop</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">output_target</span><span class="p">()</span>
                 <span class="n">output_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_hashable_key</span><span class="p">(</span><span class="n">output_id</span><span class="p">,</span> <span class="n">output_prop</span><span class="p">)</span>
 
-                <span class="c1"># NEW: Skip if already registered (idempotency for navigation lazy-loading)</span>
-                <span class="k">if</span> <span class="n">output_key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_registered_outputs</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;⏭️  Callback for </span><span class="si">{</span><span class="n">block</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">output_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">output_prop</span><span class="si">}</span><span class="s2">) already registered, skipping&quot;</span>
-                    <span class="p">)</span>
-                    <span class="k">continue</span>
+                <span class="c1"># Get own control inputs for this block</span>
+                <span class="n">own_controls</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">list_control_inputs</span><span class="p">()</span>
 
-                <span class="c1"># Get all control inputs for this block</span>
-                <span class="n">inputs</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">list_control_inputs</span><span class="p">()</span>
-
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">inputs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">own_controls</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
                         <span class="sa">f</span><span class="s2">&quot;⏭️  Block </span><span class="si">{</span><span class="n">block</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> has no control inputs, skipping callback&quot;</span>
                     <span class="p">)</span>
                     <span class="k">continue</span>
 
+                <span class="c1"># CRITICAL: Collect BOTH external states AND own controls for combined callback</span>
+                <span class="c1"># External states use EXACT IDs (from section 0)</span>
+                <span class="c1"># Own controls use MATCH IDs (within block&#39;s section)</span>
+                <span class="c1"># Dash SUPPORTS mixing exact Input IDs with MATCH Input IDs!</span>
+
+                <span class="n">external_state_inputs</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">state_id</span><span class="p">,</span> <span class="n">connections</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dependency_graph</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">subscribers</span> <span class="o">=</span> <span class="n">connections</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;subscribers&quot;</span><span class="p">,</span> <span class="p">[])</span>
+                    <span class="k">for</span> <span class="n">sub</span> <span class="ow">in</span> <span class="n">subscribers</span><span class="p">:</span>
+                        <span class="n">sub_output_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_hashable_key</span><span class="p">(</span>
+                            <span class="n">sub</span><span class="p">[</span><span class="s2">&quot;component_id&quot;</span><span class="p">],</span> <span class="n">sub</span><span class="p">[</span><span class="s2">&quot;component_prop&quot;</span><span class="p">]</span>
+                        <span class="p">)</span>
+                        <span class="k">if</span> <span class="n">sub_output_key</span> <span class="o">==</span> <span class="n">output_key</span><span class="p">:</span>
+                            <span class="n">publisher</span> <span class="o">=</span> <span class="n">connections</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;publisher&quot;</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">publisher</span><span class="p">:</span>
+                                <span class="c1"># Use EXACT publisher ID (no MATCH conversion)</span>
+                                <span class="n">external_state_inputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                                    <span class="p">(</span>
+                                        <span class="n">state_id</span><span class="p">,</span>
+                                        <span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;component_id&quot;</span><span class="p">],</span>
+                                        <span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;component_prop&quot;</span><span class="p">],</span>
+                                    <span class="p">)</span>
+                                <span class="p">)</span>
+
+                <span class="n">own_control_inputs</span> <span class="o">=</span> <span class="n">own_controls</span>
+
+                <span class="n">input_count_desc</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">external_state_inputs</span><span class="p">)</span><span class="si">}</span><span class="s2"> external + </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">own_controls</span><span class="p">)</span><span class="si">}</span><span class="s2"> own&quot;</span>
+                    <span class="k">if</span> <span class="n">external_state_inputs</span>
+                    <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">own_controls</span><span class="p">)</span><span class="si">}</span><span class="s2"> own&quot;</span>
+                <span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;🔧 Creating block-centric callback for: </span><span class="si">{</span><span class="n">block</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span><span class="si">}</span><span class="s2"> inputs -&gt; </span><span class="si">{</span><span class="n">output_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">output_prop</span><span class="si">}</span><span class="s2">)&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;🔧 Creating combined callback for: </span><span class="si">{</span><span class="n">block</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">input_count_desc</span><span class="si">}</span><span class="s2"> inputs -&gt; </span><span class="si">{</span><span class="n">output_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">output_prop</span><span class="si">}</span><span class="s2">)&quot;</span>
                 <span class="p">)</span>
 
-                <span class="c1"># Create Input objects with pattern matching support</span>
+                <span class="c1"># Create Input/State objects</span>
+                <span class="c1"># CRITICAL: External states must be State() not Input()</span>
+                <span class="c1"># because they have EXACT IDs from other sections</span>
                 <span class="n">input_objects</span> <span class="o">=</span> <span class="p">[]</span>
-                <span class="k">for</span> <span class="n">component_id</span><span class="p">,</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">inputs</span><span class="p">:</span>
-                    <span class="c1"># Pattern matching: replace section index with MATCH for dict IDs</span>
-                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">component_id</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-                        <span class="n">component_id</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">component_id</span><span class="p">,</span> <span class="s2">&quot;section&quot;</span><span class="p">:</span> <span class="n">MATCH</span><span class="p">}</span>
+                <span class="n">state_objects</span> <span class="o">=</span> <span class="p">[]</span>
+
+                <span class="c1"># 1. Add external states as State() (cross-section, read-only)</span>
+                <span class="k">for</span> <span class="n">state_id</span><span class="p">,</span> <span class="n">pub_component_id</span><span class="p">,</span> <span class="n">pub_prop</span> <span class="ow">in</span> <span class="n">external_state_inputs</span><span class="p">:</span>
+                    <span class="n">state_objects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">State</span><span class="p">(</span><span class="n">pub_component_id</span><span class="p">,</span> <span class="n">pub_prop</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;  🔍 External State[</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">state_objects</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="si">}</span><span class="s2">]: </span><span class="si">{</span><span class="n">pub_component_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">pub_prop</span><span class="si">}</span><span class="s2"> &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;(state_id: </span><span class="si">{</span><span class="n">state_id</span><span class="si">}</span><span class="s2">, EXACT ID, read-only)&quot;</span>
+                    <span class="p">)</span>
+
+                <span class="c1"># 2. Add own control inputs with MATCH pattern</span>
+                <span class="k">for</span> <span class="n">component_id</span><span class="p">,</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">own_control_inputs</span><span class="p">:</span>
+                    <span class="n">original_id</span> <span class="o">=</span> <span class="n">component_id</span>
+                    <span class="c1"># Pattern matching: convert string IDs to dict IDs for navigation mode</span>
+                    <span class="c1"># CRITICAL: Key order MUST match HTML rendering: section first, then type</span>
+                    <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">navigation_mode</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">component_id</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                        <span class="n">component_id</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;section&quot;</span><span class="p">:</span> <span class="n">MATCH</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">component_id</span><span class="p">}</span>
+                    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">component_id</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                        <span class="c1"># Rebuild dict with correct key order</span>
+                        <span class="n">component_id</span> <span class="o">=</span> <span class="p">{</span>
+                            <span class="s2">&quot;section&quot;</span><span class="p">:</span> <span class="n">MATCH</span><span class="p">,</span>
+                            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">component_id</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">),</span>
+                        <span class="p">}</span>
                     <span class="n">input_objects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Input</span><span class="p">(</span><span class="n">component_id</span><span class="p">,</span> <span class="n">prop</span><span class="p">))</span>
 
-                <span class="c1"># Debug: log all inputs for this block</span>
-                <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">comp_id</span><span class="p">,</span> <span class="n">prop</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">inputs</span><span class="p">):</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  📥 Input[</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">]: </span><span class="si">{</span><span class="n">comp_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">prop</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="c1"># Debug: log transformation</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;  📥 Own Control Input[</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">input_objects</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="si">}</span><span class="s2">]: </span><span class="si">{</span><span class="n">original_id</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">component_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">prop</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
 
                 <span class="c1"># Create Output object with allow_duplicate and pattern matching support</span>
                 <span class="n">allow_duplicate</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="s2">&quot;allow_duplicate_output&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
                 <span class="c1"># Pattern matching: replace section index with MATCH for dict IDs</span>
+                <span class="c1"># CRITICAL: Maintain correct key order (section first, then type)</span>
                 <span class="n">output_id_pm</span> <span class="o">=</span> <span class="n">output_id</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output_id_pm</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-                    <span class="n">output_id_pm</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">output_id_pm</span><span class="p">,</span> <span class="s2">&quot;section&quot;</span><span class="p">:</span> <span class="n">MATCH</span><span class="p">}</span>
+                    <span class="n">output_id_pm</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;section&quot;</span><span class="p">:</span> <span class="n">MATCH</span><span class="p">,</span>
+                        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">output_id_pm</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">,</span> <span class="n">output_id_pm</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)),</span>
+                    <span class="p">}</span>
                 <span class="n">output_object</span> <span class="o">=</span> <span class="n">Output</span><span class="p">(</span>
                     <span class="n">output_id_pm</span><span class="p">,</span> <span class="n">output_prop</span><span class="p">,</span> <span class="n">allow_duplicate</span><span class="o">=</span><span class="n">allow_duplicate</span>
                 <span class="p">)</span>
@@ -483,16 +559,24 @@
                 <span class="p">)</span>
 
                 <span class="c1"># Create callback function with enhanced error handling</span>
-                <span class="k">def</span><span class="w"> </span><span class="nf">create_block_callback</span><span class="p">(</span><span class="n">block_ref</span><span class="p">):</span>
-                    <span class="k">def</span><span class="w"> </span><span class="nf">block_callback</span><span class="p">(</span><span class="o">*</span><span class="n">values</span><span class="p">):</span>
+                <span class="k">def</span><span class="w"> </span><span class="nf">create_block_callback</span><span class="p">(</span><span class="n">block_ref</span><span class="p">,</span> <span class="n">ext_states_count</span><span class="p">,</span> <span class="n">ext_states_list</span><span class="p">):</span>
+                    <span class="k">def</span><span class="w"> </span><span class="nf">block_callback</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
                         <span class="k">try</span><span class="p">:</span>
+                            <span class="c1"># CRITICAL: Dash passes Input values first, then State values</span>
+                            <span class="c1"># Our callback signature: *inputs, *states</span>
+                            <span class="n">own_control_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">block_ref</span><span class="o">.</span><span class="n">list_control_inputs</span><span class="p">())</span>
+                            <span class="n">own_control_values</span> <span class="o">=</span> <span class="n">args</span><span class="p">[:</span><span class="n">own_control_count</span><span class="p">]</span>
+                            <span class="n">external_values</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="n">own_control_count</span><span class="p">:]</span>
+
                             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
                                 <span class="sa">f</span><span class="s2">&quot;🎬 Block callback triggered for </span><span class="si">{</span><span class="n">block_ref</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> &quot;</span>
-                                <span class="sa">f</span><span class="s2">&quot;with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="si">}</span><span class="s2"> input values&quot;</span>
+                                <span class="sa">f</span><span class="s2">&quot;with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="si">}</span><span class="s2"> values (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">own_control_values</span><span class="p">)</span><span class="si">}</span><span class="s2"> own Input + </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">external_values</span><span class="p">)</span><span class="si">}</span><span class="s2"> external State)&quot;</span>
                             <span class="p">)</span>
 
-                            <span class="c1"># Convert input values to control values dict</span>
+                            <span class="c1"># Build control_values dict</span>
                             <span class="n">control_values</span> <span class="o">=</span> <span class="p">{}</span>
+
+                            <span class="c1"># 1. Add own control values (from Input objects)</span>
                             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">component_id</span><span class="p">,</span> <span class="n">prop</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
                                 <span class="n">block_ref</span><span class="o">.</span><span class="n">list_control_inputs</span><span class="p">()</span>
                             <span class="p">):</span>
@@ -503,10 +587,18 @@
                                 <span class="k">else</span><span class="p">:</span>
                                     <span class="n">id_str</span> <span class="o">=</span> <span class="n">component_id</span>
                                 <span class="n">control_name</span> <span class="o">=</span> <span class="n">id_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-                                <span class="n">control_values</span><span class="p">[</span><span class="n">control_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                                <span class="n">control_values</span><span class="p">[</span><span class="n">control_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">own_control_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
                                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                                    <span class="sa">f</span><span class="s2">&quot;  🎛️  Control </span><span class="si">{</span><span class="n">control_name</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2"> &quot;</span>
-                                    <span class="sa">f</span><span class="s2">&quot;(from </span><span class="si">{</span><span class="n">component_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">prop</span><span class="si">}</span><span class="s2">)&quot;</span>
+                                    <span class="sa">f</span><span class="s2">&quot;  🎛️  Own control </span><span class="si">{</span><span class="n">control_name</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">own_control_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2"> &quot;</span>
+                                    <span class="sa">f</span><span class="s2">&quot;(from Input </span><span class="si">{</span><span class="n">component_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">prop</span><span class="si">}</span><span class="s2">)&quot;</span>
+                                <span class="p">)</span>
+
+                            <span class="c1"># 2. Add external state values (from State objects)</span>
+                            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">state_id</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ext_states_list</span><span class="p">):</span>
+                                <span class="n">control_values</span><span class="p">[</span><span class="n">state_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">external_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                                    <span class="sa">f</span><span class="s2">&quot;  🌐 External state </span><span class="si">{</span><span class="n">state_id</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">external_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2"> &quot;</span>
+                                    <span class="sa">f</span><span class="s2">&quot;(from State, cross-section)&quot;</span>
                                 <span class="p">)</span>
 
                             <span class="c1"># Call the block&#39;s update method</span>
@@ -523,9 +615,17 @@
 
                 <span class="c1"># Register the callback with enhanced error handling</span>
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;🔗 Registering block callback with Dash...&quot;</span><span class="p">)</span>
-                    <span class="n">app</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span><span class="n">output_object</span><span class="p">,</span> <span class="n">input_objects</span><span class="p">)(</span>
-                        <span class="n">create_block_callback</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;🔗 Registering combined callback with Dash &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">state_objects</span><span class="p">)</span><span class="si">}</span><span class="s2"> external State(EXACT) + </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">input_objects</span><span class="p">)</span><span class="si">}</span><span class="s2"> own Input(MATCH))...&quot;</span>
+                    <span class="p">)</span>
+
+                    <span class="c1"># CRITICAL: Pass state_objects + input_objects to callback</span>
+                    <span class="c1"># State objects come first, then Input objects</span>
+                    <span class="n">app</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span><span class="n">output_object</span><span class="p">,</span> <span class="n">input_objects</span><span class="p">,</span> <span class="n">state_objects</span><span class="p">)(</span>
+                        <span class="n">create_block_callback</span><span class="p">(</span>
+                            <span class="n">block</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">external_state_inputs</span><span class="p">),</span> <span class="n">external_state_inputs</span>
+                        <span class="p">)</span>
                     <span class="p">)</span>
                     <span class="n">callback_count</span> <span class="o">+=</span> <span class="mi">1</span>
 

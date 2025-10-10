@@ -80,17 +80,23 @@
              
   <h1>Source code for dashboard_lego.core.datasources.sql_source</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Concrete implementation of a DataSource for SQL databases.</span>
+<span class="sd">SQL data source with built-in DataBuilder.</span>
 
+<span class="sd">:hierarchy: [Core | DataSources | SqlDataSource]</span>
+<span class="sd">:contract:</span>
+<span class="sd"> - pre: &quot;connection_uri and query provided&quot;</span>
+<span class="sd"> - post: &quot;SQL data loaded and cached&quot;</span>
+
+<span class="sd">:complexity: 3</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.data_builder</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataBuilder</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.datasource</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseDataSource</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoadError</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_engine</span><span class="p">,</span> <span class="n">text</span>
@@ -102,140 +108,74 @@
     <span class="p">)</span>
 
 
+<div class="viewcode-block" id="SqlDataBuilder">
+<a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.datasources.sql_source.SqlDataBuilder">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SqlDataBuilder</span><span class="p">(</span><span class="n">DataBuilder</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    DataBuilder for SQL databases.</span>
+
+<span class="sd">    :hierarchy: [Core | DataSources | SqlDataBuilder]</span>
+<span class="sd">    :contract:</span>
+<span class="sd">     - pre: &quot;connection_uri and query valid&quot;</span>
+<span class="sd">     - post: &quot;Returns loaded DataFrame&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SqlDataBuilder.__init__">
+<a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.datasources.sql_source.SqlDataBuilder.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection_uri</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connection_uri</span> <span class="o">=</span> <span class="n">connection_uri</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">query</span> <span class="o">=</span> <span class="n">query</span></div>
+
+
+<div class="viewcode-block" id="SqlDataBuilder.build">
+<a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.datasources.sql_source.SqlDataBuilder.build">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute SQL query.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[SqlDataBuilder] Executing query&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">connection_uri</span><span class="p">)</span>
+
+            <span class="k">with</span> <span class="n">engine</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
+                <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">text</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">),</span> <span class="n">connection</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[SqlDataBuilder] Loaded </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">df</span>
+
+        <span class="k">except</span> <span class="n">SQLAlchemyError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SQLAlchemy error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">DataLoadError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Database error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error executing SQL query: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">DataLoadError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to execute SQL query: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span></div>
+</div>
+
+
+
 <div class="viewcode-block" id="SqlDataSource">
 <a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.datasources.sql_source.SqlDataSource">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SqlDataSource</span><span class="p">(</span><span class="n">BaseDataSource</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A data source that loads data from a SQL database using SQLAlchemy.</span>
+<span class="sd">    SQL data source.</span>
 
-<span class="sd">        :hierarchy: [Feature | DataSources | SqlDataSource]</span>
-<span class="sd">        :relates-to:</span>
-<span class="sd">          - motivated_by: &quot;Architectural Conclusion: Provide ready-to-use data source classes&quot;</span>
-<span class="sd">          - implements: &quot;class: &#39;SqlDataSource&#39;&quot;</span>
-<span class="sd">          - uses: [&quot;interface: &#39;BaseDataSource&#39;&quot;, &quot;library: &#39;SQLAlchemy&#39;&quot;]</span>
-
-<span class="sd">        :rationale: &quot;Uses SQLAlchemy to provide a consistent interface to various SQL backends.&quot;</span>
-<span class="sd">        :contract:</span>
-<span class="sd">          - pre: &quot;A valid SQLAlchemy connection URI and a SQL query must be provided.&quot;</span>
-<span class="sd">          - post: &quot;The instance holds a pandas DataFrame with the query results.&quot;</span>
-
+<span class="sd">    :hierarchy: [Core | DataSources | SqlDataSource]</span>
+<span class="sd">    :complexity: 3</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="SqlDataSource.__init__">
 <a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.datasources.sql_source.SqlDataSource.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection_uri</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the SqlDataSource.</span>
+<span class="sd">        Initialize SQL datasource.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            connection_uri: A SQLAlchemy-compatible database URI.</span>
-<span class="sd">                            (e.g., &#39;sqlite:///mydatabase.db&#39;,</span>
-<span class="sd">                            &#39;postgresql://user:pass@host/db&#39;)</span>
-<span class="sd">            query: The SQL query to execute to retrieve the data.</span>
-<span class="sd">            **kwargs: Keyword arguments for the parent BaseDataSource</span>
-<span class="sd">                     (e.g., cache_ttl).</span>
-
+<span class="sd">            connection_uri: SQLAlchemy connection URI</span>
+<span class="sd">            query: SQL query to execute</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">SqlDataSource</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">connection_uri</span> <span class="o">=</span> <span class="n">connection_uri</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">query</span> <span class="o">=</span> <span class="n">query</span>
+        <span class="c1"># Create builder</span>
+        <span class="n">builder</span> <span class="o">=</span> <span class="n">SqlDataBuilder</span><span class="p">(</span><span class="n">connection_uri</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SQL datasource initialized for URI: </span><span class="si">{</span><span class="n">connection_uri</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Query: </span><span class="si">{</span><span class="n">query</span><span class="p">[:</span><span class="mi">100</span><span class="p">]</span><span class="si">}</span><span class="s2">...&quot;</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">query</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">100</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;Query: </span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="p">)</span></div>
-
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_load_raw_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Load raw data from SQL database (NO filtering).</span>
-
-<span class="sd">        :hierarchy: [Core | DataSources | SqlDataSource | Load Stage]</span>
-<span class="sd">        :relates-to:</span>
-<span class="sd">         - motivated_by: &quot;Refactor: Separate data loading from filtering&quot;</span>
-<span class="sd">         - implements: &quot;method: &#39;_load_raw_data&#39;&quot;</span>
-
-<span class="sd">        :contract:</span>
-<span class="sd">         - pre: &quot;connection_uri is valid, query is valid SQL&quot;</span>
-<span class="sd">         - post: &quot;Returns raw DataFrame from SQL query&quot;</span>
-<span class="sd">         - invariant: &quot;Does NOT apply filters&quot;</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            params: Optional dictionary of parameters to bind to the SQL query.</span>
-<span class="sd">                   These are SQL query parameters (e.g., :param_name in query),</span>
-<span class="sd">                   NOT filtering parameters for the DataFrame.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            Raw DataFrame from SQL query results</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            DataLoadError: If connection fails or query fails</span>
-
-<span class="sd">        Note:</span>
-<span class="sd">            Filtering logic has been removed and should be handled by DataFilter.</span>
-<span class="sd">            SQL query parameters are still supported as they affect data loading.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Executing SQL query with params: </span><span class="si">{</span><span class="n">params</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">connection_uri</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Database engine created successfully&quot;</span><span class="p">)</span>
-
-            <span class="k">with</span> <span class="n">engine</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Database connection established&quot;</span><span class="p">)</span>
-                <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">text</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">),</span> <span class="n">connection</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
-
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;SQL query executed successfully: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows, &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span><span class="si">}</span><span class="s2"> columns&quot;</span>
-                <span class="p">)</span>
-
-                <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;SQL query returned empty result set&quot;</span><span class="p">)</span>
-
-                <span class="k">return</span> <span class="n">df</span>
-
-        <span class="k">except</span> <span class="n">SQLAlchemyError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SQLAlchemy error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">DataLoadError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Database error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error executing SQL query: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">DataLoadError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to execute SQL query: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
-
-<div class="viewcode-block" id="SqlDataSource.get_kpis">
-<a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.datasources.sql_source.SqlDataSource.get_kpis">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_kpis</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns an empty dictionary. Users should subclass to implement this.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">{}</span></div>
-
-
-<div class="viewcode-block" id="SqlDataSource.get_filter_options">
-<a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.datasources.sql_source.SqlDataSource.get_filter_options">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_filter_options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns an empty list. Users should subclass to implement this.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">[]</span></div>
-
-
-<div class="viewcode-block" id="SqlDataSource.get_summary">
-<a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.datasources.sql_source.SqlDataSource.get_summary">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a basic summary of the loaded data.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
-            <span class="n">summary</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;SQL data loaded via query. Shape: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Generated summary: </span><span class="si">{</span><span class="n">summary</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">summary</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;No data loaded for summary&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="s2">&quot;No data loaded.&quot;</span></div>
+        <span class="c1"># Pass to parent</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data_builder</span><span class="o">=</span><span class="n">builder</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

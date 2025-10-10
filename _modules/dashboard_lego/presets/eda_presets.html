@@ -80,34 +80,234 @@
              
   <h1>Source code for dashboard_lego.presets.eda_presets</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">This module contains pre-built blocks for common Exploratory Data Analysis (EDA) tasks.</span>
+<span class="sd">Pre-built EDA blocks using TypedChartBlock and plot registry.</span>
 
+<span class="sd">v0.15.0: Refactored to use TypedChartBlock instead of deprecated</span>
+<span class="sd">StaticChartBlock/InteractiveChartBlock.</span>
+
+<span class="sd">:hierarchy: [Presets | EDA]</span>
+<span class="sd">:relates-to:</span>
+<span class="sd"> - motivated_by: &quot;v0.15.0: Use TypedChartBlock with plot registry&quot;</span>
+<span class="sd"> - implements: &quot;EDA presets with zero chart_generator code&quot;</span>
+
+<span class="sd">:complexity: 4</span>
 <span class="sd">&quot;&quot;&quot;</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">plotly.express</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">px</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">plotly.graph_objects</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">go</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dash</span><span class="w"> </span><span class="kn">import</span> <span class="n">dcc</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.chart</span><span class="w"> </span><span class="kn">import</span> <span class="n">Control</span><span class="p">,</span> <span class="n">InteractiveChartBlock</span><span class="p">,</span> <span class="n">StaticChartBlock</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.typed_chart</span><span class="w"> </span><span class="kn">import</span> <span class="n">Control</span><span class="p">,</span> <span class="n">TypedChartBlock</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.datasource</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseDataSource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.plot_registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_plot_type</span>
+
+<span class="c1"># ============================================================================</span>
+<span class="c1"># Custom Plot Functions for EDA</span>
+<span class="c1"># ============================================================================</span>
+
+
+<div class="viewcode-block" id="plot_correlation_heatmap">
+<a class="viewcode-back" href="../../../api/presets.html#dashboard_lego.presets.eda_presets.plot_correlation_heatmap">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_correlation_heatmap</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot correlation matrix heatmap for numerical columns.</span>
+
+<span class="sd">    :hierarchy: [Presets | EDA | Plots | CorrelationHeatmap]</span>
+<span class="sd">    :contract:</span>
+<span class="sd">     - pre: &quot;DataFrame contains numerical columns&quot;</span>
+<span class="sd">     - post: &quot;Returns heatmap figure or empty figure&quot;</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: Input DataFrame</span>
+<span class="sd">        **kwargs: Additional plotly kwargs (title, etc.)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Plotly Figure with correlation heatmap</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">numerical_df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">numerical_df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span><span class="o">.</span><span class="n">add_annotation</span><span class="p">(</span>
+            <span class="n">text</span><span class="o">=</span><span class="s2">&quot;No numerical data for correlation matrix&quot;</span><span class="p">,</span>
+            <span class="n">showarrow</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">xref</span><span class="o">=</span><span class="s2">&quot;paper&quot;</span><span class="p">,</span>
+            <span class="n">yref</span><span class="o">=</span><span class="s2">&quot;paper&quot;</span><span class="p">,</span>
+            <span class="n">x</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">corr_matrix</span> <span class="o">=</span> <span class="n">numerical_df</span><span class="o">.</span><span class="n">corr</span><span class="p">()</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span>
+        <span class="n">corr_matrix</span><span class="p">,</span>
+        <span class="n">text_auto</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">aspect</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+        <span class="n">labels</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&quot;Correlation&quot;</span><span class="p">),</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_xaxes</span><span class="p">(</span><span class="n">side</span><span class="o">=</span><span class="s2">&quot;top&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+
+
+<div class="viewcode-block" id="plot_missing_values">
+<a class="viewcode-back" href="../../../api/presets.html#dashboard_lego.presets.eda_presets.plot_missing_values">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_missing_values</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot percentage of missing values per column.</span>
+
+<span class="sd">    :hierarchy: [Presets | EDA | Plots | MissingValues]</span>
+<span class="sd">    :contract:</span>
+<span class="sd">     - pre: &quot;DataFrame provided&quot;</span>
+<span class="sd">     - post: &quot;Returns bar chart or empty figure&quot;</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: Input DataFrame</span>
+<span class="sd">        **kwargs: Additional plotly kwargs (title, etc.)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Plotly Figure with missing values bar chart</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">missing_percent</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span> <span class="o">*</span> <span class="mi">100</span>
+    <span class="n">missing_percent</span> <span class="o">=</span> <span class="n">missing_percent</span><span class="p">[</span><span class="n">missing_percent</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">missing_percent</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span><span class="o">.</span><span class="n">add_annotation</span><span class="p">(</span>
+            <span class="n">text</span><span class="o">=</span><span class="s2">&quot;No missing values found&quot;</span><span class="p">,</span>
+            <span class="n">showarrow</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">xref</span><span class="o">=</span><span class="s2">&quot;paper&quot;</span><span class="p">,</span>
+            <span class="n">yref</span><span class="o">=</span><span class="s2">&quot;paper&quot;</span><span class="p">,</span>
+            <span class="n">x</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span>
+        <span class="n">missing_percent</span><span class="p">,</span>
+        <span class="n">x</span><span class="o">=</span><span class="n">missing_percent</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+        <span class="n">y</span><span class="o">=</span><span class="n">missing_percent</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+        <span class="n">labels</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="s2">&quot;Column&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="s2">&quot;Missing Values (%)&quot;</span><span class="p">},</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">showlegend</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+
+
+<div class="viewcode-block" id="plot_grouped_histogram">
+<a class="viewcode-back" href="../../../api/presets.html#dashboard_lego.presets.eda_presets.plot_grouped_histogram">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_grouped_histogram</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot histogram with optional grouping.</span>
+
+<span class="sd">    :hierarchy: [Presets | EDA | Plots | GroupedHistogram]</span>
+<span class="sd">    :contract:</span>
+<span class="sd">     - pre: &quot;x column exists in df&quot;</span>
+<span class="sd">     - post: &quot;Returns histogram with optional color grouping&quot;</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: Input DataFrame</span>
+<span class="sd">        x: Column name for x-axis</span>
+<span class="sd">        color: Optional column for grouping (None or &quot;None&quot; = no grouping)</span>
+<span class="sd">        **kwargs: Additional plotly kwargs</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Plotly Figure with histogram</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">empty</span> <span class="ow">or</span> <span class="n">x</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span><span class="o">.</span><span class="n">add_annotation</span><span class="p">(</span>
+            <span class="n">text</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Column &#39;</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">&#39; not found&quot;</span><span class="p">,</span>
+            <span class="n">showarrow</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">xref</span><span class="o">=</span><span class="s2">&quot;paper&quot;</span><span class="p">,</span>
+            <span class="n">yref</span><span class="o">=</span><span class="s2">&quot;paper&quot;</span><span class="p">,</span>
+            <span class="n">x</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Handle None or &quot;None&quot; string for color</span>
+    <span class="n">actual_color</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="p">(</span><span class="n">color</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">color</span> <span class="o">==</span> <span class="s2">&quot;None&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="n">color</span>
+
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">actual_color</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+
+
+<div class="viewcode-block" id="plot_box_by_category">
+<a class="viewcode-back" href="../../../api/presets.html#dashboard_lego.presets.eda_presets.plot_box_by_category">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_box_by_category</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot box plot comparing distributions across categories.</span>
+
+<span class="sd">    :hierarchy: [Presets | EDA | Plots | BoxPlot]</span>
+<span class="sd">    :contract:</span>
+<span class="sd">     - pre: &quot;x and y columns exist in df&quot;</span>
+<span class="sd">     - post: &quot;Returns box plot figure&quot;</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: Input DataFrame</span>
+<span class="sd">        x: Categorical column for x-axis</span>
+<span class="sd">        y: Numerical column for y-axis</span>
+<span class="sd">        color: Optional column for color grouping</span>
+<span class="sd">        **kwargs: Additional plotly kwargs</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Plotly Figure with box plot</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span><span class="o">.</span><span class="n">add_annotation</span><span class="p">(</span>
+            <span class="n">text</span><span class="o">=</span><span class="s2">&quot;No data available&quot;</span><span class="p">,</span>
+            <span class="n">showarrow</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">xref</span><span class="o">=</span><span class="s2">&quot;paper&quot;</span><span class="p">,</span>
+            <span class="n">yref</span><span class="o">=</span><span class="s2">&quot;paper&quot;</span><span class="p">,</span>
+            <span class="n">x</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">x</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="ow">or</span> <span class="n">y</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span><span class="o">.</span><span class="n">add_annotation</span><span class="p">(</span>
+            <span class="n">text</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Required columns not found: </span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">showarrow</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">xref</span><span class="o">=</span><span class="s2">&quot;paper&quot;</span><span class="p">,</span>
+            <span class="n">yref</span><span class="o">=</span><span class="s2">&quot;paper&quot;</span><span class="p">,</span>
+            <span class="n">x</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">box</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span> <span class="ow">or</span> <span class="n">x</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+
+
+<span class="c1"># Register custom EDA plot types</span>
+<span class="n">register_plot_type</span><span class="p">(</span><span class="s2">&quot;correlation_heatmap&quot;</span><span class="p">,</span> <span class="n">plot_correlation_heatmap</span><span class="p">)</span>
+<span class="n">register_plot_type</span><span class="p">(</span><span class="s2">&quot;missing_values&quot;</span><span class="p">,</span> <span class="n">plot_missing_values</span><span class="p">)</span>
+<span class="n">register_plot_type</span><span class="p">(</span><span class="s2">&quot;grouped_histogram&quot;</span><span class="p">,</span> <span class="n">plot_grouped_histogram</span><span class="p">)</span>
+<span class="n">register_plot_type</span><span class="p">(</span><span class="s2">&quot;box_by_category&quot;</span><span class="p">,</span> <span class="n">plot_box_by_category</span><span class="p">)</span>
+
+
+<span class="c1"># ============================================================================</span>
+<span class="c1"># EDA Preset Blocks</span>
+<span class="c1"># ============================================================================</span>
 
 
 <div class="viewcode-block" id="CorrelationHeatmapPreset">
 <a class="viewcode-back" href="../../../api/presets.html#dashboard_lego.presets.eda_presets.CorrelationHeatmapPreset">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">CorrelationHeatmapPreset</span><span class="p">(</span><span class="n">StaticChartBlock</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CorrelationHeatmapPreset</span><span class="p">(</span><span class="n">TypedChartBlock</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A preset block that displays a correlation matrix heatmap for the numerical columns of a DataFrame.</span>
+<span class="sd">    Correlation matrix heatmap preset using TypedChartBlock.</span>
 
-<span class="sd">        :hierarchy: [Presets | EDA | CorrelationHeatmap]</span>
+<span class="sd">    :hierarchy: [Presets | EDA | CorrelationHeatmapPreset]</span>
 <span class="sd">        :relates-to:</span>
-<span class="sd">          - motivated_by: &quot;Architectural Conclusion: Provide pre-built EDA components</span>
-<span class="sd">            for common data analysis patterns to reduce boilerplate&quot;</span>
+<span class="sd">     - motivated_by: &quot;v0.15.0: EDA preset using TypedChartBlock&quot;</span>
 <span class="sd">          - implements: &quot;preset: &#39;CorrelationHeatmapPreset&#39;&quot;</span>
-<span class="sd">          - uses: [&quot;block: &#39;StaticChartBlock&#39;&quot;]</span>
+<span class="sd">     - uses: [&quot;block: &#39;TypedChartBlock&#39;&quot;]</span>
 
+<span class="sd">    :contract:</span>
+<span class="sd">     - pre: &quot;DataFrame contains numerical columns&quot;</span>
+<span class="sd">     - post: &quot;Renders correlation heatmap&quot;</span>
+
+<span class="sd">    :complexity: 2</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="CorrelationHeatmapPreset.__init__">
@@ -118,271 +318,49 @@
         <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span>
         <span class="n">subscribes_to</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Correlation Heatmap&quot;</span><span class="p">,</span>
-        <span class="c1"># Style customization parameters (inherited from StaticChartBlock)</span>
-        <span class="n">card_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">card_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">title_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">title_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">loading_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
-        <span class="n">graph_config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">graph_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">figure_layout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the CorrelationHeatmapPreset with customizable styling.</span>
+<span class="sd">        Initialize correlation heatmap preset.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            block_id: A unique identifier for this block instance.</span>
-<span class="sd">            datasource: An instance of a class that implements the BaseDataSource interface.</span>
-<span class="sd">            subscribes_to: The state ID to which this block subscribes to receive updates.</span>
-<span class="sd">            title: The title to be displayed on the chart card.</span>
-<span class="sd">            card_style: Optional style dictionary for the card component.</span>
-<span class="sd">            card_className: Optional CSS class name for the card component.</span>
-<span class="sd">            title_style: Optional style dictionary for the title component.</span>
-<span class="sd">            title_className: Optional CSS class name for the title component.</span>
-<span class="sd">            loading_type: Type of loading indicator to display.</span>
-<span class="sd">            graph_config: Optional configuration for the Plotly graph.</span>
-<span class="sd">            graph_style: Optional style dictionary for the graph component.</span>
-<span class="sd">            figure_layout: Optional layout overrides for the Plotly figure.</span>
-
+<span class="sd">            block_id: Unique identifier</span>
+<span class="sd">            datasource: Data source instance</span>
+<span class="sd">            subscribes_to: State ID to subscribe to</span>
+<span class="sd">            title: Chart title</span>
+<span class="sd">            **kwargs: Additional styling parameters</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">block_id</span><span class="o">=</span><span class="n">block_id</span><span class="p">,</span>
             <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+            <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;correlation_heatmap&quot;</span><span class="p">,</span>
+            <span class="n">plot_params</span><span class="o">=</span><span class="p">{},</span>  <span class="c1"># No params needed</span>
+            <span class="n">plot_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Correlation Matrix&quot;</span><span class="p">},</span>
             <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
-            <span class="n">chart_generator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_create_heatmap</span><span class="p">,</span>
             <span class="n">subscribes_to</span><span class="o">=</span><span class="n">subscribes_to</span><span class="p">,</span>
-            <span class="c1"># Pass through customization parameters</span>
-            <span class="n">card_style</span><span class="o">=</span><span class="n">card_style</span><span class="p">,</span>
-            <span class="n">card_className</span><span class="o">=</span><span class="n">card_className</span><span class="p">,</span>
-            <span class="n">title_style</span><span class="o">=</span><span class="n">title_style</span><span class="p">,</span>
-            <span class="n">title_className</span><span class="o">=</span><span class="n">title_className</span><span class="p">,</span>
-            <span class="n">loading_type</span><span class="o">=</span><span class="n">loading_type</span><span class="p">,</span>
-            <span class="n">graph_config</span><span class="o">=</span><span class="n">graph_config</span><span class="p">,</span>
-            <span class="n">graph_style</span><span class="o">=</span><span class="n">graph_style</span><span class="p">,</span>
-            <span class="n">figure_layout</span><span class="o">=</span><span class="n">figure_layout</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span></div>
-
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_create_heatmap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Calculates the correlation matrix and generates a heatmap figure.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            df: The input DataFrame from the datasource.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            A Plotly Figure object representing the heatmap.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Select only numerical columns for correlation matrix</span>
-        <span class="n">numerical_df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">])</span>
-
-        <span class="k">if</span> <span class="n">numerical_df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
-                <span class="n">title</span><span class="o">=</span><span class="s2">&quot;No numerical data to create a correlation matrix.&quot;</span>
-            <span class="p">)</span>
-
-        <span class="n">corr_matrix</span> <span class="o">=</span> <span class="n">numerical_df</span><span class="o">.</span><span class="n">corr</span><span class="p">()</span>
-        <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span>
-            <span class="n">corr_matrix</span><span class="p">,</span>
-            <span class="n">text_auto</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">aspect</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
-            <span class="n">labels</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&quot;Correlation&quot;</span><span class="p">),</span>
-            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Correlation Matrix&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">fig</span><span class="o">.</span><span class="n">update_xaxes</span><span class="p">(</span><span class="n">side</span><span class="o">=</span><span class="s2">&quot;top&quot;</span><span class="p">)</span>
-
-        <span class="c1"># Apply theme layout if provided</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">figure_layout</span><span class="p">:</span>
-            <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">figure_layout</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">fig</span></div>
-
-
-
-<div class="viewcode-block" id="GroupedHistogramPreset">
-<a class="viewcode-back" href="../../../api/presets.html#dashboard_lego.presets.eda_presets.GroupedHistogramPreset">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">GroupedHistogramPreset</span><span class="p">(</span><span class="n">InteractiveChartBlock</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A preset block that displays an interactive histogram.</span>
-
-<span class="sd">    Provides controls to select the numerical column for the histogram and an</span>
-<span class="sd">    optional categorical column for grouping.</span>
-
-<span class="sd">        :hierarchy: [Presets | EDA | GroupedHistogram]</span>
-<span class="sd">        :relates-to:</span>
-<span class="sd">          - motivated_by: &quot;Architectural Conclusion: Provide pre-built EDA components</span>
-<span class="sd">            for common data analysis patterns to reduce boilerplate&quot;</span>
-<span class="sd">          - implements: &quot;preset: &#39;GroupedHistogramPreset&#39;&quot;</span>
-<span class="sd">          - uses: [&quot;block: &#39;InteractiveChartBlock&#39;&quot;]</span>
-
-<span class="sd">    &quot;&quot;&quot;</span>
-
-<div class="viewcode-block" id="GroupedHistogramPreset.__init__">
-<a class="viewcode-back" href="../../../api/presets.html#dashboard_lego.presets.eda_presets.GroupedHistogramPreset.__init__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span>
-        <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Distribution Analysis&quot;</span><span class="p">,</span>
-        <span class="c1"># Style customization parameters (inherited from InteractiveChartBlock)</span>
-        <span class="n">card_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">card_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">title_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">title_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">loading_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
-        <span class="n">graph_config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">graph_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">figure_layout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">controls_row_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">controls_row_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="p">):</span>
-        <span class="c1"># Store datasource for later use in _build_controls</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_datasource</span> <span class="o">=</span> <span class="n">datasource</span>
-
-        <span class="c1"># Create basic controls that will be updated after datasource is initialized</span>
-        <span class="n">controls</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;x_col&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span>
-                <span class="n">component</span><span class="o">=</span><span class="n">dcc</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">,</span>
-                <span class="n">props</span><span class="o">=</span><span class="p">{</span>
-                    <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">[],</span>  <span class="c1"># Will be populated later</span>
-                    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-                    <span class="s2">&quot;clearable&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                    <span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="s2">&quot;150px&quot;</span><span class="p">},</span>
-                <span class="p">},</span>
-            <span class="p">),</span>
-            <span class="s2">&quot;group_by&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span>
-                <span class="n">component</span><span class="o">=</span><span class="n">dcc</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">,</span>
-                <span class="n">props</span><span class="o">=</span><span class="p">{</span>
-                    <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;None&quot;</span><span class="p">],</span>  <span class="c1"># Will be populated later</span>
-                    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;clearable&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                    <span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="s2">&quot;150px&quot;</span><span class="p">},</span>
-                <span class="p">},</span>
-            <span class="p">),</span>
-        <span class="p">}</span>
-
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">block_id</span><span class="o">=</span><span class="n">block_id</span><span class="p">,</span>
-            <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
-            <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
-            <span class="n">chart_generator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_create_histogram</span><span class="p">,</span>
-            <span class="n">controls</span><span class="o">=</span><span class="n">controls</span><span class="p">,</span>
-            <span class="c1"># Pass through customization parameters</span>
-            <span class="n">card_style</span><span class="o">=</span><span class="n">card_style</span><span class="p">,</span>
-            <span class="n">card_className</span><span class="o">=</span><span class="n">card_className</span><span class="p">,</span>
-            <span class="n">title_style</span><span class="o">=</span><span class="n">title_style</span><span class="p">,</span>
-            <span class="n">title_className</span><span class="o">=</span><span class="n">title_className</span><span class="p">,</span>
-            <span class="n">loading_type</span><span class="o">=</span><span class="n">loading_type</span><span class="p">,</span>
-            <span class="n">graph_config</span><span class="o">=</span><span class="n">graph_config</span><span class="p">,</span>
-            <span class="n">graph_style</span><span class="o">=</span><span class="n">graph_style</span><span class="p">,</span>
-            <span class="n">figure_layout</span><span class="o">=</span><span class="n">figure_layout</span><span class="p">,</span>
-            <span class="n">controls_row_style</span><span class="o">=</span><span class="n">controls_row_style</span><span class="p">,</span>
-            <span class="n">controls_row_className</span><span class="o">=</span><span class="n">controls_row_className</span><span class="p">,</span>
-        <span class="p">)</span></div>
-
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_update_controls_from_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update control options based on the datasource data.&quot;&quot;&quot;</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
-                <span class="k">return</span>
-
-            <span class="n">numerical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span>
-                <span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">]</span>
-            <span class="p">)</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-            <span class="n">categorical_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;None&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span>
-                <span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;object&quot;</span><span class="p">,</span> <span class="s2">&quot;category&quot;</span><span class="p">]</span>
-            <span class="p">)</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">numerical_cols</span><span class="p">:</span>
-                <span class="k">return</span>
-
-            <span class="c1"># Update x_col control</span>
-            <span class="k">if</span> <span class="s2">&quot;x_col&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="p">[</span><span class="s2">&quot;x_col&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">props</span><span class="p">[</span><span class="s2">&quot;options&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numerical_cols</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="p">[</span><span class="s2">&quot;x_col&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">props</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="p">[</span><span class="s2">&quot;x_col&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">props</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numerical_cols</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-
-            <span class="c1"># Update group_by control</span>
-            <span class="k">if</span> <span class="s2">&quot;group_by&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="p">[</span><span class="s2">&quot;group_by&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">props</span><span class="p">[</span><span class="s2">&quot;options&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">categorical_cols</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="p">[</span><span class="s2">&quot;group_by&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">props</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">categorical_cols</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="p">[</span><span class="s2">&quot;group_by&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">props</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;None&quot;</span>
-
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to update controls from data: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_create_histogram</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Generates a histogram based on the selected control values.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">x_col</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;x_col&quot;</span><span class="p">)</span>
-        <span class="n">group_by</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;group_by&quot;</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">x_col</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Please select a column to display.&quot;</span><span class="p">)</span>
-
-        <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span>
-            <span class="n">df</span><span class="p">,</span>
-            <span class="n">x</span><span class="o">=</span><span class="n">x_col</span><span class="p">,</span>
-            <span class="n">color</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">group_by</span> <span class="o">==</span> <span class="s2">&quot;None&quot;</span> <span class="k">else</span> <span class="n">group_by</span><span class="p">,</span>
-            <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Distribution of </span><span class="si">{</span><span class="n">x_col</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot; grouped by </span><span class="si">{</span><span class="n">group_by</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">group_by</span> <span class="o">!=</span> <span class="s2">&quot;None&quot;</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
-            <span class="n">barmode</span><span class="o">=</span><span class="s2">&quot;overlay&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">fig</span><span class="o">.</span><span class="n">update_traces</span><span class="p">(</span><span class="n">opacity</span><span class="o">=</span><span class="mf">0.75</span><span class="p">)</span>
-
-        <span class="c1"># Apply theme layout if provided</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">figure_layout</span><span class="p">:</span>
-            <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">figure_layout</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">fig</span>
-
-<div class="viewcode-block" id="GroupedHistogramPreset.layout">
-<a class="viewcode-back" href="../../../api/presets.html#dashboard_lego.presets.eda_presets.GroupedHistogramPreset.layout">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">layout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Override layout to update controls from data before rendering.&quot;&quot;&quot;</span>
-        <span class="c1"># Update controls based on datasource data</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_update_controls_from_data</span><span class="p">()</span>
-        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">layout</span><span class="p">()</span></div>
-
-
-<div class="viewcode-block" id="GroupedHistogramPreset.list_control_inputs">
-<a class="viewcode-back" href="../../../api/presets.html#dashboard_lego.presets.eda_presets.GroupedHistogramPreset.list_control_inputs">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">list_control_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns empty list to prevent duplicate callbacks.</span>
-
-<span class="sd">        GroupedHistogramPreset uses state-based callbacks (publishes/subscribes)</span>
-<span class="sd">        and doesn&#39;t need block-centric callbacks to avoid &quot;Duplicate callback outputs&quot; error.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">[]</span></div>
 </div>
 
 
 
 <div class="viewcode-block" id="MissingValuesPreset">
 <a class="viewcode-back" href="../../../api/presets.html#dashboard_lego.presets.eda_presets.MissingValuesPreset">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">MissingValuesPreset</span><span class="p">(</span><span class="n">StaticChartBlock</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MissingValuesPreset</span><span class="p">(</span><span class="n">TypedChartBlock</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A preset block that displays the percentage of missing values for each column in a bar chart.</span>
+<span class="sd">    Missing values analysis preset using TypedChartBlock.</span>
 
-<span class="sd">        :hierarchy: [Presets | EDA | MissingValues]</span>
-<span class="sd">        :relates-to:</span>
-<span class="sd">          - motivated_by: &quot;Architectural Conclusion: Missing value analysis is a</span>
-<span class="sd">            fundamental EDA requirement for data quality assessment&quot;</span>
-<span class="sd">          - implements: &quot;preset: &#39;MissingValuesPreset&#39;&quot;</span>
-<span class="sd">          - uses: [&quot;block: &#39;StaticChartBlock&#39;&quot;]</span>
+<span class="sd">    :hierarchy: [Presets | EDA | MissingValuesPreset]</span>
+<span class="sd">    :relates-to:</span>
+<span class="sd">     - motivated_by: &quot;v0.15.0: EDA preset using TypedChartBlock&quot;</span>
+<span class="sd">     - implements: &quot;preset: &#39;MissingValuesPreset&#39;&quot;</span>
+<span class="sd">     - uses: [&quot;block: &#39;TypedChartBlock&#39;&quot;]</span>
 
-<span class="sd">        :rationale: &quot;Chosen as a high-value, simple-to-implement preset for initial data quality assessment.&quot;</span>
-<span class="sd">        :contract:</span>
-<span class="sd">          - pre: &quot;A DataFrame is available from the data source.&quot;</span>
-<span class="sd">          - post: &quot;A bar chart is rendered showing the percentage of missing values per column.&quot;</span>
+<span class="sd">    :contract:</span>
+<span class="sd">     - pre: &quot;DataFrame provided&quot;</span>
+<span class="sd">     - post: &quot;Renders missing values bar chart&quot;</span>
 
+<span class="sd">    :complexity: 2</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="MissingValuesPreset.__init__">
@@ -393,111 +371,129 @@
         <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span>
         <span class="n">subscribes_to</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Missing Values Analysis&quot;</span><span class="p">,</span>
-        <span class="c1"># Style customization parameters (inherited from StaticChartBlock)</span>
-        <span class="n">card_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">card_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">title_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">title_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">loading_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
-        <span class="n">graph_config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">graph_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">figure_layout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the MissingValuesPreset with customizable styling.</span>
+<span class="sd">        Initialize missing values preset.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            block_id: A unique identifier for this block instance.</span>
-<span class="sd">            datasource: An instance of a class that implements the BaseDataSource interface.</span>
-<span class="sd">            subscribes_to: The state ID to which this block subscribes to receive updates.</span>
-<span class="sd">            title: The title to be displayed on the chart card.</span>
-<span class="sd">            card_style: Optional style dictionary for the card component.</span>
-<span class="sd">            card_className: Optional CSS class name for the card component.</span>
-<span class="sd">            title_style: Optional style dictionary for the title component.</span>
-<span class="sd">            title_className: Optional CSS class name for the title component.</span>
-<span class="sd">            loading_type: Type of loading indicator to display.</span>
-<span class="sd">            graph_config: Optional configuration for the Plotly graph.</span>
-<span class="sd">            graph_style: Optional style dictionary for the graph component.</span>
-<span class="sd">            figure_layout: Optional layout overrides for the Plotly figure.</span>
-
+<span class="sd">            block_id: Unique identifier</span>
+<span class="sd">            datasource: Data source instance</span>
+<span class="sd">            subscribes_to: State ID to subscribe to</span>
+<span class="sd">            title: Chart title</span>
+<span class="sd">            **kwargs: Additional styling parameters</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">block_id</span><span class="o">=</span><span class="n">block_id</span><span class="p">,</span>
             <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+            <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;missing_values&quot;</span><span class="p">,</span>
+            <span class="n">plot_params</span><span class="o">=</span><span class="p">{},</span>  <span class="c1"># No params needed</span>
+            <span class="n">plot_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Percentage of Missing Values per Column&quot;</span><span class="p">},</span>
             <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
-            <span class="n">chart_generator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_create_missing_values_chart</span><span class="p">,</span>
             <span class="n">subscribes_to</span><span class="o">=</span><span class="n">subscribes_to</span><span class="p">,</span>
-            <span class="c1"># Pass through customization parameters</span>
-            <span class="n">card_style</span><span class="o">=</span><span class="n">card_style</span><span class="p">,</span>
-            <span class="n">card_className</span><span class="o">=</span><span class="n">card_className</span><span class="p">,</span>
-            <span class="n">title_style</span><span class="o">=</span><span class="n">title_style</span><span class="p">,</span>
-            <span class="n">title_className</span><span class="o">=</span><span class="n">title_className</span><span class="p">,</span>
-            <span class="n">loading_type</span><span class="o">=</span><span class="n">loading_type</span><span class="p">,</span>
-            <span class="n">graph_config</span><span class="o">=</span><span class="n">graph_config</span><span class="p">,</span>
-            <span class="n">graph_style</span><span class="o">=</span><span class="n">graph_style</span><span class="p">,</span>
-            <span class="n">figure_layout</span><span class="o">=</span><span class="n">figure_layout</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span></div>
+</div>
 
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_create_missing_values_chart</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+
+<div class="viewcode-block" id="GroupedHistogramPreset">
+<a class="viewcode-back" href="../../../api/presets.html#dashboard_lego.presets.eda_presets.GroupedHistogramPreset">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">GroupedHistogramPreset</span><span class="p">(</span><span class="n">TypedChartBlock</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Interactive histogram with grouping using TypedChartBlock.</span>
+
+<span class="sd">    :hierarchy: [Presets | EDA | GroupedHistogramPreset]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">     - motivated_by: &quot;v0.15.0: Interactive histogram with controls&quot;</span>
+<span class="sd">          - implements: &quot;preset: &#39;GroupedHistogramPreset&#39;&quot;</span>
+<span class="sd">     - uses: [&quot;block: &#39;TypedChartBlock&#39;&quot;]</span>
+
+<span class="sd">    :contract:</span>
+<span class="sd">     - pre: &quot;DataFrame contains numerical and categorical columns&quot;</span>
+<span class="sd">     - post: &quot;Renders histogram with column/group controls&quot;</span>
+
+<span class="sd">    :complexity: 3</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="GroupedHistogramPreset.__init__">
+<a class="viewcode-back" href="../../../api/presets.html#dashboard_lego.presets.eda_presets.GroupedHistogramPreset.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span>
+        <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Distribution Analysis&quot;</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Calculates missing values and generates a bar chart.</span>
+<span class="sd">        Initialize grouped histogram preset.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            df: The input DataFrame from the datasource.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            A Plotly Figure object representing the bar chart.</span>
-
+<span class="sd">            block_id: Unique identifier</span>
+<span class="sd">            datasource: Data source instance</span>
+<span class="sd">            title: Chart title</span>
+<span class="sd">            **kwargs: Additional styling parameters</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">missing_percent</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span> <span class="o">*</span> <span class="mi">100</span>
-        <span class="n">missing_percent</span> <span class="o">=</span> <span class="n">missing_percent</span><span class="p">[</span><span class="n">missing_percent</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span>
-            <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span>
-        <span class="p">)</span>
+        <span class="c1"># Get columns from datasource</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
+        <span class="n">numerical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">categorical_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;None&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span>
+            <span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;object&quot;</span><span class="p">,</span> <span class="s2">&quot;category&quot;</span><span class="p">]</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
 
-        <span class="k">if</span> <span class="n">missing_percent</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
-                <span class="n">title</span><span class="o">=</span><span class="s2">&quot;No missing values found in the dataset.&quot;</span>
-            <span class="p">)</span>
+        <span class="c1"># Create controls</span>
+        <span class="n">controls</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;x_col&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span>
+                <span class="n">component</span><span class="o">=</span><span class="n">dcc</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">,</span>
+                <span class="n">props</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="n">numerical_cols</span><span class="p">,</span>
+                    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">numerical_cols</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">numerical_cols</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="s2">&quot;clearable&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="s2">&quot;150px&quot;</span><span class="p">},</span>
+                <span class="p">},</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;group_by&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span>
+                <span class="n">component</span><span class="o">=</span><span class="n">dcc</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">,</span>
+                <span class="n">props</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="n">categorical_cols</span><span class="p">,</span>
+                    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;clearable&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="s2">&quot;150px&quot;</span><span class="p">},</span>
+                <span class="p">},</span>
+            <span class="p">),</span>
+        <span class="p">}</span>
 
-        <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span>
-            <span class="n">missing_percent</span><span class="p">,</span>
-            <span class="n">x</span><span class="o">=</span><span class="n">missing_percent</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
-            <span class="n">y</span><span class="o">=</span><span class="n">missing_percent</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-            <span class="n">labels</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="s2">&quot;Column&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="s2">&quot;Missing Values (%)&quot;</span><span class="p">},</span>
-            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Percentage of Missing Values per Column&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">showlegend</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-
-        <span class="c1"># Apply theme layout if provided</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">figure_layout</span><span class="p">:</span>
-            <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">figure_layout</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">fig</span></div>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">block_id</span><span class="o">=</span><span class="n">block_id</span><span class="p">,</span>
+            <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+            <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;grouped_histogram&quot;</span><span class="p">,</span>
+            <span class="n">plot_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="s2">&quot;{{x_col}}&quot;</span><span class="p">,</span> <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;{{group_by}}&quot;</span><span class="p">},</span>
+            <span class="n">plot_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;barmode&quot;</span><span class="p">:</span> <span class="s2">&quot;overlay&quot;</span><span class="p">,</span> <span class="s2">&quot;opacity&quot;</span><span class="p">:</span> <span class="mf">0.75</span><span class="p">},</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+            <span class="n">controls</span><span class="o">=</span><span class="n">controls</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span></div>
+</div>
 
 
 
 <div class="viewcode-block" id="BoxPlotPreset">
 <a class="viewcode-back" href="../../../api/presets.html#dashboard_lego.presets.eda_presets.BoxPlotPreset">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">BoxPlotPreset</span><span class="p">(</span><span class="n">InteractiveChartBlock</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BoxPlotPreset</span><span class="p">(</span><span class="n">TypedChartBlock</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A preset block that displays an interactive box plot.</span>
+<span class="sd">    Interactive box plot preset using TypedChartBlock.</span>
 
-<span class="sd">    Provides controls to select a numerical column and a categorical column</span>
-<span class="sd">    to compare distributions.</span>
-
-<span class="sd">        :hierarchy: [Presets | EDA | BoxPlot]</span>
+<span class="sd">    :hierarchy: [Presets | EDA | BoxPlotPreset]</span>
 <span class="sd">        :relates-to:</span>
-<span class="sd">          - motivated_by: &quot;Architectural Conclusion: Box plots are essential for</span>
-<span class="sd">            understanding data distribution and identifying outliers&quot;</span>
-<span class="sd">          - implements: &quot;preset: &#39;BoxPlotPreset&#39;&quot;</span>
-<span class="sd">          - uses: [&quot;block: &#39;InteractiveChartBlock&#39;&quot;]</span>
+<span class="sd">     - motivated_by: &quot;v0.15.0: Box plot with controls&quot;</span>
+<span class="sd">     - implements: &quot;preset: &#39;BoxPlotPreset&#39;&quot;</span>
+<span class="sd">     - uses: [&quot;block: &#39;TypedChartBlock&#39;&quot;]</span>
 
-<span class="sd">        :rationale: &quot;Chosen as a standard and effective way to compare distributions across categories.&quot;</span>
 <span class="sd">        :contract:</span>
-<span class="sd">          - pre: &quot;User selects a numerical and a categorical column.&quot;</span>
-<span class="sd">          - post: &quot;A box plot is rendered showing the distribution of the numerical column grouped by the categorical column.&quot;</span>
+<span class="sd">     - pre: &quot;DataFrame has numerical and categorical columns&quot;</span>
+<span class="sd">     - post: &quot;Renders box plot with column selection&quot;</span>
 
+<span class="sd">    :complexity: 3</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="BoxPlotPreset.__init__">
@@ -507,18 +503,18 @@
         <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span>
         <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Distribution Comparison (Box Plot)&quot;</span><span class="p">,</span>
-        <span class="c1"># Style customization parameters (inherited from InteractiveChartBlock)</span>
-        <span class="n">card_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">card_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">title_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">title_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">loading_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
-        <span class="n">graph_config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">graph_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">figure_layout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">controls_row_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">controls_row_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize box plot preset.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            block_id: Unique identifier</span>
+<span class="sd">            datasource: Data source instance</span>
+<span class="sd">            title: Chart title</span>
+<span class="sd">            **kwargs: Additional styling parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get columns from datasource</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
         <span class="n">numerical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
         <span class="n">categorical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span>
@@ -526,14 +522,11 @@
         <span class="p">)</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">numerical_cols</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;BoxPlotPreset requires a datasource with at least one numerical column.&quot;</span>
-            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;BoxPlotPreset requires at least one numerical column&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">categorical_cols</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;BoxPlotPreset requires a datasource with at least one categorical column.&quot;</span>
-            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;BoxPlotPreset requires at least one categorical column&quot;</span><span class="p">)</span>
 
+        <span class="c1"># Create controls</span>
         <span class="n">controls</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;y_col&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span>
                 <span class="n">component</span><span class="o">=</span><span class="n">dcc</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">,</span>
@@ -558,42 +551,14 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">block_id</span><span class="o">=</span><span class="n">block_id</span><span class="p">,</span>
             <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+            <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;box_by_category&quot;</span><span class="p">,</span>
+            <span class="n">plot_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="s2">&quot;{{x_col}}&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="s2">&quot;{{y_col}}&quot;</span><span class="p">,</span> <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;{{x_col}}&quot;</span><span class="p">},</span>
+            <span class="n">plot_kwargs</span><span class="o">=</span><span class="p">{},</span>
             <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
-            <span class="n">chart_generator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_create_box_plot</span><span class="p">,</span>
             <span class="n">controls</span><span class="o">=</span><span class="n">controls</span><span class="p">,</span>
-            <span class="c1"># Pass through customization parameters</span>
-            <span class="n">card_style</span><span class="o">=</span><span class="n">card_style</span><span class="p">,</span>
-            <span class="n">card_className</span><span class="o">=</span><span class="n">card_className</span><span class="p">,</span>
-            <span class="n">title_style</span><span class="o">=</span><span class="n">title_style</span><span class="p">,</span>
-            <span class="n">title_className</span><span class="o">=</span><span class="n">title_className</span><span class="p">,</span>
-            <span class="n">loading_type</span><span class="o">=</span><span class="n">loading_type</span><span class="p">,</span>
-            <span class="n">graph_config</span><span class="o">=</span><span class="n">graph_config</span><span class="p">,</span>
-            <span class="n">graph_style</span><span class="o">=</span><span class="n">graph_style</span><span class="p">,</span>
-            <span class="n">figure_layout</span><span class="o">=</span><span class="n">figure_layout</span><span class="p">,</span>
-            <span class="n">controls_row_style</span><span class="o">=</span><span class="n">controls_row_style</span><span class="p">,</span>
-            <span class="n">controls_row_className</span><span class="o">=</span><span class="n">controls_row_className</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span></div>
-
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_create_box_plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Generates a box plot based on the selected control values.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">y_col</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;y_col&quot;</span><span class="p">)</span>
-        <span class="n">x_col</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;x_col&quot;</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">y_col</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">x_col</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Please select columns to display.&quot;</span><span class="p">)</span>
-
-        <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">box</span><span class="p">(</span>
-            <span class="n">df</span><span class="p">,</span>
-            <span class="n">x</span><span class="o">=</span><span class="n">x_col</span><span class="p">,</span>
-            <span class="n">y</span><span class="o">=</span><span class="n">y_col</span><span class="p">,</span>
-            <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Distribution of </span><span class="si">{</span><span class="n">y_col</span><span class="si">}</span><span class="s2"> by </span><span class="si">{</span><span class="n">x_col</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-            <span class="n">color</span><span class="o">=</span><span class="n">x_col</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">fig</span></div>
+</div>
 
 </pre></div>
 

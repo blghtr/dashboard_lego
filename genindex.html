@@ -88,7 +88,6 @@
  | <a href="#F"><strong>F</strong></a>
  | <a href="#G"><strong>G</strong></a>
  | <a href="#H"><strong>H</strong></a>
- | <a href="#I"><strong>I</strong></a>
  | <a href="#K"><strong>K</strong></a>
  | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
@@ -99,6 +98,7 @@
  | <a href="#S"><strong>S</strong></a>
  | <a href="#T"><strong>T</strong></a>
  | <a href="#U"><strong>U</strong></a>
+ | <a href="#W"><strong>W</strong></a>
  
 </div>
 <h2 id="_">_</h2>
@@ -107,14 +107,6 @@
       <li><a href="api/blocks.html#dashboard_lego.blocks.base.BaseBlock.__init__">__init__() (dashboard_lego.blocks.base.BaseBlock method)</a>
 
       <ul>
-        <li><a href="api/blocks.html#dashboard_lego.blocks.chart.Control.__init__">(dashboard_lego.blocks.chart.Control method)</a>
-</li>
-        <li><a href="api/blocks.html#dashboard_lego.blocks.chart.ControlPanelBlock.__init__">(dashboard_lego.blocks.chart.ControlPanelBlock method)</a>
-</li>
-        <li><a href="api/blocks.html#dashboard_lego.blocks.chart.InteractiveChartBlock.__init__">(dashboard_lego.blocks.chart.InteractiveChartBlock method)</a>
-</li>
-        <li><a href="api/blocks.html#dashboard_lego.blocks.chart.StaticChartBlock.__init__">(dashboard_lego.blocks.chart.StaticChartBlock method)</a>
-</li>
         <li><a href="api/blocks.html#dashboard_lego.blocks.kpi.KPIBlock.__init__">(dashboard_lego.blocks.kpi.KPIBlock method)</a>
 </li>
         <li><a href="api/blocks.html#dashboard_lego.blocks.text.TextBlock.__init__">(dashboard_lego.blocks.text.TextBlock method)</a>
@@ -123,9 +115,15 @@
 </li>
         <li><a href="api/core.html#dashboard_lego.core.datasource.BaseDataSource.__init__">(dashboard_lego.core.datasource.BaseDataSource method)</a>
 </li>
+        <li><a href="api/core.html#dashboard_lego.core.datasources.csv_source.CsvDataBuilder.__init__">(dashboard_lego.core.datasources.csv_source.CsvDataBuilder method)</a>
+</li>
         <li><a href="api/core.html#dashboard_lego.core.datasources.csv_source.CsvDataSource.__init__">(dashboard_lego.core.datasources.csv_source.CsvDataSource method)</a>
 </li>
+        <li><a href="api/core.html#dashboard_lego.core.datasources.parquet_source.ParquetDataBuilder.__init__">(dashboard_lego.core.datasources.parquet_source.ParquetDataBuilder method)</a>
+</li>
         <li><a href="api/core.html#dashboard_lego.core.datasources.parquet_source.ParquetDataSource.__init__">(dashboard_lego.core.datasources.parquet_source.ParquetDataSource method)</a>
+</li>
+        <li><a href="api/core.html#dashboard_lego.core.datasources.sql_source.SqlDataBuilder.__init__">(dashboard_lego.core.datasources.sql_source.SqlDataBuilder method)</a>
 </li>
         <li><a href="api/core.html#dashboard_lego.core.datasources.sql_source.SqlDataSource.__init__">(dashboard_lego.core.datasources.sql_source.SqlDataSource method)</a>
 </li>
@@ -174,14 +172,22 @@
 </li>
       <li><a href="api/core.html#dashboard_lego.core.state.StateManager.bind_callbacks">bind_callbacks() (dashboard_lego.core.state.StateManager method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/core.html#dashboard_lego.core.page.NavigationSection.block_factory">block_factory (dashboard_lego.core.page.NavigationSection attribute)</a>
 </li>
       <li><a href="api/utils.html#dashboard_lego.utils.exceptions.BlockError">BlockError</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/presets.html#dashboard_lego.presets.eda_presets.BoxPlotPreset">BoxPlotPreset (class in dashboard_lego.presets.eda_presets)</a>
 </li>
+      <li><a href="api/core.html#dashboard_lego.core.datasources.csv_source.CsvDataBuilder.build">build() (dashboard_lego.core.datasources.csv_source.CsvDataBuilder method)</a>
+
+      <ul>
+        <li><a href="api/core.html#dashboard_lego.core.datasources.parquet_source.ParquetDataBuilder.build">(dashboard_lego.core.datasources.parquet_source.ParquetDataBuilder method)</a>
+</li>
+        <li><a href="api/core.html#dashboard_lego.core.datasources.sql_source.SqlDataBuilder.build">(dashboard_lego.core.datasources.sql_source.SqlDataBuilder method)</a>
+</li>
+      </ul></li>
       <li><a href="api/core.html#dashboard_lego.core.page.DashboardPage.build_layout">build_layout() (dashboard_lego.core.page.DashboardPage method)</a>
 </li>
   </ul></td>
@@ -194,10 +200,6 @@
 </li>
       <li><a href="api/core.html#dashboard_lego.core.chart_context.ChartContext">ChartContext (class in dashboard_lego.core.chart_context)</a>
 </li>
-      <li><a href="api/blocks.html#dashboard_lego.blocks.chart.Control.col_props">col_props (dashboard_lego.blocks.chart.Control attribute)</a>
-</li>
-      <li><a href="api/blocks.html#dashboard_lego.blocks.chart.Control.component">component (dashboard_lego.blocks.chart.Control attribute)</a>
-</li>
       <li><a href="api/utils.html#dashboard_lego.utils.exceptions.ConfigurationError">ConfigurationError</a>
 </li>
       <li><a href="api/presets.html#dashboard_lego.presets.ml_presets.ConfusionMatrixPreset">ConfusionMatrixPreset (class in dashboard_lego.presets.ml_presets)</a>
@@ -208,15 +210,13 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/core.html#dashboard_lego.core.page.NavigationConfig.content_style">content_style (dashboard_lego.core.page.NavigationConfig attribute)</a>
 </li>
-      <li><a href="api/blocks.html#dashboard_lego.blocks.chart.Control">Control (class in dashboard_lego.blocks.chart)</a>
-</li>
-      <li><a href="api/blocks.html#dashboard_lego.blocks.chart.ControlPanelBlock">ControlPanelBlock (class in dashboard_lego.blocks.chart)</a>
-</li>
       <li><a href="api/core.html#dashboard_lego.core.chart_context.ChartContext.controls">controls (dashboard_lego.core.chart_context.ChartContext attribute)</a>
 </li>
       <li><a href="api/presets.html#dashboard_lego.presets.eda_presets.CorrelationHeatmapPreset">CorrelationHeatmapPreset (class in dashboard_lego.presets.eda_presets)</a>
 </li>
       <li><a href="api/core.html#dashboard_lego.core.page.DashboardPage.create_app">create_app() (dashboard_lego.core.page.DashboardPage method)</a>
+</li>
+      <li><a href="api/core.html#dashboard_lego.core.datasources.csv_source.CsvDataBuilder">CsvDataBuilder (class in dashboard_lego.core.datasources.csv_source)</a>
 </li>
       <li><a href="api/core.html#dashboard_lego.core.datasources.csv_source.CsvDataSource">CsvDataSource (class in dashboard_lego.core.datasources.csv_source)</a>
 </li>
@@ -231,13 +231,6 @@
 
       <ul>
         <li><a href="api/blocks.html#module-dashboard_lego.blocks.base">module</a>
-</li>
-      </ul></li>
-      <li>
-    dashboard_lego.blocks.chart
-
-      <ul>
-        <li><a href="api/blocks.html#module-dashboard_lego.blocks.chart">module</a>
 </li>
       </ul></li>
       <li>
@@ -296,8 +289,6 @@
         <li><a href="api/core.html#module-dashboard_lego.core.page">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     dashboard_lego.core.state
 
@@ -305,6 +296,8 @@
         <li><a href="api/core.html#module-dashboard_lego.core.state">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     dashboard_lego.presets.eda_presets
 
@@ -381,46 +374,12 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/core.html#dashboard_lego.core.state.StateManager.generate_callbacks">generate_callbacks() (dashboard_lego.core.state.StateManager method)</a>
 </li>
-      <li><a href="api/core.html#dashboard_lego.core.datasource.BaseDataSource.get_data">get_data() (dashboard_lego.core.datasource.BaseDataSource method)</a>
-</li>
-      <li><a href="api/core.html#dashboard_lego.core.datasource.BaseDataSource.get_filter_options">get_filter_options() (dashboard_lego.core.datasource.BaseDataSource method)</a>
-
-      <ul>
-        <li><a href="api/core.html#dashboard_lego.core.datasources.csv_source.CsvDataSource.get_filter_options">(dashboard_lego.core.datasources.csv_source.CsvDataSource method)</a>
-</li>
-        <li><a href="api/core.html#dashboard_lego.core.datasources.parquet_source.ParquetDataSource.get_filter_options">(dashboard_lego.core.datasources.parquet_source.ParquetDataSource method)</a>
-</li>
-        <li><a href="api/core.html#dashboard_lego.core.datasources.sql_source.SqlDataSource.get_filter_options">(dashboard_lego.core.datasources.sql_source.SqlDataSource method)</a>
-</li>
-      </ul></li>
-      <li><a href="api/core.html#dashboard_lego.core.datasource.BaseDataSource.get_kpis">get_kpis() (dashboard_lego.core.datasource.BaseDataSource method)</a>
-
-      <ul>
-        <li><a href="api/core.html#dashboard_lego.core.datasources.csv_source.CsvDataSource.get_kpis">(dashboard_lego.core.datasources.csv_source.CsvDataSource method)</a>
-</li>
-        <li><a href="api/core.html#dashboard_lego.core.datasources.parquet_source.ParquetDataSource.get_kpis">(dashboard_lego.core.datasources.parquet_source.ParquetDataSource method)</a>
-</li>
-        <li><a href="api/core.html#dashboard_lego.core.datasources.sql_source.SqlDataSource.get_kpis">(dashboard_lego.core.datasources.sql_source.SqlDataSource method)</a>
-</li>
-      </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/utils.html#dashboard_lego.utils.logger.get_logger">get_logger() (in module dashboard_lego.utils.logger)</a>
 </li>
-      <li><a href="api/core.html#dashboard_lego.core.datasource.BaseDataSource.get_preprocessed_data">get_preprocessed_data() (dashboard_lego.core.datasource.BaseDataSource method)</a>
-</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/core.html#dashboard_lego.core.datasource.BaseDataSource.get_processed_data">get_processed_data() (dashboard_lego.core.datasource.BaseDataSource method)</a>
 </li>
-      <li><a href="api/core.html#dashboard_lego.core.datasource.BaseDataSource.get_summary">get_summary() (dashboard_lego.core.datasource.BaseDataSource method)</a>
-
-      <ul>
-        <li><a href="api/core.html#dashboard_lego.core.datasources.csv_source.CsvDataSource.get_summary">(dashboard_lego.core.datasources.csv_source.CsvDataSource method)</a>
-</li>
-        <li><a href="api/core.html#dashboard_lego.core.datasources.parquet_source.ParquetDataSource.get_summary">(dashboard_lego.core.datasources.parquet_source.ParquetDataSource method)</a>
-</li>
-        <li><a href="api/core.html#dashboard_lego.core.datasources.sql_source.SqlDataSource.get_summary">(dashboard_lego.core.datasources.sql_source.SqlDataSource method)</a>
-</li>
-      </ul></li>
       <li><a href="api/core.html#dashboard_lego.core.page.DashboardPage.get_theme_html_template">get_theme_html_template() (dashboard_lego.core.page.DashboardPage method)</a>
 </li>
       <li><a href="api/presets.html#dashboard_lego.presets.eda_presets.GroupedHistogramPreset">GroupedHistogramPreset (class in dashboard_lego.presets.eda_presets)</a>
@@ -432,18 +391,6 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/utils.html#dashboard_lego.utils.logger.HierarchyLoggerAdapter">HierarchyLoggerAdapter (class in dashboard_lego.utils.logger)</a>
-</li>
-  </ul></td>
-</tr></table>
-
-<h2 id="I">I</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/core.html#dashboard_lego.core.datasource.BaseDataSource.init_data">init_data() (dashboard_lego.core.datasource.BaseDataSource method)</a>
-</li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/blocks.html#dashboard_lego.blocks.chart.InteractiveChartBlock">InteractiveChartBlock (class in dashboard_lego.blocks.chart)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -466,17 +413,9 @@
       <li><a href="api/blocks.html#dashboard_lego.blocks.base.BaseBlock.layout">layout() (dashboard_lego.blocks.base.BaseBlock method)</a>
 
       <ul>
-        <li><a href="api/blocks.html#dashboard_lego.blocks.chart.ControlPanelBlock.layout">(dashboard_lego.blocks.chart.ControlPanelBlock method)</a>
-</li>
-        <li><a href="api/blocks.html#dashboard_lego.blocks.chart.InteractiveChartBlock.layout">(dashboard_lego.blocks.chart.InteractiveChartBlock method)</a>
-</li>
-        <li><a href="api/blocks.html#dashboard_lego.blocks.chart.StaticChartBlock.layout">(dashboard_lego.blocks.chart.StaticChartBlock method)</a>
-</li>
         <li><a href="api/blocks.html#dashboard_lego.blocks.kpi.KPIBlock.layout">(dashboard_lego.blocks.kpi.KPIBlock method)</a>
 </li>
         <li><a href="api/blocks.html#dashboard_lego.blocks.text.TextBlock.layout">(dashboard_lego.blocks.text.TextBlock method)</a>
-</li>
-        <li><a href="api/presets.html#dashboard_lego.presets.eda_presets.GroupedHistogramPreset.layout">(dashboard_lego.presets.eda_presets.GroupedHistogramPreset method)</a>
 </li>
         <li><a href="api/presets.html#dashboard_lego.presets.ml_presets.ModelSummaryBlock.layout">(dashboard_lego.presets.ml_presets.ModelSummaryBlock method)</a>
 </li>
@@ -484,15 +423,7 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/blocks.html#dashboard_lego.blocks.base.BaseBlock.list_control_inputs">list_control_inputs() (dashboard_lego.blocks.base.BaseBlock method)</a>
-
-      <ul>
-        <li><a href="api/blocks.html#dashboard_lego.blocks.chart.ControlPanelBlock.list_control_inputs">(dashboard_lego.blocks.chart.ControlPanelBlock method)</a>
 </li>
-        <li><a href="api/blocks.html#dashboard_lego.blocks.chart.InteractiveChartBlock.list_control_inputs">(dashboard_lego.blocks.chart.InteractiveChartBlock method)</a>
-</li>
-        <li><a href="api/presets.html#dashboard_lego.presets.eda_presets.GroupedHistogramPreset.list_control_inputs">(dashboard_lego.presets.eda_presets.GroupedHistogramPreset method)</a>
-</li>
-      </ul></li>
       <li><a href="api/core.html#dashboard_lego.core.chart_context.ChartContext.logger">logger (dashboard_lego.core.chart_context.ChartContext attribute)</a>
 </li>
   </ul></td>
@@ -512,8 +443,6 @@
 
       <ul>
         <li><a href="api/blocks.html#module-dashboard_lego.blocks.base">dashboard_lego.blocks.base</a>
-</li>
-        <li><a href="api/blocks.html#module-dashboard_lego.blocks.chart">dashboard_lego.blocks.chart</a>
 </li>
         <li><a href="api/blocks.html#module-dashboard_lego.blocks.kpi">dashboard_lego.blocks.kpi</a>
 </li>
@@ -580,29 +509,39 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/presets.html#dashboard_lego.presets.layouts.one_column">one_column() (in module dashboard_lego.presets.layouts)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/blocks.html#dashboard_lego.blocks.base.BaseBlock.output_target">output_target() (dashboard_lego.blocks.base.BaseBlock method)</a>
-
-      <ul>
-        <li><a href="api/blocks.html#dashboard_lego.blocks.chart.InteractiveChartBlock.output_target">(dashboard_lego.blocks.chart.InteractiveChartBlock method)</a>
 </li>
-        <li><a href="api/blocks.html#dashboard_lego.blocks.chart.StaticChartBlock.output_target">(dashboard_lego.blocks.chart.StaticChartBlock method)</a>
-</li>
-      </ul></li>
   </ul></td>
 </tr></table>
 
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/core.html#dashboard_lego.core.datasources.parquet_source.ParquetDataBuilder">ParquetDataBuilder (class in dashboard_lego.core.datasources.parquet_source)</a>
+</li>
       <li><a href="api/core.html#dashboard_lego.core.datasources.parquet_source.ParquetDataSource">ParquetDataSource (class in dashboard_lego.core.datasources.parquet_source)</a>
 </li>
-      <li><a href="api/core.html#dashboard_lego.core.page.NavigationConfig.position">position (dashboard_lego.core.page.NavigationConfig attribute)</a>
+      <li><a href="api/presets.html#dashboard_lego.presets.eda_presets.plot_box_by_category">plot_box_by_category() (in module dashboard_lego.presets.eda_presets)</a>
+</li>
+      <li><a href="api/presets.html#dashboard_lego.presets.ml_presets.plot_confusion_matrix">plot_confusion_matrix() (in module dashboard_lego.presets.ml_presets)</a>
+</li>
+      <li><a href="api/presets.html#dashboard_lego.presets.eda_presets.plot_correlation_heatmap">plot_correlation_heatmap() (in module dashboard_lego.presets.eda_presets)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/utils.html#dashboard_lego.utils.logger.HierarchyLoggerAdapter.process">process() (dashboard_lego.utils.logger.HierarchyLoggerAdapter method)</a>
+      <li><a href="api/presets.html#dashboard_lego.presets.ml_presets.plot_feature_importance_horizontal">plot_feature_importance_horizontal() (in module dashboard_lego.presets.ml_presets)</a>
 </li>
-      <li><a href="api/blocks.html#dashboard_lego.blocks.chart.Control.props">props (dashboard_lego.blocks.chart.Control attribute)</a>
+      <li><a href="api/presets.html#dashboard_lego.presets.eda_presets.plot_grouped_histogram">plot_grouped_histogram() (in module dashboard_lego.presets.eda_presets)</a>
+</li>
+      <li><a href="api/presets.html#dashboard_lego.presets.eda_presets.plot_missing_values">plot_missing_values() (in module dashboard_lego.presets.eda_presets)</a>
+</li>
+      <li><a href="api/presets.html#dashboard_lego.presets.ml_presets.plot_roc_curve">plot_roc_curve() (in module dashboard_lego.presets.ml_presets)</a>
+</li>
+      <li><a href="api/core.html#dashboard_lego.core.page.NavigationConfig.position">position (dashboard_lego.core.page.NavigationConfig attribute)</a>
+</li>
+      <li><a href="api/utils.html#dashboard_lego.utils.logger.HierarchyLoggerAdapter.process">process() (dashboard_lego.utils.logger.HierarchyLoggerAdapter method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -644,13 +583,13 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/core.html#dashboard_lego.core.page.NavigationConfig.sidebar_width">sidebar_width (dashboard_lego.core.page.NavigationConfig attribute)</a>
 </li>
+      <li><a href="api/core.html#dashboard_lego.core.datasources.sql_source.SqlDataBuilder">SqlDataBuilder (class in dashboard_lego.core.datasources.sql_source)</a>
+</li>
       <li><a href="api/core.html#dashboard_lego.core.datasources.sql_source.SqlDataSource">SqlDataSource (class in dashboard_lego.core.datasources.sql_source)</a>
 </li>
       <li><a href="api/utils.html#dashboard_lego.utils.exceptions.StateError">StateError</a>
 </li>
       <li><a href="api/core.html#dashboard_lego.core.state.StateManager">StateManager (class in dashboard_lego.core.state)</a>
-</li>
-      <li><a href="api/blocks.html#dashboard_lego.blocks.chart.StaticChartBlock">StaticChartBlock (class in dashboard_lego.blocks.chart)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -677,11 +616,23 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/blocks.html#dashboard_lego.blocks.base.BaseBlock.update_from_controls">update_from_controls() (dashboard_lego.blocks.base.BaseBlock method)</a>
-
-      <ul>
-        <li><a href="api/blocks.html#dashboard_lego.blocks.chart.InteractiveChartBlock.update_from_controls">(dashboard_lego.blocks.chart.InteractiveChartBlock method)</a>
 </li>
-      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="W">W</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/core.html#dashboard_lego.core.datasource.BaseDataSource.with_builder">with_builder() (dashboard_lego.core.datasource.BaseDataSource method)</a>
+</li>
+      <li><a href="api/core.html#dashboard_lego.core.datasource.BaseDataSource.with_builder_fn">with_builder_fn() (dashboard_lego.core.datasource.BaseDataSource method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/core.html#dashboard_lego.core.datasource.BaseDataSource.with_transform_fn">with_transform_fn() (dashboard_lego.core.datasource.BaseDataSource method)</a>
+</li>
+      <li><a href="api/core.html#dashboard_lego.core.datasource.BaseDataSource.with_transformer">with_transformer() (dashboard_lego.core.datasource.BaseDataSource method)</a>
+</li>
   </ul></td>
 </tr></table>
 

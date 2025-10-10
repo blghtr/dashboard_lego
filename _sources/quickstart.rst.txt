@@ -86,6 +86,19 @@ Create blocks for displaying your data:
        subscribes_to="dummy_state"
    )
 
+   # Optional: Create block with data transformation (v0.16.0+)
+   # This aggregates data before visualization
+   from dashboard_lego.blocks.typed_chart import TypedChartBlock
+
+   aggregated_chart = TypedChartBlock(
+       block_id="sales_by_category",
+       datasource=datasource,
+       plot_type='bar',
+       plot_params={'x': 'Fruit', 'y': 'total_sales'},
+       transform_fn=lambda df: df.groupby('Fruit')['Sales'].sum().reset_index(name='total_sales')
+   )
+   # See concepts.rst for more on block-level transformations
+
 Step 3: Create Dashboard Page
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

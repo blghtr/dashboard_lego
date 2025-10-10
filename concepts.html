@@ -58,9 +58,19 @@
 <li class="toctree-l2"><a class="reference internal" href="#state-management">State Management</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#layout-system">Layout System</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#presets">Presets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#block-level-data-transformations">Block-Level Data Transformations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#data-flow">Data Flow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#common-patterns">Common Patterns</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#key-concepts">Key Concepts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#example-scenarios">Example Scenarios</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#best-practices">Best Practices</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#block-design">Block Design</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#id1">State Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#data-transformations">Data Transformations</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#performance">Performance</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#layout-design">Layout Design</a></li>
 </ul>
@@ -200,6 +210,153 @@
 <li><p><strong>Layout Presets</strong>: Common dashboard arrangements</p></li>
 </ul>
 </section>
+<section id="block-level-data-transformations">
+<h2>Block-Level Data Transformations<a class="headerlink" href="#block-level-data-transformations" title="Link to this heading"></a></h2>
+<p>Dashboard Lego v0.16.0 introduces block-specific data transformations, allowing each
+block to apply custom transformations (aggregation, filtering, pivoting) to the data
+it displays without affecting other blocks.</p>
+<section id="overview">
+<h3>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">transform_fn</span></code> parameter enables blocks to define their own data transformation
+logic that executes <strong>after</strong> the global data pipeline. This allows for:</p>
+<ul class="simple">
+<li><p>Block-specific aggregations (groupby, pivot tables)</p></li>
+<li><p>Custom filtering without affecting other blocks</p></li>
+<li><p>Data reshaping for specific visualizations</p></li>
+<li><p>Complex multi-step transformations</p></li>
+</ul>
+</section>
+<section id="data-flow">
+<h3>Data Flow<a class="headerlink" href="#data-flow" title="Link to this heading"></a></h3>
+<p>The complete data pipeline with block transforms:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>1. Data Builder (load + process)
+       ↓
+2. Global Filter (optional)
+       ↓
+3. Block Transform (if specified) ← NEW in v0.15.0
+       ↓
+4. Block Rendering
+</pre></div>
+</div>
+<p>Each block with a <code class="docutils literal notranslate"><span class="pre">transform_fn</span></code> gets a specialized datasource that chains
+the transform after the global filter.</p>
+</section>
+<section id="basic-usage">
+<h3>Basic Usage<a class="headerlink" href="#basic-usage" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.typed_chart</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedChartBlock</span>
+
+<span class="c1"># Block without transform - shows raw data</span>
+<span class="n">raw_chart</span> <span class="o">=</span> <span class="n">TypedChartBlock</span><span class="p">(</span>
+    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;raw_sales&quot;</span><span class="p">,</span>
+    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;scatter&#39;</span><span class="p">,</span>
+    <span class="n">plot_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="s1">&#39;sales&#39;</span><span class="p">}</span>
+<span class="p">)</span>
+
+<span class="c1"># Block with aggregation transform</span>
+<span class="n">aggregated_chart</span> <span class="o">=</span> <span class="n">TypedChartBlock</span><span class="p">(</span>
+    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;category_totals&quot;</span><span class="p">,</span>
+    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span>
+    <span class="n">plot_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;category&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="s1">&#39;total_sales&#39;</span><span class="p">},</span>
+    <span class="n">transform_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;category&#39;</span><span class="p">)[</span><span class="s1">&#39;sales&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;total_sales&#39;</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="common-patterns">
+<h3>Common Patterns<a class="headerlink" href="#common-patterns" title="Link to this heading"></a></h3>
+<p><strong>Aggregation:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Group by category and sum sales</span>
+<span class="n">transform_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;category&#39;</span><span class="p">)[</span><span class="s1">&#39;sales&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><strong>Filtering:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Show only high-value transactions</span>
+<span class="n">transform_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;sales&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1000</span><span class="p">]</span>
+</pre></div>
+</div>
+<p><strong>Pivot Tables:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create category × region matrix</span>
+<span class="n">transform_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">pivot_table</span><span class="p">(</span>
+    <span class="n">index</span><span class="o">=</span><span class="s1">&#39;category&#39;</span><span class="p">,</span>
+    <span class="n">columns</span><span class="o">=</span><span class="s1">&#39;region&#39;</span><span class="p">,</span>
+    <span class="n">values</span><span class="o">=</span><span class="s1">&#39;sales&#39;</span><span class="p">,</span>
+    <span class="n">aggfunc</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Complex Multi-Step:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">complex_transform</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="c1"># Step 1: Filter</span>
+    <span class="n">filtered</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;category&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Electronics&#39;</span><span class="p">]</span>
+    <span class="c1"># Step 2: Aggregate</span>
+    <span class="n">grouped</span> <span class="o">=</span> <span class="n">filtered</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;region&#39;</span><span class="p">)[</span><span class="s1">&#39;sales&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="c1"># Step 3: Calculate metrics</span>
+    <span class="k">return</span> <span class="n">grouped</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;total_sales&#39;</span><span class="p">)</span>
+
+<span class="n">transform_fn</span><span class="o">=</span><span class="n">complex_transform</span>
+</pre></div>
+</div>
+</section>
+<section id="key-concepts">
+<h3>Key Concepts<a class="headerlink" href="#key-concepts" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt><strong>Immutability:</strong></dt><dd><p>The original datasource is never modified. Each block with a <code class="docutils literal notranslate"><span class="pre">transform_fn</span></code>
+gets an independent specialized clone.</p>
+</dd>
+<dt><strong>Order Matters:</strong></dt><dd><p>Transforms execute in order: Build → Global Filter → Block Transform</p>
+</dd>
+<dt><strong>Independence:</strong></dt><dd><p>Multiple blocks can have different transforms on the same datasource without
+interfering with each other.</p>
+</dd>
+<dt><strong>Caching:</strong></dt><dd><p>Each specialized datasource maintains independent cache keys, so transforms
+are only computed once.</p>
+</dd>
+</dl>
+</section>
+<section id="example-scenarios">
+<h3>Example Scenarios<a class="headerlink" href="#example-scenarios" title="Link to this heading"></a></h3>
+<p><strong>Scenario 1: Different Aggregations</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Dashboard showing same data aggregated different ways</span>
+<span class="n">sales_by_category</span> <span class="o">=</span> <span class="n">TypedChartBlock</span><span class="p">(</span>
+    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;by_category&quot;</span><span class="p">,</span>
+    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span>
+    <span class="n">plot_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;category&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="s1">&#39;total&#39;</span><span class="p">},</span>
+    <span class="n">transform_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;category&#39;</span><span class="p">)[</span><span class="s1">&#39;sales&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;total&#39;</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">sales_by_region</span> <span class="o">=</span> <span class="n">TypedChartBlock</span><span class="p">(</span>
+    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;by_region&quot;</span><span class="p">,</span>
+    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span>
+    <span class="n">plot_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;region&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="s1">&#39;total&#39;</span><span class="p">},</span>
+    <span class="n">transform_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;region&#39;</span><span class="p">)[</span><span class="s1">&#39;sales&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;total&#39;</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Scenario 2: With Global Filters</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Global filter applies first, then block transform</span>
+<span class="n">datasource</span> <span class="o">=</span> <span class="n">BaseDataSource</span><span class="p">(</span>
+    <span class="n">data_builder</span><span class="o">=</span><span class="n">builder</span><span class="p">,</span>
+    <span class="n">data_transformer</span><span class="o">=</span><span class="n">DateRangeFilter</span><span class="p">()</span>  <span class="c1"># Global filter</span>
+<span class="p">)</span>
+
+<span class="c1"># This block will:</span>
+<span class="c1"># 1. Apply DateRangeFilter (global)</span>
+<span class="c1"># 2. Then aggregate by category (block-specific)</span>
+<span class="n">chart</span> <span class="o">=</span> <span class="n">TypedChartBlock</span><span class="p">(</span>
+    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;filtered_totals&quot;</span><span class="p">,</span>
+    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span>
+    <span class="n">plot_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;category&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="s1">&#39;total&#39;</span><span class="p">},</span>
+    <span class="n">transform_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;category&#39;</span><span class="p">)[</span><span class="s1">&#39;sales&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;total&#39;</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
 <section id="best-practices">
 <h2>Best Practices<a class="headerlink" href="#best-practices" title="Link to this heading"></a></h2>
 <section id="block-design">
@@ -220,6 +377,16 @@
 <li><p>Handle state initialization properly</p></li>
 </ul>
 </section>
+<section id="data-transformations">
+<h3>Data Transformations<a class="headerlink" href="#data-transformations" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Keep transform functions simple and readable</p></li>
+<li><p>Use descriptive lambda names for complex transforms</p></li>
+<li><p>Consider extracting complex transforms to named functions</p></li>
+<li><p>Remember: transforms execute after global filters</p></li>
+<li><p>Test transforms independently before adding to blocks</p></li>
+</ul>
+</section>
 <section id="performance">
 <h3>Performance<a class="headerlink" href="#performance" title="Link to this heading"></a></h3>
 <ul class="simple">
@@ -227,6 +394,7 @@
 <li><p>Implement efficient data filtering</p></li>
 <li><p>Minimize callback complexity</p></li>
 <li><p>Use appropriate chart types for data size</p></li>
+<li><p>Block transforms are cached automatically</p></li>
 </ul>
 </section>
 <section id="layout-design">
