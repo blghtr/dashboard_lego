@@ -8,96 +8,81 @@ Creating Your First Dashboard
 
 Let's create a simple sales dashboard step by step.
 
-Step 1: Define a Data Source
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Step 1: Define a Data Builder
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-First, create a data source by inheriting from :class:`BaseDataSource`:
+v0.15+ uses composition instead of inheritance. Create a :class:`DataBuilder`:
 
 .. code-block:: python
 
    import pandas as pd
-   from dashboard_lego.core.datasource import BaseDataSource
+   from dashboard_lego.core import DataBuilder, BaseDataSource
 
-   class SalesDataSource(BaseDataSource):
+   class SalesDataBuilder(DataBuilder):
        def __init__(self, file_path):
-           self.file_path = file_path
            super().__init__()
+           self.file_path = file_path
 
-       def _load_data(self, params: dict) -> pd.DataFrame:
-           """Load data from CSV file."""
-           return pd.read_csv(self.file_path)
+       def build(self, params):
+           """Load CSV and optionally add calculated fields."""
+           df = pd.read_csv(self.file_path)
+           # Add any calculated columns here if needed
+           return df
 
-       def get_kpis(self) -> dict:
-           """Calculate key performance indicators."""
-           if self._data is None:
-               return {}
-           return {
-               "total_sales": self._data["Sales"].sum(),
-               "total_units": self._data["UnitsSold"].sum()
-           }
-
-       def get_filter_options(self, filter_name: str) -> list:
-           """Provide filter options (not used in this example)."""
-           return []
-
-       def get_summary(self) -> str:
-           """Provide data summary (not used in this example)."""
-           return ""
+   # Create datasource using composition (no inheritance!)
+   datasource = BaseDataSource(
+       data_builder=SalesDataBuilder("sample_data.csv")
+   )
 
 Step 2: Create Dashboard Blocks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Create blocks for displaying your data:
+Create blocks using v0.15+ API:
 
 .. code-block:: python
 
    import plotly.express as px
-   import plotly.graph_objects as go
-   from dashboard_lego.blocks.kpi import KPIBlock
-   from dashboard_lego.blocks.chart import StaticChartBlock
+   from dashboard_lego.blocks.metrics import MetricsBlock
+   from dashboard_lego.blocks.typed_chart import TypedChartBlock
 
-   # Initialize data source
-   datasource = SalesDataSource(file_path="sample_data.csv")
-   datasource.init_data()
-
-   # Create KPI block
-   kpi_block = KPIBlock(
-       block_id="sales_kpis",
+   # MetricsBlock replaces get_kpis() pattern (v0.15+)
+   metrics_block = MetricsBlock(
+       block_id="sales_metrics",
        datasource=datasource,
-       kpi_definitions=[
-           {"key": "total_sales", "title": "Total Sales", "color": "success"},
-           {"key": "total_units", "title": "Total Units Sold", "color": "info"},
-       ],
-       subscribes_to="dummy_state"  # Not used in static dashboard
-   )
-
-   # Define chart function
-   def plot_sales_by_fruit(df: pd.DataFrame, ctx) -> go.Figure:
-       """Create a bar chart of sales by fruit."""
-       sales_by_fruit = df.groupby("Fruit")["Sales"].sum().reset_index()
-       return px.bar(sales_by_fruit, x="Fruit", y="Sales", title="Sales by Fruit")
-
-   # Create chart block
-   chart_block = StaticChartBlock(
-       block_id="sales_chart",
-       datasource=datasource,
-       title="Fruit Sales",
-       chart_generator=plot_sales_by_fruit,
+       metrics_spec={
+           "total_sales": {
+               "column": "Sales",
+               "agg": "sum",
+               "title": "Total Sales",
+               "color": "success"
+           },
+           "total_units": {
+               "column": "UnitsSold",
+               "agg": "sum",
+               "title": "Total Units Sold",
+               "color": "info"
+           }
+       },
        subscribes_to="dummy_state"
    )
 
-   # Optional: Create block with data transformation (v0.16.0+)
-   # This aggregates data before visualization
-   from dashboard_lego.blocks.typed_chart import TypedChartBlock
-
-   aggregated_chart = TypedChartBlock(
-       block_id="sales_by_category",
+   # TypedChartBlock with plot registry (v0.15+)
+   chart_block = TypedChartBlock(
+       block_id="sales_chart",
        datasource=datasource,
-       plot_type='bar',
-       plot_params={'x': 'Fruit', 'y': 'total_sales'},
-       transform_fn=lambda df: df.groupby('Fruit')['Sales'].sum().reset_index(name='total_sales')
+       plot_type="bar",  # Built-in plot type
+       plot_params={"x": "Fruit", "y": "Sales"},
+       plot_kwargs={"title": "Sales by Fruit"},
+       title="Fruit Sales",
+       subscribes_to="dummy_state",
+       # Optional: transform data at block level (v0.15+)
+       transform_fn=lambda df: df.groupby("Fruit")["Sales"].sum().reset_index()
    )
-   # See concepts.rst for more on block-level transformations
+
+.. note::
+   v0.15 introduces ``MetricsBlock`` and ``TypedChartBlock`` which replace
+   the legacy ``get_kpis()`` method and ``StaticChartBlock``.
+   See :doc:`concepts` for more on block-level transformations.
 
 Step 3: Create Dashboard Page
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -113,7 +98,7 @@ Assemble your blocks into a dashboard page:
    # Create dashboard page using layout presets
    dashboard_page = DashboardPage(
        title="Simple Sales Dashboard",
-       blocks=one_column([kpi_block, chart_block]),  # Stack blocks vertically
+       blocks=one_column([metrics_block, chart_block]),  # Stack blocks vertically
        theme=dbc.themes.LUX
    )
 

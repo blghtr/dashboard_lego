@@ -141,11 +141,22 @@ Creating Presets
 EDA Presets
 ~~~~~~~~~~~
 
-Create presets for common exploratory data analysis tasks:
+Create presets for common exploratory data analysis tasks using v0.15+ API:
 
 .. code-block:: python
 
-   class MyEDAPreset(StaticChartBlock):
+   from dashboard_lego.blocks.typed_chart import TypedChartBlock
+   from dashboard_lego.utils.plot_registry import register_plot_type
+   import plotly.express as px
+
+   # Register custom plot function
+   @register_plot_type('my_custom_plot')
+   def my_custom_plot(df, x, y, **kwargs):
+       """Custom plot function for EDA."""
+       return px.scatter(df, x=x, y=y, **kwargs)
+
+   # Create preset using TypedChartBlock
+   class MyEDAPreset(TypedChartBlock):
        """
        Description of what this preset does.
 
@@ -153,32 +164,46 @@ Create presets for common exploratory data analysis tasks:
        :relates-to:
         - motivated_by: "Common EDA pattern for [specific analysis]"
         - implements: "preset: 'MyEDAPreset'"
-        - uses: ["block: 'StaticChartBlock'"]
+        - uses: ["block: 'TypedChartBlock'"]
        """
-
-       def _create_chart(self, df: pd.DataFrame, ctx) -> go.Figure:
-           """Create the specific chart for this EDA preset."""
-           # Implementation here
-           pass
+       def __init__(self, block_id, datasource, **kwargs):
+           super().__init__(
+               block_id=block_id,
+               datasource=datasource,
+               plot_type='my_custom_plot',
+               plot_params={'x': 'col1', 'y': 'col2'},
+               **kwargs
+           )
 
 ML Presets
 ~~~~~~~~~~
 
-Create presets for machine learning visualizations:
+Create presets for machine learning visualizations using MetricsBlock:
 
 .. code-block:: python
 
-   class MyMLPreset(KPIBlock):
+   from dashboard_lego.blocks.metrics import MetricsBlock
+
+   class MyMLPreset(MetricsBlock):
        """
-       ML-specific preset for [specific ML visualization].
+       ML-specific preset for [specific ML metrics].
 
        :hierarchy: [Presets | ML | MyMLPreset]
        :relates-to:
-        - motivated_by: "ML workflow requires [specific visualization]"
+        - motivated_by: "ML workflow requires [specific metrics]"
         - implements: "preset: 'MyMLPreset'"
-        - uses: ["block: 'KPIBlock'"]
+        - uses: ["block: 'MetricsBlock'"]
        """
-       pass
+       def __init__(self, block_id, datasource, **kwargs):
+           super().__init__(
+               block_id=block_id,
+               datasource=datasource,
+               metrics_spec={
+                   'accuracy': {'column': 'predictions', 'agg': 'mean', 'title': 'Accuracy'},
+                   'f1_score': {'column': 'f1', 'agg': 'mean', 'title': 'F1 Score'}
+               },
+               **kwargs
+           )
 
 Pull Request Process
 --------------------
