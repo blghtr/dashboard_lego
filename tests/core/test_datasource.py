@@ -1,225 +1,352 @@
 """
-Unit tests for the BaseDataSource class.
+Unit tests for BaseDataSource (v0.15.0 - 2-stage pipeline).
 
+:hierarchy: [Testing | Unit Tests | Core | BaseDataSource]
+:complexity: 4
 """
 
-import shutil
 import time
-from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
 import pytest
-from diskcache import Cache
 from pandas.testing import assert_frame_equal
 
-from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core import BaseDataSource, DataBuilder, DataTransformer
+from dashboard_lego.utils.exceptions import DataLoadError
 
 
-@pytest.fixture
-def temp_cache(tmp_path):
+# Simple test data builder
+class SampleDataBuilder(DataBuilder):
+    """Sample data builder that returns test data."""
+
+    def __init__(self, data=None, **kwargs):
+        super().__init__(**kwargs)
+        self.data = (
+            data if data is not None else pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+        )
+
+    def build(self, params):
+        return self.data.copy()
+
+
+# Simple test filter
+class SampleDataTransformer(DataTransformer):
+    """Sample filter that filters by min value."""
+
+    def transform(self, data, params):
+        df = data.copy()
+        if "min_a" in params:
+            df = df[df["a"] >= params["min_a"]]
+        return df
+
+
+def test_datasource_in_memory_caching_hit():
+    """Test that in-memory cache works correctly."""
+    builder = SampleDataBuilder()
+    datasource = BaseDataSource(data_builder=builder)
+
+    # First call - cache miss
+    data1 = datasource.get_processed_data()
+
+    # Second call - cache hit
+    data2 = datasource.get_processed_data()
+
+    # Assert data is same and cached
+    assert_frame_equal(data1, data2)
+
+
+def test_datasource_disk_caching_hit(tmp_path):
+    """Test that disk cache works correctly."""
+    cache_dir = str(tmp_path / "cache")
+    builder = SampleDataBuilder()
+    datasource = BaseDataSource(data_builder=builder, cache_dir=cache_dir)
+
+    # First call
+    data1 = datasource.get_processed_data()
+
+    # Second call (should hit disk cache)
+    data2 = datasource.get_processed_data()
+
+    assert_frame_equal(data1, data2)
+
+
+def test_datasource_caching_miss():
+    """Test cache miss with different parameters."""
+    builder = SampleDataBuilder()
+    filter_obj = SampleDataTransformer()
+
+    def classifier(key):
+        return "transform" if key == "min_a" else "build"
+
+    datasource = BaseDataSource(
+        data_builder=builder, data_transformer=filter_obj, param_classifier=classifier
+    )
+
+    # Different params = different cache keys
+    data1 = datasource.get_processed_data({"min_a": 2})
+    data2 = datasource.get_processed_data({"min_a": 3})
+
+    assert len(data1) == 2  # a >= 2
+    assert len(data2) == 1  # a >= 3
+
+
+def test_datasource_cache_ttl_configuration(tmp_path):
+    """Test cache TTL expiration."""
+    cache_dir = str(tmp_path / "cache")
+    builder = SampleDataBuilder()
+
+    datasource = BaseDataSource(
+        data_builder=builder, cache_dir=cache_dir, cache_ttl=1  # 1 second TTL
+    )
+
+    # First call
+    data1 = datasource.get_processed_data()
+
+    # Wait for TTL expiration
+    time.sleep(1.5)
+
+    # Should reload (not from cache)
+    data2 = datasource.get_processed_data()
+
+    # Data should still be equal
+    assert_frame_equal(data1, data2)
+
+
+def test_datasource_load_error_handling():
+    """Test error handling when data building fails.
+
+    In v0.15.0, BaseDataSource catches exceptions and returns empty DataFrame
+    instead of propagating them to maintain dashboard stability.
     """
-    A pytest fixture that creates, yields, and properly closes a diskcache.Cache object
-    in a temporary directory.
+
+    class ErrorBuilder(DataBuilder):
+        def build(self, params):
+            raise ValueError("Build error")
+
+    datasource = BaseDataSource(data_builder=ErrorBuilder())
+
+    # Should return empty DataFrame, not raise
+    result = datasource.get_processed_data()
+    assert isinstance(result, pd.DataFrame)
+    assert result.empty
+
+
+def test_datasource_numpy_serialization(tmp_path):
+    """Test that DataFrames with numpy types are cached correctly."""
+    cache_dir = str(tmp_path / "cache")
+
+    df = pd.DataFrame(
+        {
+            "int_col": np.array([1, 2, 3], dtype=np.int64),
+            "float_col": np.array([1.1, 2.2, 3.3], dtype=np.float64),
+        }
+    )
+
+    builder = SampleDataBuilder(data=df)
+    datasource = BaseDataSource(data_builder=builder, cache_dir=cache_dir)
+
+    # First call
+    data1 = datasource.get_processed_data()
+
+    # Second call (from cache)
+    data2 = datasource.get_processed_data()
+
+    assert_frame_equal(data1, data2)
+    assert data2["int_col"].dtype == np.int64
+    assert data2["float_col"].dtype == np.float64
+
+
+# <semantic_block: test_with_transform_fn>
+def test_datasource_with_transform_fn_basic():
     """
-    cache_dir = tmp_path / "test_cache"
-    cache = Cache(directory=str(cache_dir))
-    yield cache
-    cache.close()
+    Test with_transform_fn() creates specialized datasource with block transform.
 
+    :hierarchy: [Testing | Unit Tests | BaseDataSource | WithTransform]
+    :covers:
+     - target: "BaseDataSource.with_transform_fn"
+     - requirement: "Creates new datasource with additional transform"
 
-@pytest.fixture
-def temp_ttl_cache(tmp_path):
+    :scenario: "Basic transform function applied after global filter"
+    :priority: "P0"
+    :complexity: 3
     """
-    A pytest fixture for a cache with a very short TTL for expiration tests.
+    df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    builder = SampleDataBuilder(data=df)
+    datasource = BaseDataSource(data_builder=builder)
+
+    # Create specialized datasource with transform
+    transform_fn = lambda df: df[df["a"] >= 2]
+    specialized_ds = datasource.with_transform_fn(transform_fn)
+
+    # Get data from specialized datasource
+    result = specialized_ds.get_processed_data()
+
+    # Should have applied transform (filter a >= 2)
+    assert len(result) == 2
+    assert result["a"].tolist() == [2, 3]
+
+
+def test_datasource_with_transform_fn_preserves_original():
     """
-    cache_dir = tmp_path / "test_ttl_cache"
-    cache = Cache(directory=str(cache_dir), expire=0.1)
-    yield cache
-    cache.close()
+    Test with_transform_fn() does not modify original datasource.
 
+    :hierarchy: [Testing | Unit Tests | BaseDataSource | Immutability]
+    :covers:
+     - target: "BaseDataSource.with_transform_fn"
+     - requirement: "Immutable pattern - original unchanged"
 
-# A concrete implementation of the abstract BaseDataSource for testing.
-class ConcreteDataSource(BaseDataSource):
+    :scenario: "Original datasource returns unchanged data"
+    :priority: "P0"
+    :complexity: 2
     """
-    A concrete test implementation of BaseDataSource.
-    It implements the abstract methods and allows us to test the base class logic.
+    df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    builder = SampleDataBuilder(data=df)
+    original_ds = BaseDataSource(data_builder=builder)
 
-        :hierarchy: [Tests | Core | DataSource]
-        :covers:
-          - object: "class: BaseDataSource"
+    # Create specialized datasource
+    transform_fn = lambda df: df[df["a"] >= 2]
+    specialized_ds = original_ds.with_transform_fn(transform_fn)
 
+    # Original should return all data
+    original_result = original_ds.get_processed_data()
+    assert len(original_result) == 3
+
+    # Specialized should return filtered data
+    specialized_result = specialized_ds.get_processed_data()
+    assert len(specialized_result) == 2
+
+
+def test_datasource_with_transform_fn_and_global_filter():
     """
+    Test with_transform_fn() chains with global filter correctly.
 
-    def __init__(self, cache_obj: Cache = None, **kwargs):
-        # Allow injecting a cache object for testing purposes
-        if cache_obj:
-            self.cache = cache_obj
-            self._data = None
-        else:
-            super().__init__(**kwargs)
+    :hierarchy: [Testing | Unit Tests | BaseDataSource | Chaining]
+    :covers:
+     - target: "BaseDataSource.with_transform_fn"
+     - requirement: "Block transform applied AFTER global filter"
 
-    def _load_data(self, params: Dict[str, Any]) -> pd.DataFrame:
-        """
-        A mock data loading method.
-        Returns a DataFrame with a value from the params for testing.
-
-        """
-        # This method will be spied on to check call counts.
-        val = params.get("value", 0)
-        return pd.DataFrame({"A": [val]})
-
-    def get_kpis(self) -> Dict[str, Any]:
-        return {"test_kpi": 1}
-
-    def get_filter_options(self, filter_name: str) -> List[Dict[str, Any]]:
-        return [{"label": "Test", "value": "test"}]
-
-    def get_summary(self) -> str:
-        return "Test Summary"
-
-
-def test_datasource_in_memory_caching_hit(mocker):
+    :scenario: "Global filter → Block transform pipeline"
+    :priority: "P0"
+    :complexity: 4
     """
-    Tests that the _load_data method is only called once for identical params with in-memory cache.
+    df = pd.DataFrame({"a": [1, 2, 3, 4, 5], "b": [10, 20, 30, 40, 50]})
+    builder = SampleDataBuilder(data=df)
 
-        :scenario: Call `init_data` twice with the same parameters.
-        :strategy: Use `mocker.spy` to track calls to `_load_data`.     :contract:
-      - pre: "`init_data` is called multiple times with identical `params`."
-      - post: "`_load_data` is executed only on the first call."
+    # Global filter: keep a >= min_a
+    global_filter = SampleDataTransformer()
 
+    def classifier(key):
+        return "transform" if key == "min_a" else "build"
+
+    datasource = BaseDataSource(
+        data_builder=builder,
+        data_transformer=global_filter,
+        param_classifier=classifier,
+    )
+
+    # Block transform: keep only rows where b > 25
+    block_transform = lambda df: df[df["b"] > 25]
+    specialized_ds = datasource.with_transform_fn(block_transform)
+
+    # Get data with global filter param
+    result = specialized_ds.get_processed_data({"min_a": 2})
+
+    # Should apply: Build → GlobalFilter(a >= 2) → BlockTransform(b > 25)
+    # After global filter: a in [2,3,4,5], b in [20,30,40,50]
+    # After block transform: b in [30,40,50] (b > 25)
+    assert len(result) == 3
+    assert result["a"].tolist() == [3, 4, 5]
+    assert result["b"].tolist() == [30, 40, 50]
+
+
+def test_datasource_with_transform_fn_aggregation():
     """
-    source = ConcreteDataSource()
-    spy = mocker.spy(source, "_load_data")
+    Test with_transform_fn() with aggregation function.
 
-    params = {"value": 100}
+    :hierarchy: [Testing | Unit Tests | BaseDataSource | Aggregation]
+    :covers:
+     - target: "BaseDataSource.with_transform_fn"
+     - requirement: "Supports aggregation transforms"
 
-    source.init_data(params)
-    source.init_data(params)
-
-    spy.assert_called_once_with(params)
-
-
-def test_datasource_disk_caching_hit(mocker, temp_cache):
+    :scenario: "Transform aggregates data by grouping"
+    :priority: "P1"
+    :complexity: 3
     """
-    Tests that the _load_data method is only called once for identical params with disk cache.
+    df = pd.DataFrame(
+        {"category": ["A", "B", "A", "B", "C"], "value": [10, 20, 30, 40, 50]}
+    )
+    builder = SampleDataBuilder(data=df)
+    datasource = BaseDataSource(data_builder=builder)
 
-        :scenario: Call `init_data` twice with the same parameters on a disk-cached source.
-        :strategy: Use `mocker.spy` and a temporary directory for the cache.     :contract:
-      - pre: "`init_data` is called multiple times with identical `params` on a disk-cached source."
-      - post: "`_load_data` is executed only on the first call."
+    # Block transform: aggregate by category
+    agg_transform = lambda df: df.groupby("category")["value"].sum().reset_index()
+    specialized_ds = datasource.with_transform_fn(agg_transform)
 
+    result = specialized_ds.get_processed_data()
+
+    # Should have 3 rows (A, B, C) with summed values
+    assert len(result) == 3
+    assert set(result["category"]) == {"A", "B", "C"}
+    assert result[result["category"] == "A"]["value"].iloc[0] == 40  # 10 + 30
+
+
+def test_datasource_with_transform_fn_caching():
     """
-    source = ConcreteDataSource(cache_obj=temp_cache)
-    spy = mocker.spy(source, "_load_data")
-    params = {"value": 200}
+    Test with_transform_fn() caching works independently.
 
-    # First call, should hit the disk
-    source.init_data(params)
+    :hierarchy: [Testing | Unit Tests | BaseDataSource | Caching]
+    :covers:
+     - target: "BaseDataSource.with_transform_fn"
+     - requirement: "Specialized datasource has independent cache"
 
-    # Second call, should be a cache hit
-    source.init_data(params)
-    data2 = source.get_processed_data()
-
-    spy.assert_called_once_with(params)
-    assert data2["A"][0] == 200
-
-
-def test_datasource_caching_miss(mocker):
+    :scenario: "Cache keys differ between original and specialized"
+    :priority: "P1"
+    :complexity: 3
     """
-    Tests that the _load_data method is called again for different params.
+    df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    builder = SampleDataBuilder(data=df)
+    datasource = BaseDataSource(data_builder=builder)
 
-        :scenario: Call `init_data` with two different sets of parameters.
-        :strategy: Use `mocker.spy` to track calls to `_load_data`.     :contract:
-      - pre: "`init_data` is called with different `params`."
-      - post: "`_load_data` is executed for each unique set of `params`."
+    # Create specialized datasource
+    transform_fn = lambda df: df[df["a"] >= 2]
+    specialized_ds = datasource.with_transform_fn(transform_fn)
 
+    # First call - should cache
+    result1 = specialized_ds.get_processed_data()
+
+    # Second call - should hit cache
+    result2 = specialized_ds.get_processed_data()
+
+    assert_frame_equal(result1, result2)
+    assert len(result2) == 2
+
+
+def test_datasource_with_transform_fn_empty_result():
     """
-    source = ConcreteDataSource()
-    spy = mocker.spy(source, "_load_data")
+    Test with_transform_fn() handles empty results gracefully.
 
-    params1 = {"value": 1}
-    params2 = {"value": 2}
+    :hierarchy: [Testing | Unit Tests | BaseDataSource | EmptyResult]
+    :covers:
+     - target: "BaseDataSource.with_transform_fn"
+     - requirement: "Handles empty DataFrame from transform"
 
-    source.init_data(params1)
-    source.init_data(params2)
-
-    assert spy.call_count == 2
-
-
-def test_datasource_cache_ttl_configuration():
+    :scenario: "Transform filters out all rows"
+    :priority: "P2"
+    :complexity: 2
     """
-    Tests that the cache_ttl parameter is correctly passed to the underlying cache object.
-    """
-    # Test with a specific TTL
-    source = ConcreteDataSource(cache_ttl=123)
-    assert source.cache.expire == 123
-    source.cache.close()
+    df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    builder = SampleDataBuilder(data=df)
+    datasource = BaseDataSource(data_builder=builder)
 
-    # Test with default TTL
-    source_default = ConcreteDataSource()
-    assert source_default.cache.expire == 300  # Default value in BaseDataSource
-    source_default.cache.close()
+    # Transform that filters everything
+    transform_fn = lambda df: df[df["a"] > 100]
+    specialized_ds = datasource.with_transform_fn(transform_fn)
 
+    result = specialized_ds.get_processed_data()
 
-def test_datasource_load_error_handling(mocker):
-    """
-    Tests that the datasource handles errors during data loading gracefully.
-
-        :scenario: The `_load_data` method raises an exception.
-        :strategy: Use `mocker.patch` to make `_load_data` raise an error.     :contract:
-      - pre: "`_load_data` throws an exception."
-      - post: "`init_data` returns `False` and `get_processed_data` returns an empty DataFrame."
-
-    """
-    source = ConcreteDataSource()
-    mocker.patch.object(source, "_load_data", side_effect=ValueError("Failed to load"))
-
-    result = source.init_data({"value": 1})
-    data = source.get_processed_data()
-
-    assert result is False
-    assert isinstance(data, pd.DataFrame)
-    assert data.empty
+    assert len(result) == 0
+    assert isinstance(result, pd.DataFrame)
 
 
-def test_get_processed_data_before_init():
-    """
-    Tests that get_processed_data returns an empty DataFrame if called before init_data.
-
-        :scenario: Call `get_processed_data` on a new datasource instance.
-        :strategy: Direct call and assertion.     :contract:
-      - pre: "`init_data` has not been called."
-      - post: "`get_processed_data` returns an empty DataFrame."
-
-    """
-    source = ConcreteDataSource()
-    data = source.get_processed_data()
-    assert isinstance(data, pd.DataFrame)
-    assert data.empty
-
-
-def test_datasource_numpy_serialization(mocker):
-    """
-    Tests that the datasource can handle numpy numeric types during cache key generation.
-
-        :scenario: Call `init_data` with a parameter of type `np.int64`.
-        :strategy: Direct call and assertion that no `TypeError` is raised.     :contract:
-          - pre: "`init_data` is called with a `np.int64` value in `params`."
-          - post: "The operation completes without a `TypeError`."
-
-    """
-    source = ConcreteDataSource()
-    spy = mocker.spy(source, "_get_cache_key")
-
-    # Simulate a parameter that might come from a pandas DataFrame
-    params = {"value": np.int64(42)}
-
-    try:
-        source.init_data(params)
-        # The real test is that the line above does not raise a TypeError
-        assert True
-    except TypeError:
-        pytest.fail("TypeError was raised during numpy serialization")
-
-    spy.assert_called_once_with(params)
+# </semantic_block: test_with_transform_fn>

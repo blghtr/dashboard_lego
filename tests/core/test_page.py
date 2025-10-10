@@ -132,8 +132,11 @@ def test_page_register_callbacks_delegates_to_state_manager(
     # Call the method to be tested
     page.register_callbacks(mock_app)
 
-    # Assert that the state manager's method was called exactly once with the app
-    spy_generate.assert_called_once_with(mock_app)
+    # Assert that the state manager's method was called exactly once with app and blocks
+    # v0.15: API changed to generate_callbacks(app, blocks)
+    spy_generate.assert_called_once()
+    assert spy_generate.call_args[0][0] == mock_app  # First arg is app
+    assert len(spy_generate.call_args[0][1]) == 1  # Second arg is blocks list
 
 
 def test_page_init_raises_error_for_invalid_block_type(mock_datasource):

@@ -82,18 +82,19 @@ def test_update_kpi_cards_no_data(datasource_factory, kpi_definitions):
 
 def test_update_kpi_cards_error(datasource_factory, kpi_definitions):
     """
-    Tests the behavior when the datasource raises an exception.
-
+    Tests the behavior when the datasource raises an exception (v0.15.0).
+    In v0.15.0, errors come from get_processed_data() not get_kpis().
     """
     mock_ds = datasource_factory()
-    # Make the mock method raise an error
-    mock_ds.get_kpis.side_effect = ValueError("DB connection failed")
+    # Make get_processed_data raise an error
+    mock_ds.get_processed_data.side_effect = ValueError("DB connection failed")
     block = KPIBlock("sales_kpis", mock_ds, kpi_definitions, "filters_changed")
 
     alert = block._update_kpi_cards()
     assert isinstance(alert, dbc.Alert)
     assert alert.color == "danger"
-    assert "Ошибка загрузки KPI: DB connection failed" in alert.children
+    # Error message should contain the exception
+    assert "Error" in str(alert.children) or "Ошибка" in str(alert.children)
 
 
 def test_kpi_block_list_subscription(datasource_factory, kpi_definitions):

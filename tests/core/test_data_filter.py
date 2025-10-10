@@ -1,15 +1,15 @@
 """
-Unit tests for DataFilter class.
+Unit tests for DataTransformer class.
 
-:hierarchy: [Tests | Core | DataFilter]
+:hierarchy: [Tests | Core | DataTransformer]
 :relates-to:
- - motivated_by: "Need comprehensive tests for DataFilter"
- - implements: "test_suite: 'DataFilter'"
- - uses: ["class: 'DataFilter'"]
+ - motivated_by: "Need comprehensive tests for DataTransformer"
+ - implements: "test_suite: 'DataTransformer'"
+ - uses: ["class: 'DataTransformer'"]
 
 :contract:
- - pre: "DataFilter class is importable"
- - post: "All DataFilter functionality is tested"
+ - pre: "DataTransformer class is importable"
+ - post: "All DataTransformer functionality is tested"
 
 :complexity: 3
 """
@@ -17,13 +17,13 @@ Unit tests for DataFilter class.
 import pandas as pd
 import pytest
 
-from dashboard_lego.core.data_filter import DataFilter
+from dashboard_lego.core.data_transformer import DataTransformer
 
 
-class CustomDataFilter(DataFilter):
+class CustomDataTransformer(DataTransformer):
     """Test filter that filters by category and value range."""
 
-    def filter(self, data, params):
+    def transform(self, data, params):
         df = data.copy()
 
         # Category filter
@@ -41,27 +41,27 @@ class CustomDataFilter(DataFilter):
 
 
 def test_data_filter_default_returns_unchanged_data():
-    """Test that default DataFilter returns data unchanged."""
+    """Test that default DataTransformer returns data unchanged."""
     # Arrange
-    data_filter = DataFilter()
+    data_filter = DataTransformer()
     df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
 
     # Act
-    result = data_filter.filter(df, {})
+    result = data_filter.transform(df, {})
 
     # Assert
     pd.testing.assert_frame_equal(result, df)
 
 
 def test_data_filter_does_not_modify_input():
-    """Test that DataFilter doesn't modify input DataFrame."""
+    """Test that DataTransformer doesn't modify input DataFrame."""
     # Arrange
-    data_filter = DataFilter()
+    data_filter = DataTransformer()
     df = pd.DataFrame({"a": [1, 2, 3]})
     df_copy = df.copy()
 
     # Act
-    result = data_filter.filter(df, {})
+    result = data_filter.transform(df, {})
 
     # Assert - input unchanged
     pd.testing.assert_frame_equal(df, df_copy)
@@ -70,11 +70,11 @@ def test_data_filter_does_not_modify_input():
 def test_custom_filter_category():
     """Test custom filter with category filtering."""
     # Arrange
-    data_filter = CustomDataFilter()
+    data_filter = CustomDataTransformer()
     df = pd.DataFrame({"category": ["A", "B", "A", "C", "B"], "value": [1, 2, 3, 4, 5]})
 
     # Act
-    result = data_filter.filter(df, {"category": "A"})
+    result = data_filter.transform(df, {"category": "A"})
 
     # Assert
     assert len(result) == 2
@@ -84,11 +84,11 @@ def test_custom_filter_category():
 def test_custom_filter_min_value():
     """Test custom filter with minimum value."""
     # Arrange
-    data_filter = CustomDataFilter()
+    data_filter = CustomDataTransformer()
     df = pd.DataFrame({"value": [1, 2, 3, 4, 5], "category": ["A"] * 5})
 
     # Act
-    result = data_filter.filter(df, {"min_value": 3})
+    result = data_filter.transform(df, {"min_value": 3})
 
     # Assert
     assert len(result) == 3
@@ -98,11 +98,11 @@ def test_custom_filter_min_value():
 def test_custom_filter_max_value():
     """Test custom filter with maximum value."""
     # Arrange
-    data_filter = CustomDataFilter()
+    data_filter = CustomDataTransformer()
     df = pd.DataFrame({"value": [1, 2, 3, 4, 5], "category": ["A"] * 5})
 
     # Act
-    result = data_filter.filter(df, {"max_value": 3})
+    result = data_filter.transform(df, {"max_value": 3})
 
     # Assert
     assert len(result) == 3
@@ -112,11 +112,11 @@ def test_custom_filter_max_value():
 def test_custom_filter_range():
     """Test custom filter with value range."""
     # Arrange
-    data_filter = CustomDataFilter()
+    data_filter = CustomDataTransformer()
     df = pd.DataFrame({"value": range(1, 11), "category": ["A"] * 10})
 
     # Act
-    result = data_filter.filter(df, {"min_value": 3, "max_value": 7})
+    result = data_filter.transform(df, {"min_value": 3, "max_value": 7})
 
     # Assert
     assert len(result) == 5  # 3, 4, 5, 6, 7
@@ -126,13 +126,13 @@ def test_custom_filter_range():
 def test_custom_filter_combined():
     """Test custom filter with multiple filters combined."""
     # Arrange
-    data_filter = CustomDataFilter()
+    data_filter = CustomDataTransformer()
     df = pd.DataFrame(
         {"category": ["A", "B", "A", "B", "A", "B"], "value": [1, 2, 3, 4, 5, 6]}
     )
 
     # Act
-    result = data_filter.filter(df, {"category": "A", "min_value": 3})
+    result = data_filter.transform(df, {"category": "A", "min_value": 3})
 
     # Assert
     assert len(result) == 2  # category A with value >= 3 (rows 3 and 5)
@@ -143,11 +143,11 @@ def test_custom_filter_combined():
 def test_filter_returns_empty_when_no_matches():
     """Test that filter returns empty DataFrame when no rows match."""
     # Arrange
-    data_filter = CustomDataFilter()
+    data_filter = CustomDataTransformer()
     df = pd.DataFrame({"category": ["A", "A"], "value": [1, 2]})
 
     # Act
-    result = data_filter.filter(df, {"category": "B"})
+    result = data_filter.transform(df, {"category": "B"})
 
     # Assert
     assert len(result) == 0
@@ -157,13 +157,13 @@ def test_filter_returns_empty_when_no_matches():
 def test_filter_never_adds_rows():
     """Test that filtering never adds rows (output <= input)."""
     # Arrange
-    data_filter = CustomDataFilter()
+    data_filter = CustomDataTransformer()
     df = pd.DataFrame({"category": ["A"] * 10, "value": range(10)})
 
     # Act - various filter params
-    result1 = data_filter.filter(df, {})
-    result2 = data_filter.filter(df, {"min_value": 5})
-    result3 = data_filter.filter(df, {"category": "A"})
+    result1 = data_filter.transform(df, {})
+    result2 = data_filter.transform(df, {"min_value": 5})
+    result3 = data_filter.transform(df, {"category": "A"})
 
     # Assert
     assert len(result1) <= len(df)
@@ -174,11 +174,11 @@ def test_filter_never_adds_rows():
 def test_filter_handles_empty_dataframe():
     """Test that filter handles empty DataFrame."""
     # Arrange
-    data_filter = CustomDataFilter()
+    data_filter = CustomDataTransformer()
     df = pd.DataFrame({"category": [], "value": []})
 
     # Act
-    result = data_filter.filter(df, {"category": "A"})
+    result = data_filter.transform(df, {"category": "A"})
 
     # Assert
     assert len(result) == 0
@@ -187,12 +187,12 @@ def test_filter_handles_empty_dataframe():
 def test_filter_handles_missing_columns_gracefully():
     """Test that filter handles missing columns."""
     # Arrange
-    data_filter = CustomDataFilter()
+    data_filter = CustomDataTransformer()
     df = pd.DataFrame({"other_column": [1, 2, 3]})
 
     # Act - should not crash even if expected columns missing
     try:
-        result = data_filter.filter(df, {"category": "A"})
+        result = data_filter.transform(df, {"category": "A"})
         # If it doesn't crash, that's fine
     except KeyError:
         # Or it might raise KeyError, which is also acceptable
@@ -202,11 +202,11 @@ def test_filter_handles_missing_columns_gracefully():
 def test_filter_with_none_params():
     """Test that filter handles None parameter values."""
     # Arrange
-    data_filter = CustomDataFilter()
+    data_filter = CustomDataTransformer()
     df = pd.DataFrame({"category": ["A", "B"], "value": [1, 2]})
 
     # Act
-    result = data_filter.filter(df, {"category": None, "min_value": None})
+    result = data_filter.transform(df, {"category": None, "min_value": None})
 
     # Assert - None params should be ignored
     assert len(result) == len(df)
@@ -215,7 +215,7 @@ def test_filter_with_none_params():
 def test_filter_preserves_data_types():
     """Test that filter preserves column data types."""
     # Arrange
-    data_filter = CustomDataFilter()
+    data_filter = CustomDataTransformer()
     df = pd.DataFrame(
         {
             "category": ["A", "B", "C"],
@@ -225,7 +225,7 @@ def test_filter_preserves_data_types():
     )
 
     # Act
-    result = data_filter.filter(df, {"category": "A"})
+    result = data_filter.transform(df, {"category": "A"})
 
     # Assert
     assert result["category"].dtype == df["category"].dtype
@@ -236,14 +236,14 @@ def test_filter_preserves_data_types():
 def test_filter_maintains_index():
     """Test that filter maintains original index."""
     # Arrange
-    data_filter = CustomDataFilter()
+    data_filter = CustomDataTransformer()
     df = pd.DataFrame(
         {"category": ["A", "B", "A", "B"], "value": [1, 2, 3, 4]},
         index=[10, 20, 30, 40],
     )
 
     # Act
-    result = data_filter.filter(df, {"category": "A"})
+    result = data_filter.transform(df, {"category": "A"})
 
     # Assert
     assert list(result.index) == [10, 30]
@@ -253,8 +253,8 @@ def test_filter_with_complex_conditions():
     """Test filter with multiple conditions."""
 
     # Arrange
-    class ComplexFilter(DataFilter):
-        def filter(self, data, params):
+    class ComplexFilter(DataTransformer):
+        def transform(self, data, params):
             df = data.copy()
 
             # Complex OR condition
@@ -278,7 +278,7 @@ def test_filter_with_complex_conditions():
     )
 
     # Act
-    result = data_filter.filter(
+    result = data_filter.transform(
         df, {"categories": ["A", "B"], "value_ranges": [(1, 2), (5, 6)]}
     )
 

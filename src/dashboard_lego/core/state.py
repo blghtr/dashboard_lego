@@ -5,7 +5,7 @@ This module defines the StateManager for handling interactivity between blocks.
 
 from typing import Any, Callable, Dict, List, Union
 
-from dash.dependencies import MATCH, Input, Output
+from dash.dependencies import MATCH, Input, Output, State
 
 from dashboard_lego.utils.exceptions import StateError
 from dashboard_lego.utils.logger import get_logger
@@ -170,10 +170,14 @@ class StateManager:
             return (id_tuple, component_prop)
         return (component_id, component_prop)
 
-    def generate_callbacks(self, app: Any):
+    def generate_callbacks(self, app: Any, blocks: List[Any] = None):
         """
         Traverses the dependency graph and registers all necessary callbacks
         with the Dash app.
+
+        Args:
+            app: Dash app instance
+            blocks: List of blocks (to check for controls)
 
         This method now supports multi-state subscriptions by grouping
         subscribers by their output target and creating callbacks with
@@ -196,6 +200,14 @@ class StateManager:
         """
         self.logger.info("Generating callbacks from dependency graph")
         callback_count = 0
+
+        # Build block lookup by output target
+        blocks_by_output = {}
+        if blocks:
+            for block in blocks:
+                output_id, output_prop = block.output_target()
+                output_key = self._make_hashable_key(output_id, output_prop)
+                blocks_by_output[output_key] = block
 
         try:
             # Group subscriptions by output target (component_id, component_prop)
@@ -246,6 +258,16 @@ class StateManager:
                     # Was a string ID
                     component_id, component_prop = output_key
 
+                # CRITICAL: Skip blocks with controls - they will be handled by bind_callbacks
+                # with combined Input(exact session controls) + Input(MATCH own controls)
+                block = blocks_by_output.get(output_key)
+                if block and block.list_control_inputs():
+                    self.logger.debug(
+                        f"⏭️  Block {block.block_id} has controls - "
+                        f"will use combined callback (state-centric skipped)"
+                    )
+                    continue
+
                 # NEW: Skip if already registered (idempotency for navigation lazy-loading)
                 if output_key in self._registered_outputs:
                     self.logger.debug(
@@ -262,9 +284,9 @@ class StateManager:
                 inputs = []
                 for info in state_infos:
                     pub_id = info["publisher"]["component_id"]
-                    # Pattern matching: replace section index with MATCH for dict IDs
-                    if isinstance(pub_id, dict):
-                        pub_id = {**pub_id, "section": MATCH}
+                    # CRITICAL: Keep publisher IDs EXACT (no MATCH conversion)
+                    # This allows cross-section subscriptions (section 0 → section 1+)
+                    # Dash supports: Input(exact_id) → Output(MATCH_id)
                     inputs.append(Input(pub_id, info["publisher"]["component_prop"]))
 
                 # Debug: log all inputs for this callback
@@ -276,9 +298,11 @@ class StateManager:
 
                 # Create single Output for this subscriber
                 # Pattern matching: replace section index with MATCH for dict IDs
+                # CRITICAL: Maintain key order (section first, then type)
                 output_id = component_id
                 if isinstance(output_id, dict):
-                    output_id = {**output_id, "section": MATCH}
+                    output_id = {"section": MATCH, "type": component_id.get("type")}
+
                 output = Output(output_id, component_prop)
                 self.logger.debug(
                     f"  📤 Output: {output.component_id}.{output.component_property}"
@@ -288,6 +312,8 @@ class StateManager:
                 callback_func = self._create_multi_input_callback(state_infos)
 
                 # Register callback with Dash
+                # CRITICAL: State-centric callbacks should NOT use prevent_initial_call
+                # (they need to trigger on session control changes)
                 self.logger.debug("  🔗 Registering callback with Dash...")
                 app.callback(output, inputs)(callback_func)
                 callback_count += 1
@@ -338,45 +364,95 @@ class StateManager:
                 output_id, output_prop = block.output_target()
                 output_key = self._make_hashable_key(output_id, output_prop)
 
-                # NEW: Skip if already registered (idempotency for navigation lazy-loading)
-                if output_key in self._registered_outputs:
-                    self.logger.debug(
-                        f"⏭️  Callback for {block.block_id} ({output_id}.{output_prop}) already registered, skipping"
-                    )
-                    continue
+                # Get own control inputs for this block
+                own_controls = block.list_control_inputs()
 
-                # Get all control inputs for this block
-                inputs = block.list_control_inputs()
-
-                if not inputs:
+                if not own_controls:
                     self.logger.debug(
                         f"⏭️  Block {block.block_id} has no control inputs, skipping callback"
                     )
                     continue
 
+                # CRITICAL: Collect BOTH external states AND own controls for combined callback
+                # External states use EXACT IDs (from section 0)
+                # Own controls use MATCH IDs (within block's section)
+                # Dash SUPPORTS mixing exact Input IDs with MATCH Input IDs!
+
+                external_state_inputs = []
+                for state_id, connections in self.dependency_graph.items():
+                    subscribers = connections.get("subscribers", [])
+                    for sub in subscribers:
+                        sub_output_key = self._make_hashable_key(
+                            sub["component_id"], sub["component_prop"]
+                        )
+                        if sub_output_key == output_key:
+                            publisher = connections.get("publisher")
+                            if publisher:
+                                # Use EXACT publisher ID (no MATCH conversion)
+                                external_state_inputs.append(
+                                    (
+                                        state_id,
+                                        publisher["component_id"],
+                                        publisher["component_prop"],
+                                    )
+                                )
+
+                own_control_inputs = own_controls
+
+                input_count_desc = (
+                    f"{len(external_state_inputs)} external + {len(own_controls)} own"
+                    if external_state_inputs
+                    else f"{len(own_controls)} own"
+                )
                 self.logger.info(
-                    f"🔧 Creating block-centric callback for: {block.block_id} "
-                    f"({len(inputs)} inputs -> {output_id}.{output_prop})"
+                    f"🔧 Creating combined callback for: {block.block_id} "
+                    f"({input_count_desc} inputs -> {output_id}.{output_prop})"
                 )
 
-                # Create Input objects with pattern matching support
+                # Create Input/State objects
+                # CRITICAL: External states must be State() not Input()
+                # because they have EXACT IDs from other sections
                 input_objects = []
-                for component_id, prop in inputs:
-                    # Pattern matching: replace section index with MATCH for dict IDs
-                    if isinstance(component_id, dict):
-                        component_id = {**component_id, "section": MATCH}
+                state_objects = []
+
+                # 1. Add external states as State() (cross-section, read-only)
+                for state_id, pub_component_id, pub_prop in external_state_inputs:
+                    state_objects.append(State(pub_component_id, pub_prop))
+                    self.logger.debug(
+                        f"  🔍 External State[{len(state_objects)-1}]: {pub_component_id}.{pub_prop} "
+                        f"(state_id: {state_id}, EXACT ID, read-only)"
+                    )
+
+                # 2. Add own control inputs with MATCH pattern
+                for component_id, prop in own_control_inputs:
+                    original_id = component_id
+                    # Pattern matching: convert string IDs to dict IDs for navigation mode
+                    # CRITICAL: Key order MUST match HTML rendering: section first, then type
+                    if block.navigation_mode and isinstance(component_id, str):
+                        component_id = {"section": MATCH, "type": component_id}
+                    elif isinstance(component_id, dict):
+                        # Rebuild dict with correct key order
+                        component_id = {
+                            "section": MATCH,
+                            "type": component_id.get("type"),
+                        }
                     input_objects.append(Input(component_id, prop))
 
-                # Debug: log all inputs for this block
-                for idx, (comp_id, prop) in enumerate(inputs):
-                    self.logger.debug(f"  📥 Input[{idx}]: {comp_id}.{prop}")
+                    # Debug: log transformation
+                    self.logger.debug(
+                        f"  📥 Own Control Input[{len(input_objects)-1}]: {original_id} → {component_id}.{prop}"
+                    )
 
                 # Create Output object with allow_duplicate and pattern matching support
                 allow_duplicate = getattr(block, "allow_duplicate_output", False)
                 # Pattern matching: replace section index with MATCH for dict IDs
+                # CRITICAL: Maintain correct key order (section first, then type)
                 output_id_pm = output_id
                 if isinstance(output_id_pm, dict):
-                    output_id_pm = {**output_id_pm, "section": MATCH}
+                    output_id_pm = {
+                        "section": MATCH,
+                        "type": output_id_pm.get("type", output_id_pm.get("type")),
+                    }
                 output_object = Output(
                     output_id_pm, output_prop, allow_duplicate=allow_duplicate
                 )
@@ -386,16 +462,24 @@ class StateManager:
                 )
 
                 # Create callback function with enhanced error handling
-                def create_block_callback(block_ref):
-                    def block_callback(*values):
+                def create_block_callback(block_ref, ext_states_count, ext_states_list):
+                    def block_callback(*args):
                         try:
+                            # CRITICAL: Dash passes Input values first, then State values
+                            # Our callback signature: *inputs, *states
+                            own_control_count = len(block_ref.list_control_inputs())
+                            own_control_values = args[:own_control_count]
+                            external_values = args[own_control_count:]
+
                             self.logger.debug(
                                 f"🎬 Block callback triggered for {block_ref.block_id} "
-                                f"with {len(values)} input values"
+                                f"with {len(args)} values ({len(own_control_values)} own Input + {len(external_values)} external State)"
                             )
 
-                            # Convert input values to control values dict
+                            # Build control_values dict
                             control_values = {}
+
+                            # 1. Add own control values (from Input objects)
                             for i, (component_id, prop) in enumerate(
                                 block_ref.list_control_inputs()
                             ):
@@ -406,10 +490,18 @@ class StateManager:
                                 else:
                                     id_str = component_id
                                 control_name = id_str.split("-")[-1]
-                                control_values[control_name] = values[i]
+                                control_values[control_name] = own_control_values[i]
                                 self.logger.debug(
-                                    f"  🎛️  Control {control_name} = {values[i]} "
-                                    f"(from {component_id}.{prop})"
+                                    f"  🎛️  Own control {control_name} = {own_control_values[i]} "
+                                    f"(from Input {component_id}.{prop})"
+                                )
+
+                            # 2. Add external state values (from State objects)
+                            for i, (state_id, _, _) in enumerate(ext_states_list):
+                                control_values[state_id] = external_values[i]
+                                self.logger.debug(
+                                    f"  🌐 External state {state_id} = {external_values[i]} "
+                                    f"(from State, cross-section)"
                                 )
 
                             # Call the block's update method
@@ -426,9 +518,17 @@ class StateManager:
 
                 # Register the callback with enhanced error handling
                 try:
-                    self.logger.debug("🔗 Registering block callback with Dash...")
-                    app.callback(output_object, input_objects)(
-                        create_block_callback(block)
+                    self.logger.debug(
+                        f"🔗 Registering combined callback with Dash "
+                        f"({len(state_objects)} external State(EXACT) + {len(input_objects)} own Input(MATCH))..."
+                    )
+
+                    # CRITICAL: Pass state_objects + input_objects to callback
+                    # State objects come first, then Input objects
+                    app.callback(output_object, input_objects, state_objects)(
+                        create_block_callback(
+                            block, len(external_state_inputs), external_state_inputs
+                        )
                     )
                     callback_count += 1
 

@@ -3,6 +3,7 @@ This module provides preset blocks for machine learning visualization.
 
 """
 
+import warnings
 from typing import Any, Dict, Optional
 
 import dash_bootstrap_components as dbc
@@ -13,25 +14,29 @@ from dash import html
 from sklearn.metrics import confusion_matrix
 
 from dashboard_lego.blocks.base import BaseBlock
-from dashboard_lego.blocks.chart import StaticChartBlock
 from dashboard_lego.blocks.kpi import KPIBlock
+from dashboard_lego.blocks.typed_chart import TypedChartBlock
 from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.utils.plot_registry import register_plot_type
 
 
 class MetricCardBlock(KPIBlock):
     """
     An extension of KPIBlock for displaying ML metrics in a compact list.
 
+    .. deprecated:: 0.15.0
+        MetricCardBlock is deprecated. Use MetricsBlock instead.
+        Use :class:`~dashboard_lego.blocks.metrics.MetricsBlock` instead.
+
         :hierarchy: [Presets | ML | MetricCardBlock]
         :relates-to:
-          - motivated_by: "Architectural Conclusion: Metric cards provide a standardized
-            way to display key performance indicators in ML dashboards"
-          - implements: "block: 'MetricCardBlock'"
+          - motivated_by: "DEPRECATED: Use MetricsBlock from dashboard_lego.blocks.metrics"
+          - implements: "block: 'MetricCardBlock' (deprecated)"
           - uses: ["block: 'KPIBlock'"]
 
         :rationale: "Subclassed KPIBlock to reuse its data-handling logic while providing a more compact, list-based layout suitable for displaying multiple ML metrics."
         :contract:
-          - pre: "Inherits the contract from KPIBlock."
+          - pre: "Inherits the contract from KPIBlock (deprecated pattern)."
           - post: "The block renders a card with a list of metrics."
 
     """
@@ -45,6 +50,12 @@ class MetricCardBlock(KPIBlock):
         title: str = "Metrics",
         **kwargs,
     ):
+        warnings.warn(
+            "MetricCardBlock is deprecated. "
+            "Use MetricsBlock from dashboard_lego.blocks.metrics instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.title = title
         super().__init__(block_id, datasource, kpi_definitions, subscribes_to, **kwargs)
 
@@ -167,25 +178,43 @@ class ModelSummaryBlock(BaseBlock):
         )
 
 
-class ConfusionMatrixPreset(StaticChartBlock):
+# Register confusion matrix plot
+def plot_confusion_matrix(
+    df: pd.DataFrame, y_true_col: str, y_pred_col: str, **kwargs
+) -> go.Figure:
+    """Confusion matrix heatmap."""
+    if df.empty or y_true_col not in df.columns or y_pred_col not in df.columns:
+        return go.Figure()
+
+    cm = confusion_matrix(df[y_true_col], df[y_pred_col])
+    labels = sorted(df[y_true_col].unique())
+    fig = px.imshow(
+        cm,
+        labels=dict(x="Predicted Label", y="True Label", color="Count"),
+        x=labels,
+        y=labels,
+        text_auto=True,
+        color_continuous_scale="Blues",
+        **kwargs,
+    )
+    return fig
+
+
+register_plot_type("confusion_matrix", plot_confusion_matrix)
+
+
+class ConfusionMatrixPreset(TypedChartBlock):
     """
-    A preset block for displaying a confusion matrix.
+    Confusion matrix preset using TypedChartBlock.
 
-    This block automatically calculates and displays a confusion matrix from
-    true and predicted labels.
+    Refactored from StaticChartBlock in v0.15.
 
-        :hierarchy: [Presets | ML | ConfusionMatrixPreset]
-        :relates-to:
-          - motivated_by: "Architectural Conclusion: Confusion matrices are fundamental
-            for evaluating classification model performance"
-          - implements: "preset: 'ConfusionMatrixPreset'"
-          - uses: ["block: 'StaticChartBlock'"]
+    :hierarchy: [Presets | ML | ConfusionMatrixPreset]
+    :contract:
+     - pre: "Datasource has y_true_col and y_pred_col columns"
+     - post: "Renders confusion matrix heatmap"
 
-        :rationale: "Implemented as a subclass of StaticChartBlock with internal plotting logic to provide a simple user experience."
-        :contract:
-          - pre: "Datasource must contain columns specified by y_true_col and y_pred_col."
-          - post: "The block renders a heatmap of the confusion matrix."
-
+    :complexity: 2
     """
 
     def __init__(
@@ -195,62 +224,83 @@ class ConfusionMatrixPreset(StaticChartBlock):
         y_true_col: str,
         y_pred_col: str,
         title: str = "Confusion Matrix",
+        subscribes_to: str = "dummy_state",
         **kwargs,
     ):
-        self.y_true_col = y_true_col
-        self.y_pred_col = y_pred_col
         super().__init__(
             block_id=block_id,
             datasource=datasource,
+            plot_type="confusion_matrix",
+            plot_params={"y_true_col": y_true_col, "y_pred_col": y_pred_col},
+            plot_kwargs={"title": title},
             title=title,
-            chart_generator=self._generate_chart,
-            subscribes_to="dummy_state",  # This preset is static for now
+            subscribes_to=subscribes_to,
             **kwargs,
         )
 
-    def _generate_chart(self, df: pd.DataFrame, ctx) -> go.Figure:
-        """
-        Generates the confusion matrix heatmap.
 
-        """
-        cm = confusion_matrix(df[self.y_true_col], df[self.y_pred_col])
-        labels = sorted(df[self.y_true_col].unique())
-        fig = px.imshow(
-            cm,
-            labels=dict(x="Predicted Label", y="True Label", color="Count"),
-            x=labels,
-            y=labels,
-            text_auto=True,
-            color_continuous_scale="Blues",
+# Register ROC curve plot
+def plot_roc_curve(
+    df: pd.DataFrame, y_true_col: str, y_score_cols: list, **kwargs
+) -> go.Figure:
+    """ROC curve plot (binary or multi-class)."""
+    if df.empty or y_true_col not in df.columns:
+        return go.Figure()
+
+    from sklearn.metrics import auc, roc_curve
+    from sklearn.preprocessing import label_binarize
+
+    y_true = df[y_true_col]
+    y_score = df[y_score_cols]
+    classes = sorted(y_true.unique())
+
+    fig = go.Figure()
+    fig.add_shape(type="line", line=dict(dash="dash"), x0=0, x1=1, y0=0, y1=1)
+
+    if len(classes) > 2:  # Multi-class
+        y_true_bin = label_binarize(y_true, classes=classes)
+        for i, class_name in enumerate(classes):
+            fpr, tpr, _ = roc_curve(y_true_bin[:, i], y_score.iloc[:, i])
+            roc_auc = auc(fpr, tpr)
+            fig.add_trace(
+                go.Scatter(
+                    x=fpr,
+                    y=tpr,
+                    name=f"{class_name} (AUC = {roc_auc:.2f})",
+                    mode="lines",
+                )
+            )
+    else:  # Binary
+        fpr, tpr, _ = roc_curve(y_true, y_score.iloc[:, 0])
+        roc_auc = auc(fpr, tpr)
+        fig.add_trace(
+            go.Scatter(x=fpr, y=tpr, name=f"AUC = {roc_auc:.2f}", mode="lines")
         )
-        fig.update_layout(title_text=self.title)
 
-        # Apply theme layout if provided
-        if self.figure_layout:
-            fig.update_layout(**self.figure_layout)
+    fig.update_layout(
+        xaxis_title="False Positive Rate",
+        yaxis_title="True Positive Rate",
+        yaxis=dict(scaleanchor="x", scaleratio=1),
+        xaxis=dict(constrain="domain"),
+    )
+    return fig
 
-        return fig
+
+register_plot_type("roc_curve", plot_roc_curve)
 
 
-class RocAucCurvePreset(StaticChartBlock):
+class RocAucCurvePreset(TypedChartBlock):
     """
-    A preset block for displaying a Receiver Operating Characteristic (ROC) curve.
+    ROC curve preset using TypedChartBlock.
 
-    This block automatically calculates and displays an ROC curve and AUC score.
-    It supports both binary and multi-class classification (using One-vs-Rest).
+    Refactored from StaticChartBlock in v0.15.
 
-        :hierarchy: [Presets | ML | RocAucCurvePreset]
-        :relates-to:
-          - motivated_by: "Architectural Conclusion: ROC curves are essential for
-            evaluating binary classification model performance and thresholds"
-          - implements: "preset: 'RocAucCurvePreset'"
-          - uses: ["block: 'StaticChartBlock'"]
+    :hierarchy: [Presets | ML | RocAucCurvePreset]
+    :contract:
+     - pre: "Datasource has y_true_col and y_score_cols"
+     - post: "Renders ROC curve (binary or multi-class)"
 
-        :rationale: "Implemented as a subclass of StaticChartBlock with internal plotting logic for simplicity. Uses a One-vs-Rest approach for multi-class problems as a robust default."
-        :contract:
-          - pre: "Datasource must contain columns specified by y_true_col and y_score_cols."
-          - post: "The block renders a plot of the ROC curve(s)."
-
+    :complexity: 3
     """
 
     def __init__(
@@ -260,82 +310,63 @@ class RocAucCurvePreset(StaticChartBlock):
         y_true_col: str,
         y_score_cols: list[str],
         title: str = "ROC Curve",
+        subscribes_to: str = "dummy_state",
         **kwargs,
     ):
-        self.y_true_col = y_true_col
-        self.y_score_cols = y_score_cols
         super().__init__(
             block_id=block_id,
             datasource=datasource,
+            plot_type="roc_curve",
+            plot_params={"y_true_col": y_true_col, "y_score_cols": y_score_cols},
+            plot_kwargs={"title": title},
             title=title,
-            chart_generator=self._generate_chart,
-            subscribes_to="dummy_state",
+            subscribes_to=subscribes_to,
             **kwargs,
         )
 
-    def _generate_chart(self, df: pd.DataFrame, ctx) -> go.Figure:
-        """
-        Generates the ROC curve plot.
 
-        """
-        from sklearn.metrics import auc, roc_curve
-        from sklearn.preprocessing import label_binarize
-
-        y_true = df[self.y_true_col]
-        y_score = df[self.y_score_cols]
-        classes = sorted(y_true.unique())
-
-        fig = go.Figure()
-        fig.add_shape(type="line", line=dict(dash="dash"), x0=0, x1=1, y0=0, y1=1)
-
-        if len(classes) > 2:  # Multi-class
-            y_true_bin = label_binarize(y_true, classes=classes)
-            for i, class_name in enumerate(classes):
-                fpr, tpr, _ = roc_curve(y_true_bin[:, i], y_score.iloc[:, i])
-                roc_auc = auc(fpr, tpr)
-                fig.add_trace(
-                    go.Scatter(
-                        x=fpr,
-                        y=tpr,
-                        name=f"{class_name} (AUC = {roc_auc:.2f})",
-                        mode="lines",
-                    )
-                )
-        else:  # Binary
-            fpr, tpr, _ = roc_curve(y_true, y_score.iloc[:, 0])
-            roc_auc = auc(fpr, tpr)
-            fig.add_trace(
-                go.Scatter(x=fpr, y=tpr, name=f"AUC = {roc_auc:.2f}", mode="lines")
-            )
-
-        fig.update_layout(
-            xaxis_title="False Positive Rate",
-            yaxis_title="True Positive Rate",
-            yaxis=dict(scaleanchor="x", scaleratio=1),
-            xaxis=dict(constrain="domain"),
-            title_text=self.title,
-        )
-        return fig
-
-
-class FeatureImportancePreset(StaticChartBlock):
+# Register plot function for feature importance
+def plot_feature_importance_horizontal(
+    df: pd.DataFrame, x: str, y: str, **kwargs
+) -> go.Figure:
     """
-    A preset block for displaying feature importances.
+    Horizontal bar chart for feature importance.
 
-    This block creates a sorted, horizontal bar chart of feature importances.
+    :hierarchy: [Presets | ML | Plots | FeatureImportance]
+    :contract:
+     - pre: "df has x (importance) and y (feature) columns"
+     - post: "Returns sorted horizontal bar chart"
+    """
+    if df.empty or x not in df.columns or y not in df.columns:
+        return go.Figure()
 
-        :hierarchy: [Presets | ML | FeatureImportancePreset]
-        :relates-to:
-          - motivated_by: "Architectural Conclusion: Feature importance visualization
-            is crucial for understanding model interpretability and feature relevance"
-          - implements: "preset: 'FeatureImportancePreset'"
-          - uses: ["block: 'StaticChartBlock'"]
+    df_sorted = df.sort_values(by=x, ascending=True)
+    fig = px.bar(df_sorted, x=x, y=y, orientation="h", **kwargs)
+    fig.update_layout(yaxis_title="Feature")
+    return fig
 
-        :rationale: "Implemented as a subclass of StaticChartBlock that expects a datasource with feature and importance columns. This is a clean, decoupled approach."
-        :contract:
-          - pre: "Datasource must contain columns specified by feature_col and importance_col."
-          - post: "The block renders a sorted horizontal bar chart."
 
+# Register ML plot types
+register_plot_type("feature_importance_horizontal", plot_feature_importance_horizontal)
+
+
+class FeatureImportancePreset(TypedChartBlock):
+    """
+    Feature importance preset using TypedChartBlock.
+
+    Refactored from StaticChartBlock in v0.15.
+
+    :hierarchy: [Presets | ML | FeatureImportancePreset]
+    :relates-to:
+     - motivated_by: "v0.15: Use TypedChartBlock with plot_registry"
+     - implements: "preset: 'FeatureImportancePreset'"
+     - uses: ["block: 'TypedChartBlock'"]
+
+    :contract:
+     - pre: "Datasource returns df with feature_col and importance_col"
+     - post: "Renders sorted horizontal bar chart"
+
+    :complexity: 2
     """
 
     def __init__(
@@ -345,36 +376,16 @@ class FeatureImportancePreset(StaticChartBlock):
         feature_col: str,
         importance_col: str,
         title: str = "Feature Importance",
+        subscribes_to: str = "dummy_state",
         **kwargs,
     ):
-        self.feature_col = feature_col
-        self.importance_col = importance_col
         super().__init__(
             block_id=block_id,
             datasource=datasource,
+            plot_type="feature_importance_horizontal",
+            plot_params={"x": importance_col, "y": feature_col},
+            plot_kwargs={"title": title},
             title=title,
-            chart_generator=self._generate_chart,
-            subscribes_to="dummy_state",
+            subscribes_to=subscribes_to,
             **kwargs,
         )
-
-    def _generate_chart(self, df: pd.DataFrame, ctx) -> go.Figure:
-        """
-        Generates the feature importance bar chart.
-
-        """
-        df_sorted = df.sort_values(by=self.importance_col, ascending=True)
-        fig = px.bar(
-            df_sorted,
-            x=self.importance_col,
-            y=self.feature_col,
-            orientation="h",
-            title=self.title,
-        )
-        fig.update_layout(yaxis_title="Feature")
-
-        # Apply theme layout if provided
-        if self.figure_layout:
-            fig.update_layout(**self.figure_layout)
-
-        return fig

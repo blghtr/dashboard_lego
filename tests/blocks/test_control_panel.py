@@ -18,7 +18,7 @@ import pandas as pd
 import pytest
 from dash import dcc
 
-from dashboard_lego.blocks.chart import Control, ControlPanelBlock
+from dashboard_lego.blocks.control_panel import Control, ControlPanelBlock
 
 
 @pytest.fixture

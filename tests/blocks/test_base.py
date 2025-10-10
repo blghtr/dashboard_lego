@@ -212,3 +212,86 @@ def test_register_callbacks_does_nothing(mock_datasource):
         block.register_callbacks(app=MagicMock())
     except Exception as e:
         pytest.fail(f"register_callbacks should do nothing, but it raised {e}")
+
+
+# <semantic_block: test_transform_fn>
+def test_base_block_without_transform_fn(mock_datasource):
+    """
+    Test BaseBlock without transform_fn uses original datasource.
+
+    :hierarchy: [Testing | Unit Tests | Blocks | BaseBlock | TransformFn]
+    :covers:
+     - object: "BaseBlock.__init__"
+     - requirement: "Block without transform_fn keeps original datasource"
+
+    :scenario: "No transform_fn provided, datasource unchanged"
+    :priority: "P0"
+    :complexity: 1
+    """
+    original_ds = mock_datasource
+    block = ConcreteTestBlock(block_id="test", datasource=original_ds)
+
+    # Datasource should be unchanged
+    assert block.datasource is original_ds
+    assert block.transform_fn is None
+
+
+def test_base_block_with_transform_fn_fn(mock_datasource):
+    """
+    Test BaseBlock with transform_fn creates specialized datasource.
+
+    :hierarchy: [Testing | Unit Tests | Blocks | BaseBlock | TransformFn]
+    :covers:
+     - object: "BaseBlock.__init__"
+     - requirement: "Block with transform_fn gets specialized datasource"
+
+    :scenario: "transform_fn provided, datasource replaced with specialized clone"
+    :priority: "P0"
+    :complexity: 2
+    """
+    original_ds = mock_datasource
+    original_ds.with_transform_fn = MagicMock(return_value=MagicMock())
+
+    transform_fn = lambda df: df[df["a"] >= 2]
+    block = ConcreteTestBlock(
+        block_id="test", datasource=original_ds, transform_fn=transform_fn
+    )
+
+    # Should have called with_transform_fn
+    original_ds.with_transform_fn.assert_called_once_with(transform_fn)
+
+    # Datasource should be replaced
+    assert block.datasource is not original_ds
+    assert block.datasource == original_ds.with_transform_fn.return_value
+
+    # Transform fn should be stored
+    assert block.transform_fn is transform_fn
+
+
+def test_base_block_transform_fn_passed_via_kwargs(mock_datasource):
+    """
+    Test BaseBlock accepts transform_fn via kwargs.
+
+    :hierarchy: [Testing | Unit Tests | Blocks | BaseBlock | TransformFn]
+    :covers:
+     - object: "BaseBlock.__init__"
+     - requirement: "transform_fn can be passed via kwargs"
+
+    :scenario: "transform_fn in kwargs is extracted and used"
+    :priority: "P1"
+    :complexity: 1
+    """
+    original_ds = mock_datasource
+    original_ds.with_transform_fn = MagicMock(return_value=MagicMock())
+
+    transform_fn = lambda df: df.head(10)
+    block = ConcreteTestBlock(
+        block_id="test", datasource=original_ds, transform_fn=transform_fn
+    )
+
+    # Should have used the transform_fn
+    original_ds.with_transform_fn.assert_called_once()
+    assert block.transform_fn == transform_fn
+
+
+# </semantic_block: test_transform_fn>

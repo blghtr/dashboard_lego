@@ -203,7 +203,7 @@ wheels = [
 
 [[package]]
 name = "dashboard-lego"
-version = "0.12"
+version = "0.15"
 source = { editable = "." }
 dependencies = [
     { name = "dash" },

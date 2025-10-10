@@ -56,7 +56,7 @@ coverage.xml
 *.pot
 
 # Django stuff:
-*.log
+#*.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
@@ -171,4 +171,11 @@ assets/
 
 .cursor/
 *.mdc
+*.md
 GEMINI.md
+
+*.bat
+#*.png
+*.toml
+
+.gitignore

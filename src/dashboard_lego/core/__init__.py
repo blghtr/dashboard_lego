@@ -6,9 +6,9 @@ Exports:
     - NavigationConfig: Configuration for navigation panels
     - NavigationSection: Individual navigation section definition
     - StateManager: Global state management
-    - BaseDataSource: Abstract data source interface
-    - PreProcessor: Data preprocessing handler
-    - DataFilter: Data filtering handler
+    - BaseDataSource: Base data source with 2-stage pipeline
+    - DataBuilder: Data building handler (load + process)
+    - DataTransformer: Data transformation handler (filter/aggregate/reshape)
     - DataProcessingContext: Pipeline parameter context
     - ThemeConfig: Theme configuration system
     - ColorScheme: Color scheme definition
@@ -17,10 +17,10 @@ Exports:
 
 """
 
-from dashboard_lego.core.data_filter import DataFilter
+from dashboard_lego.core.data_builder import DataBuilder
+from dashboard_lego.core.data_transformer import DataTransformer
 from dashboard_lego.core.datasource import BaseDataSource
 from dashboard_lego.core.page import DashboardPage, NavigationConfig, NavigationSection
-from dashboard_lego.core.preprocessor import PreProcessor
 from dashboard_lego.core.processing_context import DataProcessingContext
 from dashboard_lego.core.state import StateManager
 from dashboard_lego.core.theme import ColorScheme, Spacing, ThemeConfig, Typography
@@ -31,8 +31,8 @@ __all__ = [
     "NavigationSection",
     "StateManager",
     "BaseDataSource",
-    "PreProcessor",
-    "DataFilter",
+    "DataBuilder",
+    "DataTransformer",
     "DataProcessingContext",
     "ThemeConfig",
     "ColorScheme",

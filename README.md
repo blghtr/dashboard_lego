@@ -1,5 +1,10 @@
 # Dashboard Lego 🧱
 
+<div align="center">
+  <img src="example.png" alt="Dashboard Lego v0.15 Showcase - Cyborg Theme" width="800"/>
+  <p><em>Dashboard Lego v0.15 Showcase Dashboard with Cyborg Theme</em></p>
+</div>
+
 A modular Python library for building interactive dashboards using Dash and Plotly.
 
 Dashboard Lego allows you to build complex dashboards from independent, reusable "blocks" like building with LEGO bricks. This simplifies development, improves code readability, and promotes component reusability.
@@ -13,8 +18,9 @@ Dashboard Lego allows you to build complex dashboards from independent, reusable
 - **Navigation System**: Multi-section dashboards with sidebar/tab navigation and lazy-loaded sections
 - **Flexible Grid System**: Position blocks in any configuration using a grid system based on `dash-bootstrap-components`
 - **Theme System**: Comprehensive theming with pre-built themes (light, dark, and 10+ Bootstrap themes) and custom theme support
-- **Data Caching**: Built-in disk-based caching at the data source level for improved performance
-- **Easy Extension**: Easily create custom blocks and data sources by inheriting from base classes
+- **Data Caching**: 2-stage pipeline with independent caching (Build → Filter) for optimal performance
+- **No Subclassing Required**: Use composition pattern with `DataBuilder` + `DataFilter` instead of inheriting from `BaseDataSource`
+- **TypedChartBlock System**: Plot registry pattern for reusable chart components with embedded controls
 - **Presets & Layouts**: Pre-built EDA and ML visualization blocks, plus layout presets for common dashboard patterns
 - **Comprehensive Testing**: Full test coverage with unit, integration, and performance tests
 

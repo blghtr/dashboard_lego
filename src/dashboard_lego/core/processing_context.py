@@ -115,13 +115,16 @@ class DataProcessingContext:
             if param_classifier:
                 try:
                     category = param_classifier(key)
-                    if category == "filter":
+                    if category in (
+                        "filter",
+                        "transform",
+                    ):  # Accept both old and new names
                         filtering[key] = value
-                        logger.debug(f"  {key} -> filtering")
+                        logger.debug(f"  {key} -> filtering/transform")
                     else:
                         # Default to preprocessing for any other return value
                         preprocessing[key] = value
-                        logger.debug(f"  {key} -> preprocessing")
+                        logger.debug(f"  {key} -> preprocessing/build")
                 except Exception as e:
                     logger.warning(
                         f"Error classifying param '{key}', defaulting to preprocessing: {e}"

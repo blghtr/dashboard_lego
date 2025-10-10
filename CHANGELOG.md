@@ -7,271 +7,296 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.15.0] - 2025-10-08
+## [0.15.0] - 2025-10-10
 
 ### Breaking Changes
 
-**IMPORTANT:** This release introduces breaking changes to the `BaseDataSource` API.
+#### Core Architecture Changes
 
-- **`_load_data()` replaced with `_load_raw_data()`**: Custom datasources must rename their `_load_data()` method to `_load_raw_data()`.
-- **DataSources no longer handle filtering internally**: Filtering logic should be moved to custom `DataFilter` classes.
-- **Pipeline architecture**: Data now flows through a 3-stage pipeline: Load → Preprocess → Filter.
+- **2-Stage Pipeline (Simplified)**: Data flows through Build → Transform (was: Load → Preprocess → Filter)
+  - Stage 1: **Build** (load + process) - handles data loading AND transformation
+  - Stage 2: **Transform** (filter + aggregate) - applies transformations and filtering
 
-### Migration Guide
+- **PreProcessor renamed to DataBuilder**: Better semantic clarity
+  - `PreProcessor` → `DataBuilder` (combines loading + processing)
+  - Method: `process()` → `build()`
 
-#### For Custom DataSources
+- **DataFilter renamed to DataTransformer**: Broader semantic contract
+  - `DataFilter` → `DataTransformer` (filter + aggregate + reshape)
+  - Method: `filter()` → `transform()`
+  - Enables aggregation, pivoting, and any df→df transformation
 
-**Before (v0.14.0):**
-```python
-def _load_data(self, params):
-    df = pd.read_csv(self.file_path)
-    if 'category' in params:
-        df = df[df['Category'] == params['category']]  # Filtering in _load_data
-    return df
-```
+- **BaseDataSource is now concrete**: No more abstract methods!
+  - Removed: `_load_raw_data()`, `get_kpis()`, `get_filter_options()`, `get_summary()`
+  - Pattern: Pass `DataBuilder` and `DataTransformer` to constructor
 
-**After (v0.15.0):**
-```python
-# 1. Rename _load_data to _load_raw_data and remove filtering
-def _load_raw_data(self, params):
-    return pd.read_csv(self.file_path)  # Just load, no filtering
-
-# 2. Create custom DataFilter for filtering logic
-class CategoryFilter(DataFilter):
-    def filter(self, data, params):
-        df = data.copy()
-        if 'category' in params:
-            df = df[df['Category'] == params['category']]
-        return df
-
-# 3. Pass filter to datasource
-datasource = MyDataSource(
-    file_path="data.csv",
-    data_filter=CategoryFilter(),
-    param_classifier=lambda k: 'filter' if k == 'category' else 'preprocess'
-)
-```
+- **New MetricsBlock**: Replaces `datasource.get_kpis()` pattern
+  - Calculate metrics in blocks, not datasources
+  - Supports custom aggregation functions (str or callable)
+  - Optional dtype conversion
 
 ### Added
 
-- **Pipeline Architecture**: 3-stage data processing pipeline with staged caching
-  - `PreProcessor` class for data transformation (feature engineering, aggregations)
-  - `DataFilter` class for data filtering (category filters, range filters)
-  - `DataProcessingContext` for parameter classification
-  - Staged caching: filter changes don't trigger preprocessing
+#### Block-Level Data Transformations (v0.15)
 
-- **New Core Classes**:
-  - `dashboard_lego.core.PreProcessor` - Base class for data preprocessing
-  - `dashboard_lego.core.DataFilter` - Base class for data filtering
-  - `dashboard_lego.core.DataProcessingContext` - Pipeline parameter context
+- **`transform_fn` parameter in BaseBlock/TypedChartBlock**: Apply block-specific transformations
+  - Enables aggregation, pivoting, filtering AFTER global filters
+  - Example: `transform_fn=lambda df: df.groupby('Product')['Revenue'].sum().head(10)`
+  - Use case: Different charts need different aggregations of same filtered data
 
-- **BaseDataSource Enhancements**:
-  - New constructor params: `preprocessor`, `data_filter`, `param_classifier`
-  - `get_preprocessed_data()` method for accessing preprocessed data before filtering
-  - `get_data()` method for accessing raw data before preprocessing
-  - Staged caching for better performance
+- **Symmetric DataSource API**: Factory methods for lambda-based customization
+  - `with_builder_fn(lambda params: df)` - Custom data loading/building with lambda
+  - `with_transform_fn(lambda df: df)` - Custom transformation (chained after global filters)
+  - `with_builder(builder_instance)` - Replace builder with DataBuilder instance
+  - `with_transformer(transformer_instance)` - Replace transformer with DataTransformer instance
+  - All methods preserve immutability (return new datasource instances)
+  - Independent caching for specialized datasources
+  - Example: `agg_ds = main_ds.with_transform_fn(lambda df: df.groupby('x').sum())`
 
-- **Examples**:
-  - `12_sales_filter_example.py` - Custom DataFilter demonstration
-  - `13_sales_preprocessor_example.py` - Custom PreProcessor demonstration
-  - `14_complete_pipeline_example.py` - Full dashboard with pipeline
+- **`ChainedTransformer`**: New DataTransformer subclass
+  - Applies two transformers sequentially
+  - Used internally by `with_transform_fn()` to chain global filters + block transforms
+  - Maintains 2-stage caching integrity
+
+#### Sidebar and Navigation Enhancements
+
+- **Collapsible Sidebar Feature**: Global controls sidebar with fixed IDs
+  - `SidebarConfig` dataclass for sidebar configuration
+  - `dbc.Offcanvas` integration for responsive, animated sidebar
+  - Fixed string IDs for sidebar blocks (no pattern-matching)
+  - Enables cross-section `State()` subscriptions in pattern-matching callbacks
+  - Collapse/expand toggle button with state persistence
+  - Works standalone or combined with navigation
+  - Unified sidebar+navigation in single Offcanvas panel
+  - Theme-aware styling with `--bs-offcanvas-bg` and `--bs-offcanvas-color`
+
+- **Bootstrap Native Components**: Theme integration improvements
+  - Replaced `dcc.Dropdown` with `dbc.Select` in examples
+  - Replaced `dcc.Input` with `dbc.Input` in examples
+  - Native Bootstrap components automatically adapt to themes
+  - Minimal CSS overrides for Offcanvas panel controls
+
+#### Other Additions
+
+- **DataBuilder class**: Semantic replacement for PreProcessor
+  - Method `build(params)` combines loading and processing
+  - Clearer responsibility: "build complete dataset"
+  - Used by composition, not inheritance
+
+- **DataTransformer class**: Semantic evolution of DataFilter
+  - Broader contract: filter + aggregate + reshape + any df→df transformation
+  - Method `transform(data, params)` for data transformations
+  - Enables aggregation, pivot, melt operations
+  - DataFilter kept as deprecated alias
+
+- **TypedChartBlock.update_from_controls()**: Override for block-centric callback support
+  - Enables embedded controls to trigger chart updates
+  - Passes `control_values` dict directly to `_update_chart()`
+
+- **DashboardPage._preload_all_section_blocks()**: Pre-register navigation callbacks
+  - Loads all section blocks before `app.run()` to satisfy Dash lifecycle
+
+- **Enhanced Logging**: Detailed DEBUG logging for callback registration and execution
+  - Shows control value extraction, parameter resolution, callback triggering
 
 ### Changed
 
-- **BaseDataSource**: Refactored to implement 3-stage pipeline with staged caching
-- **CsvDataSource**: Updated to use `_load_raw_data()`, removed internal filtering
-- **ParquetDataSource**: Updated to use `_load_raw_data()`, removed internal filtering
-- **SqlDataSource**: Updated to use `_load_raw_data()`, removed internal filtering
-- **core/__init__.py**: Now exports `PreProcessor`, `DataFilter`, `DataProcessingContext`
+- **BaseBlock ID Generation**: Add `is_sidebar_block` attribute
+  - Sidebar blocks use fixed string IDs (e.g., `"block_id-component"`)
+  - Navigation blocks continue using pattern-matching dict IDs
+  - Resolves Dash limitation where `State({"section": 0, ...})` cannot be resolved from other sections
+
+- **BaseDataSource**: Now fully concrete (no abstract methods)
+  - Constructor takes `data_builder` and `data_transformer` instances
+  - Pipeline: Build → Transform (was: Load → Preprocess → Filter)
+  - Method: `get_processed_data()` runs 2-stage pipeline
+  - New methods: `with_builder()`, `with_transform()` for immutable derivation
+
+- **TypedChartBlock**: Simplified state management
+  - Removed complex state registration overrides
+  - Now uses BaseBlock's automatic registration (same pattern as other blocks)
+  - Added `transform_fn` parameter for block-level transformations
+
+- **All Concrete DataSources**: Updated to use DataBuilder pattern
+  - `CsvDataSource`: Uses `CsvDataBuilder` internally
+  - `ParquetDataSource`: Uses `ParquetDataBuilder` internally
+  - `SqlDataSource`: Uses `SqlDataBuilder` internally
+  - All follow composition pattern (builder + transformer)
+
+- **core/__init__.py**: Updated exports
+  - Exports: `DataBuilder` (was: `PreProcessor`)
+  - Exports: `DataTransformer` (was: `DataFilter`)
+  - Still exports: `DataProcessingContext`
+
+### Removed
+
+- **Abstract methods from BaseDataSource**:
+  - `_load_raw_data()` - replaced by DataBuilder pattern
+  - `get_kpis()` - replaced by MetricsBlock
+  - `get_filter_options()` - moved to application code
+  - `get_summary()` - moved to application code
+
+### Fixed
+
+- **TypedChartBlock Interactive Controls**: Fixed embedded controls not triggering callbacks
+  - Root cause: `BaseBlock.update_from_controls()` returned `None` for blocks with empty `subscribes` dict
+  - Solution: Added `update_from_controls()` override in `TypedChartBlock`
+  - Result: Interactive controls in preset blocks now work correctly
+
+- **Navigation Link Visibility**: Fixed navigation titles being invisible
+  - Root cause: Bootstrap CSS variable precedence
+  - Solution: Scoped CSS variable overrides + callback style updates
+  - Result: Navigation links properly display with theme colors
+
+- **Pattern-Matching Callback Registration**: Fixed dict key order
+  - Root cause: Dash requires exact dict structure match including key order
+  - Solution: Consistent `{"section": N, "type": "..."}` order everywhere
+  - Result: Pattern-matching callbacks now match HTML component IDs
+
+- **Scatter Plot NaN Handling**: Added automatic NaN filtering in `plot_scatter()`
+  - Result: Scatter plots no longer crash on missing values
+
+- **Navigation Lazy-Loading**: Fixed callback registration for lazy-loaded sections
+  - Root cause: Dash requires all callbacks registered before `app.run()`
+  - Solution: Pre-load all section blocks during `register_callbacks()` phase
+  - Result: Interactive controls work in all navigation sections
+
+- **Sidebar Controls Theming**: Fixed controls appearing with wrong theme
+  - Solution: Use `dbc.Select` and `dbc.Input` instead of `dcc` components
+  - Added minimal CSS for Offcanvas panel controls
+  - Result: Controls automatically adapt to dark/light themes
 
 ### Benefits
 
-- **Better Performance**: Changing filters doesn't trigger data reloading or preprocessing
-- **Separation of Concerns**: Clear boundaries between loading, transformation, and filtering
-- **Composability**: Mix and match preprocessors and filters
-- **Clearer Code**: Each component has a single responsibility
+- **Simpler Architecture**: 2 stages instead of 3
+- **Semantic Clarity**: "Build" clearly means "construct complete dataset", "Transform" means "any df→df"
+- **No Subclassing**: BaseDataSource is concrete, use composition
+- **Block-Based Metrics**: Metrics calculated in blocks, not datasources
+- **Block-Level Transformations**: Each block can transform data independently via `transform_fn`
+- **Better Performance**: Staged caching + independent caching for transformed datasources
+- **Working Interactive Controls**: TypedChartBlock embedded controls fully functional
+- **Proper Navigation**: Multi-section dashboards with working callbacks in all sections
+- **Theme Integration**: Native Bootstrap components for automatic theme support
 
 ### Technical Details
 
-**Pipeline Flow:**
+**New Pipeline Flow:**
 ```
-Raw Data (cached by preprocessing params)
+Build Stage (cached by build params)
   ↓
-Preprocessed Data (cached by preprocessing params)
+Transform Stage (cached by transform params)
   ↓
-Filtered Data (cached by all params)
+Block Transform (optional, via transform_fn)
 ```
 
 **Cache Strategy:**
-- Stage 1 (Raw): Cached by preprocessing params only
-- Stage 2 (Preprocess): Cached by preprocessing params only
-- Stage 3 (Filter): Cached by all params combined
+- Stage 1 (Build): Cached by build params only
+- Stage 2 (Transform): Cached by transform params only
+- Block Transform: Independent cache per specialized datasource
 
-This means changing filter params only triggers Stage 3, reusing cached results from Stages 1 and 2.
+Changing filter params only triggers Stage 2, reusing cached build results.
+
+**Decision Cache:**
+- `data_pipeline_architecture`: Chose 2-stage over 3-stage for simplicity (build combines load+process)
+- `transformer_naming`: Chose DataTransformer over DataFilter for broader semantic contract (supports aggregation)
+- `block_transforms`: Chose `transform_fn` + `with_transform()` pattern for block-specific transformations without plot function proliferation
+- `theming_components`: Chose `dbc.Select`/`dbc.Input` over `dcc` components for native Bootstrap theme support
 
 ## [0.14.0] - 2025-10-08
 
 ### Changed
-- Refactored `InteractiveChartBlock` and `ControlPanelBlock` to delay state interaction setup, improving compatibility with lazy-loaded navigation sections.
-- Updated `DASHBOARD_LEGO_GUIDE.md` to align with recent code changes and improve accuracy.
+- Refactored `InteractiveChartBlock` and `ControlPanelBlock` to delay state interaction setup
+- Updated `DASHBOARD_LEGO_GUIDE.md` to align with code changes
 
 ### Fixed
-- Corrected an issue where `InteractiveChartBlock` would not update correctly because its update method was not handling positional arguments from the `StateManager`.
-- Fixed a bug in the `02_interactive_dashboard.py` example where data was not being filtered due to an incorrect parameter key.
+- Fixed `InteractiveChartBlock` not handling positional arguments from `StateManager`
+- Fixed data filtering in `02_interactive_dashboard.py` example
 
 ## [0.13.0] - 2025-10-07
 
 ### Added
 - **Theme-Aware Styling System**
-  - Integration of theme configuration into `BaseBlock` and related classes
-  - Automatic styling based on user-defined themes in `create_eda_section` and `create_ml_section`
-  - New control panel styles and layouts for improved user interaction
-  - Sample datasets: `sample_feature_importance.csv` and `sample_theme_data.csv`
+  - Integration of theme configuration into `BaseBlock`
+  - Automatic styling based on user-defined themes
+  - New control panel styles and layouts
+  - Sample datasets for examples
 
 ### Changed
-- Enhanced responsiveness and visual consistency across dashboard components
-- Improved control panel layouts for better user experience
+- Enhanced responsiveness and visual consistency across components
 
 ## [0.12.0] - 2025-10-06
 
 ### Fixed
-- Corrected syntax in `_normalize_subscribes_to` method signature (trailing comma for style consistency)
+- Corrected syntax in `_normalize_subscribes_to` method signature
 
 ## [0.11.2] - 2025-10-05
 
 ### Added
 - **Multi-State Subscriptions Support**
-  - `BaseBlock` and subclasses now accept both single state IDs and lists of state IDs for `subscribes_to` parameter
-  - New `_normalize_subscribes_to` method for consistent subscription handling
-  - Enhanced `StateManager` to manage multi-state subscriptions
-  - Integration tests for multi-state subscription behavior
-
-### Changed
-- Improved flexibility for complex data interactions across dashboard blocks
+  - `BaseBlock` accepts both single state IDs and lists for `subscribes_to`
+  - New `_normalize_subscribes_to` method
+  - Enhanced `StateManager` for multi-state subscriptions
+  - Integration tests for multi-state behavior
 
 ## [0.11.0] - 2025-10-02
 
 ### Added
 - **Enhanced Output and Error Management**
-  - New `allow_duplicate_output` parameter in `BaseBlock` and `StaticChartBlock`
-  - Comprehensive error handling for Dash callbacks in `DashboardPage`
-  - Enhanced `StateManager` with duplicate output validation and detailed logging
-  - New `_get_fallback_output` method for safe outputs when errors occur
-  - Sample navigation data file: `sample_nav_data.csv`
+  - `allow_duplicate_output` parameter in blocks
+  - Comprehensive error handling for Dash callbacks
+  - Duplicate output validation and detailed logging
+  - `_get_fallback_output` method for safe error recovery
 
 ### Changed
-- Updated `DashboardPage` styles to use camelCase for CSS properties
-- Enhanced documentation structure with improved Sphinx configuration
-- Improved error handling in content loading process
+- Updated styles to use camelCase for CSS properties
+- Enhanced documentation structure
 
 ### Fixed
 - Documentation paths for src-layout structure
-- API documentation to include proper dashboard_lego namespace
+- API documentation namespace
 
 ## [0.10.0] - 2025-10-01
 
 ### Added
-- **NEW FEATURE**: Navigation Panel System
-  - `NavigationConfig` and `NavigationSection` classes for multi-section dashboards
-  - Lazy loading of dashboard sections with factory functions
-  - Fixed sidebar navigation with dynamic width calculation
-  - Section caching to prevent recreation on revisit
-  - Support for Font Awesome icons and Bootstrap styling
+- **Navigation Panel System**
+  - `NavigationConfig` and `NavigationSection` classes
+  - Lazy loading of sections with factory functions
+  - Fixed sidebar navigation with dynamic width
+  - Section caching
+  - Font Awesome icons support
   - Example: `examples/08_navigation_dashboard.py`
 
 ### Changed
-- Enhanced `DashboardPage` to support both standard and navigation modes
-- Improved visual styling with custom CSS and responsive design
-- Updated validation to require either `blocks` or `navigation` parameter
-
-### Technical Details
-- Added 12 comprehensive tests for navigation functionality
-- Maintained 85% test coverage across all modules
-- All 124 tests pass without regressions
+- Enhanced `DashboardPage` to support navigation mode
+- Improved visual styling with custom CSS
 
 ## [0.9.2] - 2025-10-01
 
 ### Changed
-- **BREAKING CHANGE**: Restructured package to src-layout architecture
-  - All modules moved to `src/dashboard_lego/` directory
-  - All imports must now use `dashboard_lego.*` prefix (e.g., `from dashboard_lego.blocks import ...`)
-  - Migration: `from blocks.chart import X` → `from dashboard_lego.blocks.chart import X`
-- Updated package metadata with author information and project URLs
-- Improved CI workflows with updated paths for new structure
-- Code formatting improvements (isort, flake8 compliance)
+- **BREAKING CHANGE**: Restructured to src-layout architecture
+  - All modules moved to `src/dashboard_lego/`
+  - All imports require `dashboard_lego.*` prefix
 
 ### Fixed
-- Package installation issue where only `.dist-info` was created without actual code modules
-- Import formatting and linter warnings in `__init__.py`
+- Package installation issue
+- Import formatting warnings
 
 ### Added
-- PyPI publish workflow for automated releases
-- `__all__` export in main `__init__.py` for explicit module exports
+- PyPI publish workflow
+- `__all__` export in `__init__.py`
 
 ## [0.9.0] - 2025-10-01
 
 ### Added
 - Initial release of Dashboard Lego library
-- Comprehensive Sphinx documentation with automatic GitHub Pages deployment
-- CHANGELOG and CONTRIBUTING guidelines
-- Multiple example dashboards (simple, interactive, presets, ML, layouts)
-- Modular architecture with BaseBlock and BaseDataSource
-- Core dashboard components:
-  - StaticChartBlock for non-interactive charts
-  - InteractiveChartBlock for charts with controls
-  - KPIBlock for key performance indicators
-  - TextBlock for text content
-- State management system for block interactivity
-- Data source implementations:
-  - CSV data source with caching
-  - Parquet data source for high-performance loading
-  - SQL data source via SQLAlchemy
-- EDA presets for common analysis tasks:
-  - CorrelationHeatmapPreset
-  - GroupedHistogramPreset
-  - MissingValuesPreset
-  - BoxPlotPreset
-- ML presets for machine learning visualizations:
-  - MetricCardBlock
-  - ConfusionMatrixPreset
-  - FeatureImportancePreset
-  - ROC_CurvePreset
-- Layout presets for common dashboard patterns:
-  - one_column, two_column_8_4, three_column_4_4_4
-  - kpi_row_top and other specialized layouts
-- Comprehensive testing suite:
-  - Unit tests for all components
-  - Integration tests for dashboard functionality
-  - Performance tests and benchmarks
-- Development tools and configuration:
-  - Black code formatting
-  - Flake8 linting
-  - MyPy type checking
-  - Pre-commit hooks
-  - Pytest testing framework
-- Documentation:
-  - README with examples and quick start guide
-  - Contributing guidelines
-  - API documentation structure
-  - Example dashboards in multiple scenarios
+- Core components: StaticChartBlock, InteractiveChartBlock, KPIBlock, TextBlock
+- State management system
+- Data sources: CSV, Parquet, SQL
+- EDA and ML presets
+- Layout presets
+- Comprehensive testing suite
+- Documentation and examples
 - MIT license
-- Python package configuration (pyproject.toml)
-- Development dependencies and testing setup
-
-### Changed
-- N/A
-
-### Deprecated
-- N/A
-
-### Removed
-- N/A
-
-### Fixed
-- N/A
-
-### Security
-- N/A
 
 ---
 

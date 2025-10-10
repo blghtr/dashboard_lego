@@ -3,19 +3,27 @@ This module defines the DashboardPage class, which orchestrates blocks on a page
 
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 import dash_bootstrap_components as dbc
 from dash import dcc, html
 from dash.dependencies import Input, Output
 from dash.development.base_component import Component
 
-from dashboard_lego.blocks.base import BaseBlock
 from dashboard_lego.core.state import StateManager
 from dashboard_lego.core.theme import ThemeConfig
 from dashboard_lego.utils.exceptions import ConfigurationError
 from dashboard_lego.utils.logger import get_logger
+
+# Lazy import for SidebarConfig to avoid circular dependency
+if TYPE_CHECKING:
+    from dashboard_lego.core.sidebar import SidebarConfig
+
+if TYPE_CHECKING:
+    from dashboard_lego.blocks.base import BaseBlock
 
 
 @dataclass
@@ -100,6 +108,7 @@ class DashboardPage:
         theme: str = dbc.themes.BOOTSTRAP,
         navigation: Optional[NavigationConfig] = None,
         theme_config: Optional[ThemeConfig] = None,
+        sidebar: Optional["SidebarConfig"] = None,
     ):
         """
         Initializes the DashboardPage, creates a StateManager, and
@@ -121,14 +130,21 @@ class DashboardPage:
             navigation: Optional NavigationConfig for multi-section dashboard
                 with lazy-loaded content.
             theme_config: Optional ThemeConfig for global styling customization.
+            sidebar: Optional SidebarConfig for collapsible sidebar with fixed-ID blocks.
+                Sidebar blocks use non-pattern-matched IDs, enabling cross-section
+                State() subscriptions in pattern-matching callbacks.
 
         """
+        # Lazy import to avoid circular dependency
+        from dashboard_lego.blocks.base import BaseBlock
+
         self.logger = get_logger(__name__, DashboardPage)
         self.logger.info(f"Initializing dashboard page: '{title}'")
 
         self.title = title
         self.theme = theme
         self.navigation = navigation
+        self.sidebar = sidebar
 
         # Auto-derive theme_config from dbc theme if not explicitly provided
         if theme_config is None:
@@ -138,6 +154,12 @@ class DashboardPage:
             self.theme_config = theme_config
 
         self.logger.info(f"Using theme: {self.theme_config.name}")
+
+        if self.sidebar:
+            self.logger.info(
+                f"Sidebar enabled | blocks={len(self.sidebar.blocks)} "
+                f"position={self.sidebar.position} collapsible={self.sidebar.collapsible}"
+            )
 
         self.layout_structure = blocks or []
         self.state_manager = StateManager()
@@ -240,6 +262,9 @@ class DashboardPage:
              - post: "Returns (block, options) where options contains only allowed keys; assigns default equal width if none provided"
 
         """
+        # Lazy import to avoid circular dependency
+        from dashboard_lego.blocks.base import BaseBlock
+
         if isinstance(cell_spec, tuple):
             block, options = cell_spec
         else:
@@ -451,6 +476,367 @@ class DashboardPage:
         )
         return dbc.Col(col_content, **col_kwargs)
 
+    def _render_sidebar_blocks(self) -> List[Component]:
+        """
+        Render sidebar blocks with fixed IDs.
+
+        :hierarchy: [Core | Layout | Sidebar | RenderBlocks]
+        :relates-to:
+         - motivated_by: "SidebarConfig requires rendering blocks with fixed IDs"
+         - uses: ["class: 'BaseBlock'"]
+
+        :contract:
+         - pre: "self.sidebar is not None and contains valid blocks"
+         - post: "List of rendered Dash components for sidebar content"
+         - invariant: "All sidebar blocks have is_sidebar_block=True"
+
+        :complexity: 3
+
+        :returns:
+         - List[Component]: Rendered sidebar block components
+        """
+        self.logger.debug(
+            f"[Core|Sidebar|RenderBlocks] Rendering {len(self.sidebar.blocks)} sidebar blocks"
+        )
+
+        rendered_blocks = []
+
+        # <semantic_block: sidebar_block_rendering>
+        for idx, block in enumerate(self.sidebar.blocks):
+            # Mark as sidebar block for fixed ID generation
+            block.is_sidebar_block = True
+            block.navigation_mode = False  # No pattern-matching
+
+            self.logger.debug(
+                f"[Core|Sidebar|RenderBlocks] Block {idx}: {block.block_id} | "
+                f"is_sidebar_block=True"
+            )
+
+            # Register state interactions (publishers/subscribers)
+            block._register_state_interactions(self.state_manager)
+
+            # Render block layout
+            rendered = block.layout()
+            rendered_blocks.append(rendered)
+        # </semantic_block: sidebar_block_rendering>
+
+        self.logger.info(
+            f"[Core|Sidebar|RenderBlocks] Rendered {len(rendered_blocks)} blocks successfully"
+        )
+
+        return rendered_blocks
+
+    def _build_navigation_links(self) -> List[Component]:
+        """
+        Build navigation links for sidebar integration.
+
+        :hierarchy: [Core | Navigation | BuildLinks]
+        :relates-to:
+         - motivated_by: "Sidebar + Navigation integration: links go IN sidebar"
+         - implements: "method: '_build_navigation_links'"
+
+        :contract:
+         - pre: "self.navigation is not None"
+         - post: "Returns list of nav link components"
+         - invariant: "No wrapper div, just the links"
+
+        :complexity: 3
+
+        :returns:
+         - List[Component]: Navigation links ready for sidebar
+        """
+        nav_links = []
+        for idx, section in enumerate(self.navigation.sections):
+            if idx == self.navigation.default_section:
+                initial_class = (
+                    self.navigation.nav_link_active_className
+                    or "themed-nav-link-active"
+                )
+            else:
+                initial_class = self.navigation.nav_link_className or "themed-nav-link"
+
+            nav_link_props = {
+                "id": f"nav-item-{idx}",
+                "href": "#",
+                "n_clicks": 0,
+                "className": initial_class,
+            }
+
+            nav_links.append(
+                dbc.NavLink(
+                    [
+                        html.I(className="fas fa-chart-bar me-2"),
+                        section.title,
+                    ],
+                    **nav_link_props,
+                )
+            )
+
+        return nav_links
+
+    def _build_sidebar_layout(self) -> Component:
+        """
+        Build layout with dbc.Offcanvas collapsible sidebar.
+
+        UNIFIED SIDEBAR: Contains navigation links (if navigation enabled) + control blocks.
+
+        :hierarchy: [Core | Layout | Sidebar | BuildLayout]
+        :relates-to:
+         - motivated_by: "Pattern-matching callbacks + unified sidebar UX"
+         - implements: "method: '_build_sidebar_layout'"
+         - uses: ["class: 'SidebarConfig'", "component: 'dbc.Offcanvas'"]
+
+        :contract:
+         - pre: "self.sidebar is not None and validated"
+         - post: "ONE Offcanvas with navigation (if enabled) + controls"
+         - invariant: "Sidebar blocks always use fixed string IDs"
+         - spec_compliance: "Sidebar + Navigation: ONE dbc.Offcanvas component"
+
+        :complexity: 6
+        :decision_cache: "Unified sidebar: Navigation links at top, controls below"
+
+        :returns:
+         - Component: html.Div containing ONE offcanvas, toggle button, and main content
+        """
+        self.logger.info(
+            f"[Core|Sidebar|BuildLayout] Building UNIFIED sidebar layout | "
+            f"position={self.sidebar.position} width={self.sidebar.width} "
+            f"has_navigation={self.navigation is not None}"
+        )
+
+        # <semantic_block: sidebar_content_assembly>
+        sidebar_components = []
+
+        # Add navigation links at TOP if navigation enabled
+        if self.navigation:
+            self.logger.debug(
+                "[Core|Sidebar|BuildLayout] Adding navigation links to sidebar"
+            )
+
+            # Title
+            sidebar_components.append(
+                html.Div(
+                    [
+                        html.I(className="fas fa-tachometer-alt me-2"),
+                        html.H4(
+                            self.title,
+                            className="mb-0 d-inline",
+                            style={"color": self.theme_config.colors.nav_text},
+                        ),
+                    ],
+                    className="mb-3",
+                )
+            )
+
+            # Navigation section
+            sidebar_components.append(
+                html.Div(
+                    [
+                        html.P(
+                            "Navigate between sections",
+                            className="small mb-2",
+                            style={
+                                "color": self.theme_config.colors.nav_text,
+                                "opacity": "0.7",
+                            },
+                        ),
+                        dbc.Nav(
+                            self._build_navigation_links(),
+                            vertical=True,
+                            pills=True,
+                            id="nav-list",
+                            className=self.navigation.nav_className
+                            or "nav-pills-custom",
+                            style=self.navigation.nav_style or {},
+                        ),
+                    ],
+                    className="mb-4",
+                )
+            )
+
+            # Separator
+            sidebar_components.append(
+                html.Hr(
+                    style={
+                        "borderColor": self.theme_config.colors.nav_text,
+                        "opacity": "0.3",
+                        "margin": "1rem 0",
+                    }
+                )
+            )
+
+        # Add control blocks BELOW navigation
+        control_blocks = self._render_sidebar_blocks()
+        sidebar_components.extend(control_blocks)
+
+        self.logger.debug(
+            f"[Core|Sidebar|BuildLayout] Sidebar assembled | "
+            f"components={len(sidebar_components)} "
+            f"(nav={self.navigation is not None}, controls={len(control_blocks)})"
+        )
+        # </semantic_block: sidebar_content_assembly>
+
+        # <semantic_block: offcanvas_configuration>
+        # Apply theme styles to Offcanvas
+        # DBC Offcanvas has header + body, style both for theme consistency
+        offcanvas_style = {
+            "width": self.sidebar.width,
+            "--bs-offcanvas-bg": self.theme_config.colors.nav_background,
+            "--bs-offcanvas-color": self.theme_config.colors.nav_text,
+            # Style for close button (contrast for visibility)
+            "--bs-btn-close-color": self.theme_config.colors.nav_text,
+            "--bs-btn-close-opacity": "1.0",
+        }
+
+        # Add custom CSS class for additional control styling
+        offcanvas_class = "themed-offcanvas"
+
+        offcanvas = dbc.Offcanvas(
+            id="sidebar-offcanvas",
+            children=sidebar_components,
+            title=self.sidebar.title or "Dashboard Controls",
+            placement=self.sidebar.position,
+            is_open=not self.sidebar.default_collapsed,
+            backdrop=self.sidebar.backdrop,
+            scrollable=True,
+            style=offcanvas_style,
+            className=offcanvas_class,
+        )
+
+        self.logger.debug(
+            f"[Core|Sidebar|BuildLayout] Offcanvas configured with theme | "
+            f"bg={self.theme_config.colors.nav_background} | "
+            f"text={self.theme_config.colors.nav_text}"
+        )
+        # </semantic_block: offcanvas_configuration>
+
+        # <semantic_block: toggle_button>
+        toggle_btn = None
+        if self.sidebar.collapsible:
+            position_style = {"top": "10px", "z-index": 1060}
+            if self.sidebar.position == "start":
+                position_style["left"] = "10px"
+            else:
+                position_style["right"] = "10px"
+
+            toggle_btn = dbc.Button(
+                "☰",
+                id="sidebar-toggle-btn",
+                size="sm",
+                color="secondary",
+                className="position-fixed",
+                style=position_style,
+            )
+            self.logger.debug("[Core|Sidebar|BuildLayout] Toggle button created")
+        # </semantic_block: toggle_button>
+
+        # <semantic_block: main_content>
+        # Build main content WITHOUT duplicate sidebar
+        if self.navigation:
+            self.logger.debug(
+                "[Core|Sidebar|BuildLayout] Building navigation content (content area only)"
+            )
+            # Build ONLY content area (no sidebar!)
+            main_content = self._build_navigation_content_only()
+        else:
+            self.logger.debug(
+                "[Core|Sidebar|BuildLayout] Building standard grid content"
+            )
+            rows: List[Component] = []
+            for row_idx, row_spec in enumerate(self.layout_structure):
+                normalized_cells, row_options = self._validate_row(row_spec)
+                rows.append(self._render_row(normalized_cells, row_options))
+            main_content = [html.H1(self.title, className="my-4"), *rows]
+
+        main_container = dbc.Container(main_content, fluid=True, className="p-3")
+        # </semantic_block: main_content>
+
+        self.logger.info(
+            f"[Core|Sidebar|BuildLayout] UNIFIED sidebar layout complete | "
+            f"toggle={toggle_btn is not None} | "
+            f"nav_in_sidebar={self.navigation is not None}"
+        )
+
+        return html.Div([toggle_btn, offcanvas, main_container])
+
+    def _build_navigation_content_only(self) -> List[Component]:
+        """
+        Build ONLY navigation content area (without sidebar).
+
+        Used when sidebar+navigation are combined in ONE Offcanvas.
+
+        :hierarchy: [Core | Navigation | ContentOnly]
+        :relates-to:
+         - motivated_by: "Sidebar + Navigation integration: avoid duplicate sidebars"
+         - implements: "method: '_build_navigation_content_only'"
+
+        :contract:
+         - pre: "self.navigation is not None"
+         - post: "Returns [store, content_area] WITHOUT sidebar div"
+         - invariant: "No sidebar wrapper - navigation already in Offcanvas"
+
+        :complexity: 3
+        :decision_cache: "Unified sidebar: Avoid duplicate navigation sidebar"
+
+        :returns:
+         - List[Component]: [active_section_store, content_area]
+        """
+        # Get content style from theme
+        base_content_style = self.theme_config.get_component_style(
+            "navigation", "content"
+        )
+
+        # Content style WITHOUT marginLeft (no fixed sidebar to avoid)
+        content_style = {
+            **base_content_style,
+            "minHeight": "100vh",
+            "padding": "2rem",
+            **(self.navigation.content_style or {}),
+        }
+
+        # Load initial content
+        try:
+            initial_content = self._create_section_content(
+                self.navigation.default_section
+            )
+            self.logger.debug(
+                f"[Core|Navigation|ContentOnly] Loaded section {self.navigation.default_section}"
+            )
+        except Exception as e:
+            self.logger.error(
+                f"[Core|Navigation|ContentOnly] Failed to load section: {e}"
+            )
+            initial_content = [
+                dbc.Alert(
+                    [
+                        html.H4("Error Loading Section", className="alert-heading"),
+                        html.P(f"Failed to load initial section: {e}"),
+                    ],
+                    color="danger",
+                    className="m-3",
+                )
+            ]
+
+        # Content area (dynamic, updates on navigation)
+        content_area = html.Div(
+            id="nav-content-area",
+            children=initial_content,
+            style=content_style,
+            className=self.navigation.content_className,
+        )
+
+        # Store for active section tracking
+        active_section_store = dcc.Store(
+            id="active-section-store", data=self.navigation.default_section
+        )
+
+        self.logger.info(
+            f"[Core|Navigation|ContentOnly] Content area built | "
+            f"initial_section={self.navigation.default_section}"
+        )
+
+        return [active_section_store, content_area]
+
     def _build_navigation_layout(self) -> Component:
         """
         Builds the navigation-based layout with fixed sidebar and dynamic content.
@@ -536,10 +922,9 @@ class DashboardPage:
                 # Inactive section - use default class
                 initial_class = self.navigation.nav_link_className or "themed-nav-link"
 
-            # Build NavLink props
-            # Note: Do NOT apply inline styles here, even if provided via NavigationConfig,
-            # because inline styles cannot be updated by callbacks and would override className
-            # Users should use CSS class overrides via nav_link_className parameters
+            # Build NavLink props WITHOUT inline styles
+            # CRITICAL: Don't use inline styles - they can't be updated by callbacks!
+            # Instead, use className which updates via callback + CSS variable overrides
             nav_link_props = {
                 "id": f"nav-item-{idx}",
                 "href": "#",
@@ -568,14 +953,28 @@ class DashboardPage:
                 html.Div(
                     [
                         html.I(className="fas fa-tachometer-alt me-2"),
-                        html.H4(self.title, className="mb-0 d-inline"),
+                        html.H4(
+                            self.title,
+                            className="mb-0 d-inline",
+                            style={"color": self.theme_config.colors.nav_text},
+                        ),
                     ],
                     className="mb-4",
                 ),
-                html.Hr(style={"borderColor": "#34495e", "margin": "1.5rem 0"}),
+                html.Hr(
+                    style={
+                        "borderColor": self.theme_config.colors.nav_text,
+                        "opacity": "0.3",
+                        "margin": "1.5rem 0",
+                    }
+                ),
                 html.P(
                     "Navigate between sections",
-                    className="text-muted small mb-3",
+                    className="small mb-3",
+                    style={
+                        "color": self.theme_config.colors.nav_text,
+                        "opacity": "0.7",
+                    },
                 ),
                 dbc.Nav(
                     nav_links,
@@ -641,11 +1040,23 @@ class DashboardPage:
         """
         Assembles the layouts from all blocks into a grid-based page layout.
 
+        Supports three layout modes:
+        1. Sidebar + Navigation: dbc.Offcanvas + multi-section navigation
+        2. Sidebar + Standard: dbc.Offcanvas + grid layout
+        3. Standard/Navigation: existing behavior (no sidebar)
+
         Returns:
             A Dash component representing the entire page.
 
         """
         self.logger.info("Building page layout")
+
+        # Sidebar mode: use Offcanvas + main content
+        if self.sidebar:
+            self.logger.info(
+                f"Building sidebar layout | position={self.sidebar.position}"
+            )
+            return self._build_sidebar_layout()
 
         # Navigation mode: use navigation layout
         if self.navigation:
@@ -692,17 +1103,23 @@ class DashboardPage:
              - post: "Returns list of rendered rows for the section; blocks are cached and registered"
 
         """
+        # Lazy import to avoid circular dependency
+        from dashboard_lego.blocks.base import BaseBlock
+
         if section_index in self._section_blocks_cache:
-            # Return cached content
-            self.logger.debug(f"Using cached content for section {section_index}")
-            # Re-render from cached blocks
+            # Use preloaded blocks (callbacks already registered)
+            self.logger.debug(f"Using preloaded blocks for section {section_index}")
+            # Re-render from cached layout
             rows = []
             for row_spec in self._section_layout_cache[section_index]:
                 normalized_cells, row_options = self._validate_row(row_spec)
                 rows.append(self._render_row(normalized_cells, row_options))
             return rows
 
-        # Create new blocks via factory
+        # Fallback: Section not preloaded (shouldn't happen if preload worked)
+        self.logger.warning(
+            f"Section {section_index} not preloaded - creating on-demand (callbacks may not work)"
+        )
         self.logger.info(f"Lazily loading section {section_index}")
         section = self.navigation.sections[section_index]
 
@@ -752,14 +1169,9 @@ class DashboardPage:
             f"Section {section_index} loaded: {len(section_blocks)} blocks registered"
         )
 
-        # NEW: Dynamically register callbacks for lazy-loaded sections
-        if hasattr(self, "_app_instance") and self._app_instance is not None:
-            self.logger.info(
-                f"Registering callbacks for lazy-loaded section {section_index}"
-            )
-            self.state_manager.generate_callbacks(self._app_instance)
-            self.state_manager.bind_callbacks(self._app_instance, section_blocks)
-            self.logger.info(f"Callbacks registered for section {section_index}")
+        # NOTE: Callbacks are NOT registered here anymore
+        # They were already registered during register_callbacks() via _preload_all_section_blocks()
+        # This fallback path should rarely execute
 
         # Render rows
         rows = []
@@ -769,54 +1181,125 @@ class DashboardPage:
 
         return rows
 
+    def _preload_all_section_blocks(self) -> List[Any]:
+        """
+        Preload all section blocks for callback registration.
+
+        CRITICAL: Dash requires all callbacks registered before app.run().
+        This method creates blocks from all sections upfront.
+
+        :hierarchy: [Architecture | Navigation | Preload]
+        :relates-to:
+         - motivated_by: "Dash lifecycle requires callbacks before app.run()"
+         - implements: "method: '_preload_all_section_blocks'"
+         - uses: ["method: 'block_factory'"]
+
+        :contract:
+         - pre: "Navigation config exists with block factories"
+         - post: "Returns list of all blocks with navigation context set"
+
+        :complexity: 5
+        :decision_cache: "Preload all sections to satisfy Dash callback lifecycle requirements"
+
+        Returns:
+            List of all blocks from all sections
+        """
+        from dashboard_lego.blocks.base import BaseBlock
+
+        all_blocks = []
+        self.logger.info(
+            f"Preloading {len(self.navigation.sections)} sections for callback registration"
+        )
+
+        for section_idx, section in enumerate(self.navigation.sections):
+            try:
+                # Call factory to create blocks
+                layout_structure = section.block_factory()
+
+                # Extract blocks from layout
+                section_blocks = []
+                for row in layout_structure:
+                    if isinstance(row, tuple) and len(row) == 2:
+                        blocks_list = row[0]
+                    else:
+                        blocks_list = row
+
+                    for item in blocks_list:
+                        block = item[0] if isinstance(item, tuple) else item
+                        if isinstance(block, BaseBlock):
+                            section_blocks.append(block)
+
+                # Set navigation context for each block
+                for block in section_blocks:
+                    block.navigation_mode = True
+                    block.section_index = section_idx
+                    block._set_theme_config(self.theme_config)
+                    block._register_state_interactions(self.state_manager)
+
+                # Cache blocks and layout
+                self._section_blocks_cache[section_idx] = section_blocks
+                if not hasattr(self, "_section_layout_cache"):
+                    self._section_layout_cache = {}
+                self._section_layout_cache[section_idx] = layout_structure
+
+                all_blocks.extend(section_blocks)
+                self.logger.debug(
+                    f"Preloaded section {section_idx}: {len(section_blocks)} blocks"
+                )
+
+            except Exception as e:
+                self.logger.error(f"Error preloading section {section_idx}: {e}")
+                raise
+
+        self.logger.info(f"Preloaded {len(all_blocks)} total blocks from all sections")
+        return all_blocks
+
     def register_callbacks(self, app: Any):
         """
-        Registers callbacks using both old (state-based) and new (block-centric) mechanisms.
+        Registers callbacks using both mechanisms.
+
+        CRITICAL: For navigation mode, preloads all sections to satisfy Dash requirement
+        that all callbacks must be registered before app.run().
 
         :hierarchy: [Architecture | Callback Registration | DashboardPage]
         :relates-to:
-         - motivated_by: "Architectural Conclusion: Hybrid callback system enables
-           both legacy and modern callback patterns for backward compatibility"
-         - implements: "method: 'register_callbacks' with dual mechanism"
-         - uses: ["method: 'generate_callbacks'", "method: 'bind_callbacks'"]
+         - motivated_by: "Dash lifecycle requires all callbacks before app.run()"
+         - implements: "method: 'register_callbacks' with preload"
+         - uses: ["method: '_preload_all_section_blocks'", "method: 'generate_callbacks'", "method: 'bind_callbacks'"]
 
-        :rationale: "Use old mechanism for static blocks with state dependencies,
-         new mechanism for interactive blocks with controls."
+        :rationale: "Preload all section blocks before registering callbacks to satisfy Dash requirements."
         :contract:
-         - pre: "StateManager is initialized, blocks are registered."
-         - post: "All callbacks (old and new style) are registered with Dash app."
+         - pre: "StateManager is initialized"
+         - post: "All callbacks registered before app.run()"
 
         Args:
             app: The Dash app instance.
-
         """
         self.logger.info("Registering callbacks with Dash app")
 
         try:
-            # Navigation-specific callbacks MUST be registered BEFORE error handling wrapper
+            # Sidebar-specific callbacks
+            if self.sidebar and self.sidebar.collapsible:
+                self._register_sidebar_callbacks(app)
+
+            # Navigation-specific callbacks
             if self.navigation:
                 self._register_navigation_callbacks(app)
 
-            # Store app reference for lazy-loaded sections
+            # Store app reference
             self._app_instance = app
 
-            # Set up comprehensive error handling for Dash callbacks
-            # NOTE: This replaces app.callback, so must be done AFTER navigation callbacks
+            # Set up error handling
             self._setup_callback_error_handling(app)
 
-            # OLD MECHANISM: State-based callbacks for StaticChartBlock
-            self.state_manager.generate_callbacks(app)
-
-            # NEW MECHANISM: Block-centric callbacks for InteractiveChartBlock
-            # For navigation mode, we need to handle dynamic blocks
+            # CRITICAL: For navigation, preload ALL sections before registering callbacks
             if self.navigation:
-                # Bind callbacks for any already-loaded sections
-                all_section_blocks = []
-                for blocks in self._section_blocks_cache.values():
-                    all_section_blocks.extend(blocks)
-                if all_section_blocks:
-                    self.state_manager.bind_callbacks(app, all_section_blocks)
+                all_blocks = self._preload_all_section_blocks()
+                self.state_manager.generate_callbacks(app, all_blocks)
+                self.state_manager.bind_callbacks(app, all_blocks)
             else:
+                # Non-navigation mode: standard flow
+                self.state_manager.generate_callbacks(app, self.blocks)
                 self.state_manager.bind_callbacks(app, self.blocks)
 
             self.logger.info("Callbacks registered successfully")
@@ -937,6 +1420,10 @@ class DashboardPage:
             + [
                 Output(f"nav-item-{i}", "className")
                 for i in range(len(self.navigation.sections))
+            ]
+            + [
+                Output(f"nav-item-{i}", "style")
+                for i in range(len(self.navigation.sections))
             ],
             [
                 Input(f"nav-item-{i}", "n_clicks")
@@ -993,31 +1480,110 @@ class DashboardPage:
                     )
                 ]
 
-            # Update className for nav items based on active state
-            # Use themed-nav-link* classes which are styled via CSS variables
+            # Update className AND style for nav items based on active state
             nav_class_names = []
+            nav_styles = []
+
             for i in range(len(self.navigation.sections)):
                 if i == section_idx:
-                    # Active state - use active className (defaults to themed-nav-link-active)
-                    active_class = (
+                    # Active state
+                    nav_class_names.append(
                         self.navigation.nav_link_active_className
                         or "themed-nav-link-active"
                     )
-                    nav_class_names.append(active_class)
+                    # Active style - theme colors from config
+                    nav_styles.append(
+                        {
+                            "color": self.theme_config.colors.nav_text or "#ecf0f1",
+                            "backgroundColor": self.theme_config.colors.nav_active
+                            or "#3498db",
+                            "fontWeight": "600",
+                        }
+                    )
                 else:
-                    # Inactive state - use default className (defaults to themed-nav-link)
-                    default_class = (
+                    # Inactive state
+                    nav_class_names.append(
                         self.navigation.nav_link_className or "themed-nav-link"
                     )
-                    nav_class_names.append(default_class)
+                    # Inactive style - light text, transparent bg
+                    nav_styles.append(
+                        {
+                            "color": self.theme_config.colors.nav_text or "#ecf0f1",
+                            "backgroundColor": "transparent",
+                            "fontWeight": "500",
+                        }
+                    )
 
             self.logger.info(
                 f"🎯 Setting nav classNames: {nav_class_names} (section_idx={section_idx})"
             )
 
-            return [content, section_idx] + nav_class_names
+            # Return: content, section_idx, 3x className, 3x style (8 total outputs)
+            return [content, section_idx] + nav_class_names + nav_styles
 
         self.logger.info("Navigation callbacks registered")
+
+    def _register_sidebar_callbacks(self, app: Any):
+        """
+        Register callback for sidebar collapse/expand toggle.
+
+        Uses standard DBC pattern: Button click → toggle Offcanvas.is_open
+
+        :hierarchy: [Core | Layout | Sidebar | Callbacks]
+        :relates-to:
+         - motivated_by: "User needs to collapse/expand sidebar for better UX"
+         - implements: "method: '_register_sidebar_callbacks'"
+         - uses: ["component: 'dbc.Offcanvas'", "component: 'dbc.Button'"]
+
+        :contract:
+         - pre: "self.sidebar.collapsible is True"
+         - post: "Callback toggles sidebar visibility on button click"
+         - invariant: "Offcanvas.is_open toggles between True/False"
+
+        :complexity: 3
+        :decision_cache: "sidebar_toggle: Chose dbc.Offcanvas.is_open property over custom CSS for standard DBC behavior"
+
+        Args:
+            app: Dash application instance
+        """
+        from dash.dependencies import Input, Output, State
+
+        self.logger.info("[Core|Sidebar|Callbacks] Registering sidebar toggle callback")
+
+        # <semantic_block: toggle_callback>
+        @app.callback(
+            Output("sidebar-offcanvas", "is_open"),
+            [Input("sidebar-toggle-btn", "n_clicks")],
+            [State("sidebar-offcanvas", "is_open")],
+        )
+        def toggle_sidebar(n_clicks, is_open):
+            """
+            Toggle sidebar open/closed state.
+
+            :hierarchy: [Core | Sidebar | Toggle | Callback]
+            :contract:
+             - pre: "Button clicked (n_clicks changes)"
+             - post: "Offcanvas.is_open is inverted"
+            """
+            if n_clicks is None:
+                # Initial load - return current state
+                return is_open
+
+            # Toggle state
+            new_state = not is_open
+
+            self.logger.debug(
+                f"[Core|Sidebar|Toggle] Button clicked | "
+                f"n_clicks={n_clicks} | is_open={is_open} → {new_state}"
+            )
+
+            return new_state
+
+        # </semantic_block: toggle_callback>
+
+        self.logger.info(
+            "[Core|Sidebar|Callbacks] Sidebar toggle callback registered successfully"
+        )
 
     def get_theme_html_template(self) -> str:
         """
@@ -1085,25 +1651,33 @@ class DashboardPage:
                 background-color: var(--bs-secondary) !important;
             }"""
 
-        # Navigation CSS classes using theme CSS variables
-        nav_css = """
-            /* Navigation link styles using theme variables */
-            .themed-nav-link {
-                color: var(--theme-nav-text);
-                background-color: transparent;
-                padding: var(--theme-spacing-md);
-                border-radius: var(--theme-border-radius);
-                text-decoration: none;
-                transition: all 0.3s ease;
-                display: block;
-            }
-            .themed-nav-link:hover {
-                background-color: var(--theme-nav-hover);
-            }
-            .themed-nav-link-active {
-                background-color: var(--theme-nav-active) !important;
-                color: var(--theme-white) !important;
-            }"""
+        # Override Bootstrap CSS variables for navigation
+        # CRITICAL: Must override --bs-nav-link-color and --bs-nav-pills-link-active-bg
+        # Get color values from theme
+        nav_text_color = self.theme_config.colors.nav_text or "#ecf0f1"
+        nav_active_bg = self.theme_config.colors.nav_active or "#3498db"
+
+        nav_css = f"""
+            /* Override Bootstrap CSS variables for navigation */
+            #nav-list {{
+                --bs-nav-link-color: {nav_text_color} !important;
+                --bs-nav-link-hover-color: {nav_text_color} !important;
+                --bs-nav-pills-link-active-bg: {nav_active_bg} !important;
+                --bs-nav-pills-link-active-color: #ffffff !important;
+            }}
+
+            /* Additional styling for themed-nav-link classes */
+            #nav-list .nav-link.themed-nav-link {{
+                display: flex !important;
+                align-items: center !important;
+                font-weight: 500 !important;
+            }}
+            #nav-list .nav-link.themed-nav-link:hover {{
+                background-color: rgba(255,255,255,0.1) !important;
+            }}
+            #nav-list .nav-link.themed-nav-link-active {{
+                font-weight: 600 !important;
+            }}"""
 
         return f"""<!DOCTYPE html>
 <html data-bs-theme="{bs_theme}">

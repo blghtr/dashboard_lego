@@ -77,13 +77,31 @@ class BaseBlock(ABC):
         self.navigation_mode: bool = kwargs.get("navigation_mode", False)
         self.section_index: Optional[int] = kwargs.get("section_index", None)
 
+        # Sidebar context for fixed ID generation
+        self.is_sidebar_block: bool = kwargs.get("is_sidebar_block", False)
+
         # Theme configuration - will be set by DashboardPage
         self.theme_config: Optional["ThemeConfig"] = None
+
+        # <semantic_block: block_transform>
+        # Block-specific data transformation
+        # If a transform function is provided, create a specialized datasource clone for this block
+        self.transform_fn: Optional[Callable] = kwargs.get("transform_fn")
+        if self.transform_fn:
+            self.logger.info(
+                f"[BaseBlock|Init] Block {block_id} has transform_fn, creating specialized datasource"
+            )
+            self.datasource = self.datasource.with_transform_fn(self.transform_fn)
+            self.logger.debug(
+                f"[BaseBlock|Init] Specialized datasource created for {block_id}"
+            )
+        # </semantic_block: block_transform>
 
         self.logger.debug(
             f"Block initialized: publishes={bool(self.publishes)}, "
             f"subscribes={bool(self.subscribes)}, "
-            f"allow_duplicate_output={self.allow_duplicate_output}"
+            f"allow_duplicate_output={self.allow_duplicate_output}, "
+            f"has_transform={bool(self.transform_fn)}"
         )
 
     def _register_state_interactions(self, state_manager: StateManager):
@@ -219,29 +237,56 @@ class BaseBlock(ABC):
         """
         Generates a unique ID for a component within the block.
 
-        For navigation mode with lazy-loaded sections, returns dict ID for pattern matching.
+        For sidebar blocks: returns fixed string ID (no section dict).
+        For navigation mode: returns dict ID for pattern matching.
+        For standard mode: returns simple string ID.
 
         :hierarchy: [Blocks | Base | ID Generation]
         :relates-to:
          - motivated_by: "Fix lazy-loaded section callbacks using Dash pattern matching"
-         - implements: "method: '_generate_id' with pattern matching support"
+         - motivated_by: "Sidebar blocks need fixed IDs for cross-section State() subscriptions"
+         - implements: "method: '_generate_id' with sidebar + pattern matching support"
+
+        :contract:
+         - pre: "component_name is valid string"
+         - post: "Returns ID appropriate for block context"
+         - invariant: "Sidebar blocks ALWAYS get fixed string IDs"
 
         Returns:
-            str: Simple ID for non-navigation mode (e.g., "block_id-component")
-            Dict: Pattern-matching ID for navigation mode (e.g., {'type': 'block_id-component', 'section': 0})
+            str: Fixed ID for sidebar blocks (e.g., "block_id-component")
+            str: Simple ID for standard blocks (e.g., "block_id-component")
+            Dict: Pattern-matching ID for navigation blocks (e.g., {'section': 0, 'type': 'block_id-component'})
         """
+        # <semantic_block: sidebar_fixed_id>
+        # CRITICAL: Sidebar blocks MUST use fixed string IDs
+        # This enables cross-section State() subscriptions in pattern-matching callbacks
+        if self.is_sidebar_block:
+            component_id = f"{self.block_id}-{component_name}"
+            self.logger.debug(
+                f"[Sidebar|FixedID] Generated fixed component ID: {component_id}"
+            )
+            return component_id
+        # </semantic_block: sidebar_fixed_id>
+
+        # <semantic_block: navigation_pattern_matching>
         if self.navigation_mode and self.section_index is not None:
+            # CRITICAL: Key order must match HTML rendering order
+            # Dash/React renders as {"section": N, "type": "..."}
             component_id = {
-                "type": f"{self.block_id}-{component_name}",
                 "section": self.section_index,
+                "type": f"{self.block_id}-{component_name}",
             }
             self.logger.debug(
                 f"Generated pattern-matching component ID: {component_id}"
             )
-        else:
-            component_id = f"{self.block_id}-{component_name}"
-            self.logger.debug(f"Generated component ID: {component_id}")
+            return component_id
+        # </semantic_block: navigation_pattern_matching>
+
+        # <semantic_block: standard_fixed_id>
+        component_id = f"{self.block_id}-{component_name}"
+        self.logger.debug(f"Generated component ID: {component_id}")
         return component_id
+        # </semantic_block: standard_fixed_id>
 
     @staticmethod
     def _normalize_subscribes_to(
@@ -349,6 +394,9 @@ class BaseBlock(ABC):
         """
         Updates the block based on control values.
 
+        CRITICAL: Passes control_values dict directly to callback, NOT as **kwargs.
+        Python doesn't allow dict objects as keyword argument names.
+
         :hierarchy: [Architecture | Block-centric Callbacks | BaseBlock]
         :relates-to:
          - motivated_by: "Architectural Conclusion: Block-centric callbacks improve
@@ -356,16 +404,19 @@ class BaseBlock(ABC):
          - implements: "method: 'update_from_controls'"
          - uses: ["attribute: 'subscribes'"]
 
-        :rationale: "Default implementation calls the first subscription callback."
         :contract:
-         - pre: "Block has at least one subscription callback."
-         - post: "Returns the result of the subscription callback."
+         - pre: "Block has at least one subscription callback"
+         - post: "Returns result of subscription callback"
+         - spec_compliance: "Passes control_values as single dict argument"
+
+        :complexity: 2
+        :decision_cache: "Pass control_values dict directly instead of unpacking to **kwargs"
 
         Args:
-            control_values: Dictionary of control name -> value mappings.
+            control_values: Dictionary of control name -> value mappings (e.g. {'x_col': 'Price'})
 
         Returns:
-            The result of the subscription callback.
+            The result of the subscription callback
         """
         if not self.subscribes:
             return None
@@ -373,14 +424,9 @@ class BaseBlock(ABC):
         # Get the first subscription callback
         callback_fn = next(iter(self.subscribes.values()))
 
-        # Convert control_values to kwargs format expected by callbacks
-        kwargs = {}
-        for control_name, value in control_values.items():
-            # Create the full component ID for the control
-            component_id = self._generate_id(control_name)
-            kwargs[component_id] = value
-
-        return callback_fn(**kwargs)
+        # CRITICAL: Pass control_values dict directly, not as **kwargs
+        # TypedChartBlock callbacks expect: callback(control_values_dict)
+        return callback_fn(control_values)
 
     @abstractmethod
     def layout(self) -> Component:

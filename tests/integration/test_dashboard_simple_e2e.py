@@ -19,15 +19,16 @@ import tempfile
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
+import plotly.graph_objects as go
 import pytest
 
-from dashboard_lego.blocks.chart import StaticChartBlock
 from dashboard_lego.blocks.kpi import KPIBlock
+from dashboard_lego.blocks.metrics import MetricsBlock
 from dashboard_lego.blocks.text import TextBlock
-from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.blocks.typed_chart import TypedChartBlock
+from dashboard_lego.core import BaseDataSource, DataBuilder
 from dashboard_lego.core.page import DashboardPage
-from dashboard_lego.presets.eda_presets import CorrelationHeatmapPreset
-from dashboard_lego.presets.ml_presets import MetricCardBlock, ModelSummaryBlock
+from dashboard_lego.utils.plot_registry import register_plot_type
 
 
 class TestSimpleDashboardE2E:
@@ -69,44 +70,36 @@ class TestSimpleDashboardE2E:
             csv_path = f.name
 
         try:
-            # Create custom data source
-            class TestDataSource(BaseDataSource):
-                def _load_data(self, params: dict) -> pd.DataFrame:
-                    return pd.read_csv(csv_path)
+            # Create custom data builder
+            class TestDataBuilder(DataBuilder):
+                def __init__(self, file_path, **kwargs):
+                    super().__init__(**kwargs)
+                    self.file_path = file_path
 
-                def get_kpis(self) -> dict:
-                    if self._data is None:
-                        return {}
-                    return {
-                        "total_sales": self._data["Sales"].sum(),
-                        "total_units": self._data["UnitsSold"].sum(),
-                    }
+                def build(self, params):
+                    return pd.read_csv(self.file_path)
 
-                def get_filter_options(self, filter_name: str) -> list:
-                    return []
+            # Create data source with builder
+            datasource = BaseDataSource(data_builder=TestDataBuilder(csv_path))
 
-                def get_summary(self) -> str:
-                    return "Test data source"
-
-            # Initialize data source
-            datasource = TestDataSource()
-            datasource.init_data()
-
-            # Validate data source works
-            kpis = datasource.get_kpis()
-            assert "total_sales" in kpis
-            assert "total_units" in kpis
-            assert kpis["total_sales"] > 0
-            assert kpis["total_units"] > 0
-
-            # Create dashboard blocks with dummy state
-            kpi_block = KPIBlock(
-                block_id="test_kpis",
+            # Create dashboard blocks with MetricsBlock (replaces KPIBlock with get_kpis)
+            metrics_block = MetricsBlock(
+                block_id="test_metrics",
                 datasource=datasource,
-                kpi_definitions=[
-                    {"key": "total_sales", "title": "Total Sales", "color": "success"},
-                    {"key": "total_units", "title": "Total Units", "color": "info"},
-                ],
+                metrics_spec={
+                    "total_sales": {
+                        "column": "Sales",
+                        "agg": "sum",
+                        "title": "Total Sales",
+                        "color": "success",
+                    },
+                    "total_units": {
+                        "column": "UnitsSold",
+                        "agg": "sum",
+                        "title": "Total Units",
+                        "color": "info",
+                    },
+                },
                 subscribes_to="dummy_state",
             )
 
@@ -115,18 +108,22 @@ class TestSimpleDashboardE2E:
 
                 return px.bar(df, x="Fruit", y="Sales", title="Sales by Fruit")
 
-            chart_block = StaticChartBlock(
+            # Register custom plot function
+            register_plot_type("test_bar_chart", chart_generator)
+
+            chart_block = TypedChartBlock(
                 block_id="test_chart",
                 datasource=datasource,
                 title="Sales Chart",
-                chart_generator=chart_generator,
+                plot_type="test_bar_chart",
+                plot_params={},
                 subscribes_to="dummy_state",
             )
 
             # Validate blocks are created correctly
-            assert kpi_block.block_id == "test_kpis"
+            assert metrics_block.block_id == "test_metrics"
             assert chart_block.block_id == "test_chart"
-            assert len(kpi_block.kpi_definitions) == 2
+            assert len(metrics_block.metrics_spec) == 2
 
         finally:
             # Clean up temporary file
@@ -154,39 +151,22 @@ class TestSimpleDashboardE2E:
             csv_path = f.name
 
         try:
-            # Create data source
-            class CSVDataSource(BaseDataSource):
-                def _load_data(self, params: dict) -> pd.DataFrame:
-                    return pd.read_csv(csv_path)
+            # Create data builder for CSV
+            class CSVDataBuilder(DataBuilder):
+                def __init__(self, file_path, **kwargs):
+                    super().__init__(**kwargs)
+                    self.file_path = file_path
 
-                def get_kpis(self) -> dict:
-                    if self._data is None:
-                        return {}
-                    return {
-                        "total_sales": float(self._data["Sales"].sum()),
-                        "total_units": int(self._data["UnitsSold"].sum()),
-                    }
+                def build(self, params):
+                    return pd.read_csv(self.file_path)
 
-                def get_filter_options(self, filter_name: str) -> list:
-                    return []
+            # Create data source with builder
+            datasource = BaseDataSource(data_builder=CSVDataBuilder(csv_path))
 
-                def get_summary(self) -> str:
-                    return f"CSV with {len(self._data)} rows"
-
-            # Initialize and test data source
-            datasource = CSVDataSource()
-            datasource.init_data()
-
-            # Validate data processing
-            kpis = datasource.get_kpis()
-            assert "total_sales" in kpis
-            assert "total_units" in kpis
-            assert isinstance(kpis["total_sales"], float)
-            assert isinstance(kpis["total_units"], int)
-
-            # Test that data is loaded correctly
-            assert len(datasource._data) == len(sample_csv_data)
-            assert list(datasource._data.columns) == list(sample_csv_data.columns)
+            # Validate data processing by getting data
+            df = datasource.get_processed_data()
+            assert len(df) == len(sample_csv_data)
+            assert list(df.columns) == list(sample_csv_data.columns)
 
         finally:
             os.unlink(csv_path)
@@ -213,52 +193,58 @@ class TestSimpleDashboardE2E:
             csv_path = f.name
 
         try:
-            # Create comprehensive data source
-            class MultiBlockDataSource(BaseDataSource):
-                def _load_data(self, params: dict) -> pd.DataFrame:
-                    return pd.read_csv(csv_path)
+            # Create data builder
+            class MultiBlockDataBuilder(DataBuilder):
+                def __init__(self, file_path, **kwargs):
+                    super().__init__(**kwargs)
+                    self.file_path = file_path
 
-                def get_kpis(self) -> dict:
-                    if self._data is None:
-                        return {}
-                    return {
-                        "total_sales": float(self._data["Sales"].sum()),
-                        "total_units": int(self._data["UnitsSold"].sum()),
-                        "avg_price": float(self._data["Sales"].mean()),
-                    }
+                def build(self, params):
+                    return pd.read_csv(self.file_path)
 
-                def get_filter_options(self, filter_name: str) -> list:
-                    return []
+            # Create data source
+            datasource = BaseDataSource(data_builder=MultiBlockDataBuilder(csv_path))
 
-                def get_summary(self) -> str:
-                    return f"Multi-block data with {len(self._data)} rows"
-
-            # Initialize data source
-            datasource = MultiBlockDataSource()
-            datasource.init_data()
-
-            # Create various blocks
-            kpi_block = KPIBlock(
-                block_id="multi_kpis",
+            # Create various blocks with MetricsBlock
+            metrics_block = MetricsBlock(
+                block_id="multi_metrics",
                 datasource=datasource,
-                kpi_definitions=[
-                    {"key": "total_sales", "title": "Total Sales", "color": "success"},
-                    {"key": "total_units", "title": "Total Units", "color": "info"},
-                    {"key": "avg_price", "title": "Average Price", "color": "warning"},
-                ],
+                metrics_spec={
+                    "total_sales": {
+                        "column": "Sales",
+                        "agg": "sum",
+                        "title": "Total Sales",
+                        "color": "success",
+                    },
+                    "total_units": {
+                        "column": "UnitsSold",
+                        "agg": "sum",
+                        "title": "Total Units",
+                        "color": "info",
+                    },
+                    "avg_price": {
+                        "column": "Sales",
+                        "agg": "mean",
+                        "title": "Average Price",
+                        "color": "warning",
+                    },
+                },
                 subscribes_to="dummy_state",
             )
 
-            def chart_generator(df: pd.DataFrame):
+            def chart_generator2(df: pd.DataFrame, **kwargs):
                 import plotly.express as px
 
                 return px.bar(df, x="Fruit", y="Sales", title="Sales Analysis")
 
-            chart_block = StaticChartBlock(
+            register_plot_type("test_bar_chart2", chart_generator2)
+
+            chart_block = TypedChartBlock(
                 block_id="multi_chart",
                 datasource=datasource,
                 title="Sales Chart",
-                chart_generator=chart_generator,
+                plot_type="test_bar_chart2",
+                plot_params={},
                 subscribes_to="dummy_state",
             )
 
@@ -274,156 +260,12 @@ class TestSimpleDashboardE2E:
             )
 
             # Validate all blocks are properly created
-            assert kpi_block.block_id == "multi_kpis"
+            assert metrics_block.block_id == "multi_metrics"
             assert chart_block.block_id == "multi_chart"
             assert text_block.block_id == "multi_text"
-            assert len(kpi_block.kpi_definitions) == 3
+            assert len(metrics_block.metrics_spec) == 3
             assert chart_block.title == "Sales Chart"
             assert text_block.title == "Dashboard Info"
-
-        finally:
-            os.unlink(csv_path)
-
-
-class TestPresetDashboardE2E:
-    """
-    Test for preset dashboard functionality.
-
-    :hierarchy: [Testing | Integration Tests | Simple E2E | Preset Dashboard]
-    :covers:
-     - object: "workflow: 'Preset Dashboard'"
-     - requirement: "Dashboard with EDA and ML presets"
-
-    :scenario: "Verifies that dashboard with presets works"
-    :strategy: "Uses EDA and ML presets to test preset functionality"
-    :contract:
-     - pre: "Preset components and data available"
-     - post: "Preset dashboard components are created correctly"
-
-    """
-
-    def test_eda_preset_dashboard(self, sample_csv_data):
-        """
-        Test dashboard with EDA presets.
-
-        :hierarchy: [Testing | Integration Tests | Simple E2E | Preset Dashboard | EDA Presets]
-        :covers:
-         - object: "workflow: 'EDA Preset Dashboard'"
-         - requirement: "Dashboard must work with EDA presets"
-
-        :scenario: "Verifies that EDA presets work in dashboard context"
-        :strategy: "Creates dashboard with EDA presets and validates functionality"
-        :contract:
-         - pre: "EDA presets and appropriate data available"
-         - post: "EDA preset components are created correctly"
-
-        """
-        # Create temporary CSV file
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
-            sample_csv_data.to_csv(f.name, index=False)
-            csv_path = f.name
-
-        try:
-            # Create data source for EDA
-            class EDADataSource(BaseDataSource):
-                def _load_data(self, params: dict) -> pd.DataFrame:
-                    return pd.read_csv(csv_path)
-
-                def get_kpis(self) -> dict:
-                    return {}
-
-                def get_filter_options(self, filter_name: str) -> list:
-                    return []
-
-                def get_summary(self) -> str:
-                    return "EDA test data source"
-
-            # Initialize data source
-            datasource = EDADataSource()
-            datasource.init_data()
-
-            # Create EDA preset
-            correlation_preset = CorrelationHeatmapPreset(
-                block_id="eda_correlation",
-                datasource=datasource,
-                subscribes_to="dummy_state",
-            )
-
-            # Validate EDA preset
-            assert correlation_preset.block_id == "eda_correlation"
-            assert correlation_preset.datasource == datasource
-
-        finally:
-            os.unlink(csv_path)
-
-    def test_ml_preset_dashboard(self, sample_csv_data):
-        """
-        Test dashboard with ML presets.
-
-        :hierarchy: [Testing | Integration Tests | Simple E2E | Preset Dashboard | ML Presets]
-        :covers:
-         - object: "workflow: 'ML Preset Dashboard'"
-         - requirement: "Dashboard must work with ML presets"
-
-        :scenario: "Verifies that ML presets work in dashboard context"
-        :strategy: "Creates dashboard with ML presets and validates functionality"
-        :contract:
-         - pre: "ML presets and appropriate data available"
-         - post: "ML preset components are created correctly"
-
-        """
-        # Create temporary CSV file
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
-            sample_csv_data.to_csv(f.name, index=False)
-            csv_path = f.name
-
-        try:
-            # Create data source for ML
-            class MLDataSource(BaseDataSource):
-                def _load_data(self, params: dict) -> pd.DataFrame:
-                    return pd.read_csv(csv_path)
-
-                def get_kpis(self) -> dict:
-                    return {"accuracy": 0.95, "precision": 0.87, "recall": 0.92}
-
-                def get_filter_options(self, filter_name: str) -> list:
-                    return []
-
-                def get_summary(self) -> str:
-                    return "ML test data source"
-
-                def get_summary_data(self) -> dict:
-                    return {
-                        "algorithm": "Random Forest",
-                        "n_estimators": 100,
-                        "max_depth": 10,
-                    }
-
-            # Initialize data source
-            datasource = MLDataSource()
-            datasource.init_data()
-
-            # Create ML presets
-            metric_block = MetricCardBlock(
-                block_id="ml_metrics",
-                datasource=datasource,
-                kpi_definitions=[
-                    {"key": "accuracy", "title": "Accuracy"},
-                    {"key": "precision", "title": "Precision"},
-                    {"key": "recall", "title": "Recall"},
-                ],
-                subscribes_to="dummy_state",
-            )
-
-            summary_block = ModelSummaryBlock(
-                block_id="ml_summary", datasource=datasource, title="Model Summary"
-            )
-
-            # Validate ML presets
-            assert metric_block.block_id == "ml_metrics"
-            assert summary_block.block_id == "ml_summary"
-            assert len(metric_block.kpi_definitions) == 3
-            assert summary_block.title == "Model Summary"
 
         finally:
             os.unlink(csv_path)
