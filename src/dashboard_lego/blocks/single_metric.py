@@ -367,26 +367,39 @@ class SingleMetricBlock(BaseBlock):
 
     def layout(self) -> Component:
         """
-        Render initial layout.
+        Render initial layout with callback-compatible container.
+
+        CRITICAL: Must wrap metric card in Div with id=block_id-container
+        to match BaseBlock.output_target() contract for callbacks.
 
         :hierarchy: [Blocks | Metrics | SingleMetricBlock | Layout]
         :relates-to:
-         - motivated_by: "BaseBlock lifecycle contract"
+         - motivated_by: "BaseBlock lifecycle contract requires container ID"
          - implements: "method: 'layout'"
+         - uses: ["method: '_generate_id'", "method: '_update_metric'"]
 
         :contract:
-         - pre: "Block initialized"
-         - post: "Returns dbc.Card with initial metric value"
-         - invariant: "Card has h-100 class for flexbox"
+         - pre: "Block initialized with navigation_mode and section_index"
+         - post: "Returns Div(id=block_id-container) wrapping metric card"
+         - invariant: "Container ID matches output_target() for callbacks"
+         - spec_compliance: "Dash callback Output target must exist in DOM"
 
         :complexity: 2
+        :decision_cache: "Wrap in container Div to enable state-centric callbacks"
 
         Returns:
-            dbc.Card component
+            html.Div wrapping dbc.Card (not Card directly!)
         """
         self.logger.debug(
             f"[Blocks|Metrics|SingleMetricBlock] Rendering layout | "
             f"block_id={self.block_id}"
         )
 
-        return self._update_metric()
+        # CRITICAL: Wrap card in Div with id matching output_target()
+        # This enables Dash callbacks to find the component
+        # h-100 ensures equal height when multiple metrics in same row
+        return html.Div(
+            id=self._generate_id("container"),
+            children=self._update_metric(),
+            className="h-100",
+        )

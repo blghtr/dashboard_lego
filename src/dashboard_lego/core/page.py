@@ -707,7 +707,6 @@ class DashboardPage:
             placement=self.sidebar.position,
             is_open=not self.sidebar.default_collapsed,
             backdrop=self.sidebar.backdrop,
-            scrollable=True,
             style=offcanvas_style,
             className=offcanvas_class,
         )
@@ -1076,11 +1075,43 @@ class DashboardPage:
         2. Sidebar + Standard: dbc.Offcanvas + grid layout
         3. Standard/Navigation: existing behavior (no sidebar)
 
+        CRITICAL: For navigation mode, preload all sections BEFORE building layout
+        to prevent duplicate block creation when combined with sidebar.
+
+        :hierarchy: [Core | Page | BuildLayout]
+        :relates-to:
+         - motivated_by: "Dash callback lifecycle requires all blocks before app.run()"
+         - implements: "method: 'build_layout' with navigation preload"
+         - uses: ["method: '_preload_all_section_blocks'"]
+
+        :contract:
+         - pre: "Page configured with blocks or navigation"
+         - post: "Layout built with all blocks created exactly once"
+         - invariant: "Navigation sections preloaded before HTML rendering"
+         - spec_compliance: "Dash callback registration lifecycle"
+
+        :complexity: 5
+        :decision_cache: "Preload navigation before layout to prevent duplicate block creation"
+
         Returns:
             A Dash component representing the entire page.
 
         """
         self.logger.info("Building page layout")
+
+        # <semantic_block: navigation_preload>
+        # CRITICAL: Preload navigation sections before layout build
+        # Prevents duplicate block creation in sidebar+navigation mode
+        # Ensures all blocks exist before register_callbacks() is called
+        if self.navigation and not hasattr(self, "_sections_preloaded"):
+            self.logger.info(
+                f"Preloading {len(self.navigation.sections)} navigation sections "
+                f"before layout build (prevents duplicate block creation)"
+            )
+            self._preload_all_section_blocks()
+            self._sections_preloaded = True
+            self.logger.debug("Navigation sections preloaded successfully")
+        # </semantic_block: navigation_preload>
 
         # Sidebar mode: use Offcanvas + main content
         if self.sidebar:
@@ -1325,8 +1356,24 @@ class DashboardPage:
             self._setup_callback_error_handling(app)
 
             # CRITICAL: For navigation, preload ALL sections before registering callbacks
+            # NOTE: Sections may already be preloaded in build_layout() for sidebar mode
             if self.navigation:
-                all_blocks = self._preload_all_section_blocks()
+                if not hasattr(self, "_sections_preloaded"):
+                    self.logger.info(
+                        "Preloading sections for callback registration "
+                        "(not yet preloaded in build_layout)"
+                    )
+                    all_blocks = self._preload_all_section_blocks()
+                    self._sections_preloaded = True
+                else:
+                    self.logger.debug(
+                        "Using already preloaded sections from build_layout()"
+                    )
+                    # Collect all blocks from cache
+                    all_blocks = []
+                    for section_blocks in self._section_blocks_cache.values():
+                        all_blocks.extend(section_blocks)
+
                 self.state_manager.generate_callbacks(app, all_blocks)
                 self.state_manager.bind_callbacks(app, all_blocks)
             else:
