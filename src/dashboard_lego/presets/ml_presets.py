@@ -3,7 +3,6 @@ This module provides preset blocks for machine learning visualization.
 
 """
 
-import warnings
 from typing import Any, Dict, Optional
 
 import dash_bootstrap_components as dbc
@@ -14,78 +13,9 @@ from dash import html
 from sklearn.metrics import confusion_matrix
 
 from dashboard_lego.blocks.base import BaseBlock
-from dashboard_lego.blocks.kpi import KPIBlock
 from dashboard_lego.blocks.typed_chart import TypedChartBlock
 from dashboard_lego.core.datasource import BaseDataSource
 from dashboard_lego.utils.plot_registry import register_plot_type
-
-
-class MetricCardBlock(KPIBlock):
-    """
-    An extension of KPIBlock for displaying ML metrics in a compact list.
-
-    .. deprecated:: 0.15.0
-        MetricCardBlock is deprecated. Use MetricsBlock instead.
-        Use :class:`~dashboard_lego.blocks.metrics.MetricsBlock` instead.
-
-        :hierarchy: [Presets | ML | MetricCardBlock]
-        :relates-to:
-          - motivated_by: "DEPRECATED: Use MetricsBlock from dashboard_lego.blocks.metrics"
-          - implements: "block: 'MetricCardBlock' (deprecated)"
-          - uses: ["block: 'KPIBlock'"]
-
-        :rationale: "Subclassed KPIBlock to reuse its data-handling logic while providing a more compact, list-based layout suitable for displaying multiple ML metrics."
-        :contract:
-          - pre: "Inherits the contract from KPIBlock (deprecated pattern)."
-          - post: "The block renders a card with a list of metrics."
-
-    """
-
-    def __init__(
-        self,
-        block_id: str,
-        datasource: BaseDataSource,
-        kpi_definitions: list[dict[str, str]],
-        subscribes_to: str,
-        title: str = "Metrics",
-        **kwargs,
-    ):
-        warnings.warn(
-            "MetricCardBlock is deprecated. "
-            "Use MetricsBlock from dashboard_lego.blocks.metrics instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        self.title = title
-        super().__init__(block_id, datasource, kpi_definitions, subscribes_to, **kwargs)
-
-    def _update_kpi_cards(self, *args) -> html.Div:
-        kpi_data = self.datasource.get_kpis()
-        if not kpi_data:
-            return html.Div(dbc.Alert("No KPI data available.", color="warning"))
-
-        list_group_items = []
-        for definition in self.kpi_definitions:
-            key = definition["key"]
-            value = kpi_data.get(key, "N/A")
-            formatted_value = (
-                f"{value:.3f}" if isinstance(value, (int, float)) else str(value)
-            )
-            list_group_items.append(
-                dbc.ListGroupItem(
-                    [html.B(f"{definition['title']}: "), formatted_value],
-                    className="d-flex justify-content-between align-items-center",
-                )
-            )
-
-        return html.Div(
-            dbc.Card(
-                [
-                    dbc.CardHeader(self.title),
-                    dbc.CardBody(dbc.ListGroup(list_group_items, flush=True)),
-                ]
-            )
-        )
 
 
 class ModelSummaryBlock(BaseBlock):

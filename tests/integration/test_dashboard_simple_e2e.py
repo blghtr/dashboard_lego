@@ -22,8 +22,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import pytest
 
-from dashboard_lego.blocks.kpi import KPIBlock
-from dashboard_lego.blocks.metrics import MetricsBlock
+from dashboard_lego.blocks import get_metric_row
 from dashboard_lego.blocks.text import TextBlock
 from dashboard_lego.blocks.typed_chart import TypedChartBlock
 from dashboard_lego.core import BaseDataSource, DataBuilder
@@ -82,10 +81,8 @@ class TestSimpleDashboardE2E:
             # Create data source with builder
             datasource = BaseDataSource(data_builder=TestDataBuilder(csv_path))
 
-            # Create dashboard blocks with MetricsBlock (replaces KPIBlock with get_kpis)
-            metrics_block = MetricsBlock(
-                block_id="test_metrics",
-                datasource=datasource,
+            # Create dashboard blocks with get_metric_row factory
+            metric_blocks, _ = get_metric_row(
                 metrics_spec={
                     "total_sales": {
                         "column": "Sales",
@@ -100,8 +97,13 @@ class TestSimpleDashboardE2E:
                         "color": "info",
                     },
                 },
+                datasource=datasource,
                 subscribes_to="dummy_state",
+                block_id_prefix="test_metrics",
             )
+            metrics_block = metric_blocks[
+                0
+            ]  # For backwards compat with test assertions
 
             def chart_generator(df: pd.DataFrame):
                 import plotly.express as px
@@ -121,9 +123,9 @@ class TestSimpleDashboardE2E:
             )
 
             # Validate blocks are created correctly
-            assert metrics_block.block_id == "test_metrics"
+            assert metrics_block.block_id == "test_metrics-total_sales"
             assert chart_block.block_id == "test_chart"
-            assert len(metrics_block.metrics_spec) == 2
+            assert len(metric_blocks) == 2
 
         finally:
             # Clean up temporary file
@@ -205,10 +207,8 @@ class TestSimpleDashboardE2E:
             # Create data source
             datasource = BaseDataSource(data_builder=MultiBlockDataBuilder(csv_path))
 
-            # Create various blocks with MetricsBlock
-            metrics_block = MetricsBlock(
-                block_id="multi_metrics",
-                datasource=datasource,
+            # Create various blocks with get_metric_row factory
+            metric_blocks, _ = get_metric_row(
                 metrics_spec={
                     "total_sales": {
                         "column": "Sales",
@@ -229,8 +229,13 @@ class TestSimpleDashboardE2E:
                         "color": "warning",
                     },
                 },
+                datasource=datasource,
                 subscribes_to="dummy_state",
+                block_id_prefix="multi_metrics",
             )
+            metrics_block = metric_blocks[
+                0
+            ]  # For backwards compat with test assertions
 
             def chart_generator2(df: pd.DataFrame, **kwargs):
                 import plotly.express as px
@@ -260,10 +265,10 @@ class TestSimpleDashboardE2E:
             )
 
             # Validate all blocks are properly created
-            assert metrics_block.block_id == "multi_metrics"
+            assert metrics_block.block_id == "multi_metrics-total_sales"
             assert chart_block.block_id == "multi_chart"
             assert text_block.block_id == "multi_text"
-            assert len(metrics_block.metrics_spec) == 3
+            assert len(metric_blocks) == 3
             assert chart_block.title == "Sales Chart"
             assert text_block.title == "Dashboard Info"
 

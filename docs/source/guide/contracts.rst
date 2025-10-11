@@ -79,9 +79,77 @@ Block Lifecycle
 
 **Post-conditions:**
 
-- ``layout()`` returns valid Dash Component
+- ``layout()`` returns valid Dash Component (single component, not composite)
 - ``output_target()`` returns unique (id, property) tuple
 - Updates trigger correctly on state changes
+
+Layout Height Contract (v0.16)
+--------------------------------
+
+**Contract:**
+
+.. code-block:: text
+
+   Row (auto height) → Col (content height) → Card (natural size)
+         ↓                    ↓                      ↓
+   Determined by     Independent sizing      Compact/tight
+   tallest child     per block type          no empty space
+
+**Guarantees:**
+
+1. **Content-Driven Heights:** Blocks size naturally to their content
+2. **No Fixed Heights:** No hardcoded px values (responsive to content)
+3. **No Empty Space:** Cards are compact (especially metrics)
+4. **Responsive Widths:** Bootstrap breakpoints (xs, sm, md, lg) preserved
+5. **No Scrolling:** Cards expand to show all content
+
+**Design Decision:**
+
+Blocks in the same row MAY have different heights based on content.
+This is **industry standard** (Grafana, Tableau, Looker, Metabase).
+
+**Rationale:**
+
+Bootstrap Flexbox ``align-items: stretch`` requires Row with defined height
+to make columns equal height. With ``height: auto`` (content-driven),
+equal heights require either:
+
+- CSS Grid (breaks responsive breakpoints)
+- JavaScript (complexity)
+- Fixed heights (empty space in compact blocks)
+
+**We choose content-driven sizing** to preserve Bootstrap responsive behavior
+and avoid complexity.
+
+**Pre-conditions:**
+
+- Row has ``className="mb-4"`` for vertical spacing (auto-applied)
+- Col has responsive width classes (xs, sm, md, lg) from user or defaults
+- Card has ``className="h-100"`` to fill its column (applied by blocks)
+- No fixed ``height`` or ``minHeight`` in inline styles
+
+**Post-conditions:**
+
+- Cards are compact (tight fit around content)
+- Row height = max(card heights)
+- Columns may have different heights (content-driven)
+- Responsive breakpoints work correctly
+
+**Example:**
+
+.. code-block:: python
+
+   # Metric (compact ~150px) + Chart (large ~500px) in same row
+   metric = SingleMetricBlock(...)  # Compact card, natural height
+   chart = TypedChartBlock(...)     # Larger card with graph
+
+   page = DashboardPage(..., blocks=[[metric, chart]])
+
+   # Result:
+   # - Row height = 500px (tallest child)
+   # - Metric card = 150px (compact, no empty space)
+   # - Chart card = 500px (natural graph size)
+   # - Both preserve responsive widths (col-md-4, col-md-8, etc.)
 
 State Management Callbacks
 ---------------------------

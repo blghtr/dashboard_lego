@@ -7,6 +7,123 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.1] - 2025-10-11
+
+### Added
+
+#### Metrics Factory Pattern
+
+- **`SingleMetricBlock`**: Atomic block for displaying a single metric value
+  - Compact card design (content-driven height)
+  - Theme-aware color resolution via `ThemeConfig`
+  - Supports conditional coloring via `color_rules` parameter
+  - Example: `SingleMetricBlock(block_id="revenue", datasource=ds, metric_spec={...})`
+
+- **`get_metric_row()` Factory Function**: Creates rows of individual metric blocks
+  - Returns `(List[SingleMetricBlock], row_options)` tuple
+  - Compatible with `DashboardPage` layout format
+  - Enables natural composition with other blocks
+  - Example: `metrics, opts = get_metric_row(metrics_spec={...}, datasource=ds)`
+
+- **Layout Height Contract Documentation**: Formalized content-driven height behavior
+  - Blocks size naturally to content (industry standard)
+  - No fixed heights or CSS hacks
+  - Preserves Bootstrap responsive breakpoints
+  - Reference: Grafana, Tableau, Looker, Metabase pattern
+
+#### Sidebar Enhancements
+
+- **Adaptive Layout**: Sidebar pushes content instead of overlaying (desktop)
+  - `push_content` parameter in `SidebarConfig` (default: `True`)
+  - CSS transitions for smooth content shifting
+  - Mobile-responsive: overlays on small screens
+  - CSS in `examples/assets/offcanvas-controls.css`
+
+### Changed
+
+- **`MetricsBlock`**: Deprecated in favor of factory pattern
+  - Added deprecation warning in `__init__`
+  - Maintained for backward compatibility
+  - Violates layout contracts (returns `dbc.Row` instead of single component)
+  - Migration guide in `docs/source/guide/blocks.rst`
+
+- **Block Card Styling**: Removed `mb-4` from base classes
+  - `TypedChartBlock`: Card uses `h-100` only (spacing handled by Row)
+  - `TextBlock`: Card uses `h-100` only
+  - `ControlPanelBlock`: Card uses `h-100` only
+  - Rationale: Row-level spacing prevents flexbox interference
+
+- **`TypedChartBlock`**: Removed default `minHeight` on graphs
+  - Previous: `minHeight: "400px"` caused empty space
+  - Current: Natural graph sizing (content-driven)
+  - Preserves user `graph_style` overrides
+
+### Removed
+
+- **`KPIBlock`**: Removed deprecated block (use `get_metric_row()`)
+  - Was deprecated in v0.15.0
+  - Relied on removed `datasource.get_kpis()` method
+  - Migration: Use `get_metric_row()` factory pattern
+- **`MetricsBlock`**: Removed deprecated block (use `get_metric_row()`)
+  - Was deprecated in v0.15.1
+  - Replaced by factory pattern for better composability
+  - Migration: Use `get_metric_row()` to create metric blocks
+- **`MetricCardBlock`**: Removed from `ml_presets` module
+  - Was deprecated in v0.15.0
+  - Migration: Use `get_metric_row()` for metric display
+
+### Fixed
+
+- **`kpi_row_top()` Layout Preset**: Fixed tuple concatenation error
+  - Root cause: Attempted to concatenate tuple + list
+  - Solution: Build result as list, append rows consistently
+  - Result: Works with factory-created metric blocks
+
+### Documentation
+
+- **`docs/source/guide/blocks.rst`**: Added Metrics Factory Pattern section
+  - Usage examples with `get_metric_row()`
+  - Migration guide from `MetricsBlock`
+  - Conditional coloring examples
+  - Theme integration documentation
+
+- **`docs/source/guide/contracts.rst`**: Updated Layout Height Contract
+  - Documented content-driven height behavior
+  - Explained Bootstrap flexbox limitations
+  - Industry standard justification
+  - Design decision rationale
+
+### Testing
+
+- **Browser Tests**: Layout contract tests marked as skipped by default
+  - Require ChromeDriver version matching installed Chrome browser
+  - Can be enabled by updating ChromeDriver or using `webdriver-manager`
+  - Core functionality verified through 187 unit/integration tests (all passing)
+
+### Technical Details
+
+**Metrics Factory Pattern:**
+```python
+# Factory creates atomic blocks
+metrics, row_opts = get_metric_row(
+    metrics_spec={
+        'revenue': {'column': 'Revenue', 'agg': 'sum', 'color': 'success'}
+    },
+    datasource=datasource
+)
+
+# Use in page layout
+page = DashboardPage(..., blocks=[
+    (metrics, row_opts),  # Metrics row
+    [chart1, chart2]      # Charts row
+])
+```
+
+**Decision Cache:**
+- `metric_architecture`: Factory pattern over composite block for layout compliance
+- `layout_heights`: Content-driven sizing (industry standard) over forced equal heights
+- `theme_colors`: Bootstrap theme names resolved via ThemeConfig (no hardcoded hex)
+
 ## [0.15.0] - 2025-10-10
 
 ### Breaking Changes

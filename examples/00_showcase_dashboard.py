@@ -6,8 +6,9 @@ Demonstrates:
 - Theme selection via CLI (--theme light|dark|lux|cyborg)
 - v0.15 composition pattern (DataBuilder + DataTransformer)
 - **NEW v0.15: Collapsible Sidebar with global filters**
+- **NEW v0.15: Adaptive layout - sidebar pushes content (desktop/mobile)**
 - **NEW v0.15: Block-level data transformations (transform_fn)**
-- MetricsBlock instead of get_kpis()
+- **NEW v0.15: MetricsBlock with dynamic responsive sizing**
 - EDA and ML presets
 - Various layouts and blocks
 - Interactive controls with state management
@@ -29,8 +30,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from dash import dcc
 
+from dashboard_lego.blocks import get_metric_row
 from dashboard_lego.blocks.control_panel import ControlPanelBlock
-from dashboard_lego.blocks.metrics import MetricsBlock
 from dashboard_lego.blocks.typed_chart import Control, TypedChartBlock
 from dashboard_lego.core import (
     BaseDataSource,
@@ -212,10 +213,8 @@ def param_classifier(key):
 def create_overview_section():
     """Overview page with KPIs and summary charts."""
 
-    # MetricsBlock replaces get_kpis() pattern (v0.15)
-    metrics = MetricsBlock(
-        block_id="overview_metrics",
-        datasource=datasource,
+    # NEW v0.16: get_metric_row() factory pattern
+    metrics_blocks, metrics_row_opts = get_metric_row(
         metrics_spec={
             "total_revenue": {
                 "column": "Revenue",
@@ -237,7 +236,9 @@ def create_overview_section():
                 "color": "primary",
             },
         },
+        datasource=datasource,
         subscribes_to=["filters-category", "filters-min_price"],
+        block_id_prefix="overview_metric",
     )
 
     # Revenue trend chart (using custom plot function)
@@ -281,11 +282,12 @@ def create_overview_section():
     )
 
     return kpi_row_top(
-        kpi_blocks=[metrics],
+        kpi_blocks=metrics_blocks,
         content_rows=[
             [trend_chart],
             [(category_chart, {"md": 6}), (top_products, {"md": 6})],
         ],
+        kpi_row_options=metrics_row_opts,
     )
 
 
@@ -438,6 +440,7 @@ def main():
         title="Global Filters",
         position="start",
         default_collapsed=False,
+        push_content=True,  # NEW: Adaptive layout (push vs overlay)
     )
 
     # Create navigation
@@ -480,17 +483,19 @@ def main():
     print("  ✓ Theme selection via CLI (--theme)")
     print("  ✓ v0.15 composition pattern (DataBuilder + DataTransformer)")
     print("  ✓ NEW v0.15: Collapsible Sidebar with global filters (☰ button)")
-    print("  ✓ NEW v0.15: Cross-section State() subscriptions (all charts use sidebar)")
-    print("  ✓ NEW v0.15: Block-level transformations (transform_fn for aggregation)")
-    print("  ✓ MetricsBlock (replaces get_kpis)")
+    print("  ✓ NEW v0.15: Adaptive layout (content pushes aside on desktop)")
+    print("  ✓ NEW v0.15: Cross-section State() (all charts use sidebar)")
+    print("  ✓ NEW v0.15: Block-level transforms (transform_fn)")
+    print("  ✓ MetricsBlock with dynamic sizing (auto-scales)")
     print("  ✓ EDA presets (Correlation, Histogram, Missing Values, BoxPlot)")
     print("  ✓ Interactive and static charts")
     print("  ✓ Control panels with state management")
     print("  ✓ Various layout presets (kpi_row_top, two_column_8_4)")
     print("\nInteraction Guide:")
     print("  1. Click ☰ button (top-left) to toggle sidebar")
-    print("  2. Change filters in sidebar → all sections update")
-    print("  3. Navigate between sections → filters persist")
+    print("  2. Watch content slide aside (desktop) or overlay (mobile)")
+    print("  3. Change filters in sidebar → all sections update")
+    print("  4. Navigate between sections → filters persist")
     print("\nStarting server at http://127.0.0.1:8050/")
     print("Press Ctrl+C to stop")
     print("=" * 70)

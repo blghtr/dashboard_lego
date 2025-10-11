@@ -139,10 +139,14 @@ def test_build_navigation_layout_creates_sidebar(mock_datasource):
     assert "position" in sidebar.style
     assert sidebar.style["position"] == "fixed"
 
-    # Check content area
-    content = layout.children[2]
-    assert content.__class__.__name__ == "Div"
-    assert content.id == "nav-content-area"
+    # Check content area wrapper (body-wrapper contains nav-content-area)
+    body_wrapper = layout.children[2]
+    assert body_wrapper.__class__.__name__ == "Div"
+    assert body_wrapper.id == "body-wrapper"
+    # The actual content area is inside body-wrapper
+    assert len(body_wrapper.children) > 0
+    content_area = body_wrapper.children[0]
+    assert content_area.id == "nav-content-area"
 
 
 def test_navigation_section_lazy_loading(mocker, mock_datasource):

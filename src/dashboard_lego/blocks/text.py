@@ -174,8 +174,15 @@ class TextBlock(BaseBlock):
         themed_card_style = self._get_themed_style(
             "card", "background", self.card_style
         )
+        # h-100 ensures equal height when multiple blocks in same row
+        # Note: mb-4 removed, handled by Row.mb-4
+        base_classes = "h-100"
         card_props = {
-            "className": self.card_className or "mb-4",
+            "className": (
+                f"{base_classes} {self.card_className}"
+                if self.card_className
+                else base_classes
+            )
         }
         if themed_card_style:
             card_props["style"] = themed_card_style
