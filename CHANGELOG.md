@@ -9,6 +9,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.15.1] - 2025-10-11
 
+### Fixed
+
+#### Critical: Sidebar Filters → Metrics Update Chain
+
+- **🔴 CRITICAL BUG**: Fixed metrics not updating from sidebar filters in navigation mode
+  - **Root Cause**: Duplicate block creation caused duplicate callback inputs
+  - **Contract Violation**: Blocks created twice (in `build_layout()` and `register_callbacks()`)
+  - **Impact**: Callbacks registered with wrong Input signature → metrics didn't respond to filter changes
+
+- **Fix 1**: Preload navigation sections before layout build
+  - Added preload guard in `DashboardPage.build_layout()`
+  - Prevents duplicate block creation in sidebar+navigation mode
+  - Ensures blocks created exactly once before callback registration
+  - File: `src/dashboard_lego/core/page.py:1103-1115`
+
+- **Fix 2**: Reuse preloaded blocks in `register_callbacks()`
+  - Added `_sections_preloaded` flag check
+  - Uses cached blocks instead of recreating
+  - Eliminates duplicate subscriptions in StateManager
+  - File: `src/dashboard_lego/core/page.py:1362-1376`
+
+- **Fix 3**: Wrap `SingleMetricBlock` in container Div
+  - **Root Cause**: `layout()` returned Card directly without container ID
+  - **Contract Violation**: `output_target()` expected `"block_id-container"` ID in DOM
+  - **Result**: Dash callbacks couldn't find Output target → didn't fire
+  - **Solution**: Wrap card in `html.Div(id=_generate_id("container"))`
+  - File: `src/dashboard_lego/blocks/single_metric.py:400-405`
+
+**Validation**: ✅ Tested with `examples/00_showcase_dashboard.py`
+- Callbacks now register with correct inputs (no duplicates)
+- Metrics update correctly when sidebar filters change
+- All 3 sections respond to global filters
+
 ### Added
 
 #### Metrics Factory Pattern
