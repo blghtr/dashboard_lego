@@ -496,7 +496,12 @@
 
         <span class="c1"># Keep legacy spacing class unless overridden</span>
         <span class="k">if</span> <span class="s2">&quot;className&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">row_kwargs</span><span class="p">:</span>
-            <span class="n">row_kwargs</span><span class="p">[</span><span class="s2">&quot;className&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mb-4&quot;</span>
+            <span class="n">row_kwargs</span><span class="p">[</span><span class="s2">&quot;className&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mb-4 align-items-stretch&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Add align-items-stretch for equal height columns</span>
+            <span class="k">if</span> <span class="s2">&quot;align-items-stretch&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">row_kwargs</span><span class="p">[</span><span class="s2">&quot;className&quot;</span><span class="p">]:</span>
+                <span class="n">row_kwargs</span><span class="p">[</span><span class="s2">&quot;className&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="s2">&quot; align-items-stretch&quot;</span>
+
         <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span><span class="n">cols</span><span class="p">,</span> <span class="o">**</span><span class="n">row_kwargs</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_render_cell</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="p">:</span> <span class="n">BaseBlock</span><span class="p">,</span> <span class="n">options</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
@@ -526,6 +531,10 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">col_kwargs</span><span class="p">[</span><span class="s2">&quot;className&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;offset-</span><span class="si">{</span><span class="n">offset</span><span class="si">}</span><span class="s2">&quot;</span>
 
+        <span class="c1"># Add h-100 for equal height columns in rows (unless user overrides)</span>
+        <span class="k">if</span> <span class="s2">&quot;className&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
+            <span class="n">col_kwargs</span><span class="p">[</span><span class="s2">&quot;className&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;h-100&quot;</span>
+
         <span class="c1"># Handle other column options</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span>
             <span class="s2">&quot;width&quot;</span><span class="p">,</span>
@@ -540,7 +549,7 @@
         <span class="p">]:</span>
             <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;className&quot;</span> <span class="ow">and</span> <span class="s2">&quot;className&quot;</span> <span class="ow">in</span> <span class="n">col_kwargs</span><span class="p">:</span>
-                    <span class="c1"># Merge offset class with existing className</span>
+                    <span class="c1"># Merge h-100 with user className</span>
                     <span class="n">col_kwargs</span><span class="p">[</span><span class="s2">&quot;className&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
                         <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">col_kwargs</span><span class="p">[</span><span class="s1">&#39;className&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">options</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
                     <span class="p">)</span>
@@ -794,7 +803,6 @@
             <span class="n">placement</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">position</span><span class="p">,</span>
             <span class="n">is_open</span><span class="o">=</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">default_collapsed</span><span class="p">,</span>
             <span class="n">backdrop</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">backdrop</span><span class="p">,</span>
-            <span class="n">scrollable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">style</span><span class="o">=</span><span class="n">offcanvas_style</span><span class="p">,</span>
             <span class="n">className</span><span class="o">=</span><span class="n">offcanvas_class</span><span class="p">,</span>
         <span class="p">)</span>
@@ -914,11 +922,22 @@
             <span class="p">]</span>
 
         <span class="c1"># Content area (dynamic, updates on navigation)</span>
+        <span class="n">nav_classes</span> <span class="o">=</span> <span class="s2">&quot;nav-content-area&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="o">.</span><span class="n">content_className</span><span class="p">:</span>
+            <span class="n">nav_classes</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">nav_classes</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="o">.</span><span class="n">content_className</span><span class="si">}</span><span class="s2">&quot;</span>
+
         <span class="n">content_area</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">Div</span><span class="p">(</span>
             <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;nav-content-area&quot;</span><span class="p">,</span>
             <span class="n">children</span><span class="o">=</span><span class="n">initial_content</span><span class="p">,</span>
             <span class="n">style</span><span class="o">=</span><span class="n">content_style</span><span class="p">,</span>
-            <span class="n">className</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="o">.</span><span class="n">content_className</span><span class="p">,</span>
+            <span class="n">className</span><span class="o">=</span><span class="n">nav_classes</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Body wrapper for adaptive layout</span>
+        <span class="n">body_wrapper</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">Div</span><span class="p">(</span>
+            <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;body-wrapper&quot;</span><span class="p">,</span>
+            <span class="n">className</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>  <span class="c1"># Will be updated by adaptive layout callback</span>
+            <span class="n">children</span><span class="o">=</span><span class="p">[</span><span class="n">content_area</span><span class="p">],</span>
         <span class="p">)</span>
 
         <span class="c1"># Store for active section tracking</span>
@@ -931,7 +950,7 @@
             <span class="sa">f</span><span class="s2">&quot;initial_section=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="o">.</span><span class="n">default_section</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
 
-        <span class="k">return</span> <span class="p">[</span><span class="n">active_section_store</span><span class="p">,</span> <span class="n">content_area</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">active_section_store</span><span class="p">,</span> <span class="n">body_wrapper</span><span class="p">]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_build_navigation_layout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1109,11 +1128,22 @@
             <span class="p">]</span>
 
         <span class="c1"># Content area for dynamic content with initial content loaded</span>
+        <span class="n">nav_classes</span> <span class="o">=</span> <span class="s2">&quot;nav-content-area&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="o">.</span><span class="n">content_className</span><span class="p">:</span>
+            <span class="n">nav_classes</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">nav_classes</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="o">.</span><span class="n">content_className</span><span class="si">}</span><span class="s2">&quot;</span>
+
         <span class="n">content_area</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">Div</span><span class="p">(</span>
             <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;nav-content-area&quot;</span><span class="p">,</span>
             <span class="n">children</span><span class="o">=</span><span class="n">initial_content</span><span class="p">,</span>
             <span class="n">style</span><span class="o">=</span><span class="n">content_style</span><span class="p">,</span>
-            <span class="n">className</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="o">.</span><span class="n">content_className</span><span class="p">,</span>
+            <span class="n">className</span><span class="o">=</span><span class="n">nav_classes</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Body wrapper for adaptive layout</span>
+        <span class="n">body_wrapper</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">Div</span><span class="p">(</span>
+            <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;body-wrapper&quot;</span><span class="p">,</span>
+            <span class="n">className</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>  <span class="c1"># Will be updated by adaptive layout callback</span>
+            <span class="n">children</span><span class="o">=</span><span class="p">[</span><span class="n">content_area</span><span class="p">],</span>
         <span class="p">)</span>
 
         <span class="c1"># Store to track the currently active section index</span>
@@ -1125,7 +1155,7 @@
         <span class="c1"># No inline CSS needed here</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="o">.</span><span class="n">position</span> <span class="o">==</span> <span class="s2">&quot;left&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">Div</span><span class="p">([</span><span class="n">active_section_store</span><span class="p">,</span> <span class="n">sidebar</span><span class="p">,</span> <span class="n">content_area</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">Div</span><span class="p">([</span><span class="n">active_section_store</span><span class="p">,</span> <span class="n">sidebar</span><span class="p">,</span> <span class="n">body_wrapper</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Top navigation - not yet implemented</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
@@ -1143,11 +1173,43 @@
 <span class="sd">        2. Sidebar + Standard: dbc.Offcanvas + grid layout</span>
 <span class="sd">        3. Standard/Navigation: existing behavior (no sidebar)</span>
 
+<span class="sd">        CRITICAL: For navigation mode, preload all sections BEFORE building layout</span>
+<span class="sd">        to prevent duplicate block creation when combined with sidebar.</span>
+
+<span class="sd">        :hierarchy: [Core | Page | BuildLayout]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Dash callback lifecycle requires all blocks before app.run()&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;build_layout&#39; with navigation preload&quot;</span>
+<span class="sd">         - uses: [&quot;method: &#39;_preload_all_section_blocks&#39;&quot;]</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;Page configured with blocks or navigation&quot;</span>
+<span class="sd">         - post: &quot;Layout built with all blocks created exactly once&quot;</span>
+<span class="sd">         - invariant: &quot;Navigation sections preloaded before HTML rendering&quot;</span>
+<span class="sd">         - spec_compliance: &quot;Dash callback registration lifecycle&quot;</span>
+
+<span class="sd">        :complexity: 5</span>
+<span class="sd">        :decision_cache: &quot;Preload navigation before layout to prevent duplicate block creation&quot;</span>
+
 <span class="sd">        Returns:</span>
 <span class="sd">            A Dash component representing the entire page.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Building page layout&quot;</span><span class="p">)</span>
+
+        <span class="c1"># &lt;semantic_block: navigation_preload&gt;</span>
+        <span class="c1"># CRITICAL: Preload navigation sections before layout build</span>
+        <span class="c1"># Prevents duplicate block creation in sidebar+navigation mode</span>
+        <span class="c1"># Ensures all blocks exist before register_callbacks() is called</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">navigation</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_sections_preloaded&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Preloading </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="o">.</span><span class="n">sections</span><span class="p">)</span><span class="si">}</span><span class="s2"> navigation sections &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;before layout build (prevents duplicate block creation)&quot;</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_preload_all_section_blocks</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sections_preloaded</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Navigation sections preloaded successfully&quot;</span><span class="p">)</span>
+        <span class="c1"># &lt;/semantic_block: navigation_preload&gt;</span>
 
         <span class="c1"># Sidebar mode: use Offcanvas + main content</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="p">:</span>
@@ -1382,6 +1444,7 @@
             <span class="c1"># Sidebar-specific callbacks</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">collapsible</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_register_sidebar_callbacks</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_register_sidebar_adaptive_layout_callback</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
 
             <span class="c1"># Navigation-specific callbacks</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="p">:</span>
@@ -1394,8 +1457,24 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_setup_callback_error_handling</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
 
             <span class="c1"># CRITICAL: For navigation, preload ALL sections before registering callbacks</span>
+            <span class="c1"># NOTE: Sections may already be preloaded in build_layout() for sidebar mode</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="p">:</span>
-                <span class="n">all_blocks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_preload_all_section_blocks</span><span class="p">()</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_sections_preloaded&quot;</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="s2">&quot;Preloading sections for callback registration &quot;</span>
+                        <span class="s2">&quot;(not yet preloaded in build_layout)&quot;</span>
+                    <span class="p">)</span>
+                    <span class="n">all_blocks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_preload_all_section_blocks</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_sections_preloaded</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="s2">&quot;Using already preloaded sections from build_layout()&quot;</span>
+                    <span class="p">)</span>
+                    <span class="c1"># Collect all blocks from cache</span>
+                    <span class="n">all_blocks</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">section_blocks</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_section_blocks_cache</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                        <span class="n">all_blocks</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">section_blocks</span><span class="p">)</span>
+
                 <span class="bp">self</span><span class="o">.</span><span class="n">state_manager</span><span class="o">.</span><span class="n">generate_callbacks</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">all_blocks</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">state_manager</span><span class="o">.</span><span class="n">bind_callbacks</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">all_blocks</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
@@ -1685,6 +1764,54 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="s2">&quot;[Core|Sidebar|Callbacks] Sidebar toggle callback registered successfully&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_register_sidebar_adaptive_layout_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Register callback to adapt main content layout when sidebar toggles.</span>
+
+<span class="sd">        :hierarchy: [Core | Page | Callbacks | AdaptiveLayout]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;User request: Push content instead of overlay&quot;</span>
+<span class="sd">         - implements: &quot;callback: adaptive layout on sidebar toggle&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;sidebar.push_content is True&quot;</span>
+<span class="sd">         - post: &quot;body-wrapper className updates to push content&quot;</span>
+
+<span class="sd">        :complexity: 2</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">push_content</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="nd">@app</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span>
+            <span class="n">Output</span><span class="p">(</span><span class="s2">&quot;body-wrapper&quot;</span><span class="p">,</span> <span class="s2">&quot;className&quot;</span><span class="p">),</span>
+            <span class="n">Input</span><span class="p">(</span><span class="s2">&quot;sidebar-offcanvas&quot;</span><span class="p">,</span> <span class="s2">&quot;is_open&quot;</span><span class="p">),</span>
+            <span class="n">prevent_initial_call</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">adapt_layout_on_sidebar_toggle</span><span class="p">(</span><span class="n">is_open</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Adapt body wrapper className based on sidebar state.&quot;&quot;&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[Core|Sidebar|AdaptiveLayout] Callback fired | &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;is_open=</span><span class="si">{</span><span class="n">is_open</span><span class="si">}</span><span class="s2"> | position=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">position</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">is_open</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">position</span> <span class="o">==</span> <span class="s2">&quot;start&quot;</span><span class="p">:</span>
+                    <span class="n">class_name</span> <span class="o">=</span> <span class="s2">&quot;sidebar-open-start&quot;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">class_name</span> <span class="o">=</span> <span class="s2">&quot;sidebar-open-end&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">class_name</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[Core|Sidebar|AdaptiveLayout] Returning className: &quot;</span> <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">class_name</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">class_name</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;[Core|Sidebar|Callbacks] Sidebar adaptive layout callback &quot;</span>
+            <span class="s2">&quot;registered successfully&quot;</span>
         <span class="p">)</span>
 
 <div class="viewcode-block" id="DashboardPage.get_theme_html_template">

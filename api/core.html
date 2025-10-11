@@ -1198,9 +1198,35 @@ State() subscriptions in pattern-matching callbacks.</p></li>
 1. Sidebar + Navigation: dbc.Offcanvas + multi-section navigation
 2. Sidebar + Standard: dbc.Offcanvas + grid layout
 3. Standard/Navigation: existing behavior (no sidebar)</p>
+<p>CRITICAL: For navigation mode, preload all sections BEFORE building layout
+to prevent duplicate block creation when combined with sidebar.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A Dash component representing the entire page.</p>
+<dt class="field-odd">Hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Core | Page | BuildLayout]</p>
+</dd>
+<dt class="field-even">Relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Dash callback lifecycle requires all blocks before app.run()”</p></li>
+<li><p>implements: “method: ‘build_layout’ with navigation preload”</p></li>
+<li><p>uses: [“method: ‘_preload_all_section_blocks’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Contract<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p>pre: “Page configured with blocks or navigation”</p></li>
+<li><p>post: “Layout built with all blocks created exactly once”</p></li>
+<li><p>invariant: “Navigation sections preloaded before HTML rendering”</p></li>
+<li><p>spec_compliance: “Dash callback registration lifecycle”</p></li>
+</ul>
+</dd>
+<dt class="field-even">Complexity<span class="colon">:</span></dt>
+<dd class="field-even"><p>5</p>
+</dd>
+<dt class="field-odd">Decision_cache<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Preload navigation before layout to prevent duplicate block creation”</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A Dash component representing the entire page.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1389,9 +1415,35 @@ State() subscriptions in pattern-matching callbacks.</p></li>
 1. Sidebar + Navigation: dbc.Offcanvas + multi-section navigation
 2. Sidebar + Standard: dbc.Offcanvas + grid layout
 3. Standard/Navigation: existing behavior (no sidebar)</p>
+<p>CRITICAL: For navigation mode, preload all sections BEFORE building layout
+to prevent duplicate block creation when combined with sidebar.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A Dash component representing the entire page.</p>
+<dt class="field-odd">Hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Core | Page | BuildLayout]</p>
+</dd>
+<dt class="field-even">Relates-to<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>motivated_by: “Dash callback lifecycle requires all blocks before app.run()”</p></li>
+<li><p>implements: “method: ‘build_layout’ with navigation preload”</p></li>
+<li><p>uses: [“method: ‘_preload_all_section_blocks’”]</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Contract<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p>pre: “Page configured with blocks or navigation”</p></li>
+<li><p>post: “Layout built with all blocks created exactly once”</p></li>
+<li><p>invariant: “Navigation sections preloaded before HTML rendering”</p></li>
+<li><p>spec_compliance: “Dash callback registration lifecycle”</p></li>
+</ul>
+</dd>
+<dt class="field-even">Complexity<span class="colon">:</span></dt>
+<dd class="field-even"><p>5</p>
+</dd>
+<dt class="field-odd">Decision_cache<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“Preload navigation before layout to prevent duplicate block creation”</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A Dash component representing the entire page.</p>
 </dd>
 </dl>
 </dd></dl>

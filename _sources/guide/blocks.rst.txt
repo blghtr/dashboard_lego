@@ -77,25 +77,33 @@ The ``transform_fn`` parameter allows blocks to apply custom data transformation
        )
    )
 
-MetricsBlock
-------------
+Metrics Factory Pattern
+------------------------
 
-**Location:** ``dashboard_lego.blocks.metrics``
+**Location:** ``dashboard_lego.blocks.metrics_factory``
 
-Display aggregated metrics from filtered data (replaces get_kpis pattern).
+**Status:** ✅ **RECOMMENDED (v0.15+)**
 
-**Constructor:**
+Factory function to create individual metric blocks for flexible layout.
+
+**Why Factory Pattern?**
+
+- ✅ **Composable**: Mix metrics with other blocks naturally
+- ✅ **Layout Compliant**: Proper equal-height rows via flexbox
+- ✅ **Compact**: No empty space in metric cards
+- ✅ **Theme-Aware**: Colors resolved via ThemeConfig
+
+**Factory Function:**
 
 .. code-block:: python
 
-   def __init__(
-       self,
-       block_id: str,
-       datasource: BaseDataSource,
+   def get_metric_row(
        metrics_spec: Dict[str, Dict[str, Any]],
-       subscribes_to: Union[str, List[str], None] = None,
-       **kwargs
-   )
+       datasource: BaseDataSource,
+       subscribes_to: Optional[Union[str, List[str]]] = None,
+       row_options: Optional[Dict[str, Any]] = None,
+       block_id_prefix: str = "metric",
+   ) -> Tuple[List[SingleMetricBlock], Dict[str, Any]]
 
 **Metrics Spec Format:**
 
@@ -106,8 +114,9 @@ Display aggregated metrics from filtered data (replaces get_kpis pattern).
            'column': str,           # Column name to aggregate
            'agg': str | Callable,   # Aggregation function
            'title': str,            # Display title
-           'color': str,            # Bootstrap color (optional)
-           'dtype': str             # Type conversion (optional)
+           'color': str,            # Bootstrap theme color
+           'dtype': str,            # Type conversion (optional)
+           'color_rules': dict      # Conditional coloring (optional)
        }
    }
 
@@ -115,27 +124,70 @@ Display aggregated metrics from filtered data (replaces get_kpis pattern).
 
 .. code-block:: python
 
-   from dashboard_lego.blocks import MetricsBlock
+   from dashboard_lego.blocks import get_metric_row
 
-   metrics = MetricsBlock(
-       block_id="sales_metrics",
-       datasource=datasource,
+   metrics, row_opts = get_metric_row(
        metrics_spec={
            'total_revenue': {
                'column': 'Revenue',
                'agg': 'sum',
                'title': 'Total Revenue',
-               'color': 'success'
+               'color': 'success'  # Bootstrap theme color
            },
            'avg_price': {
                'column': 'Price',
                'agg': 'mean',
                'title': 'Average Price',
                'color': 'info'
+           },
+           'units_sold': {
+               'column': 'Quantity',
+               'agg': 'sum',
+               'title': 'Units Sold',
+               'color': 'primary'
            }
        },
-       subscribes_to=['control-category']
+       datasource=datasource,
+       subscribes_to=['filters-category']
    )
+
+   # Use in page layout
+   page = DashboardPage(
+       title="Dashboard",
+       blocks=[
+           (metrics, row_opts),  # Metrics row
+           [chart1, chart2]      # Charts row
+       ]
+   )
+
+**Conditional Coloring (Optional):**
+
+.. code-block:: python
+
+   metrics_spec = {
+       'profit_margin': {
+           'column': 'Profit',
+           'agg': lambda df: df['Profit'].sum() / df['Revenue'].sum(),
+           'title': 'Profit Margin %',
+           'color_rules': {
+               'thresholds': [0.0, 0.15, 0.30],
+               'colors': ['danger', 'warning', 'success']
+               # < 0%: danger, 0-15%: warning, 15-30%: success
+           }
+       }
+   }
+
+MetricsBlock (Deprecated)
+--------------------------
+
+**Status:** ⚠️ **DEPRECATED** - Use ``get_metric_row()`` for new applications.
+
+.. deprecated:: 0.15.0
+   Use :func:`get_metric_row` instead. MetricsBlock violates layout contracts
+   by returning dbc.Row internally.
+
+The ``MetricsBlock`` is maintained for backward compatibility but returns
+a composite Row component, preventing proper equal-height layout integration.
 
 ControlPanelBlock
 -----------------

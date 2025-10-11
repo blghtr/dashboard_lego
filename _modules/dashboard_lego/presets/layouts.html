@@ -363,21 +363,21 @@
     <span class="n">kpi_opts</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;md&quot;</span><span class="p">:</span> <span class="n">kpi_width</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">kpi_options</span> <span class="ow">or</span> <span class="p">{})}</span>
     <span class="n">kpi_row</span> <span class="o">=</span> <span class="p">[(</span><span class="n">k</span><span class="p">,</span> <span class="n">kpi_opts</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">kpi_blocks</span><span class="p">]</span>
 
-    <span class="c1"># Apply row options if provided</span>
+    <span class="c1"># Apply row options if provided and build result list</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">if</span> <span class="n">kpi_row_options</span><span class="p">:</span>
-        <span class="n">kpi_row</span> <span class="o">=</span> <span class="p">(</span><span class="n">kpi_row</span><span class="p">,</span> <span class="n">kpi_row_options</span><span class="p">)</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">kpi_row</span><span class="p">,</span> <span class="n">kpi_row_options</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">kpi_row</span> <span class="o">=</span> <span class="p">[</span><span class="n">kpi_row</span><span class="p">]</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kpi_row</span><span class="p">)</span>
 
     <span class="c1"># Process content rows</span>
-    <span class="n">processed_content_rows</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">content_rows</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">content_row_options</span><span class="p">:</span>
-            <span class="n">processed_content_rows</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">row</span><span class="p">,</span> <span class="n">content_row_options</span><span class="p">))</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">row</span><span class="p">,</span> <span class="n">content_row_options</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">processed_content_rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">kpi_row</span> <span class="o">+</span> <span class="n">processed_content_rows</span></div>
+    <span class="k">return</span> <span class="n">result</span></div>
 
 </pre></div>
 

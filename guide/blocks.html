@@ -57,14 +57,14 @@
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Blocks Module API</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#baseblock">BaseBlock</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#typedchartblock">TypedChartBlock</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#metricsblock">MetricsBlock</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metrics-factory-pattern">Metrics Factory Pattern</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metricsblock-deprecated">MetricsBlock (Deprecated)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#controlpanelblock">ControlPanelBlock</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#textblock">TextBlock</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#kpiblock-deprecated">KPIBlock (Deprecated)</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="presets.html">Presets Module API</a></li>
-<li class="toctree-l2"><a class="reference internal" href="utils.html">Utils Module API</a></li>
 <li class="toctree-l2"><a class="reference internal" href="patterns.html">Integration Patterns</a></li>
 <li class="toctree-l2"><a class="reference internal" href="contracts.html">Contracts and Guarantees</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference.html">Quick Reference</a></li>
@@ -112,10 +112,11 @@
 <ul class="simple">
 <li><p><a class="reference internal" href="#baseblock" id="id1">BaseBlock</a></p></li>
 <li><p><a class="reference internal" href="#typedchartblock" id="id2">TypedChartBlock</a></p></li>
-<li><p><a class="reference internal" href="#metricsblock" id="id3">MetricsBlock</a></p></li>
-<li><p><a class="reference internal" href="#controlpanelblock" id="id4">ControlPanelBlock</a></p></li>
-<li><p><a class="reference internal" href="#textblock" id="id5">TextBlock</a></p></li>
-<li><p><a class="reference internal" href="#kpiblock-deprecated" id="id6">KPIBlock (Deprecated)</a></p></li>
+<li><p><a class="reference internal" href="#metrics-factory-pattern" id="id3">Metrics Factory Pattern</a></p></li>
+<li><p><a class="reference internal" href="#metricsblock-deprecated" id="id4">MetricsBlock (Deprecated)</a></p></li>
+<li><p><a class="reference internal" href="#controlpanelblock" id="id5">ControlPanelBlock</a></p></li>
+<li><p><a class="reference internal" href="#textblock" id="id6">TextBlock</a></p></li>
+<li><p><a class="reference internal" href="#kpiblock-deprecated" id="id7">KPIBlock (Deprecated)</a></p></li>
 </ul>
 </nav>
 <section id="baseblock">
@@ -174,19 +175,26 @@
 </pre></div>
 </div>
 </section>
-<section id="metricsblock">
-<h2><a class="toc-backref" href="#id3" role="doc-backlink">MetricsBlock</a><a class="headerlink" href="#metricsblock" title="Link to this heading"></a></h2>
-<p><strong>Location:</strong> <code class="docutils literal notranslate"><span class="pre">dashboard_lego.blocks.metrics</span></code></p>
-<p>Display aggregated metrics from filtered data (replaces get_kpis pattern).</p>
-<p><strong>Constructor:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-    <span class="bp">self</span><span class="p">,</span>
-    <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span>
+<section id="metrics-factory-pattern">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Metrics Factory Pattern</a><a class="headerlink" href="#metrics-factory-pattern" title="Link to this heading"></a></h2>
+<p><strong>Location:</strong> <code class="docutils literal notranslate"><span class="pre">dashboard_lego.blocks.metrics_factory</span></code></p>
+<p><strong>Status:</strong> ✅ <strong>RECOMMENDED (v0.15+)</strong></p>
+<p>Factory function to create individual metric blocks for flexible layout.</p>
+<p><strong>Why Factory Pattern?</strong></p>
+<ul class="simple">
+<li><p>✅ <strong>Composable</strong>: Mix metrics with other blocks naturally</p></li>
+<li><p>✅ <strong>Layout Compliant</strong>: Proper equal-height rows via flexbox</p></li>
+<li><p>✅ <strong>Compact</strong>: No empty space in metric cards</p></li>
+<li><p>✅ <strong>Theme-Aware</strong>: Colors resolved via ThemeConfig</p></li>
+</ul>
+<p><strong>Factory Function:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_metric_row</span><span class="p">(</span>
     <span class="n">metrics_spec</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
-    <span class="n">subscribes_to</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span>
+    <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span>
+    <span class="n">subscribes_to</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">row_options</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">block_id_prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;metric&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">SingleMetricBlock</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>
 </pre></div>
 </div>
 <p><strong>Metrics Spec Format:</strong></p>
@@ -195,51 +203,91 @@
         <span class="s1">&#39;column&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>           <span class="c1"># Column name to aggregate</span>
         <span class="s1">&#39;agg&#39;</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">,</span>   <span class="c1"># Aggregation function</span>
         <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>            <span class="c1"># Display title</span>
-        <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>            <span class="c1"># Bootstrap color (optional)</span>
-        <span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="nb">str</span>             <span class="c1"># Type conversion (optional)</span>
+        <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>            <span class="c1"># Bootstrap theme color</span>
+        <span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>            <span class="c1"># Type conversion (optional)</span>
+        <span class="s1">&#39;color_rules&#39;</span><span class="p">:</span> <span class="nb">dict</span>      <span class="c1"># Conditional coloring (optional)</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 </div>
 <p><strong>Example:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks</span><span class="w"> </span><span class="kn">import</span> <span class="n">MetricsBlock</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_metric_row</span>
 
-<span class="n">metrics</span> <span class="o">=</span> <span class="n">MetricsBlock</span><span class="p">(</span>
-    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;sales_metrics&quot;</span><span class="p">,</span>
-    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+<span class="n">metrics</span><span class="p">,</span> <span class="n">row_opts</span> <span class="o">=</span> <span class="n">get_metric_row</span><span class="p">(</span>
     <span class="n">metrics_spec</span><span class="o">=</span><span class="p">{</span>
         <span class="s1">&#39;total_revenue&#39;</span><span class="p">:</span> <span class="p">{</span>
             <span class="s1">&#39;column&#39;</span><span class="p">:</span> <span class="s1">&#39;Revenue&#39;</span><span class="p">,</span>
             <span class="s1">&#39;agg&#39;</span><span class="p">:</span> <span class="s1">&#39;sum&#39;</span><span class="p">,</span>
             <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;Total Revenue&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;success&#39;</span>
+            <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;success&#39;</span>  <span class="c1"># Bootstrap theme color</span>
         <span class="p">},</span>
         <span class="s1">&#39;avg_price&#39;</span><span class="p">:</span> <span class="p">{</span>
             <span class="s1">&#39;column&#39;</span><span class="p">:</span> <span class="s1">&#39;Price&#39;</span><span class="p">,</span>
             <span class="s1">&#39;agg&#39;</span><span class="p">:</span> <span class="s1">&#39;mean&#39;</span><span class="p">,</span>
             <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;Average Price&#39;</span><span class="p">,</span>
             <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;info&#39;</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;units_sold&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;column&#39;</span><span class="p">:</span> <span class="s1">&#39;Quantity&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;agg&#39;</span><span class="p">:</span> <span class="s1">&#39;sum&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;Units Sold&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;primary&#39;</span>
         <span class="p">}</span>
     <span class="p">},</span>
-    <span class="n">subscribes_to</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;control-category&#39;</span><span class="p">]</span>
+    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+    <span class="n">subscribes_to</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;filters-category&#39;</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="c1"># Use in page layout</span>
+<span class="n">page</span> <span class="o">=</span> <span class="n">DashboardPage</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Dashboard&quot;</span><span class="p">,</span>
+    <span class="n">blocks</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="n">row_opts</span><span class="p">),</span>  <span class="c1"># Metrics row</span>
+        <span class="p">[</span><span class="n">chart1</span><span class="p">,</span> <span class="n">chart2</span><span class="p">]</span>      <span class="c1"># Charts row</span>
+    <span class="p">]</span>
 <span class="p">)</span>
 </pre></div>
 </div>
+<p><strong>Conditional Coloring (Optional):</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">metrics_spec</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;profit_margin&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;column&#39;</span><span class="p">:</span> <span class="s1">&#39;Profit&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;agg&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Profit&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Revenue&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span>
+        <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;Profit Margin %&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;color_rules&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;thresholds&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.30</span><span class="p">],</span>
+            <span class="s1">&#39;colors&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;danger&#39;</span><span class="p">,</span> <span class="s1">&#39;warning&#39;</span><span class="p">,</span> <span class="s1">&#39;success&#39;</span><span class="p">]</span>
+            <span class="c1"># &lt; 0%: danger, 0-15%: warning, 15-30%: success</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="metricsblock-deprecated">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">MetricsBlock (Deprecated)</a><a class="headerlink" href="#metricsblock-deprecated" title="Link to this heading"></a></h2>
+<p><strong>Status:</strong> ⚠️ <strong>DEPRECATED</strong> - Use <code class="docutils literal notranslate"><span class="pre">get_metric_row()</span></code> for new applications.</p>
+<div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 0.15.0: </span>Use <code class="xref py py-func docutils literal notranslate"><span class="pre">get_metric_row()</span></code> instead. MetricsBlock violates layout contracts
+by returning dbc.Row internally.</p>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">MetricsBlock</span></code> is maintained for backward compatibility but returns
+a composite Row component, preventing proper equal-height layout integration.</p>
 </section>
 <section id="controlpanelblock">
-<h2><a class="toc-backref" href="#id4" role="doc-backlink">ControlPanelBlock</a><a class="headerlink" href="#controlpanelblock" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id5" role="doc-backlink">ControlPanelBlock</a><a class="headerlink" href="#controlpanelblock" title="Link to this heading"></a></h2>
 <p><strong>Location:</strong> <code class="docutils literal notranslate"><span class="pre">dashboard_lego.blocks.control_panel</span></code></p>
 <p>Standalone control panel for global filters/settings.</p>
 <p>See <span class="xref std std-ref">api-blocks</span> for detailed documentation.</p>
 </section>
 <section id="textblock">
-<h2><a class="toc-backref" href="#id5" role="doc-backlink">TextBlock</a><a class="headerlink" href="#textblock" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id6" role="doc-backlink">TextBlock</a><a class="headerlink" href="#textblock" title="Link to this heading"></a></h2>
 <p><strong>Location:</strong> <code class="docutils literal notranslate"><span class="pre">dashboard_lego.blocks.text</span></code></p>
 <p>Display dynamic markdown or HTML text content.</p>
 <p>See <span class="xref std std-ref">api-blocks</span> for detailed documentation.</p>
 </section>
 <section id="kpiblock-deprecated">
-<h2><a class="toc-backref" href="#id6" role="doc-backlink">KPIBlock (Deprecated)</a><a class="headerlink" href="#kpiblock-deprecated" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id7" role="doc-backlink">KPIBlock (Deprecated)</a><a class="headerlink" href="#kpiblock-deprecated" title="Link to this heading"></a></h2>
 <p><strong>Status:</strong> ⚠️ <strong>DEPRECATED</strong> - Use <code class="docutils literal notranslate"><span class="pre">MetricsBlock</span></code> for new applications.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">KPIBlock</span></code> relied on the <code class="docutils literal notranslate"><span class="pre">datasource.get_kpis()</span></code> method, which was removed in v0.15.0. The new <code class="docutils literal notranslate"><span class="pre">MetricsBlock</span></code> provides a more powerful and flexible declarative API.</p>
 </section>
