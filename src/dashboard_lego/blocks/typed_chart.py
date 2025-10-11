@@ -588,7 +588,7 @@ class TypedChartBlock(BaseBlock):
                 col = dbc.Col(comp, **(control.col_props or {}))
                 control_components.append(col)
 
-            controls_row = dbc.Row(control_components, className="mb-3")
+            controls_row = dbc.Row(control_components, className="mb-1")
             card_content.append(controls_row)
 
         # Graph
@@ -612,7 +612,16 @@ class TypedChartBlock(BaseBlock):
         themed_card_style = self._get_themed_style(
             "card", "background", self.card_style
         )
-        card_props = {"className": self.card_className or "mb-4"}
+        # h-100 ensures equal height when multiple blocks in same row
+        # Note: mb-4 removed, handled by Row.mb-4
+        base_classes = "h-100"
+        card_props = {
+            "className": (
+                f"{base_classes} {self.card_className}"
+                if self.card_className
+                else base_classes
+            )
+        }
         if themed_card_style:
             card_props["style"] = themed_card_style
 

@@ -261,18 +261,18 @@ def kpi_row_top(
     kpi_opts = {"md": kpi_width, **(kpi_options or {})}
     kpi_row = [(k, kpi_opts) for k in kpi_blocks]
 
-    # Apply row options if provided
+    # Apply row options if provided and build result list
+    result = []
     if kpi_row_options:
-        kpi_row = (kpi_row, kpi_row_options)
+        result.append((kpi_row, kpi_row_options))
     else:
-        kpi_row = [kpi_row]
+        result.append(kpi_row)
 
     # Process content rows
-    processed_content_rows = []
     for row in content_rows:
         if content_row_options:
-            processed_content_rows.append((row, content_row_options))
+            result.append((row, content_row_options))
         else:
-            processed_content_rows.append(row)
+            result.append(row)
 
-    return kpi_row + processed_content_rows
+    return result

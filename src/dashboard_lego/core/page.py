@@ -400,7 +400,12 @@ class DashboardPage:
 
         # Keep legacy spacing class unless overridden
         if "className" not in row_kwargs:
-            row_kwargs["className"] = "mb-4"
+            row_kwargs["className"] = "mb-4 align-items-stretch"
+        else:
+            # Add align-items-stretch for equal height columns
+            if "align-items-stretch" not in row_kwargs["className"]:
+                row_kwargs["className"] += " align-items-stretch"
+
         return dbc.Row(cols, **row_kwargs)
 
     def _render_cell(self, block: BaseBlock, options: Dict[str, Any]) -> Component:
@@ -430,6 +435,10 @@ class DashboardPage:
             else:
                 col_kwargs["className"] = f"offset-{offset}"
 
+        # Add h-100 for equal height columns in rows (unless user overrides)
+        if "className" not in options:
+            col_kwargs["className"] = "h-100"
+
         # Handle other column options
         for key in [
             "width",
@@ -444,7 +453,7 @@ class DashboardPage:
         ]:
             if key in options:
                 if key == "className" and "className" in col_kwargs:
-                    # Merge offset class with existing className
+                    # Merge h-100 with user className
                     col_kwargs["className"] = (
                         f"{col_kwargs['className']} {options[key]}"
                     )
@@ -818,11 +827,22 @@ class DashboardPage:
             ]
 
         # Content area (dynamic, updates on navigation)
+        nav_classes = "nav-content-area"
+        if self.navigation.content_className:
+            nav_classes = f"{nav_classes} {self.navigation.content_className}"
+
         content_area = html.Div(
             id="nav-content-area",
             children=initial_content,
             style=content_style,
-            className=self.navigation.content_className,
+            className=nav_classes,
+        )
+
+        # Body wrapper for adaptive layout
+        body_wrapper = html.Div(
+            id="body-wrapper",
+            className="",  # Will be updated by adaptive layout callback
+            children=[content_area],
         )
 
         # Store for active section tracking
@@ -835,7 +855,7 @@ class DashboardPage:
             f"initial_section={self.navigation.default_section}"
         )
 
-        return [active_section_store, content_area]
+        return [active_section_store, body_wrapper]
 
     def _build_navigation_layout(self) -> Component:
         """
@@ -1013,11 +1033,22 @@ class DashboardPage:
             ]
 
         # Content area for dynamic content with initial content loaded
+        nav_classes = "nav-content-area"
+        if self.navigation.content_className:
+            nav_classes = f"{nav_classes} {self.navigation.content_className}"
+
         content_area = html.Div(
             id="nav-content-area",
             children=initial_content,
             style=content_style,
-            className=self.navigation.content_className,
+            className=nav_classes,
+        )
+
+        # Body wrapper for adaptive layout
+        body_wrapper = html.Div(
+            id="body-wrapper",
+            className="",  # Will be updated by adaptive layout callback
+            children=[content_area],
         )
 
         # Store to track the currently active section index
@@ -1029,7 +1060,7 @@ class DashboardPage:
         # No inline CSS needed here
 
         if self.navigation.position == "left":
-            return html.Div([active_section_store, sidebar, content_area])
+            return html.Div([active_section_store, sidebar, body_wrapper])
         else:
             # Top navigation - not yet implemented
             raise NotImplementedError(
@@ -1281,6 +1312,7 @@ class DashboardPage:
             # Sidebar-specific callbacks
             if self.sidebar and self.sidebar.collapsible:
                 self._register_sidebar_callbacks(app)
+                self._register_sidebar_adaptive_layout_callback(app)
 
             # Navigation-specific callbacks
             if self.navigation:
@@ -1583,6 +1615,54 @@ class DashboardPage:
 
         self.logger.info(
             "[Core|Sidebar|Callbacks] Sidebar toggle callback registered successfully"
+        )
+
+    def _register_sidebar_adaptive_layout_callback(self, app: Any):
+        """
+        Register callback to adapt main content layout when sidebar toggles.
+
+        :hierarchy: [Core | Page | Callbacks | AdaptiveLayout]
+        :relates-to:
+         - motivated_by: "User request: Push content instead of overlay"
+         - implements: "callback: adaptive layout on sidebar toggle"
+
+        :contract:
+         - pre: "sidebar.push_content is True"
+         - post: "body-wrapper className updates to push content"
+
+        :complexity: 2
+        """
+        if not self.sidebar.push_content:
+            return
+
+        @app.callback(
+            Output("body-wrapper", "className"),
+            Input("sidebar-offcanvas", "is_open"),
+            prevent_initial_call=False,
+        )
+        def adapt_layout_on_sidebar_toggle(is_open):
+            """Adapt body wrapper className based on sidebar state."""
+            self.logger.info(
+                f"[Core|Sidebar|AdaptiveLayout] Callback fired | "
+                f"is_open={is_open} | position={self.sidebar.position}"
+            )
+
+            if is_open:
+                if self.sidebar.position == "start":
+                    class_name = "sidebar-open-start"
+                else:
+                    class_name = "sidebar-open-end"
+            else:
+                class_name = ""
+
+            self.logger.debug(
+                f"[Core|Sidebar|AdaptiveLayout] Returning className: " f"'{class_name}'"
+            )
+            return class_name
+
+        self.logger.info(
+            "[Core|Sidebar|Callbacks] Sidebar adaptive layout callback "
+            "registered successfully"
         )
 
     def get_theme_html_template(self) -> str:

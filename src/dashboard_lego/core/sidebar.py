@@ -56,6 +56,7 @@ class SidebarConfig:
      - default_collapsed (bool): Initial collapsed state
      - title (Optional[str]): Sidebar header title
      - backdrop (bool): Show backdrop overlay when open (mobile UX)
+     - push_content (bool): Push main content when sidebar opens (desktop)
 
     :example:
         ```python
@@ -76,6 +77,7 @@ class SidebarConfig:
     default_collapsed: bool = False
     title: Optional[str] = None
     backdrop: bool = False  # No backdrop for persistent sidebar
+    push_content: bool = True  # Push main content when sidebar opens
 
     def __post_init__(self):
         """
