@@ -51,6 +51,7 @@ Changelog = "https://github.com/blghtr/dashboard_lego/blob/main/CHANGELOG.md"
 [project.optional-dependencies]
 dev = [
     "dash[testing]>=2.14.0",
+    "dash[testing]>=2.14.0",
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
     "pytest-mock",
