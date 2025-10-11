@@ -1,0 +1,327 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contracts and Guarantees &mdash; Dashboard Lego 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Quick Reference" href="reference.html" />
+    <link rel="prev" title="Integration Patterns" href="patterns.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Dashboard Lego
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../concepts.html">Core Concepts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Comprehensive Guide</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Comprehensive API Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="overview.html">System Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core.html">Core Module API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datasources.html">DataSources Module API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blocks.html">Blocks Module API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="presets.html">Presets Module API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html">Utils Module API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="patterns.html">Integration Patterns</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Contracts and Guarantees</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#data-source-lifecycle-v0-15">Data Source Lifecycle (v0.15)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#block-lifecycle">Block Lifecycle</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#state-management-callbacks">State Management Callbacks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cache-behavior-v0-15">Cache Behavior (v0.15)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="reference.html">Quick Reference</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/modules.html">API Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing to Dashboard Lego</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Dashboard Lego</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Comprehensive API Guide</a></li>
+      <li class="breadcrumb-item active">Contracts and Guarantees</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guide/contracts.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="contracts-and-guarantees">
+<span id="guide-contracts"></span><h1>Contracts and Guarantees<a class="headerlink" href="#contracts-and-guarantees" title="Link to this heading"></a></h1>
+<p>System contracts, lifecycle guarantees, and behavior specifications.</p>
+<nav class="contents local" id="contents">
+<ul class="simple">
+<li><p><a class="reference internal" href="#data-source-lifecycle-v0-15" id="id1">Data Source Lifecycle (v0.15)</a></p></li>
+<li><p><a class="reference internal" href="#block-lifecycle" id="id2">Block Lifecycle</a></p></li>
+<li><p><a class="reference internal" href="#state-management-callbacks" id="id3">State Management Callbacks</a></p></li>
+<li><p><a class="reference internal" href="#cache-behavior-v0-15" id="id4">Cache Behavior (v0.15)</a></p></li>
+</ul>
+</nav>
+<section id="data-source-lifecycle-v0-15">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">Data Source Lifecycle (v0.15)</a><a class="headerlink" href="#data-source-lifecycle-v0-15" title="Link to this heading"></a></h2>
+<p><strong>Contract:</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>initialization → pipeline → data access
+     ↓              ↓            ↓
+__init__()    get_processed_data()
+              (2 stages)
+</pre></div>
+</div>
+<p><strong>Pipeline Stages:</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>get_processed_data(params) → classify → build → transform → return
+                                 ↓        ↓         ↓
+                             Context   Cache1    Cache2
+</pre></div>
+</div>
+<p><strong>Guarantees:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Staged Caching:</strong> Each pipeline stage caches independently</p></li>
+<li><p><strong>Cache Efficiency:</strong> Transform changes don’t trigger build stage</p></li>
+<li><p><strong>Cache Consistency:</strong> Same params → same cached data at each stage</p></li>
+<li><p><strong>Cache Expiration:</strong> Data refreshes after <code class="docutils literal notranslate"><span class="pre">cache_ttl</span></code> seconds</p></li>
+<li><p><strong>Error Handling:</strong> <code class="docutils literal notranslate"><span class="pre">DataLoadError</span></code> raised on load failure</p></li>
+<li><p><strong>Thread Safety:</strong> Cache operations are thread-safe (diskcache)</p></li>
+</ol>
+<p><strong>Pre-conditions:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">DataBuilder.build()</span></code> must return <code class="docutils literal notranslate"><span class="pre">pd.DataFrame</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DataTransformer.transform()</span></code> must return <code class="docutils literal notranslate"><span class="pre">pd.DataFrame</span></code></p></li>
+<li><p>Cache directory must be writable (if specified)</p></li>
+</ul>
+<p><strong>Post-conditions:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">get_processed_data()</span></code> returns filtered DataFrame or empty DataFrame</p></li>
+<li><p>All stages are properly cached</p></li>
+<li><p>Data is consistent with input parameters</p></li>
+</ul>
+</section>
+<section id="block-lifecycle">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">Block Lifecycle</a><a class="headerlink" href="#block-lifecycle" title="Link to this heading"></a></h2>
+<p><strong>Contract:</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>instantiation → registration → layout → callbacks → updates
+      ↓              ↓            ↓          ↓          ↓
+  __init__()   _register_   layout()    bind_     update
+               state_                  callbacks  methods
+               interactions()
+</pre></div>
+</div>
+<p><strong>Guarantees:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Unique IDs:</strong> Each block has unique <code class="docutils literal notranslate"><span class="pre">block_id</span></code></p></li>
+<li><p><strong>State Registration:</strong> Blocks register before callbacks</p></li>
+<li><p><strong>Theme Injection:</strong> <code class="docutils literal notranslate"><span class="pre">theme_config</span></code> set before <code class="docutils literal notranslate"><span class="pre">layout()</span></code> called</p></li>
+<li><p><strong>Callback Order:</strong> Publishers registered before subscribers</p></li>
+<li><p><strong>Error Handling:</strong> Update methods never crash app (return fallback)</p></li>
+</ol>
+<p><strong>Pre-conditions:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">block_id</span></code> is unique across dashboard</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">datasource</span></code> is valid <code class="docutils literal notranslate"><span class="pre">BaseDataSource</span></code> instance</p></li>
+<li><p>State IDs referenced in subscriptions exist</p></li>
+</ul>
+<p><strong>Post-conditions:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">layout()</span></code> returns valid Dash Component</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">output_target()</span></code> returns unique (id, property) tuple</p></li>
+<li><p>Updates trigger correctly on state changes</p></li>
+</ul>
+</section>
+<section id="state-management-callbacks">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">State Management Callbacks</a><a class="headerlink" href="#state-management-callbacks" title="Link to this heading"></a></h2>
+<p><strong>Contract:</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>publisher change → callback trigger → subscribers update
+        ↓                  ↓                  ↓
+   Input(...)        function(*)        Output(...)
+</pre></div>
+</div>
+<p><strong>Guarantees:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>One Callback Per Block:</strong> Each block has exactly one callback</p></li>
+<li><p><strong>All Inputs Provided:</strong> Callback receives all subscribed state values</p></li>
+<li><p><strong>Positional Arguments:</strong> State values passed as positional args in registration order</p></li>
+<li><p><strong>Error Handling:</strong> Failed callbacks return safe fallback values</p></li>
+<li><p><strong>No Circular Dependencies:</strong> Detected and prevented at compile time</p></li>
+</ol>
+<p><strong>Pre-conditions:</strong></p>
+<ul class="simple">
+<li><p>No duplicate output targets (unless <code class="docutils literal notranslate"><span class="pre">allow_duplicate=True</span></code>)</p></li>
+<li><p>All state IDs have publishers</p></li>
+<li><p>Callback functions have correct signature</p></li>
+</ul>
+<p><strong>Post-conditions:</strong></p>
+<ul class="simple">
+<li><p>UI updates reflect all state changes</p></li>
+<li><p>No dangling callbacks</p></li>
+<li><p>Error states render safely</p></li>
+</ul>
+</section>
+<section id="cache-behavior-v0-15">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">Cache Behavior (v0.15)</a><a class="headerlink" href="#cache-behavior-v0-15" title="Link to this heading"></a></h2>
+<p><strong>Contract:</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>get_processed_data(params) → classify → Stage 1 → Stage 2 → return
+                                 ↓          ↓         ↓
+                             Context    Cache1    Cache2
+</pre></div>
+</div>
+<p><strong>Staged Caching Strategy:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Stage 1: Built Data (cached by build params only)</span>
+<span class="n">cache_key_1</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;built_</span><span class="si">{</span><span class="n">json</span><span class="p">(</span><span class="n">build_params</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+
+<span class="c1"># Stage 2: Transformed Data (cached by transform params)</span>
+<span class="n">cache_key_2</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;transformed_</span><span class="si">{</span><span class="n">json</span><span class="p">(</span><span class="n">transform_params</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+</pre></div>
+</div>
+<p><strong>Guarantees:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Key Stability:</strong> Same params → same cache key (sorted JSON) per stage</p></li>
+<li><p><strong>TTL Enforcement:</strong> Expired entries refreshed automatically</p></li>
+<li><p><strong>Isolation:</strong> Different params → different cache entries</p></li>
+<li><p><strong>Persistence:</strong> Disk cache survives app restarts</p></li>
+<li><p><strong>Stage Independence:</strong> Transform changes don’t invalidate build cache</p></li>
+<li><p><strong>Efficiency:</strong> Only affected stages recompute</p></li>
+</ol>
+<p><strong>Cache Hit Scenarios:</strong></p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Scenario</p></th>
+<th class="head"><p>Stage 1
+(Build)</p></th>
+<th class="head"><p>Stage 2
+(Transform)</p></th>
+<th class="head"><p>Performance</p></th>
+<th class="head"><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>First load</p></td>
+<td><p>Miss</p></td>
+<td><p>Miss</p></td>
+<td><p>Full pipeline</p></td>
+<td><p>All stages run</p></td>
+</tr>
+<tr class="row-odd"><td><p>Same params</p></td>
+<td><p>Hit</p></td>
+<td><p>Hit</p></td>
+<td><p>Instant</p></td>
+<td><p>All cached</p></td>
+</tr>
+<tr class="row-even"><td><p>Filter change</p></td>
+<td><p>Hit</p></td>
+<td><p>Miss</p></td>
+<td><p>Fast</p></td>
+<td><p>Only retransform</p></td>
+</tr>
+<tr class="row-odd"><td><p>Build change</p></td>
+<td><p>Miss</p></td>
+<td><p>Miss</p></td>
+<td><p>Full pipeline</p></td>
+<td><p>Rebuild needed</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Pre-conditions:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">DataBuilder.build()</span></code> must be implemented</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DataTransformer.transform()</span></code> must be implemented</p></li>
+<li><p>Both methods must return <code class="docutils literal notranslate"><span class="pre">pd.DataFrame</span></code></p></li>
+<li><p>Cache directory exists and is writable (if specified)</p></li>
+<li><p>Params are JSON-serializable</p></li>
+</ul>
+<p><strong>Post-conditions:</strong></p>
+<ul class="simple">
+<li><p>Cache hit at any stage → no recomputation of that stage</p></li>
+<li><p>Cache miss at stage N → stages N, N+1 recompute</p></li>
+<li><p>Expired entry → treated as cache miss</p></li>
+<li><p>Both data attributes are populated: <code class="docutils literal notranslate"><span class="pre">_built_data</span></code>, <code class="docutils literal notranslate"><span class="pre">_transformed_data</span></code></p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="patterns.html" class="btn btn-neutral float-left" title="Integration Patterns" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="reference.html" class="btn btn-neutral float-right" title="Quick Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Dashboard Lego Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

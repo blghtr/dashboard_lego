@@ -1,0 +1,380 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Integration Patterns &mdash; Dashboard Lego 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Contracts and Guarantees" href="contracts.html" />
+    <link rel="prev" title="Utils Module API" href="utils.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Dashboard Lego
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../concepts.html">Core Concepts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Comprehensive Guide</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Comprehensive API Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="overview.html">System Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core.html">Core Module API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datasources.html">DataSources Module API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blocks.html">Blocks Module API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="presets.html">Presets Module API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html">Utils Module API</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Integration Patterns</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#publisher-subscriber-pattern">Publisher/Subscriber Pattern</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#multi-state-subscriptions">Multi-State Subscriptions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#navigation-pattern">Navigation Pattern</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#theme-customization-pattern">Theme Customization Pattern</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#layout-composition-pattern">Layout Composition Pattern</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#data-processing-pipeline-pattern-v0-15">Data Processing Pipeline Pattern (v0.15)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="contracts.html">Contracts and Guarantees</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference.html">Quick Reference</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/modules.html">API Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing to Dashboard Lego</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Dashboard Lego</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Comprehensive API Guide</a></li>
+      <li class="breadcrumb-item active">Integration Patterns</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guide/patterns.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="integration-patterns">
+<span id="guide-patterns"></span><h1>Integration Patterns<a class="headerlink" href="#integration-patterns" title="Link to this heading"></a></h1>
+<p>Common patterns and best practices for building dashboards.</p>
+<nav class="contents local" id="contents">
+<ul class="simple">
+<li><p><a class="reference internal" href="#publisher-subscriber-pattern" id="id1">Publisher/Subscriber Pattern</a></p></li>
+<li><p><a class="reference internal" href="#multi-state-subscriptions" id="id2">Multi-State Subscriptions</a></p></li>
+<li><p><a class="reference internal" href="#navigation-pattern" id="id3">Navigation Pattern</a></p></li>
+<li><p><a class="reference internal" href="#theme-customization-pattern" id="id4">Theme Customization Pattern</a></p></li>
+<li><p><a class="reference internal" href="#layout-composition-pattern" id="id5">Layout Composition Pattern</a></p></li>
+<li><p><a class="reference internal" href="#data-processing-pipeline-pattern-v0-15" id="id6">Data Processing Pipeline Pattern (v0.15)</a></p></li>
+</ul>
+</nav>
+<section id="publisher-subscriber-pattern">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">Publisher/Subscriber Pattern</a><a class="headerlink" href="#publisher-subscriber-pattern" title="Link to this heading"></a></h2>
+<p>Blocks publish state changes and other blocks subscribe to react.</p>
+<p><strong>Flow:</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>ControlPanelBlock → publishes → StateManager → notifies → TypedChartBlock
+                                                        → notifies → MetricsBlock
+</pre></div>
+</div>
+<p><strong>Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Publisher: Control Panel</span>
+<span class="n">control_panel</span> <span class="o">=</span> <span class="n">ControlPanelBlock</span><span class="p">(</span>
+    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;filters&quot;</span><span class="p">,</span>
+    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Filters&quot;</span><span class="p">,</span>
+    <span class="n">controls</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span><span class="o">...</span><span class="p">)}</span>
+<span class="p">)</span>
+<span class="c1"># Publishes: &quot;filters-category&quot;</span>
+
+<span class="c1"># Subscribers: Charts and Metrics</span>
+<span class="n">chart</span> <span class="o">=</span> <span class="n">TypedChartBlock</span><span class="p">(</span>
+    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;chart1&quot;</span><span class="p">,</span>
+    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span>
+    <span class="n">plot_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;Product&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="s1">&#39;Sales&#39;</span><span class="p">},</span>
+    <span class="n">subscribes_to</span><span class="o">=</span><span class="s2">&quot;filters-category&quot;</span>
+<span class="p">)</span>
+
+<span class="n">metrics</span> <span class="o">=</span> <span class="n">MetricsBlock</span><span class="p">(</span>
+    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;metrics&quot;</span><span class="p">,</span>
+    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+    <span class="n">metrics_spec</span><span class="o">=</span><span class="p">{</span><span class="o">...</span><span class="p">},</span>
+    <span class="n">subscribes_to</span><span class="o">=</span><span class="s2">&quot;filters-category&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="multi-state-subscriptions">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">Multi-State Subscriptions</a><a class="headerlink" href="#multi-state-subscriptions" title="Link to this heading"></a></h2>
+<p>A block can subscribe to multiple state sources.</p>
+<p><strong>Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Multiple publishers</span>
+<span class="n">date_filter</span> <span class="o">=</span> <span class="n">ControlPanelBlock</span><span class="p">(</span>
+    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;date_filter&quot;</span><span class="p">,</span>
+    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Date Range&quot;</span><span class="p">,</span>
+    <span class="n">controls</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;date_range&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span><span class="o">...</span><span class="p">)}</span>
+<span class="p">)</span>
+
+<span class="n">category_filter</span> <span class="o">=</span> <span class="n">ControlPanelBlock</span><span class="p">(</span>
+    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;category_filter&quot;</span><span class="p">,</span>
+    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Category&quot;</span><span class="p">,</span>
+    <span class="n">controls</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span><span class="o">...</span><span class="p">)}</span>
+<span class="p">)</span>
+
+<span class="c1"># Subscriber to multiple states</span>
+<span class="n">chart</span> <span class="o">=</span> <span class="n">TypedChartBlock</span><span class="p">(</span>
+    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;multi_chart&quot;</span><span class="p">,</span>
+    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Filtered Analysis&quot;</span><span class="p">,</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span>
+    <span class="n">plot_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;Product&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="s1">&#39;Sales&#39;</span><span class="p">},</span>
+    <span class="n">subscribes_to</span><span class="o">=</span><span class="p">[</span>
+        <span class="s2">&quot;date_filter-date_range&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;category_filter-category&quot;</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="navigation-pattern">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Navigation Pattern</a><a class="headerlink" href="#navigation-pattern" title="Link to this heading"></a></h2>
+<p>Multi-section dashboards with lazy-loaded sections.</p>
+<p><strong>Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.page</span><span class="w"> </span><span class="kn">import</span> <span class="n">NavigationConfig</span><span class="p">,</span> <span class="n">NavigationSection</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">create_overview_section</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">kpi_row_top</span><span class="p">(</span>
+        <span class="n">kpi_blocks</span><span class="o">=</span><span class="p">[</span><span class="n">kpi1</span><span class="p">,</span> <span class="n">kpi2</span><span class="p">,</span> <span class="n">kpi3</span><span class="p">],</span>
+        <span class="n">content_rows</span><span class="o">=</span><span class="p">[[</span><span class="n">summary_chart</span><span class="p">]]</span>
+    <span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">create_details_section</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">two_column_8_4</span><span class="p">(</span>
+        <span class="n">main</span><span class="o">=</span><span class="n">detail_chart</span><span class="p">,</span>
+        <span class="n">side</span><span class="o">=</span><span class="n">filter_panel</span>
+    <span class="p">)</span>
+
+<span class="n">navigation</span> <span class="o">=</span> <span class="n">NavigationConfig</span><span class="p">(</span>
+    <span class="n">sections</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">NavigationSection</span><span class="p">(</span>
+            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Overview&quot;</span><span class="p">,</span>
+            <span class="n">block_factory</span><span class="o">=</span><span class="n">create_overview_section</span><span class="p">,</span>
+            <span class="n">icon</span><span class="o">=</span><span class="s2">&quot;📊&quot;</span>
+        <span class="p">),</span>
+        <span class="n">NavigationSection</span><span class="p">(</span>
+            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Details&quot;</span><span class="p">,</span>
+            <span class="n">block_factory</span><span class="o">=</span><span class="n">create_details_section</span><span class="p">,</span>
+            <span class="n">icon</span><span class="o">=</span><span class="s2">&quot;🔍&quot;</span>
+        <span class="p">)</span>
+    <span class="p">],</span>
+    <span class="n">position</span><span class="o">=</span><span class="s2">&quot;left&quot;</span>
+<span class="p">)</span>
+
+<span class="n">page</span> <span class="o">=</span> <span class="n">DashboardPage</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Multi-Section Dashboard&quot;</span><span class="p">,</span>
+    <span class="n">navigation</span><span class="o">=</span><span class="n">navigation</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="theme-customization-pattern">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">Theme Customization Pattern</a><a class="headerlink" href="#theme-customization-pattern" title="Link to this heading"></a></h2>
+<p>Apply consistent theming across all components.</p>
+<p><strong>Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.theme</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThemeConfig</span><span class="p">,</span> <span class="n">ColorScheme</span><span class="p">,</span> <span class="n">Typography</span>
+
+<span class="c1"># Create custom theme</span>
+<span class="n">theme</span> <span class="o">=</span> <span class="n">ThemeConfig</span><span class="o">.</span><span class="n">custom_theme</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;corporate&quot;</span><span class="p">,</span>
+    <span class="n">colors</span><span class="o">=</span><span class="n">ColorScheme</span><span class="p">(</span>
+        <span class="n">primary</span><span class="o">=</span><span class="s2">&quot;#003366&quot;</span><span class="p">,</span>
+        <span class="n">secondary</span><span class="o">=</span><span class="s2">&quot;#6699CC&quot;</span><span class="p">,</span>
+        <span class="n">success</span><span class="o">=</span><span class="s2">&quot;#009966&quot;</span><span class="p">,</span>
+        <span class="n">background</span><span class="o">=</span><span class="s2">&quot;#f5f5f5&quot;</span>
+    <span class="p">),</span>
+    <span class="n">typography</span><span class="o">=</span><span class="n">Typography</span><span class="p">(</span>
+        <span class="n">font_family</span><span class="o">=</span><span class="s2">&quot;&#39;Arial&#39;, sans-serif&quot;</span><span class="p">,</span>
+        <span class="n">font_size_base</span><span class="o">=</span><span class="s2">&quot;16px&quot;</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+
+<span class="c1"># Apply to page</span>
+<span class="n">page</span> <span class="o">=</span> <span class="n">DashboardPage</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Corporate Dashboard&quot;</span><span class="p">,</span>
+    <span class="n">blocks</span><span class="o">=</span><span class="n">my_blocks</span><span class="p">,</span>
+    <span class="n">theme_config</span><span class="o">=</span><span class="n">theme</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="layout-composition-pattern">
+<h2><a class="toc-backref" href="#id5" role="doc-backlink">Layout Composition Pattern</a><a class="headerlink" href="#layout-composition-pattern" title="Link to this heading"></a></h2>
+<p>Build complex layouts from simple presets.</p>
+<p><strong>Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.presets.layouts</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">kpi_row_top</span><span class="p">,</span>
+    <span class="n">two_column_8_4</span><span class="p">,</span>
+    <span class="n">three_column_4_4_4</span>
+<span class="p">)</span>
+
+<span class="c1"># Compose complex layout</span>
+<span class="n">layout</span> <span class="o">=</span> <span class="n">kpi_row_top</span><span class="p">(</span>
+    <span class="n">kpi_blocks</span><span class="o">=</span><span class="p">[</span><span class="n">kpi1</span><span class="p">,</span> <span class="n">kpi2</span><span class="p">,</span> <span class="n">kpi3</span><span class="p">,</span> <span class="n">kpi4</span><span class="p">],</span>
+    <span class="n">content_rows</span><span class="o">=</span><span class="p">[</span>
+        <span class="c1"># Row 1: Main chart with sidebar</span>
+        <span class="n">two_column_8_4</span><span class="p">(</span><span class="n">main</span><span class="o">=</span><span class="n">main_chart</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="n">filter_panel</span><span class="p">),</span>
+        <span class="c1"># Row 2: Three comparison charts</span>
+        <span class="n">three_column_4_4_4</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="n">chart1</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="n">chart2</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">chart3</span><span class="p">),</span>
+        <span class="c1"># Row 3: Full-width table</span>
+        <span class="p">[</span><span class="n">table_block</span><span class="p">]</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">page</span> <span class="o">=</span> <span class="n">DashboardPage</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Complex Dashboard&quot;</span><span class="p">,</span>
+    <span class="n">blocks</span><span class="o">=</span><span class="n">layout</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="data-processing-pipeline-pattern-v0-15">
+<h2><a class="toc-backref" href="#id6" role="doc-backlink">Data Processing Pipeline Pattern (v0.15)</a><a class="headerlink" href="#data-processing-pipeline-pattern-v0-15" title="Link to this heading"></a></h2>
+<p>Staged data processing with DataBuilder + DataTransformer for optimal caching.</p>
+<p><strong>Pipeline Flow:</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Control Panel → Params → BaseDataSource → Build → Transform → Blocks
+                             ↓              ↓         ↓
+                         Classifier      Cache     Cache
+</pre></div>
+</div>
+<p><strong>Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseDataSource</span><span class="p">,</span> <span class="n">DataBuilder</span><span class="p">,</span> <span class="n">DataTransformer</span>
+
+<span class="c1"># Step 1: Define DataBuilder</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SalesDataBuilder</span><span class="p">(</span><span class="n">DataBuilder</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_path</span> <span class="o">=</span> <span class="n">file_path</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Revenue&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Price&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Quantity&#39;</span><span class="p">]</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Date&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">df</span>
+
+<span class="c1"># Step 2: Define DataTransformer</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SalesTransformer</span><span class="p">(</span><span class="n">DataTransformer</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="s1">&#39;filters-category&#39;</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+            <span class="n">cat</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;filters-category&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">cat</span> <span class="o">!=</span> <span class="s1">&#39;All&#39;</span><span class="p">:</span>
+                <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Category&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">cat</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">df</span>
+
+<span class="c1"># Step 3: Define param classifier</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">classify_params</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s1">&#39;transform&#39;</span> <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;filters-&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;build&#39;</span>
+
+<span class="c1"># Step 4: Create datasource</span>
+<span class="n">datasource</span> <span class="o">=</span> <span class="n">BaseDataSource</span><span class="p">(</span>
+    <span class="n">data_builder</span><span class="o">=</span><span class="n">SalesDataBuilder</span><span class="p">(</span><span class="s2">&quot;sales.csv&quot;</span><span class="p">),</span>
+    <span class="n">data_transformer</span><span class="o">=</span><span class="n">SalesTransformer</span><span class="p">(),</span>
+    <span class="n">param_classifier</span><span class="o">=</span><span class="n">classify_params</span><span class="p">,</span>
+    <span class="n">cache_ttl</span><span class="o">=</span><span class="mi">600</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Benefits:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Performance</strong>: Changing filters only triggers transform stage</p></li>
+<li><p><strong>Clarity</strong>: Each component has one responsibility</p></li>
+<li><p><strong>Testability</strong>: Test builder and transformer independently</p></li>
+<li><p><strong>Reusability</strong>: Same components can be used in multiple dashboards</p></li>
+</ol>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="utils.html" class="btn btn-neutral float-left" title="Utils Module API" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="contracts.html" class="btn btn-neutral float-right" title="Contracts and Guarantees" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Dashboard Lego Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

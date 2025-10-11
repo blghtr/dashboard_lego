@@ -10,38 +10,6 @@ Install from PyPI
 
    pip install dashboard-lego
 
-Install with optional dependencies
-----------------------------------
-
-For machine learning features:
-
-.. code-block:: bash
-
-   pip install dashboard-lego[ml]
-
-For SQL database support:
-
-.. code-block:: bash
-
-   pip install dashboard-lego[sql]
-
-For development (includes testing tools):
-
-.. code-block:: bash
-
-   pip install dashboard-lego[dev]
-
-For documentation building:
-
-.. code-block:: bash
-
-   pip install dashboard-lego[docs]
-
-Install all optional dependencies:
-
-.. code-block:: bash
-
-   pip install dashboard-lego[dev,docs,ml,sql]
 
 Install from source
 -------------------

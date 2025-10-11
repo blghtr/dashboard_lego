@@ -1,0 +1,446 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Core Module API &mdash; Dashboard Lego 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="DataSources Module API" href="datasources.html" />
+    <link rel="prev" title="System Overview" href="overview.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Dashboard Lego
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../concepts.html">Core Concepts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Comprehensive Guide</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Comprehensive API Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="overview.html">System Overview</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Core Module API</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#basedatasource">BaseDataSource</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pipeline-architecture-v0-15">Pipeline Architecture (v0.15)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#key-architectural-changes-v0-15">Key Architectural Changes (v0.15)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#constructor">Constructor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#public-methods">Public Methods</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#implementation-example-v0-15-pattern">Implementation Example (v0.15 Pattern)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#dashboardpage">DashboardPage</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id1">Constructor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id2">Public Methods</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#layout-examples">Layout Examples</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="datasources.html">DataSources Module API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blocks.html">Blocks Module API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="presets.html">Presets Module API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html">Utils Module API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="patterns.html">Integration Patterns</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contracts.html">Contracts and Guarantees</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference.html">Quick Reference</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/modules.html">API Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing to Dashboard Lego</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Dashboard Lego</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Comprehensive API Guide</a></li>
+      <li class="breadcrumb-item active">Core Module API</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guide/core.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="core-module-api">
+<span id="guide-core"></span><h1>Core Module API<a class="headerlink" href="#core-module-api" title="Link to this heading"></a></h1>
+<p>This section documents the core components that form the foundation of dashboard_lego.</p>
+<nav class="contents local" id="contents">
+<ul class="simple">
+<li><p><a class="reference internal" href="#basedatasource" id="id3">BaseDataSource</a></p>
+<ul>
+<li><p><a class="reference internal" href="#pipeline-architecture-v0-15" id="id4">Pipeline Architecture (v0.15)</a></p></li>
+<li><p><a class="reference internal" href="#key-architectural-changes-v0-15" id="id5">Key Architectural Changes (v0.15)</a></p></li>
+<li><p><a class="reference internal" href="#constructor" id="id6">Constructor</a></p></li>
+<li><p><a class="reference internal" href="#public-methods" id="id7">Public Methods</a></p></li>
+<li><p><a class="reference internal" href="#implementation-example-v0-15-pattern" id="id8">Implementation Example (v0.15 Pattern)</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#dashboardpage" id="id9">DashboardPage</a></p>
+<ul>
+<li><p><a class="reference internal" href="#id1" id="id10">Constructor</a></p></li>
+<li><p><a class="reference internal" href="#id2" id="id11">Public Methods</a></p></li>
+<li><p><a class="reference internal" href="#layout-examples" id="id12">Layout Examples</a></p></li>
+</ul>
+</li>
+</ul>
+</nav>
+<section id="basedatasource">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">BaseDataSource</a><a class="headerlink" href="#basedatasource" title="Link to this heading"></a></h2>
+<p><strong>Location:</strong> <code class="docutils literal notranslate"><span class="pre">dashboard_lego.core.datasource</span></code></p>
+<p><strong>Hierarchy:</strong> <code class="docutils literal notranslate"><span class="pre">[Core</span> <span class="pre">|</span> <span class="pre">DataSources</span> <span class="pre">|</span> <span class="pre">BaseDataSource]</span></code></p>
+<p><strong>Purpose:</strong> Concrete data source with a 2-stage processing pipeline using composition.</p>
+<section id="pipeline-architecture-v0-15">
+<h3><a class="toc-backref" href="#id4" role="doc-backlink">Pipeline Architecture (v0.15)</a><a class="headerlink" href="#pipeline-architecture-v0-15" title="Link to this heading"></a></h3>
+<p>Data flows through a 2-stage pipeline with independent caching at each stage. This is a shift from the previous 3-stage model.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>┌─────────────┐     ┌────────────────┐     ┌──────────┐
+│ DataBuilder │ --&gt; │ DataTransformer│ --&gt; │ Output   │
+│ (Build)     │     │ (Transform)    │     │ (Blocks) │
+└─────────────┘     └────────────────┘     └──────────┘
+      ↑                      ↑
+      │                      │
+   build                  transform
+   params                 params
+</pre></div>
+</div>
+<p><strong>Contract:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">:</span><span class="n">contract</span><span class="p">:</span>
+ <span class="o">-</span> <span class="n">pre</span><span class="p">:</span> <span class="n">data_builder</span> <span class="ow">and</span> <span class="n">data_transformer</span> <span class="n">are</span> <span class="n">provided</span> <span class="n">to</span> <span class="n">the</span> <span class="n">constructor</span> <span class="n">via</span> <span class="n">composition</span><span class="o">.</span>
+ <span class="o">-</span> <span class="n">post</span><span class="p">:</span> <span class="n">Data</span> <span class="n">flows</span> <span class="n">through</span> <span class="n">the</span> <span class="mi">2</span><span class="o">-</span><span class="n">stage</span> <span class="n">pipeline</span><span class="p">:</span> <span class="n">build</span> <span class="err">→</span> <span class="n">transform</span><span class="o">.</span>
+ <span class="o">-</span> <span class="n">invariant</span><span class="p">:</span> <span class="n">get_processed_data</span><span class="p">()</span> <span class="n">always</span> <span class="n">runs</span> <span class="n">the</span> <span class="n">pipeline</span><span class="p">,</span> <span class="n">leveraging</span> <span class="n">the</span> <span class="n">cache</span> <span class="n">at</span> <span class="n">each</span> <span class="n">stage</span><span class="o">.</span>
+ <span class="o">-</span> <span class="n">no_abstract_methods</span><span class="p">:</span> <span class="n">BaseDataSource</span> <span class="ow">is</span> <span class="n">fully</span> <span class="n">concrete</span> <span class="ow">and</span> <span class="n">should</span> <span class="ow">not</span> <span class="n">be</span> <span class="n">subclassed</span> <span class="k">for</span> <span class="n">data</span> <span class="n">loading</span><span class="o">.</span>
+</pre></div>
+</div>
+</section>
+<section id="key-architectural-changes-v0-15">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">Key Architectural Changes (v0.15)</a><a class="headerlink" href="#key-architectural-changes-v0-15" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p><strong>Simpler 2-Stage Pipeline</strong>: The previous <code class="docutils literal notranslate"><span class="pre">Load</span> <span class="pre">→</span> <span class="pre">Preprocess</span> <span class="pre">→</span> <span class="pre">Filter</span></code> pipeline is now <code class="docutils literal notranslate"><span class="pre">Build</span> <span class="pre">→</span> <span class="pre">Transform</span></code>.</p></li>
+<li><p><strong>Semantic Clarity</strong>: <code class="docutils literal notranslate"><span class="pre">Build</span></code> clearly means “construct the complete dataset from a source”. <code class="docutils literal notranslate"><span class="pre">Transform</span></code> means “apply any df→df transformation” (filtering, aggregation, etc.).</p></li>
+<li><p><strong>Composition over Inheritance</strong>: <code class="docutils literal notranslate"><span class="pre">BaseDataSource</span></code> is now a concrete class. You no longer subclass it. Instead, you provide <code class="docutils literal notranslate"><span class="pre">DataBuilder</span></code> and <code class="docutils literal notranslate"><span class="pre">DataTransformer</span></code> instances to its constructor.</p></li>
+<li><p><strong>Staged Caching</strong>: Changing <code class="docutils literal notranslate"><span class="pre">transform</span></code> parameters (e.g., from a filter control) will only re-run the second stage, reusing the cached result from the <code class="docutils literal notranslate"><span class="pre">build</span></code> stage for better performance.</p></li>
+</ol>
+</section>
+<section id="constructor">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">Constructor</a><a class="headerlink" href="#constructor" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">data_builder</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DataBuilder</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">data_transformer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DataTransformer</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">param_classifier</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">cache_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">cache_ttl</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">300</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Pipeline Parameters:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">data_builder</span></code>: A <code class="docutils literal notranslate"><span class="pre">DataBuilder</span></code> instance for Stage 1 (loading and initial processing).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">data_transformer</span></code>: A <code class="docutils literal notranslate"><span class="pre">DataTransformer</span></code> instance for Stage 2 (filtering, aggregation, reshaping).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">param_classifier</span></code>: A function that routes parameters from controls to the correct pipeline stage. It must return either <code class="docutils literal notranslate"><span class="pre">'build'</span></code> or <code class="docutils literal notranslate"><span class="pre">'transform'</span></code>.</p></li>
+</ul>
+<p><strong>Param Classifier Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">classify_params</span><span class="p">(</span><span class="n">param_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Route params to the correct pipeline stage.&quot;&quot;&quot;</span>
+    <span class="c1"># Params from filter controls go to the transform stage.</span>
+    <span class="k">if</span> <span class="n">param_key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;filters-&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;transform&#39;</span>
+    <span class="c1"># All other params go to the build stage.</span>
+    <span class="k">return</span> <span class="s1">&#39;build&#39;</span>
+
+<span class="n">datasource</span> <span class="o">=</span> <span class="n">BaseDataSource</span><span class="p">(</span>
+    <span class="n">data_builder</span><span class="o">=</span><span class="n">MyDataBuilder</span><span class="p">(),</span>
+    <span class="n">data_transformer</span><span class="o">=</span><span class="n">MyDataTransformer</span><span class="p">(),</span>
+    <span class="n">param_classifier</span><span class="o">=</span><span class="n">classify_params</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="public-methods">
+<h3><a class="toc-backref" href="#id7" role="doc-backlink">Public Methods</a><a class="headerlink" href="#public-methods" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_processed_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Runs the 2-stage pipeline and returns the final, transformed data.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        params: A dictionary of parameters for both build and transform stages.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A transformed DataFrame.</span>
+
+<span class="sd">    Pipeline Stages:</span>
+<span class="sd">        1. Classify params into &#39;build&#39; vs &#39;transform&#39; categories.</span>
+<span class="sd">        2. Build data (cached by build params).</span>
+<span class="sd">        3. Transform data (cached by transform params).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">with_transform_fn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transform_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;BaseDataSource&quot;</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a new, specialized datasource instance with an additional transformation.</span>
+<span class="sd">    This is the key to block-level transformations.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="implementation-example-v0-15-pattern">
+<h3><a class="toc-backref" href="#id8" role="doc-backlink">Implementation Example (v0.15 Pattern)</a><a class="headerlink" href="#implementation-example-v0-15-pattern" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseDataSource</span><span class="p">,</span> <span class="n">DataBuilder</span><span class="p">,</span> <span class="n">DataTransformer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks</span><span class="w"> </span><span class="kn">import</span> <span class="n">MetricsBlock</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="c1"># Step 1: Define a DataBuilder (combines loading and initial processing)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SalesDataBuilder</span><span class="p">(</span><span class="n">DataBuilder</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_path</span> <span class="o">=</span> <span class="n">file_path</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="c1"># Load AND process in one method</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Revenue&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Price&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Quantity&#39;</span><span class="p">]</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Date&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">df</span>
+
+<span class="c1"># Step 2: Define a DataTransformer (for filtering, aggregation, etc.)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SalesTransformer</span><span class="p">(</span><span class="n">DataTransformer</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="s1">&#39;filters-category&#39;</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+            <span class="n">category</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;filters-category&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">category</span> <span class="ow">and</span> <span class="n">category</span> <span class="o">!=</span> <span class="s1">&#39;All&#39;</span><span class="p">:</span>
+                <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Category&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">category</span><span class="p">]</span>
+        <span class="c1"># ... other transformations</span>
+        <span class="k">return</span> <span class="n">df</span>
+
+<span class="c1"># Step 3: Define a parameter classifier</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">param_classifier</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="s1">&#39;transform&#39;</span> <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;filters-&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;build&#39;</span>
+
+<span class="c1"># Step 4: Create the DataSource instance using composition</span>
+<span class="n">datasource</span> <span class="o">=</span> <span class="n">BaseDataSource</span><span class="p">(</span>
+    <span class="n">data_builder</span><span class="o">=</span><span class="n">SalesDataBuilder</span><span class="p">(</span><span class="s2">&quot;sales.csv&quot;</span><span class="p">),</span>
+    <span class="n">data_transformer</span><span class="o">=</span><span class="n">SalesTransformer</span><span class="p">(),</span>
+    <span class="n">param_classifier</span><span class="o">=</span><span class="n">param_classifier</span><span class="p">,</span>
+    <span class="n">cache_ttl</span><span class="o">=</span><span class="mi">600</span>
+<span class="p">)</span>
+
+<span class="c1"># Step 5: Use blocks like MetricsBlock to consume the data.</span>
+<span class="c1"># The get_kpis() method is removed from the datasource.</span>
+<span class="n">metrics</span> <span class="o">=</span> <span class="n">MetricsBlock</span><span class="p">(</span>
+    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;sales_metrics&quot;</span><span class="p">,</span>
+    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+    <span class="n">metrics_spec</span><span class="o">=</span><span class="p">{</span>
+        <span class="s1">&#39;total_revenue&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;column&#39;</span><span class="p">:</span> <span class="s1">&#39;Revenue&#39;</span><span class="p">,</span> <span class="s1">&#39;agg&#39;</span><span class="p">:</span> <span class="s1">&#39;sum&#39;</span><span class="p">,</span> <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;Total Revenue&#39;</span><span class="p">},</span>
+        <span class="s1">&#39;avg_price&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;column&#39;</span><span class="p">:</span> <span class="s1">&#39;Price&#39;</span><span class="p">,</span> <span class="s1">&#39;agg&#39;</span><span class="p">:</span> <span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;Avg Price&#39;</span><span class="p">}</span>
+    <span class="p">},</span>
+    <span class="n">subscribes_to</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;filters-category&#39;</span><span class="p">]</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="dashboardpage">
+<h2><a class="toc-backref" href="#id9" role="doc-backlink">DashboardPage</a><a class="headerlink" href="#dashboardpage" title="Link to this heading"></a></h2>
+<p><strong>Location:</strong> <code class="docutils literal notranslate"><span class="pre">dashboard_lego.core.page</span></code></p>
+<p><strong>Hierarchy:</strong> <code class="docutils literal notranslate"><span class="pre">[Core</span> <span class="pre">|</span> <span class="pre">Orchestration</span> <span class="pre">|</span> <span class="pre">DashboardPage]</span></code></p>
+<p><strong>Purpose:</strong> Main orchestrator for dashboard lifecycle and layout</p>
+<p><strong>Contract:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">:</span><span class="n">contract</span><span class="p">:</span>
+ <span class="o">-</span> <span class="n">pre</span><span class="p">:</span> <span class="n">Blocks</span> <span class="n">must</span> <span class="n">be</span> <span class="n">provided</span> <span class="n">via</span> <span class="s1">&#39;blocks&#39;</span> <span class="n">param</span> <span class="ow">or</span> <span class="n">navigation</span> <span class="n">sections</span>
+ <span class="o">-</span> <span class="n">post</span><span class="p">:</span> <span class="n">Complete</span> <span class="n">Dash</span> <span class="n">layout</span> <span class="k">with</span> <span class="n">registered</span> <span class="n">callbacks</span>
+ <span class="o">-</span> <span class="n">lifecycle</span><span class="p">:</span> <span class="n">instantiate</span> <span class="err">→</span> <span class="n">build_layout</span><span class="p">()</span> <span class="err">→</span> <span class="n">register_callbacks</span><span class="p">()</span> <span class="err">→</span> <span class="n">serve</span>
+</pre></div>
+</div>
+<section id="id1">
+<h3><a class="toc-backref" href="#id10" role="doc-backlink">Constructor</a><a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Dashboard&quot;</span><span class="p">,</span>
+    <span class="n">blocks</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">LayoutSpec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">navigation</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">NavigationConfig</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">theme</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># dbc.themes.* URL</span>
+    <span class="n">theme_config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ThemeConfig</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">)</span>
+
+<span class="c1"># LayoutSpec format:</span>
+<span class="c1"># Single block: BaseBlock</span>
+<span class="c1"># Row: [block1, block2, ...] or [(block1, col_opts), ...]</span>
+<span class="c1"># Multiple rows: [[row1_blocks], [row2_blocks], ...]</span>
+<span class="c1"># With row options: [([blocks], row_opts), ...]</span>
+</pre></div>
+</div>
+<p><strong>Column Options:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">col_opts</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;xs&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>      <span class="c1"># Width on extra-small screens (1-12)</span>
+    <span class="s2">&quot;sm&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>      <span class="c1"># Width on small screens (1-12)</span>
+    <span class="s2">&quot;md&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>      <span class="c1"># Width on medium screens (1-12)</span>
+    <span class="s2">&quot;lg&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>      <span class="c1"># Width on large screens (1-12)</span>
+    <span class="s2">&quot;xl&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>      <span class="c1"># Width on extra-large screens (1-12)</span>
+    <span class="s2">&quot;offset&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>  <span class="c1"># Column offset (0-11)</span>
+    <span class="s2">&quot;align&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>   <span class="c1"># Vertical align: &quot;start&quot;|&quot;center&quot;|&quot;end&quot;</span>
+    <span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Row Options:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">row_opts</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;align&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>    <span class="c1"># Vertical alignment: &quot;start&quot;|&quot;center&quot;|&quot;end&quot;</span>
+    <span class="s2">&quot;justify&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>  <span class="c1"># Horizontal alignment: &quot;start&quot;|&quot;center&quot;|&quot;end&quot;|&quot;between&quot;|&quot;around&quot;</span>
+    <span class="s2">&quot;g&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>        <span class="c1"># Gutter size (0-5)</span>
+    <span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="id2">
+<h3><a class="toc-backref" href="#id11" role="doc-backlink">Public Methods</a><a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">build_layout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Constructs complete Dash layout from blocks.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dash Component tree ready for app.layout assignment</span>
+
+<span class="sd">    Side effects:</span>
+<span class="sd">        - Creates StateManager</span>
+<span class="sd">        - Registers all blocks with StateManager</span>
+<span class="sd">        - Injects theme_config into blocks</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">register_callbacks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">Dash</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Registers all callbacks with Dash app.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        app: Dash application instance</span>
+
+<span class="sd">    Side effects:</span>
+<span class="sd">        - Calls state_manager.bind_callbacks() for block-centric callbacks</span>
+<span class="sd">        - Registers navigation callbacks if navigation is enabled</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="layout-examples">
+<h3><a class="toc-backref" href="#id12" role="doc-backlink">Layout Examples</a><a class="headerlink" href="#layout-examples" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Simple one-column layout</span>
+<span class="n">page</span> <span class="o">=</span> <span class="n">DashboardPage</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;My Dashboard&quot;</span><span class="p">,</span>
+    <span class="n">blocks</span><span class="o">=</span><span class="n">one_column</span><span class="p">([</span><span class="n">kpi_block</span><span class="p">,</span> <span class="n">chart_block</span><span class="p">]),</span>
+    <span class="n">theme</span><span class="o">=</span><span class="n">dbc</span><span class="o">.</span><span class="n">themes</span><span class="o">.</span><span class="n">LUX</span>
+<span class="p">)</span>
+
+<span class="c1"># Two-column layout with custom column widths</span>
+<span class="n">page</span> <span class="o">=</span> <span class="n">DashboardPage</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;My Dashboard&quot;</span><span class="p">,</span>
+    <span class="n">blocks</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">[(</span><span class="n">kpi_block</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;md&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">}),</span> <span class="p">(</span><span class="n">sidebar_block</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;md&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">})]</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+<span class="c1"># Complex multi-row layout</span>
+<span class="n">page</span> <span class="o">=</span> <span class="n">DashboardPage</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;My Dashboard&quot;</span><span class="p">,</span>
+    <span class="n">blocks</span><span class="o">=</span><span class="p">[</span>
+        <span class="c1"># KPI row (full width)</span>
+        <span class="p">[(</span><span class="n">kpi_block</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;md&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">})],</span>
+        <span class="c1"># Two charts side-by-side</span>
+        <span class="p">[(</span><span class="n">chart1</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;md&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">}),</span> <span class="p">(</span><span class="n">chart2</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;md&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">})],</span>
+        <span class="c1"># Three cards in a row</span>
+        <span class="p">[(</span><span class="n">card1</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;md&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">}),</span> <span class="p">(</span><span class="n">card2</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;md&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">}),</span> <span class="p">(</span><span class="n">card3</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;md&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">})]</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>For more core components (NavigationConfig, StateManager, ThemeConfig, DataBuilder, DataTransformer, DataProcessingContext, SidebarConfig), see the <span class="xref std std-ref">API documentation</span>.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="overview.html" class="btn btn-neutral float-left" title="System Overview" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="datasources.html" class="btn btn-neutral float-right" title="DataSources Module API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Dashboard Lego Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

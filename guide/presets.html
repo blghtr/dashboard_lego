@@ -1,0 +1,213 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Presets Module API &mdash; Dashboard Lego 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Utils Module API" href="utils.html" />
+    <link rel="prev" title="Blocks Module API" href="blocks.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Dashboard Lego
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../concepts.html">Core Concepts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Comprehensive Guide</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Comprehensive API Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="overview.html">System Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core.html">Core Module API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datasources.html">DataSources Module API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blocks.html">Blocks Module API</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Presets Module API</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#eda-presets">EDA Presets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ml-presets">ML Presets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#layout-presets">Layout Presets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#control-styles">Control Styles</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html">Utils Module API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="patterns.html">Integration Patterns</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contracts.html">Contracts and Guarantees</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference.html">Quick Reference</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/modules.html">API Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing to Dashboard Lego</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Dashboard Lego</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Comprehensive API Guide</a></li>
+      <li class="breadcrumb-item active">Presets Module API</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guide/presets.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="presets-module-api">
+<span id="guide-presets"></span><h1>Presets Module API<a class="headerlink" href="#presets-module-api" title="Link to this heading"></a></h1>
+<p>Pre-built blocks and layouts for common visualization patterns.</p>
+<nav class="contents local" id="contents">
+<ul class="simple">
+<li><p><a class="reference internal" href="#eda-presets" id="id1">EDA Presets</a></p></li>
+<li><p><a class="reference internal" href="#ml-presets" id="id2">ML Presets</a></p></li>
+<li><p><a class="reference internal" href="#layout-presets" id="id3">Layout Presets</a></p></li>
+<li><p><a class="reference internal" href="#control-styles" id="id4">Control Styles</a></p></li>
+</ul>
+</nav>
+<section id="eda-presets">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">EDA Presets</a><a class="headerlink" href="#eda-presets" title="Link to this heading"></a></h2>
+<p><strong>Location:</strong> <code class="docutils literal notranslate"><span class="pre">dashboard_lego.presets.eda_presets</span></code></p>
+<p>Pre-built blocks for exploratory data analysis.</p>
+<p><strong>Available Presets:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">CorrelationHeatmapPreset</span></code>: Correlation matrix heatmap</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GroupedHistogramPreset</span></code>: Interactive histogram with grouping</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">MissingValuesPreset</span></code>: Missing values visualization</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">BoxPlotPreset</span></code>: Distribution comparison box plots</p></li>
+</ul>
+</section>
+<section id="ml-presets">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">ML Presets</a><a class="headerlink" href="#ml-presets" title="Link to this heading"></a></h2>
+<p><strong>Location:</strong> <code class="docutils literal notranslate"><span class="pre">dashboard_lego.presets.ml_presets</span></code></p>
+<p>Pre-built blocks for machine learning visualization.</p>
+<p><strong>Available Presets:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">FeatureImportancePreset</span></code>: Feature importance bar chart</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ConfusionMatrixPreset</span></code>: Confusion matrix heatmap</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ROC_CurvePreset</span></code>: ROC curve for binary classification</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">MetricCardBlock</span></code>: Compact ML metrics display</p></li>
+</ul>
+</section>
+<section id="layout-presets">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Layout Presets</a><a class="headerlink" href="#layout-presets" title="Link to this heading"></a></h2>
+<p><strong>Location:</strong> <code class="docutils literal notranslate"><span class="pre">dashboard_lego.presets.layouts</span></code></p>
+<p>Pre-built layout functions for common patterns.</p>
+<p><strong>Available Layouts:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">one_column()</span></code>: Stack blocks vertically</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">two_column_6_6()</span></code>: Equal two-column split (50/50)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">two_column_8_4()</span></code>: Main content with sidebar (67/33)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">three_column_4_4_4()</span></code>: Three equal columns (33/33/33)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sidebar_main_3_9()</span></code>: Narrow sidebar with content (25/75)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">kpi_row_top()</span></code>: KPIs in top row, content below</p></li>
+</ul>
+<p><strong>Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.presets.layouts</span><span class="w"> </span><span class="kn">import</span> <span class="n">kpi_row_top</span><span class="p">,</span> <span class="n">two_column_8_4</span>
+
+<span class="n">layout</span> <span class="o">=</span> <span class="n">kpi_row_top</span><span class="p">(</span>
+    <span class="n">kpi_blocks</span><span class="o">=</span><span class="p">[</span><span class="n">kpi1</span><span class="p">,</span> <span class="n">kpi2</span><span class="p">,</span> <span class="n">kpi3</span><span class="p">],</span>
+    <span class="n">content_rows</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">two_column_8_4</span><span class="p">(</span><span class="n">main</span><span class="o">=</span><span class="n">chart</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="n">filter_panel</span><span class="p">),</span>
+        <span class="p">[</span><span class="n">table_block</span><span class="p">]</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="control-styles">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">Control Styles</a><a class="headerlink" href="#control-styles" title="Link to this heading"></a></h2>
+<p><strong>Location:</strong> <code class="docutils literal notranslate"><span class="pre">dashboard_lego.presets.control_styles</span></code></p>
+<p>Modern UI styling functions for controls.</p>
+<p><strong>Available Functions:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">modern_slider_style()</span></code>: Modern slider styling</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">compact_dropdown_style()</span></code>: Compact dropdown styling</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">control_panel_col_props()</span></code>: Responsive column properties</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">get_control_panel_css()</span></code>: Custom CSS for control panels</p></li>
+</ul>
+<p>For detailed documentation, see <span class="xref std std-ref">api-presets</span>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="blocks.html" class="btn btn-neutral float-left" title="Blocks Module API" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="utils.html" class="btn btn-neutral float-right" title="Utils Module API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Dashboard Lego Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
