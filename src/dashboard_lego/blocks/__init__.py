@@ -2,11 +2,11 @@
 Blocks module - dashboard visual components.
 
 v0.15.0: StaticChartBlock and InteractiveChartBlock removed.
-v0.16.0: Added SingleMetricBlock and get_metric_row() factory.
+v0.15.0: Added SingleMetricBlock and get_metric_row() factory.
 
 :hierarchy: [Blocks]
 :relates-to:
- - motivated_by: "v0.16.0: Factory pattern for metrics layout"
+ - motivated_by: "v0.15.0: Factory pattern for metrics layout"
  - exports: "TypedChartBlock, SingleMetricBlock, get_metric_row"
 """
 

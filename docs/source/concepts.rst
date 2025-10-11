@@ -104,7 +104,7 @@ Presets are pre-built blocks for common use cases:
 Block-Level Data Transformations
 ---------------------------------
 
-Dashboard Lego v0.16.0 introduces block-specific data transformations, allowing each
+Dashboard Lego v0.15.0 introduces block-specific data transformations, allowing each
 block to apply custom transformations (aggregation, filtering, pivoting) to the data
 it displays without affecting other blocks.
 

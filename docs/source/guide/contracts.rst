@@ -83,7 +83,7 @@ Block Lifecycle
 - ``output_target()`` returns unique (id, property) tuple
 - Updates trigger correctly on state changes
 
-Layout Height Contract (v0.16)
+Layout Height Contract (v0.15)
 --------------------------------
 
 **Contract:**

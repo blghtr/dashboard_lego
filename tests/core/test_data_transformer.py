@@ -3,7 +3,7 @@ Unit tests for DataTransformer and ChainedTransformer.
 
 :hierarchy: [Testing | Unit Tests | Core | DataTransformer]
 :relates-to:
- - motivated_by: "v0.16.0: Block-specific data transformations"
+ - motivated_by: "v0.15.0: Block-specific data transformations"
  - implements: "test_suite: 'DataTransformer'"
  - uses: ["class: 'DataTransformer'", "class: 'ChainedTransformer'"]
 

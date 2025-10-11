@@ -213,7 +213,7 @@ def param_classifier(key):
 def create_overview_section():
     """Overview page with KPIs and summary charts."""
 
-    # NEW v0.16: get_metric_row() factory pattern
+    # NEW v0.15: get_metric_row() factory pattern
     metrics_blocks, metrics_row_opts = get_metric_row(
         metrics_spec={
             "total_revenue": {

@@ -5,7 +5,7 @@ Tests the complete flow: DataSource → Block with transform → Rendered data
 
 :hierarchy: [Testing | Integration Tests | BlockTransformations]
 :relates-to:
- - motivated_by: "v0.16.0: Block-specific data transformations feature"
+ - motivated_by: "v0.15.0: Block-specific data transformations feature"
  - implements: "test_suite: 'BlockTransformations'"
  - uses: [
      "class: 'BaseDataSource'",

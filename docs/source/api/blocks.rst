@@ -17,7 +17,7 @@ Base Block
    :show-inheritance:
    :noindex:
 
-Block-Level Transformations (v0.16.0+)
+Block-Level Transformations (v0.15.0+)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 All blocks support an optional ``transform_fn`` parameter that enables block-specific

@@ -82,7 +82,7 @@ Metrics Factory Pattern
 
 **Location:** ``dashboard_lego.blocks.metrics_factory``
 
-**Status:** ✅ **RECOMMENDED (v0.16+)**
+**Status:** ✅ **RECOMMENDED (v0.15+)**
 
 Factory function to create individual metric blocks for flexible layout.
 
@@ -182,7 +182,7 @@ MetricsBlock (Deprecated)
 
 **Status:** ⚠️ **DEPRECATED** - Use ``get_metric_row()`` for new applications.
 
-.. deprecated:: 0.16.0
+.. deprecated:: 0.15.0
    Use :func:`get_metric_row` instead. MetricsBlock violates layout contracts
    by returning dbc.Row internally.
 
