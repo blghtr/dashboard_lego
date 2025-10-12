@@ -63,6 +63,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#theme-customization-pattern">Theme Customization Pattern</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#layout-composition-pattern">Layout Composition Pattern</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#data-processing-pipeline-pattern-v0-15">Data Processing Pipeline Pattern (v0.15)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#jupyter-quick-start-pattern">Jupyter Quick Start Pattern</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="contracts.html">Contracts and Guarantees</a></li>
@@ -115,6 +116,7 @@
 <li><p><a class="reference internal" href="#theme-customization-pattern" id="id4">Theme Customization Pattern</a></p></li>
 <li><p><a class="reference internal" href="#layout-composition-pattern" id="id5">Layout Composition Pattern</a></p></li>
 <li><p><a class="reference internal" href="#data-processing-pipeline-pattern-v0-15" id="id6">Data Processing Pipeline Pattern (v0.15)</a></p></li>
+<li><p><a class="reference internal" href="#jupyter-quick-start-pattern" id="id7">Jupyter Quick Start Pattern</a></p></li>
 </ul>
 </nav>
 <section id="publisher-subscriber-pattern">
@@ -342,6 +344,130 @@
 <li><p><strong>Testability</strong>: Test builder and transformer independently</p></li>
 <li><p><strong>Reusability</strong>: Same components can be used in multiple dashboards</p></li>
 </ol>
+</section>
+<section id="jupyter-quick-start-pattern">
+<h2><a class="toc-backref" href="#id7" role="doc-backlink">Jupyter Quick Start Pattern</a><a class="headerlink" href="#jupyter-quick-start-pattern" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">quick_dashboard()</span></code> factory enables rapid prototyping in Jupyter notebooks
+with minimal code. Supports simple mode (DataFrame + card specs) and advanced mode
+(pre-built blocks).</p>
+<p><strong>Simple Mode:</strong></p>
+<p>For quick exploration with 1-4 cards:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">quick_dashboard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="c1"># Load data</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s1">&#39;Product&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Widget&#39;</span><span class="p">,</span> <span class="s1">&#39;Gadget&#39;</span><span class="p">,</span> <span class="s1">&#39;Tool&#39;</span><span class="p">,</span> <span class="s1">&#39;Device&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;Sales&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">150</span><span class="p">,</span> <span class="mi">180</span><span class="p">],</span>
+    <span class="s1">&#39;Revenue&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">2000</span><span class="p">,</span> <span class="mi">1500</span><span class="p">,</span> <span class="mi">1800</span><span class="p">]</span>
+<span class="p">})</span>
+
+<span class="c1"># Create dashboard with card specs</span>
+<span class="n">app</span> <span class="o">=</span> <span class="n">quick_dashboard</span><span class="p">(</span>
+    <span class="n">df</span><span class="o">=</span><span class="n">df</span><span class="p">,</span>
+    <span class="n">cards</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;metric&quot;</span><span class="p">,</span> <span class="s2">&quot;column&quot;</span><span class="p">:</span> <span class="s2">&quot;Revenue&quot;</span><span class="p">,</span> <span class="s2">&quot;agg&quot;</span><span class="p">:</span> <span class="s2">&quot;sum&quot;</span><span class="p">,</span>
+         <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Total Revenue&quot;</span><span class="p">,</span> <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;chart&quot;</span><span class="p">,</span> <span class="s2">&quot;plot_type&quot;</span><span class="p">:</span> <span class="s2">&quot;bar&quot;</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="s2">&quot;Product&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="s2">&quot;Sales&quot;</span><span class="p">,</span>
+         <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Sales by Product&quot;</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;## Sales Dashboard</span><span class="se">\n</span><span class="s2">Quick analysis&quot;</span><span class="p">}</span>
+    <span class="p">],</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Sales Dashboard&quot;</span><span class="p">,</span>
+    <span class="n">theme</span><span class="o">=</span><span class="s2">&quot;lux&quot;</span>
+<span class="p">)</span>
+
+<span class="c1"># Run inline (requires jupyter-dash)</span>
+<span class="n">app</span><span class="o">.</span><span class="n">run_server</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;inline&#39;</span><span class="p">)</span>
+
+<span class="c1"># Or open in new browser tab</span>
+<span class="n">app</span><span class="o">.</span><span class="n">run_server</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Card Specification Reference:</strong></p>
+<dl class="simple">
+<dt>Metric Card:</dt><dd><ul class="simple">
+<li><p><strong>Required</strong>: <code class="docutils literal notranslate"><span class="pre">type=&quot;metric&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">column</span></code>, <code class="docutils literal notranslate"><span class="pre">agg</span></code>, <code class="docutils literal notranslate"><span class="pre">title</span></code></p></li>
+<li><p><strong>Optional</strong>: <code class="docutils literal notranslate"><span class="pre">color</span></code> (success, info, primary, danger, warning, secondary)</p></li>
+<li><p><strong>Example</strong>: <code class="docutils literal notranslate"><span class="pre">{&quot;type&quot;:</span> <span class="pre">&quot;metric&quot;,</span> <span class="pre">&quot;column&quot;:</span> <span class="pre">&quot;Sales&quot;,</span> <span class="pre">&quot;agg&quot;:</span> <span class="pre">&quot;sum&quot;,</span> <span class="pre">&quot;title&quot;:</span> <span class="pre">&quot;Total</span> <span class="pre">Sales&quot;,</span> <span class="pre">&quot;color&quot;:</span> <span class="pre">&quot;success&quot;}</span></code></p></li>
+</ul>
+</dd>
+<dt>Chart Card:</dt><dd><ul class="simple">
+<li><p><strong>Required</strong>: <code class="docutils literal notranslate"><span class="pre">type=&quot;chart&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">plot_type</span></code>, <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code>, <code class="docutils literal notranslate"><span class="pre">title</span></code></p></li>
+<li><p><strong>Optional</strong>: <code class="docutils literal notranslate"><span class="pre">color</span></code> (for color mapping), <code class="docutils literal notranslate"><span class="pre">size</span></code> (for scatter plots)</p></li>
+<li><p><strong>Example</strong>: <code class="docutils literal notranslate"><span class="pre">{&quot;type&quot;:</span> <span class="pre">&quot;chart&quot;,</span> <span class="pre">&quot;plot_type&quot;:</span> <span class="pre">&quot;bar&quot;,</span> <span class="pre">&quot;x&quot;:</span> <span class="pre">&quot;Product&quot;,</span> <span class="pre">&quot;y&quot;:</span> <span class="pre">&quot;Sales&quot;,</span> <span class="pre">&quot;title&quot;:</span> <span class="pre">&quot;Sales</span> <span class="pre">Chart&quot;}</span></code></p></li>
+<li><p><strong>Plot types</strong>: bar, line, scatter, histogram, box, violin, pie, etc.</p></li>
+</ul>
+</dd>
+<dt>Text Card:</dt><dd><ul class="simple">
+<li><p><strong>Required</strong>: <code class="docutils literal notranslate"><span class="pre">type=&quot;text&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">content</span></code></p></li>
+<li><p><strong>Supports</strong>: Markdown formatting</p></li>
+<li><p><strong>Example</strong>: <code class="docutils literal notranslate"><span class="pre">{&quot;type&quot;:</span> <span class="pre">&quot;text&quot;,</span> <span class="pre">&quot;content&quot;:</span> <span class="pre">&quot;##</span> <span class="pre">Analysis\n\nKey</span> <span class="pre">insights...&quot;}</span></code></p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Advanced Mode:</strong></p>
+<p>For full control with pre-built blocks:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks</span><span class="w"> </span><span class="kn">import</span> <span class="n">SingleMetricBlock</span><span class="p">,</span> <span class="n">TypedChartBlock</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseDataSource</span><span class="p">,</span> <span class="n">DataBuilder</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">quick_dashboard</span>
+
+<span class="c1"># Create custom datasource</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MyDataBuilder</span><span class="p">(</span><span class="n">DataBuilder</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+        <span class="c1"># Your custom data loading logic</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;data.csv&quot;</span><span class="p">)</span>
+
+<span class="n">datasource</span> <span class="o">=</span> <span class="n">BaseDataSource</span><span class="p">(</span><span class="n">data_builder</span><span class="o">=</span><span class="n">MyDataBuilder</span><span class="p">())</span>
+
+<span class="c1"># Create custom blocks with full configuration</span>
+<span class="n">blocks</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">SingleMetricBlock</span><span class="p">(</span>
+        <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;metric1&quot;</span><span class="p">,</span>
+        <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+        <span class="n">metric_spec</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;column&#39;</span><span class="p">:</span> <span class="s1">&#39;Revenue&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;agg&#39;</span><span class="p">:</span> <span class="s1">&#39;sum&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;Total Revenue&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;success&#39;</span>
+        <span class="p">}</span>
+    <span class="p">),</span>
+    <span class="n">TypedChartBlock</span><span class="p">(</span>
+        <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;chart1&quot;</span><span class="p">,</span>
+        <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+        <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;bar&quot;</span><span class="p">,</span>
+        <span class="n">plot_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="s2">&quot;Product&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="s2">&quot;Sales&quot;</span><span class="p">},</span>
+        <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Sales Chart&quot;</span>
+    <span class="p">)</span>
+<span class="p">]</span>
+
+<span class="c1"># Create dashboard from blocks</span>
+<span class="n">app</span> <span class="o">=</span> <span class="n">quick_dashboard</span><span class="p">(</span><span class="n">blocks</span><span class="o">=</span><span class="n">blocks</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Custom Dashboard&quot;</span><span class="p">)</span>
+<span class="n">app</span><span class="o">.</span><span class="n">run_server</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Installation:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Install with Jupyter support</span>
+pip<span class="w"> </span>install<span class="w"> </span>dashboard-lego<span class="o">[</span>jupyter<span class="o">]</span>
+
+<span class="c1"># Or install jupyter-dash separately</span>
+pip<span class="w"> </span>install<span class="w"> </span>jupyter-dash
+</pre></div>
+</div>
+<p><strong>Features:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Zero disk I/O</strong>: Uses in-memory data pipeline (<code class="docutils literal notranslate"><span class="pre">cache_ttl=0</span></code>)</p></li>
+<li><p><strong>Automatic layout</strong>: Selects optimal grid based on card count (1-4)</p></li>
+<li><p><strong>Theme support</strong>: All Bootstrap themes supported (lux, dark, light, cyborg, etc.)</p></li>
+<li><p><strong>JupyterDash integration</strong>: Inline display if jupyter-dash installed, graceful fallback otherwise</p></li>
+<li><p><strong>Type safety</strong>: Validates card specifications at runtime</p></li>
+</ol>
+<p><strong>Layout Selection:</strong></p>
+<ul class="simple">
+<li><p>1 card: Full width (12 columns)</p></li>
+<li><p>2 cards: 50/50 split (6/6 columns)</p></li>
+<li><p>3 cards: 33/33/33 split (4/4/4 columns)</p></li>
+<li><p>4 cards: 2x2 grid (two rows of 6/6 columns)</p></li>
+</ul>
 </section>
 </section>
 
