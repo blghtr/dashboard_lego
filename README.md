@@ -135,6 +135,48 @@ python examples/01_simple_dashboard.py
 
 For a comprehensive API reference with detailed contracts, hierarchies, and advanced patterns, see **[DASHBOARD_LEGO_GUIDE.md](DASHBOARD_LEGO_GUIDE.md)**.
 
+## 🎯 Jupyter Quick Start
+
+For rapid prototyping in Jupyter notebooks, use the `quick_dashboard()` factory:
+
+```python
+from dashboard_lego.utils import quick_dashboard
+import pandas as pd
+
+# Load your data
+df = pd.DataFrame({
+    'Product': ['Widget', 'Gadget', 'Tool', 'Device'],
+    'Sales': [100, 200, 150, 180],
+    'Revenue': [1000, 2000, 1500, 1800]
+})
+
+# Create dashboard with 3 lines of code
+app = quick_dashboard(
+    df=df,
+    cards=[
+        {"type": "metric", "column": "Revenue", "agg": "sum",
+         "title": "Total Revenue", "color": "success"},
+        {"type": "chart", "plot_type": "bar", "x": "Product", "y": "Sales",
+         "title": "Sales by Product"}
+    ],
+    title="Sales Dashboard",
+    theme="lux"
+)
+
+# Run (opens in browser tab)
+app.run(debug=True)
+```
+
+**Card Types:**
+- **Metric**: `{"type": "metric", "column": str, "agg": str, "title": str, "color": str}`
+- **Chart**: `{"type": "chart", "plot_type": str, "x": str, "y": str, "title": str}`
+- **Text**: `{"type": "text", "content": str}`
+
+**Installation:**
+```bash
+pip install dashboard-lego
+```
+
 ## 🔗 Interactivity
 
 `dashboard-lego` makes it easy to link blocks together. One block can publish its state (e.g., a filter value), and other blocks can subscribe to that state and update accordingly.
