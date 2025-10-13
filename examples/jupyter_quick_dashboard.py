@@ -1,7 +1,8 @@
 """
-Jupyter Quick Dashboard Example.
+Quick Dashboard Example.
 
 Demonstrates the quick_dashboard() factory for rapid prototyping.
+Works in Jupyter notebooks and Python scripts.
 
 Usage:
     python examples/jupyter_quick_dashboard.py
@@ -69,12 +70,12 @@ app = quick_dashboard(
 
 if __name__ == "__main__":
     print("=" * 70)
-    print("Jupyter Quick Dashboard Example")
+    print("Quick Dashboard Example")
     print("=" * 70)
     print("\nFeatures:")
     print("  ✓ 2 metric cards (Total Revenue, Average Sales)")
     print("  ✓ 2 chart cards (Bar chart, Scatter plot)")
-    print("  ✓ Automatic 2x2 grid layout")
+    print("  ✓ Smart layout: metrics row + charts 50/50")
     print("  ✓ Zero disk I/O (cache_ttl=0)")
     print("  ✓ Lux theme")
     print("\nStarting server at http://127.0.0.1:8050/")

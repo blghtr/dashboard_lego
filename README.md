@@ -135,12 +135,12 @@ python examples/01_simple_dashboard.py
 
 For a comprehensive API reference with detailed contracts, hierarchies, and advanced patterns, see **[DASHBOARD_LEGO_GUIDE.md](DASHBOARD_LEGO_GUIDE.md)**.
 
-## 🎯 Jupyter Quick Start
+## 🎯 Quick Dashboard
 
-For rapid prototyping in Jupyter notebooks, use the `quick_dashboard()` factory:
+For rapid prototyping in Jupyter notebooks, Python scripts, or anywhere Dash runs, use the `quick_dashboard()` factory:
 
 ```python
-from dashboard_lego.utils import quick_dashboard
+from dashboard_lego.utils.quick_dashboard import quick_dashboard
 import pandas as pd
 
 # Load your data
@@ -176,6 +176,30 @@ app.run(debug=True)
 ```bash
 pip install dashboard-lego
 ```
+
+### IPython Magic Commands
+
+For ultra-fast dashboard creation in Jupyter, use magic commands:
+
+```python
+# Load extension once per session
+%load_ext dashboard_lego.ipython_magics
+
+# Create dashboard in one line
+%dashboard df -m Sales sum "Total Sales" success -c bar Product Sales "Sales Chart"
+
+# Set theme preference
+%dashboard_theme cyborg
+
+# Or use cell magic for multi-line config
+%%dashboard_cell
+dataframe: df
+cards:
+  - metric: Revenue, sum, "Total Revenue"
+  - chart: bar, Product, Sales, "Sales"
+```
+
+Magic commands reduce typing and are perfect for quick exploration.
 
 ## 🔗 Interactivity
 

@@ -1,9 +1,9 @@
 """
-Tests for Jupyter dashboard factory.
+Tests for quick dashboard factory.
 
 Tests quick_dashboard() factory function with simple and advanced modes.
 
-:hierarchy: [Tests | Utils | JupyterFactory]
+:hierarchy: [Tests | Utils | QuickDashboard]
 :covers: "quick_dashboard function and InMemoryDataBuilder class"
 """
 
@@ -15,12 +15,12 @@ import pytest
 
 from dashboard_lego.blocks import SingleMetricBlock, TextBlock, TypedChartBlock
 from dashboard_lego.core import BaseDataSource
-from dashboard_lego.utils.jupyter_factory import (
+from dashboard_lego.utils.quick_dashboard import (
     InMemoryDataBuilder,
     _create_block_from_spec,
     _detect_jupyter,
     _get_theme_url_and_config,
-    _select_layout,
+    _smart_layout,
     quick_dashboard,
 )
 
@@ -187,44 +187,162 @@ class TestCreateBlockFromSpec:
             _create_block_from_spec(card_spec, datasource, "test")
 
 
-class TestSelectLayout:
-    """Test layout selection based on block count."""
+class TestSmartLayout:
+    """Test smart layout algorithm."""
 
     @pytest.fixture
-    def mock_blocks(self):
-        """Create mock blocks."""
-        return [Mock(spec=SingleMetricBlock) for _ in range(4)]
+    def datasource(self):
+        """Create test datasource."""
+        df = pd.DataFrame({"Sales": [100, 200], "Revenue": [1000, 2000]})
+        return BaseDataSource(data_builder=InMemoryDataBuilder(df), cache_ttl=0)
 
-    def test_layout_one_block(self, mock_blocks):
-        """Test layout for 1 block (full width)."""
-        layout = _select_layout([mock_blocks[0]])
-        assert len(layout) == 1  # One row
+    def test_pure_metrics(self, datasource):
+        """Test layout with only metrics (all in one row)."""
+        card_specs = [
+            {"type": "metric", "column": "Sales", "agg": "sum", "title": "Total Sales"},
+            {
+                "type": "metric",
+                "column": "Revenue",
+                "agg": "sum",
+                "title": "Total Revenue",
+            },
+        ]
 
-    def test_layout_two_blocks(self, mock_blocks):
-        """Test layout for 2 blocks (50/50 split)."""
-        layout = _select_layout(mock_blocks[:2])
-        assert len(layout) == 1  # One row with two columns
+        layout = _smart_layout(card_specs, datasource)
 
-    def test_layout_three_blocks(self, mock_blocks):
-        """Test layout for 3 blocks (33/33/33 split)."""
-        layout = _select_layout(mock_blocks[:3])
-        assert len(layout) == 1  # One row with three columns
+        # Should have 1 row (metrics row)
+        assert len(layout) == 1
 
-    def test_layout_four_blocks(self, mock_blocks):
-        """Test layout for 4 blocks (2x2 grid)."""
-        layout = _select_layout(mock_blocks)
-        assert len(layout) == 2  # Two rows
+    def test_pure_charts_one(self, datasource):
+        """Test layout with 1 chart (full width)."""
+        card_specs = [
+            {
+                "type": "chart",
+                "plot_type": "bar",
+                "x": "Sales",
+                "y": "Revenue",
+                "title": "Chart",
+            }
+        ]
 
-    def test_invalid_block_count_zero(self):
-        """Test that zero blocks raises."""
-        with pytest.raises(ValueError, match="Invalid block count"):
-            _select_layout([])
+        layout = _smart_layout(card_specs, datasource)
 
-    def test_invalid_block_count_five(self, mock_blocks):
-        """Test that more than 4 blocks raises."""
-        blocks = mock_blocks + [Mock()]  # 5 blocks
-        with pytest.raises(ValueError, match="Invalid block count"):
-            _select_layout(blocks)
+        # Should have 1 row (chart full width)
+        assert len(layout) == 1
+
+    def test_pure_charts_two(self, datasource):
+        """Test layout with 2 charts (50/50)."""
+        card_specs = [
+            {
+                "type": "chart",
+                "plot_type": "bar",
+                "x": "Sales",
+                "y": "Revenue",
+                "title": "Chart1",
+            },
+            {
+                "type": "chart",
+                "plot_type": "line",
+                "x": "Sales",
+                "y": "Revenue",
+                "title": "Chart2",
+            },
+        ]
+
+        layout = _smart_layout(card_specs, datasource)
+
+        # Should have 1 row (2 charts 50/50)
+        assert len(layout) == 1
+
+    def test_pure_charts_three(self, datasource):
+        """Test layout with 3 charts (1 full + 2 in 50/50)."""
+        card_specs = [
+            {
+                "type": "chart",
+                "plot_type": "bar",
+                "x": "Sales",
+                "y": "Revenue",
+                "title": "C1",
+            },
+            {
+                "type": "chart",
+                "plot_type": "line",
+                "x": "Sales",
+                "y": "Revenue",
+                "title": "C2",
+            },
+            {
+                "type": "chart",
+                "plot_type": "scatter",
+                "x": "Sales",
+                "y": "Revenue",
+                "title": "C3",
+            },
+        ]
+
+        layout = _smart_layout(card_specs, datasource)
+
+        # Should have 2 rows (1 full, then 2 in 50/50)
+        assert len(layout) == 2
+
+    def test_mixed_one_metric_one_chart(self, datasource):
+        """Test layout with 1M + 1C (metrics row + chart full)."""
+        card_specs = [
+            {"type": "metric", "column": "Sales", "agg": "sum", "title": "Total"},
+            {
+                "type": "chart",
+                "plot_type": "bar",
+                "x": "Sales",
+                "y": "Revenue",
+                "title": "Chart",
+            },
+        ]
+
+        layout = _smart_layout(card_specs, datasource)
+
+        # Should have 2 rows (metrics + chart)
+        assert len(layout) == 2
+
+    def test_mixed_two_metrics_two_charts(self, datasource):
+        """Test layout with 2M + 2C (metrics row + charts 50/50)."""
+        card_specs = [
+            {"type": "metric", "column": "Sales", "agg": "sum", "title": "Total Sales"},
+            {
+                "type": "metric",
+                "column": "Revenue",
+                "agg": "sum",
+                "title": "Total Revenue",
+            },
+            {
+                "type": "chart",
+                "plot_type": "bar",
+                "x": "Sales",
+                "y": "Revenue",
+                "title": "C1",
+            },
+            {
+                "type": "chart",
+                "plot_type": "line",
+                "x": "Sales",
+                "y": "Revenue",
+                "title": "C2",
+            },
+        ]
+
+        layout = _smart_layout(card_specs, datasource)
+
+        # Should have 2 rows (metrics + 2 charts)
+        assert len(layout) == 2
+
+    def test_too_many_cards_raises(self, datasource):
+        """Test that more than 4 cards raises."""
+        card_specs = [
+            {"type": "metric", "column": "Sales", "agg": "sum", "title": f"M{i}"}
+            for i in range(5)
+        ]
+
+        with pytest.raises(ValueError, match="Too many cards"):
+            _smart_layout(card_specs, datasource)
 
 
 class TestQuickDashboardSimpleMode:
