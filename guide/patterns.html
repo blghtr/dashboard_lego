@@ -63,7 +63,8 @@
 <li class="toctree-l3"><a class="reference internal" href="#theme-customization-pattern">Theme Customization Pattern</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#layout-composition-pattern">Layout Composition Pattern</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#data-processing-pipeline-pattern-v0-15">Data Processing Pipeline Pattern (v0.15)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#jupyter-quick-start-pattern">Jupyter Quick Start Pattern</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#quick-dashboard-pattern">Quick Dashboard Pattern</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ipython-magic-commands">IPython Magic Commands</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="contracts.html">Contracts and Guarantees</a></li>
@@ -116,7 +117,8 @@
 <li><p><a class="reference internal" href="#theme-customization-pattern" id="id4">Theme Customization Pattern</a></p></li>
 <li><p><a class="reference internal" href="#layout-composition-pattern" id="id5">Layout Composition Pattern</a></p></li>
 <li><p><a class="reference internal" href="#data-processing-pipeline-pattern-v0-15" id="id6">Data Processing Pipeline Pattern (v0.15)</a></p></li>
-<li><p><a class="reference internal" href="#jupyter-quick-start-pattern" id="id7">Jupyter Quick Start Pattern</a></p></li>
+<li><p><a class="reference internal" href="#quick-dashboard-pattern" id="id7">Quick Dashboard Pattern</a></p></li>
+<li><p><a class="reference internal" href="#ipython-magic-commands" id="id8">IPython Magic Commands</a></p></li>
 </ul>
 </nav>
 <section id="publisher-subscriber-pattern">
@@ -345,14 +347,28 @@
 <li><p><strong>Reusability</strong>: Same components can be used in multiple dashboards</p></li>
 </ol>
 </section>
-<section id="jupyter-quick-start-pattern">
-<h2><a class="toc-backref" href="#id7" role="doc-backlink">Jupyter Quick Start Pattern</a><a class="headerlink" href="#jupyter-quick-start-pattern" title="Link to this heading"></a></h2>
-<p>The <code class="docutils literal notranslate"><span class="pre">quick_dashboard()</span></code> factory enables rapid prototyping in Jupyter notebooks
-with minimal code. Supports simple mode (DataFrame + card specs) and advanced mode
-(pre-built blocks).</p>
+<section id="quick-dashboard-pattern">
+<h2><a class="toc-backref" href="#id7" role="doc-backlink">Quick Dashboard Pattern</a><a class="headerlink" href="#quick-dashboard-pattern" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">quick_dashboard()</span></code> factory enables rapid prototyping in Jupyter notebooks,
+Python scripts, and anywhere Dash runs, with minimal code. Supports simple mode
+(DataFrame + card specs) and advanced mode (pre-built blocks).</p>
+<p><strong>Smart Layout Algorithm:</strong></p>
+<p>The factory uses an intelligent layout algorithm optimized for notebook readability:</p>
+<ol class="arabic simple">
+<li><p><strong>Metrics are compact</strong>: All metrics grouped in single row using <code class="docutils literal notranslate"><span class="pre">get_metric_row()</span></code></p></li>
+<li><p><strong>Charts need space</strong>: Maximum 2 charts per row</p></li>
+<li><p><strong>Vertical scroll friendly</strong>: Optimized for notebook viewing</p></li>
+</ol>
+<p><strong>Layout Examples:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">2M</span> <span class="pre">+</span> <span class="pre">2C</span></code> → metrics_row + [chart1_50, chart2_50]</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">1M</span> <span class="pre">+</span> <span class="pre">3C</span></code> → metrics_row + [chart1_full] + [chart2_50, chart3_50]</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">4M</span> <span class="pre">+</span> <span class="pre">0C</span></code> → metrics_row (all 4 in one compact row)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">0M</span> <span class="pre">+</span> <span class="pre">3C</span></code> → [chart1_full] + [chart2_50, chart3_50]</p></li>
+</ul>
 <p><strong>Simple Mode:</strong></p>
 <p>For quick exploration with 1-4 cards:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">quick_dashboard</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.quick_dashboard</span><span class="w"> </span><span class="kn">import</span> <span class="n">quick_dashboard</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 <span class="c1"># Load data</span>
@@ -456,17 +472,70 @@ pip<span class="w"> </span>install<span class="w"> </span>jupyter-dash
 <p><strong>Features:</strong></p>
 <ol class="arabic simple">
 <li><p><strong>Zero disk I/O</strong>: Uses in-memory data pipeline (<code class="docutils literal notranslate"><span class="pre">cache_ttl=0</span></code>)</p></li>
-<li><p><strong>Automatic layout</strong>: Selects optimal grid based on card count (1-4)</p></li>
+<li><p><strong>Smart layout</strong>: Metrics grouped in compact row, charts max 2 per row</p></li>
 <li><p><strong>Theme support</strong>: All Bootstrap themes supported (lux, dark, light, cyborg, etc.)</p></li>
-<li><p><strong>JupyterDash integration</strong>: Inline display if jupyter-dash installed, graceful fallback otherwise</p></li>
+<li><p><strong>Universal</strong>: Works in Jupyter, Python scripts, anywhere Dash runs</p></li>
 <li><p><strong>Type safety</strong>: Validates card specifications at runtime</p></li>
 </ol>
-<p><strong>Layout Selection:</strong></p>
+</section>
+<section id="ipython-magic-commands">
+<h2><a class="toc-backref" href="#id8" role="doc-backlink">IPython Magic Commands</a><a class="headerlink" href="#ipython-magic-commands" title="Link to this heading"></a></h2>
+<p>For even faster dashboard creation in Jupyter notebooks, Dashboard Lego provides
+IPython magic commands that reduce code to a single line.</p>
+<p><strong>Loading the Extension:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="n">load_ext</span> <span class="n">dashboard_lego</span><span class="o">.</span><span class="n">ipython_magics</span>
+</pre></div>
+</div>
+<p><strong>Magic 1: %dashboard (Line Magic)</strong></p>
+<p>Create dashboard in one line:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Syntax</span>
+<span class="o">%</span><span class="n">dashboard</span> <span class="n">df</span> <span class="o">--</span><span class="n">metric</span> <span class="n">column</span> <span class="n">agg</span> <span class="n">title</span> <span class="p">[</span><span class="n">color</span><span class="p">]</span> <span class="o">--</span><span class="n">chart</span> <span class="n">plot_type</span> <span class="n">x</span> <span class="n">y</span> <span class="n">title</span>
+
+<span class="c1"># Example</span>
+<span class="o">%</span><span class="n">dashboard</span> <span class="n">df</span> <span class="o">-</span><span class="n">m</span> <span class="n">Sales</span> <span class="nb">sum</span> <span class="s2">&quot;Total Sales&quot;</span> <span class="n">success</span> <span class="o">-</span><span class="n">c</span> <span class="n">bar</span> <span class="n">Product</span> <span class="n">Sales</span> <span class="s2">&quot;Sales Chart&quot;</span>
+
+<span class="c1"># Short flags: -m (metric), -c (chart), -x (text), -t (title), -p (port)</span>
+</pre></div>
+</div>
+<p><strong>Magic 2: %dashboard_theme</strong></p>
+<p>Set default theme for future dashboards:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Set theme</span>
+<span class="o">%</span><span class="n">dashboard_theme</span> <span class="n">cyborg</span>
+
+<span class="c1"># View current theme and list all available</span>
+<span class="o">%</span><span class="n">dashboard_theme</span>
+</pre></div>
+</div>
+<p><strong>Magic 3: %%dashboard_cell (Cell Magic)</strong></p>
+<p>Multi-line YAML-like configuration:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="o">%%</span><span class="n">dashboard_cell</span>
+<span class="n">dataframe</span><span class="p">:</span> <span class="n">df</span>
+<span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Sales Analytics&quot;</span>
+<span class="n">theme</span><span class="p">:</span> <span class="n">dark</span>
+<span class="n">port</span><span class="p">:</span> <span class="mi">8050</span>
+<span class="n">cards</span><span class="p">:</span>
+  <span class="o">-</span> <span class="n">metric</span><span class="p">:</span> <span class="n">Revenue</span><span class="p">,</span> <span class="nb">sum</span><span class="p">,</span> <span class="s2">&quot;Total Revenue&quot;</span><span class="p">,</span> <span class="n">success</span>
+  <span class="o">-</span> <span class="n">metric</span><span class="p">:</span> <span class="n">Profit</span><span class="p">,</span> <span class="nb">sum</span><span class="p">,</span> <span class="s2">&quot;Total Profit&quot;</span><span class="p">,</span> <span class="n">warning</span>
+  <span class="o">-</span> <span class="n">chart</span><span class="p">:</span> <span class="n">bar</span><span class="p">,</span> <span class="n">Product</span><span class="p">,</span> <span class="n">Sales</span><span class="p">,</span> <span class="s2">&quot;Sales Chart&quot;</span>
+  <span class="o">-</span> <span class="n">text</span><span class="p">:</span> <span class="s2">&quot;## Summary</span><span class="se">\n\n</span><span class="s2">Key insights...&quot;</span>
+</pre></div>
+</div>
+<p><strong>Comparison:</strong></p>
+<p>Traditional API (3 lines):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">app</span> <span class="o">=</span> <span class="n">quick_dashboard</span><span class="p">(</span><span class="n">df</span><span class="o">=</span><span class="n">df</span><span class="p">,</span> <span class="n">cards</span><span class="o">=</span><span class="p">[</span><span class="o">...</span><span class="p">])</span>
+<span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">port</span><span class="o">=</span><span class="mi">8050</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Magic command (1 line):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="n">dashboard</span> <span class="n">df</span> <span class="o">-</span><span class="n">m</span> <span class="n">Sales</span> <span class="nb">sum</span> <span class="s2">&quot;Total&quot;</span> <span class="o">-</span><span class="n">c</span> <span class="n">bar</span> <span class="n">Product</span> <span class="n">Sales</span>
+</pre></div>
+</div>
+<p><strong>Use Cases:</strong></p>
 <ul class="simple">
-<li><p>1 card: Full width (12 columns)</p></li>
-<li><p>2 cards: 50/50 split (6/6 columns)</p></li>
-<li><p>3 cards: 33/33/33 split (4/4/4 columns)</p></li>
-<li><p>4 cards: 2x2 grid (two rows of 6/6 columns)</p></li>
+<li><p>Quick exploration and prototyping</p></li>
+<li><p>Interactive data analysis sessions</p></li>
+<li><p>Minimal typing for ephemeral dashboards</p></li>
+<li><p>Teaching and demonstrations</p></li>
 </ul>
 </section>
 </section>
