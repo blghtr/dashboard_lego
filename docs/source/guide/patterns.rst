@@ -257,12 +257,27 @@ Staged data processing with DataBuilder + DataTransformer for optimal caching.
 3. **Testability**: Test builder and transformer independently
 4. **Reusability**: Same components can be used in multiple dashboards
 
-Jupyter Quick Start Pattern
-----------------------------
+Quick Dashboard Pattern
+-----------------------
 
-The ``quick_dashboard()`` factory enables rapid prototyping in Jupyter notebooks
-with minimal code. Supports simple mode (DataFrame + card specs) and advanced mode
-(pre-built blocks).
+The ``quick_dashboard()`` factory enables rapid prototyping in Jupyter notebooks,
+Python scripts, and anywhere Dash runs, with minimal code. Supports simple mode
+(DataFrame + card specs) and advanced mode (pre-built blocks).
+
+**Smart Layout Algorithm:**
+
+The factory uses an intelligent layout algorithm optimized for notebook readability:
+
+1. **Metrics are compact**: All metrics grouped in single row using ``get_metric_row()``
+2. **Charts need space**: Maximum 2 charts per row
+3. **Vertical scroll friendly**: Optimized for notebook viewing
+
+**Layout Examples:**
+
+- ``2M + 2C`` → metrics_row + [chart1_50, chart2_50]
+- ``1M + 3C`` → metrics_row + [chart1_full] + [chart2_50, chart3_50]
+- ``4M + 0C`` → metrics_row (all 4 in one compact row)
+- ``0M + 3C`` → [chart1_full] + [chart2_50, chart3_50]
 
 **Simple Mode:**
 
@@ -270,7 +285,7 @@ For quick exploration with 1-4 cards:
 
 .. code-block:: python
 
-   from dashboard_lego.utils import quick_dashboard
+   from dashboard_lego.utils.quick_dashboard import quick_dashboard
    import pandas as pd
 
    # Load data
@@ -374,14 +389,84 @@ For full control with pre-built blocks:
 **Features:**
 
 1. **Zero disk I/O**: Uses in-memory data pipeline (``cache_ttl=0``)
-2. **Automatic layout**: Selects optimal grid based on card count (1-4)
+2. **Smart layout**: Metrics grouped in compact row, charts max 2 per row
 3. **Theme support**: All Bootstrap themes supported (lux, dark, light, cyborg, etc.)
-4. **JupyterDash integration**: Inline display if jupyter-dash installed, graceful fallback otherwise
+4. **Universal**: Works in Jupyter, Python scripts, anywhere Dash runs
 5. **Type safety**: Validates card specifications at runtime
 
-**Layout Selection:**
+IPython Magic Commands
+-----------------------
 
-- 1 card: Full width (12 columns)
-- 2 cards: 50/50 split (6/6 columns)
-- 3 cards: 33/33/33 split (4/4/4 columns)
-- 4 cards: 2x2 grid (two rows of 6/6 columns)
+For even faster dashboard creation in Jupyter notebooks, Dashboard Lego provides
+IPython magic commands that reduce code to a single line.
+
+**Loading the Extension:**
+
+.. code-block:: python
+
+   %load_ext dashboard_lego.ipython_magics
+
+**Magic 1: %dashboard (Line Magic)**
+
+Create dashboard in one line:
+
+.. code-block:: python
+
+   # Syntax
+   %dashboard df --metric column agg title [color] --chart plot_type x y title
+
+   # Example
+   %dashboard df -m Sales sum "Total Sales" success -c bar Product Sales "Sales Chart"
+
+   # Short flags: -m (metric), -c (chart), -x (text), -t (title), -p (port)
+
+**Magic 2: %dashboard_theme**
+
+Set default theme for future dashboards:
+
+.. code-block:: python
+
+   # Set theme
+   %dashboard_theme cyborg
+
+   # View current theme and list all available
+   %dashboard_theme
+
+**Magic 3: %%dashboard_cell (Cell Magic)**
+
+Multi-line YAML-like configuration:
+
+.. code-block:: python
+
+   %%dashboard_cell
+   dataframe: df
+   title: "Sales Analytics"
+   theme: dark
+   port: 8050
+   cards:
+     - metric: Revenue, sum, "Total Revenue", success
+     - metric: Profit, sum, "Total Profit", warning
+     - chart: bar, Product, Sales, "Sales Chart"
+     - text: "## Summary\n\nKey insights..."
+
+**Comparison:**
+
+Traditional API (3 lines):
+
+.. code-block:: python
+
+   app = quick_dashboard(df=df, cards=[...])
+   app.run(port=8050)
+
+Magic command (1 line):
+
+.. code-block:: python
+
+   %dashboard df -m Sales sum "Total" -c bar Product Sales
+
+**Use Cases:**
+
+- Quick exploration and prototyping
+- Interactive data analysis sessions
+- Minimal typing for ephemeral dashboards
+- Teaching and demonstrations

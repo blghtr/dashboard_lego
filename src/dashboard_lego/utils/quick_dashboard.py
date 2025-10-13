@@ -1,26 +1,30 @@
 """
-Jupyter Dashboard Factory - Rapid dashboard assembly for Jupyter notebooks.
+Quick Dashboard Factory - Rapid dashboard assembly utility.
 
 Provides quick_dashboard() factory for instant dashboard creation with
-minimal code. Supports two modes: simple (DataFrame + card specs) and
+minimal code. Works in Jupyter notebooks, Python scripts, and anywhere
+Dash runs. Supports two modes: simple (DataFrame + card specs) and
 advanced (pre-built blocks).
 
-:hierarchy: [Utils | JupyterFactory]
+:hierarchy: [Utils | QuickDashboard]
 :relates-to:
- - motivated_by: "Jupyter users need rapid prototyping without
-                  boilerplate"
- - implements: "quick_dashboard() factory function"
- - uses: ["BaseDataSource", "DashboardPage", "SingleMetricBlock",
+ - motivated_by: "Users need rapid prototyping without boilerplate:
+                  instant visualization in 3-5 lines for exploration"
+ - implements: "quick_dashboard() factory with smart layout algorithm"
+ - uses: ["BaseDataSource", "DashboardPage", "get_metric_row",
           "TypedChartBlock"]
 
 :contract:
  - pre: "Valid DataFrame OR list of blocks (mutually exclusive),
          1-4 cards/blocks"
- - post: "Returns ready-to-run Dash/JupyterDash app"
+ - post: "Returns ready-to-run Dash app"
  - invariant: "No disk writes, no external state mutations,
                deterministic layout"
 
-:complexity: 6
+:complexity: 7
+:decision_cache: "Smart layout over naive grid: metrics grouped via
+                  get_metric_row (single row), charts max 2 per row
+                  for notebook-friendly vertical scrolling"
 """
 
 from typing import Any, Dict, List, Optional, Union
@@ -30,6 +34,7 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 
 from dashboard_lego.blocks.base import BaseBlock
+from dashboard_lego.blocks.metrics_factory import get_metric_row
 from dashboard_lego.blocks.single_metric import SingleMetricBlock
 from dashboard_lego.blocks.text import TextBlock
 from dashboard_lego.blocks.typed_chart import TypedChartBlock
@@ -37,28 +42,27 @@ from dashboard_lego.core.data_builder import DataBuilder
 from dashboard_lego.core.datasource import BaseDataSource
 from dashboard_lego.core.page import DashboardPage
 from dashboard_lego.core.theme import ThemeConfig
-from dashboard_lego.presets.layouts import (
-    one_column,
-    three_column_4_4_4,
-    two_column_6_6,
-)
+from dashboard_lego.presets.layouts import one_column, two_column_6_6
 from dashboard_lego.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
 # LLM:METADATA
-# :hierarchy: [Utils | JupyterFactory | InMemoryDataBuilder]
+# :hierarchy: [Utils | QuickDashboard | InMemoryDataBuilder]
 # :relates-to:
-#  - motivated_by: "In-memory DataFrame wrapper for no-disk-I/O requirement: Jupyter users pass DataFrame directly, no file loading needed, satisfies invariant of zero disk writes [jupyter-in-memory]"
-#  - implements: "DataBuilder subclass that wraps DataFrame in memory with cache_ttl=0 [InMemoryDataBuilder]"
+#  - motivated_by: "In-memory DataFrame wrapper for no-disk-I/O requirement:
+#                   users pass DataFrame directly, no file loading,
+#                   satisfies invariant of zero disk writes"
+#  - implements: "DataBuilder subclass wrapping DataFrame in memory"
 #  - uses: ["DataBuilder: base class for build protocol"]
 # :contract:
 #  - pre: "df is valid non-empty pandas DataFrame at initialization"
 #  - post: "build() returns same DataFrame every call (cached in memory)"
-#  - invariant: "no disk I/O (no temp files, no cache), deterministic (same df in, same df out)"
+#  - invariant: "no disk I/O, deterministic"
 # :complexity: 2
-# :decision_cache: "DataFrame stored at init over build-time loading: avoids repeated reads, guarantees no disk I/O during runtime [decision-inmemory-001]"
+# :decision_cache: "DataFrame stored at init over build-time loading:
+#                   avoids repeated reads, guarantees no disk I/O"
 # LLM:END
 
 
@@ -334,51 +338,132 @@ def _create_block_from_spec(
 
 
 # LLM:METADATA
-# :hierarchy: [Utils | JupyterFactory | _select_layout]
+# :hierarchy: [Utils | QuickDashboard | _smart_layout]
 # :relates-to:
-#  - motivated_by: "Card count determines optimal grid layout for visual balance: 1 card full width, 2 cards 50/50, 3 cards 33/33/33, 4 cards 2x2 grid [layout-selection]"
-#  - implements: "Helper that selects layout preset based on block count [_select_layout]"
-#  - uses: ["one_column, two_column_6_6, three_column_4_4_4: layout presets"]
+#  - motivated_by: "Notebook-friendly layout: metrics compact (all in one row
+#                   via get_metric_row), charts large (max 2 per row),
+#                   vertical scroll friendly"
+#  - implements: "Smart layout algorithm separating metrics from charts"
+#  - uses: ["get_metric_row: metrics factory", "two_column_6_6: chart pairs"]
 # :contract:
-#  - pre: "blocks is list of 1-4 BaseBlock instances"
-#  - post: "returns layout rows compatible with DashboardPage.blocks parameter"
-#  - invariant: "deterministic (same count → same layout structure)"
-# :complexity: 2
-# :decision_cache: "Layout preset selection over manual Col/Row: reuses tested patterns, consistent spacing [decision-layout-select-001]"
+#  - pre: "card_specs is list of card dicts, datasource valid"
+#  - post: "returns layout rows: metrics_row first (if any), then charts"
+#  - invariant: "deterministic, metrics always grouped in first row"
+# :complexity: 4
+# :decision_cache: "get_metric_row integration over individual metrics:
+#                   optimized layout, single compact row for all metrics,
+#                   consistent with showcase pattern"
 # LLM:END
 
 
-def _select_layout(blocks: List[BaseBlock]) -> List:
+def _smart_layout(card_specs: List[Dict[str, Any]], datasource: BaseDataSource) -> List:
     """
-    Select layout based on block count.
+    Create notebook-friendly layout with smart metric grouping.
+
+    Algorithm:
+    1. Separate metrics from non-metrics (charts, text)
+    2. If metrics exist: create metrics_row via get_metric_row() (first row)
+    3. Layout non-metrics: max 2 per row for readability
+    4. Combine rows: [metrics_row, ...non_metric_rows]
 
     Args:
-        blocks: List of 1-4 blocks
+        card_specs: List of card specification dicts
+        datasource: DataSource for metric blocks
 
     Returns:
         Layout rows for DashboardPage
 
     Raises:
-        ValueError: If blocks count not in 1-4 range
-    """
-    count = len(blocks)
+        ValueError: If total cards > 4
 
-    if count == 1:
-        return one_column(blocks)
-    elif count == 2:
-        return two_column_6_6(blocks[0], blocks[1])
-    elif count == 3:
-        return three_column_4_4_4(blocks[0], blocks[1], blocks[2])
-    elif count == 4:
-        # 2x2 grid: two rows of two columns
-        return [
-            *two_column_6_6(blocks[0], blocks[1]),
-            *two_column_6_6(blocks[2], blocks[3]),
-        ]
-    else:
+    Example layouts:
+        2M + 2C → [metrics_row(2), [chart1_50, chart2_50]]
+        1M + 3C → [metrics_row(1), [chart1_full], [chart2_50, chart3_50]]
+        0M + 3C → [[chart1_full], [chart2_50, chart3_50]]
+    """
+    if len(card_specs) > 4:
         raise ValueError(
-            f"Invalid block count: {count}. Must be 1-4 for quick_dashboard()"
+            f"Too many cards: {len(card_specs)}. Maximum 4 for quick_dashboard()"
         )
+
+    # Separate metrics from non-metrics
+    metric_specs = []
+    non_metric_specs = []
+
+    for idx, spec in enumerate(card_specs):
+        if spec["type"] == "metric":
+            metric_specs.append((idx, spec))
+        else:
+            non_metric_specs.append((idx, spec))
+
+    rows = []
+
+    # Create metrics row if any (using get_metric_row factory)
+    if metric_specs:
+        # Validate metric specs
+        for idx, spec in metric_specs:
+            required = {"column", "agg", "title"}
+            if not required.issubset(spec.keys()):
+                missing = required - spec.keys()
+                raise ValueError(
+                    f"Invalid card spec at index {idx}: Metric card missing "
+                    f"required fields: {missing}. Required: column, agg, title"
+                )
+
+        metrics_spec_dict = {
+            f"metric_{idx}": {
+                "column": spec["column"],
+                "agg": spec["agg"],
+                "title": spec["title"],
+                "color": spec.get("color", "primary"),
+                "dtype": spec.get("dtype"),
+            }
+            for idx, spec in metric_specs
+        }
+
+        logger.debug(
+            f"[Utils|QuickDashboard] Creating metrics row | count={len(metric_specs)}"
+        )
+
+        metric_blocks, metric_row_opts = get_metric_row(
+            metrics_spec=metrics_spec_dict,
+            datasource=datasource,
+            block_id_prefix="quick_metric",
+        )
+
+        # Build metrics row with equal widths
+        metric_width = 12 // len(metric_blocks)
+        metric_cells = [(block, {"md": metric_width}) for block in metric_blocks]
+        rows.append((metric_cells, metric_row_opts))
+
+    # Create non-metric blocks
+    non_metric_blocks = []
+    for idx, spec in non_metric_specs:
+        block_id = f"quick_card_{idx}"
+        block = _create_block_from_spec(spec, datasource, block_id)
+        non_metric_blocks.append(block)
+
+    # Layout non-metrics (max 2 per row for notebook readability)
+    if len(non_metric_blocks) == 1:
+        rows.extend(one_column(non_metric_blocks))
+    elif len(non_metric_blocks) == 2:
+        rows.extend(two_column_6_6(non_metric_blocks[0], non_metric_blocks[1]))
+    elif len(non_metric_blocks) == 3:
+        # First full width, then 2 in 50/50
+        rows.extend(one_column([non_metric_blocks[0]]))
+        rows.extend(two_column_6_6(non_metric_blocks[1], non_metric_blocks[2]))
+    elif len(non_metric_blocks) == 4:
+        # Two rows of 50/50
+        rows.extend(two_column_6_6(non_metric_blocks[0], non_metric_blocks[1]))
+        rows.extend(two_column_6_6(non_metric_blocks[2], non_metric_blocks[3]))
+
+    logger.debug(
+        f"[Utils|QuickDashboard] Smart layout created | "
+        f"metrics={len(metric_specs)} | non_metrics={len(non_metric_specs)} | "
+        f"rows={len(rows)}"
+    )
+
+    return rows
 
 
 # LLM:METADATA
@@ -503,7 +588,7 @@ def quick_dashboard(
             "Must provide either 'df' (simple mode) or 'blocks' (advanced mode)"
         )
 
-    # Simple mode: build blocks from card specs
+    # Simple mode: build blocks from card specs using smart layout
     if df is not None:
         if cards is None or len(cards) == 0:
             raise ValueError("Simple mode requires 'cards' list with 1-4 card specs")
@@ -514,7 +599,7 @@ def quick_dashboard(
             )
 
         logger.debug(
-            f"[Utils|JupyterFactory|quick_dashboard] Simple mode | "
+            f"[Utils|QuickDashboard|quick_dashboard] Simple mode | "
             f"cards={len(cards)} | df_shape={df.shape}"
         )
 
@@ -524,17 +609,13 @@ def quick_dashboard(
             cache_ttl=0,  # No disk caching
         )
 
-        # Build blocks from card specs
-        blocks = []
-        for idx, card_spec in enumerate(cards):
-            block_id = f"quick_card_{idx}"
-            try:
-                block = _create_block_from_spec(card_spec, datasource, block_id)
-                blocks.append(block)
-            except Exception as e:
-                raise ValueError(f"Invalid card spec at index {idx}: {e}") from e
+        # Use smart layout (creates blocks internally with get_metric_row)
+        try:
+            layout = _smart_layout(cards, datasource)
+        except Exception as e:
+            raise ValueError(f"Error creating layout: {e}") from e
 
-    # Advanced mode: validate blocks
+    # Advanced mode: use blocks directly with simple layout
     else:
         if len(blocks) > 4:  # type: ignore
             raise ValueError(
@@ -542,11 +623,20 @@ def quick_dashboard(
             )
 
         logger.debug(
-            f"[Utils|JupyterFactory|quick_dashboard] Advanced mode | blocks={len(blocks)}"  # type: ignore
+            f"[Utils|QuickDashboard|quick_dashboard] Advanced mode | blocks={len(blocks)}"  # type: ignore
         )
 
-    # Select layout based on block count
-    layout = _select_layout(blocks)  # type: ignore
+        # For advanced mode, use simple layout (no smart grouping)
+        count = len(blocks)  # type: ignore
+        if count == 1:
+            layout = one_column(blocks)  # type: ignore
+        elif count == 2:
+            layout = two_column_6_6(blocks[0], blocks[1])  # type: ignore
+        elif count == 3:
+            # 1 full + 2 in 50/50
+            layout = [*one_column([blocks[0]]), *two_column_6_6(blocks[1], blocks[2])]  # type: ignore
+        else:  # 4 blocks
+            layout = [*two_column_6_6(blocks[0], blocks[1]), *two_column_6_6(blocks[2], blocks[3])]  # type: ignore
 
     # Get theme configuration
     theme_url, theme_config = _get_theme_url_and_config(theme)
@@ -576,9 +666,10 @@ def quick_dashboard(
     app.layout = page.build_layout()
     page.register_callbacks(app)
 
+    card_count = len(cards) if df is not None else len(blocks)  # type: ignore
     logger.info(
-        f"[Utils|JupyterFactory|quick_dashboard] EXIT | "
-        f"app_type=Dash | blocks={len(blocks)} | ready=True"  # type: ignore
+        f"[Utils|QuickDashboard|quick_dashboard] EXIT | "
+        f"app_type=Dash | cards={card_count} | ready=True"
     )
 
     return app

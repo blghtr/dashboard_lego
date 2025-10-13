@@ -270,7 +270,7 @@ def setup_logging(level: Optional[str] = None, log_dir: Optional[str] = None) ->
 
     # Log the initialization only when not in reloader subprocess
     if os.environ.get("WERKZEUG_RUN_MAIN") != "true":
-        root_logger.info(f"Logging initialized: level={level}, log_dir={log_dir}")
+        root_logger.debug(f"Logging initialized: level={level}, log_dir={log_dir}")
 
 
 # Auto-setup on import (can be disabled by setting env var)

@@ -28,7 +28,7 @@ __all__ = [
 def __getattr__(name):
     """Lazy import to avoid circular dependency."""
     if name == "quick_dashboard":
-        from dashboard_lego.utils.jupyter_factory import quick_dashboard
+        from dashboard_lego.utils.quick_dashboard import quick_dashboard
 
         return quick_dashboard
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
