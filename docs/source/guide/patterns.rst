@@ -257,6 +257,47 @@ Staged data processing with DataBuilder + DataTransformer for optimal caching.
 3. **Testability**: Test builder and transformer independently
 4. **Reusability**: Same components can be used in multiple dashboards
 
+**Cache Sharing (v0.15.2):**
+
+Cache objects are automatically shared across datasource instances to prevent duplicate builds:
+
+- **Same cache_dir**: Multiple datasources with identical ``cache_dir`` paths share cache
+- **In-memory**: All ``cache_dir=None`` datasources share single global in-memory cache
+- **Stage1 (Build) optimization**: When using ``with_transform_fn()``, the derived datasource
+  reuses the parent's cache → ``build()`` executes only once
+
+Example:
+
+.. code-block:: python
+
+   from dashboard_lego.core import BaseDataSource, DataBuilder
+
+   # Create main datasource
+   main_ds = BaseDataSource(
+       data_builder=MyDataBuilder(),
+       cache_dir=None  # In-memory cache
+   )
+
+   # Create derived datasource with additional transform
+   filtered_ds = main_ds.with_transform_fn(
+       lambda df: df[df['Category'] == 'A']
+   )
+
+   # Cache is shared automatically:
+   assert main_ds.cache is filtered_ds.cache  # True!
+
+   # Stage1 (builder.build) executes only ONCE:
+   data1 = main_ds.get_processed_data()      # Triggers build()
+   data2 = filtered_ds.get_processed_data()  # Reuses cached build, only applies filter
+
+   # Result: No duplicate expensive data loading/processing
+
+**When cache sharing happens:**
+
+1. **Explicit matching**: ``BaseDataSource(..., cache_dir="/path")`` → all instances with same path share cache
+2. **In-memory default**: ``BaseDataSource(..., cache_dir=None)`` → all in-memory instances share cache
+3. **Derived datasources**: ``ds.with_transform_fn(...)`` → automatically inherits parent's cache
+
 Quick Dashboard Pattern
 -----------------------
 

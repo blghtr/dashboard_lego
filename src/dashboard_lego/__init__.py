@@ -9,3 +9,6 @@ using Dash and Plotly with a modular block-based architecture.
 from . import blocks, core, presets, utils
 
 __all__ = ["blocks", "core", "presets", "utils"]
+
+# version
+__version__ = "0.15.2"

@@ -15,11 +15,11 @@ from dashboard_lego.blocks.base import BaseBlock
 
 class TextBlock(BaseBlock):
     """
-    A block for displaying dynamic text content, with support for Markdown and
-    customizable styling.
+    A block for displaying dynamic or static text content, with support for
+    Markdown and customizable styling.
 
-    This block subscribes to a state and uses a generator function to render
-    its content based on the data from a datasource.
+    This block optionally subscribes to a state and uses a generator function
+    to render its content based on the data from a datasource.
 
         :hierarchy: [Blocks | Text | TextBlock]
         :relates-to:
@@ -31,12 +31,13 @@ class TextBlock(BaseBlock):
 
         :rationale: "Enhanced with style customization parameters to allow
          fine-grained control over text block appearance while maintaining
-         backward compatibility."
+         backward compatibility. subscribes_to is now optional."
         :contract:
-          - pre: "A `subscribes_to` state ID and a `content_generator` function
-            must be provided."
+          - pre: "A `content_generator` function must be provided.
+            `subscribes_to` is optional."
           - post: "The block renders a card with content that updates on state
-            change with customizable styling applied."
+            change (if subscribed) or displays static content with customizable
+            styling applied."
 
     """
 
@@ -44,8 +45,8 @@ class TextBlock(BaseBlock):
         self,
         block_id: str,
         datasource: Any,
-        subscribes_to: Union[str, List[str]],
         content_generator: Callable[[pd.DataFrame], Component | str],
+        subscribes_to: Union[str, List[str], None] = None,
         title: Optional[str] = None,
         # Style customization parameters
         card_style: Optional[Dict[str, Any]] = None,
@@ -63,11 +64,11 @@ class TextBlock(BaseBlock):
             block_id: A unique identifier for this block instance.
             datasource: An instance of a class that implements the
                 BaseDataSource interface.
-            subscribes_to: The state ID(s) to which this block subscribes to
-                receive updates. Can be a single state ID string or a list of
-                state IDs.
             content_generator: A function that takes a DataFrame and returns a
                 Dash Component or a Markdown string.
+            subscribes_to: Optional state ID(s) to which this block subscribes
+                to receive updates. Can be a single state ID string, a list of
+                state IDs, or None for static content. Defaults to None.
             title: An optional title for the block's card.
             card_style: Optional style dictionary for the card component.
             card_className: Optional CSS class name for the card component.
@@ -110,7 +111,8 @@ class TextBlock(BaseBlock):
          - uses: ["attribute: 'content_generator'", "attribute: 'title_style'"]
 
         :rationale: "Enhanced to apply style customization parameters to
-         content and title components."
+         content and title components. Works for both subscribed and
+         non-subscribed blocks."
         :contract:
          - pre: "Datasource is available and content generator is set."
          - post: "Returns a styled CardBody with current content and title."

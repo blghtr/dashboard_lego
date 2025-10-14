@@ -54,6 +54,18 @@ class BaseDataSource:
     :decision_cache: "Chose 2-stage over 3-stage for semantic clarity"
     """
 
+    # LLM:METADATA
+    # :hierarchy: [Core | DataSources | BaseDataSource | CacheRegistry]
+    # :relates-to:
+    #  - motivated_by: "Cache sharing prevents duplicate Stage1 builds when same builder reused across datasources created via with_transform_fn() [Contract-Fix-CacheSharing]"
+    #  - implements: "Class-level cache registry for transparent cache reuse based on cache_dir matching"
+    # :contract:
+    #  - invariant: "Same cache_dir → same Cache instance; All cache_dir=None → single shared in-memory cache"
+    # :complexity: 2
+    # :decision_cache: "Class-level dict registry over singleton pattern: simpler, transparent, no global state pollution [decision-cache-registry-001]"
+    # LLM:END
+    _cache_registry: Dict[str, Cache] = {}
+
     def __init__(
         self,
         data_builder: Optional[Any] = None,
@@ -86,10 +98,35 @@ class BaseDataSource:
         """
         self.logger = get_logger(__name__, BaseDataSource)
 
-        # Initialize cache
+        # LLM:METADATA
+        # :hierarchy: [Core | DataSources | BaseDataSource | CacheInitialization]
+        # :relates-to:
+        #  - motivated_by: "Cache sharing prevents duplicate Stage1 builds by reusing Cache objects for matching cache_dir [Contract-Fix-CacheSharing]"
+        #  - implements: "Cache registry lookup and reuse logic in __init__"
+        # :contract:
+        #  - pre: "cache_dir is str or None, cache_ttl is int"
+        #  - post: "self.cache is set to shared or new Cache instance"
+        #  - invariant: "Same cache_dir → reuses existing Cache from registry; Different cache_dir → creates new Cache"
+        # :complexity: 3
+        # LLM:END
+
+        # Initialize cache with transparent sharing
+        cache_key = cache_dir if cache_dir else "__in_memory__"
+
         try:
-            self.cache = Cache(directory=cache_dir, expire=cache_ttl)
-            self.logger.debug("[BaseDataSource|Init] Cache initialized")
+            if cache_key in BaseDataSource._cache_registry:
+                # Reuse existing cache for same cache_dir
+                self.cache = BaseDataSource._cache_registry[cache_key]
+                self.logger.debug(
+                    f"[BaseDataSource|Init] Reused cache | key={cache_key}"
+                )
+            else:
+                # Create new cache and register it
+                self.cache = Cache(directory=cache_dir, expire=cache_ttl)
+                BaseDataSource._cache_registry[cache_key] = self.cache
+                self.logger.debug(
+                    f"[BaseDataSource|Init] Created new cache | key={cache_key}"
+                )
         except Exception as e:
             self.logger.error(f"[BaseDataSource|Init] Cache failed: {e}")
             raise CacheError(f"Cache initialization failed: {e}") from e
@@ -102,6 +139,7 @@ class BaseDataSource:
         self.data_builder = data_builder or DataBuilder(logger=self.logger)
         self.data_transformer = data_transformer or DataTransformer(logger=self.logger)
         self.param_classifier = param_classifier
+        self.cache_dir = cache_dir  # Store original cache_dir for cloning
         self.cache_ttl = cache_ttl
 
         # NO stored state
@@ -125,7 +163,7 @@ class BaseDataSource:
         :contract:
          - pre: "stage is valid string, params is dict"
          - post: "Returns stable cache key unique to stage + params + handler"
-         - invariant: "Different builders/transformers get different caches"
+         - invariant: "Different builders/transformers get different cache keys; Same cache_dir → shared Cache object"
 
         :decision_cache: "Use hash(type(handler)) for classes, id() for lambdas"
 
@@ -268,9 +306,7 @@ class BaseDataSource:
             data_builder=builder,
             data_transformer=self.data_transformer,
             param_classifier=self.param_classifier,
-            cache_dir=(
-                self.cache.directory if hasattr(self.cache, "directory") else None
-            ),
+            cache_dir=self.cache_dir,  # Use original cache_dir for cache sharing
             cache_ttl=self.cache_ttl,
         )
 
@@ -359,9 +395,7 @@ class BaseDataSource:
             data_builder=lambda_builder,
             data_transformer=self.data_transformer,
             param_classifier=self.param_classifier,
-            cache_dir=(
-                self.cache.directory if hasattr(self.cache, "directory") else None
-            ),
+            cache_dir=self.cache_dir,  # Use original cache_dir for cache sharing
             cache_ttl=self.cache_ttl,
         )
 
@@ -388,9 +422,7 @@ class BaseDataSource:
             data_builder=self.data_builder,
             data_transformer=transformer,
             param_classifier=self.param_classifier,
-            cache_dir=(
-                self.cache.directory if hasattr(self.cache, "directory") else None
-            ),
+            cache_dir=self.cache_dir,  # Use original cache_dir for cache sharing
             cache_ttl=self.cache_ttl,
         )
 
@@ -500,13 +532,12 @@ class BaseDataSource:
         )
 
         # 3. Return a new datasource instance (clone) with the new chained transformer
+        # Use stored cache_dir to ensure cache registry key matches parent
         return BaseDataSource(
             data_builder=self.data_builder,
             data_transformer=chained_transformer,
             param_classifier=self.param_classifier,
-            cache_dir=(
-                self.cache.directory if hasattr(self.cache, "directory") else None
-            ),
+            cache_dir=self.cache_dir,  # Use original cache_dir for cache sharing
             cache_ttl=self.cache_ttl,
         )
 

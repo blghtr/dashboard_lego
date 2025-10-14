@@ -16,6 +16,25 @@ from dashboard_lego.core import BaseDataSource, DataBuilder, DataTransformer
 from dashboard_lego.utils.exceptions import DataLoadError
 
 
+@pytest.fixture(autouse=True)
+def clear_cache_registry():
+    """
+    Clear cache registry before each test.
+
+    :hierarchy: [Testing | Fixtures | CacheRegistry]
+    :relates-to:
+     - motivated_by: "Cache registry persists across tests, causing cache hits from previous tests to pollute results [Test-Isolation]"
+    :contract:
+     - pre: "Called automatically before each test"
+     - post: "BaseDataSource._cache_registry is empty dict"
+    :complexity: 1
+    """
+    BaseDataSource._cache_registry.clear()
+    yield
+    # Cleanup after test as well
+    BaseDataSource._cache_registry.clear()
+
+
 # Simple test data builder
 class SampleDataBuilder(DataBuilder):
     """Sample data builder that returns test data."""
@@ -293,33 +312,58 @@ def test_datasource_with_transform_fn_aggregation():
 
 def test_datasource_with_transform_fn_caching():
     """
-    Test with_transform_fn() caching works independently.
+    Test with_transform_fn() shares Stage1 cache with original datasource.
 
-    :hierarchy: [Testing | Unit Tests | BaseDataSource | Caching]
+    :hierarchy: [Testing | Unit Tests | BaseDataSource | CacheSharing]
     :covers:
      - target: "BaseDataSource.with_transform_fn"
-     - requirement: "Specialized datasource has independent cache"
+     - requirement: "Specialized datasource shares Stage1 cache (same builder)"
 
-    :scenario: "Cache keys differ between original and specialized"
-    :priority: "P1"
+    :scenario: "Stage1 cache shared, Stage2 cache independent"
+    :priority: "P0"
     :complexity: 3
     """
+    # LLM:METADATA
+    # :hierarchy: [Testing | Unit Tests | BaseDataSource | CacheSharing]
+    # :relates-to:
+    #  - motivated_by: "Verify cache sharing contract: same builder → shared Stage1 cache → build() called only once [Contract-CacheSharing]"
+    # :contract:
+    #  - pre: "builder tracked to count build() calls"
+    #  - post: "build() called exactly once despite two datasources"
+    # :complexity: 3
+    # LLM:END
+
     df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
     builder = SampleDataBuilder(data=df)
+
+    # Track build calls
+    build_count = 0
+    original_build = builder.build
+
+    def tracked_build(params):
+        nonlocal build_count
+        build_count += 1
+        return original_build(params)
+
+    builder.build = tracked_build
+
+    # Create original datasource
     datasource = BaseDataSource(data_builder=builder)
 
-    # Create specialized datasource
+    # Create specialized datasource via with_transform_fn
     transform_fn = lambda df: df[df["a"] >= 2]
     specialized_ds = datasource.with_transform_fn(transform_fn)
 
-    # First call - should cache
-    result1 = specialized_ds.get_processed_data()
-
-    # Second call - should hit cache
+    # Call both datasources
+    result1 = datasource.get_processed_data()
     result2 = specialized_ds.get_processed_data()
 
-    assert_frame_equal(result1, result2)
-    assert len(result2) == 2
+    # Stage1 should execute only ONCE (cache shared between datasources)
+    assert build_count == 1, f"Expected 1 build call, got {build_count}"
+
+    # Verify data correctness
+    assert len(result1) == 3  # Original datasource: all rows
+    assert len(result2) == 2  # Specialized datasource: filtered (a >= 2)
 
 
 def test_datasource_with_transform_fn_empty_result():

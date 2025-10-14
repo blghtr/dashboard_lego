@@ -3,7 +3,7 @@ This module provides preset blocks for machine learning visualization.
 
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import dash_bootstrap_components as dbc
 import pandas as pd
@@ -154,7 +154,7 @@ class ConfusionMatrixPreset(TypedChartBlock):
         y_true_col: str,
         y_pred_col: str,
         title: str = "Confusion Matrix",
-        subscribes_to: str = "dummy_state",
+        subscribes_to: Union[str, List[str], None] = None,
         **kwargs,
     ):
         super().__init__(
@@ -240,7 +240,7 @@ class RocAucCurvePreset(TypedChartBlock):
         y_true_col: str,
         y_score_cols: list[str],
         title: str = "ROC Curve",
-        subscribes_to: str = "dummy_state",
+        subscribes_to: Union[str, List[str], None] = None,
         **kwargs,
     ):
         super().__init__(
@@ -306,7 +306,7 @@ class FeatureImportancePreset(TypedChartBlock):
         feature_col: str,
         importance_col: str,
         title: str = "Feature Importance",
-        subscribes_to: str = "dummy_state",
+        subscribes_to: Union[str, List[str], None] = None,
         **kwargs,
     ):
         super().__init__(

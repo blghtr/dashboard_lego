@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.2] - 2025-10-14
+
+### Fixed
+
+#### Cache Sharing Contract Violation in BaseDataSource
+
+- **🔴 CRITICAL BUG**: Fixed cache duplication causing unnecessary Stage1 (Build) re-execution
+  - **Root Cause**: `with_transform_fn()` created new `BaseDataSource` with new `Cache` object
+  - **Contract Violation**: Same `data_builder` instance got different caches → `build()` executed twice
+  - **Impact**: Performance degradation with duplicate expensive data loading operations
+  - **Example**: Histogram/boxplot presets triggered duplicate dataset builds in navigation dashboards
+
+- **Fix**: Implemented class-level cache registry for transparent cache sharing
+  - Added `BaseDataSource._cache_registry: Dict[str, Cache]` for automatic cache reuse
+  - Cache sharing rules:
+    * Same `cache_dir` path → share `Cache` object
+    * All `cache_dir=None` (in-memory) → share single global cache
+    * Result: Same builder instance → `build()` executes only once
+  - Files: `src/dashboard_lego/core/datasource.py` (~30 lines modified)
+
+- **Test Coverage**: Added comprehensive cache sharing tests
+  - New file: `tests/core/test_datasource_cache_sharing.py` (4 P0 tests)
+  - Updated: `test_datasource_with_transform_fn_caching` to verify Stage1 cache sharing
+  - All tests pass: 16/16 datasource tests, 4/4 cache sharing tests
+
+- **Documentation**: Updated patterns guide with cache sharing behavior
+  - Added "Cache Sharing (v0.15.2)" section in `docs/source/guide/patterns.rst`
+  - Explains automatic cache reuse and when it occurs
+
+**Validation**: ✅ Verified with `capstone_user_identification` dashboard
+- No duplicate Stage1 builds logged
+- Histogram/boxplot presets reuse parent datasource cache
+- Significant performance improvement in navigation mode
+
 ## [0.15.1] - 2025-10-11
 
 ### Fixed

@@ -313,6 +313,7 @@ class GroupedHistogramPreset(TypedChartBlock):
         self,
         block_id: str,
         datasource: BaseDataSource,
+        subscribes_to=None,
         title: str = "Distribution Analysis",
         **kwargs,
     ):
@@ -322,6 +323,7 @@ class GroupedHistogramPreset(TypedChartBlock):
         Args:
             block_id: Unique identifier
             datasource: Data source instance
+            subscribes_to: State ID(s) to subscribe to
             title: Chart title
             **kwargs: Additional styling parameters
         """
@@ -362,6 +364,7 @@ class GroupedHistogramPreset(TypedChartBlock):
             plot_kwargs={"barmode": "overlay", "opacity": 0.75},
             title=title,
             controls=controls,
+            subscribes_to=subscribes_to,
             **kwargs,
         )
 
@@ -387,6 +390,7 @@ class BoxPlotPreset(TypedChartBlock):
         self,
         block_id: str,
         datasource: BaseDataSource,
+        subscribes_to=None,
         title: str = "Distribution Comparison (Box Plot)",
         **kwargs,
     ):
@@ -396,6 +400,7 @@ class BoxPlotPreset(TypedChartBlock):
         Args:
             block_id: Unique identifier
             datasource: Data source instance
+            subscribes_to: State ID(s) to subscribe to
             title: Chart title
             **kwargs: Additional styling parameters
         """
@@ -441,5 +446,6 @@ class BoxPlotPreset(TypedChartBlock):
             plot_kwargs={},
             title=title,
             controls=controls,
+            subscribes_to=subscribes_to,
             **kwargs,
         )
