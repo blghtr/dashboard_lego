@@ -5,7 +5,7 @@ This module defines the StateManager for handling interactivity between blocks.
 
 from typing import Any, Callable, Dict, List, Union
 
-from dash.dependencies import MATCH, Input, Output, State
+from dash.dependencies import MATCH, Input, Output
 
 from dashboard_lego.utils.exceptions import StateError
 from dashboard_lego.utils.logger import get_logger
@@ -409,18 +409,18 @@ class StateManager:
                     f"({input_count_desc} inputs -> {output_id}.{output_prop})"
                 )
 
-                # Create Input/State objects
-                # CRITICAL: External states must be State() not Input()
-                # because they have EXACT IDs from other sections
-                input_objects = []
-                state_objects = []
+                # Create Input objects (both external and own)
+                # CRITICAL: External states must be Input() not State() to trigger callbacks
+                # Dash supports cross-section: Input(exact_id) → Output(MATCH_id)
+                input_objects_external = []
+                input_objects_own = []
 
-                # 1. Add external states as State() (cross-section, read-only)
+                # 1. Add external states as Input() (cross-section, triggers callback)
                 for state_id, pub_component_id, pub_prop in external_state_inputs:
-                    state_objects.append(State(pub_component_id, pub_prop))
+                    input_objects_external.append(Input(pub_component_id, pub_prop))
                     self.logger.debug(
-                        f"  🔍 External State[{len(state_objects)-1}]: {pub_component_id}.{pub_prop} "
-                        f"(state_id: {state_id}, EXACT ID, read-only)"
+                        f"  🔍 External Input[{len(input_objects_external)-1}]: {pub_component_id}.{pub_prop} "
+                        f"(state_id: {state_id}, EXACT ID, triggers callback)"
                     )
 
                 # 2. Add own control inputs with MATCH pattern
@@ -436,11 +436,11 @@ class StateManager:
                             "section": MATCH,
                             "type": component_id.get("type"),
                         }
-                    input_objects.append(Input(component_id, prop))
+                    input_objects_own.append(Input(component_id, prop))
 
                     # Debug: log transformation
                     self.logger.debug(
-                        f"  📥 Own Control Input[{len(input_objects)-1}]: {original_id} → {component_id}.{prop}"
+                        f"  📥 Own Control Input[{len(input_objects_own)-1}]: {original_id} → {component_id}.{prop}"
                     )
 
                 # Create Output object with allow_duplicate and pattern matching support
@@ -465,21 +465,29 @@ class StateManager:
                 def create_block_callback(block_ref, ext_states_count, ext_states_list):
                     def block_callback(*args):
                         try:
-                            # CRITICAL: Dash passes Input values first, then State values
-                            # Our callback signature: *inputs, *states
-                            own_control_count = len(block_ref.list_control_inputs())
-                            own_control_values = args[:own_control_count]
-                            external_values = args[own_control_count:]
+                            # CRITICAL: Dash passes all Input values in registration order
+                            # Our callback signature: *external_inputs, *own_inputs
+                            # Split args: first ext_states_count are external, rest are own controls
+                            external_values = args[:ext_states_count]
+                            own_control_values = args[ext_states_count:]
 
                             self.logger.debug(
                                 f"🎬 Block callback triggered for {block_ref.block_id} "
-                                f"with {len(args)} values ({len(own_control_values)} own Input + {len(external_values)} external State)"
+                                f"with {len(args)} values ({len(external_values)} external Input + {len(own_control_values)} own Input)"
                             )
 
                             # Build control_values dict
                             control_values = {}
 
-                            # 1. Add own control values (from Input objects)
+                            # 1. Add external input values (triggers callback on change)
+                            for i, (state_id, _, _) in enumerate(ext_states_list):
+                                control_values[state_id] = external_values[i]
+                                self.logger.debug(
+                                    f"  🌐 External input {state_id} = {external_values[i]} "
+                                    f"(from Input, triggers callback)"
+                                )
+
+                            # 2. Add own control values (from Input objects)
                             for i, (component_id, prop) in enumerate(
                                 block_ref.list_control_inputs()
                             ):
@@ -496,14 +504,6 @@ class StateManager:
                                     f"(from Input {component_id}.{prop})"
                                 )
 
-                            # 2. Add external state values (from State objects)
-                            for i, (state_id, _, _) in enumerate(ext_states_list):
-                                control_values[state_id] = external_values[i]
-                                self.logger.debug(
-                                    f"  🌐 External state {state_id} = {external_values[i]} "
-                                    f"(from State, cross-section)"
-                                )
-
                             # Call the block's update method
                             return block_ref.update_from_controls(control_values)
                         except Exception as e:
@@ -518,14 +518,18 @@ class StateManager:
 
                 # Register the callback with enhanced error handling
                 try:
+                    # Combine all inputs: external first, then own
+                    # This order MUST match the callback function's arg parsing
+                    all_inputs = input_objects_external + input_objects_own
+
                     self.logger.debug(
                         f"🔗 Registering combined callback with Dash "
-                        f"({len(state_objects)} external State(EXACT) + {len(input_objects)} own Input(MATCH))..."
+                        f"({len(input_objects_external)} external Input(EXACT) + {len(input_objects_own)} own Input(MATCH))..."
                     )
 
-                    # CRITICAL: Pass state_objects + input_objects to callback
-                    # State objects come first, then Input objects
-                    app.callback(output_object, input_objects, state_objects)(
+                    # CRITICAL: Use only Input() objects, no State()
+                    # All inputs (external + own) will trigger callback
+                    app.callback(output_object, all_inputs)(
                         create_block_callback(
                             block, len(external_state_inputs), external_state_inputs
                         )
