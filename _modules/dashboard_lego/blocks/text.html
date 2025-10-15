@@ -102,11 +102,11 @@
 <a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.text.TextBlock">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TextBlock</span><span class="p">(</span><span class="n">BaseBlock</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A block for displaying dynamic text content, with support for Markdown and</span>
-<span class="sd">    customizable styling.</span>
+<span class="sd">    A block for displaying dynamic or static text content, with support for</span>
+<span class="sd">    Markdown and customizable styling.</span>
 
-<span class="sd">    This block subscribes to a state and uses a generator function to render</span>
-<span class="sd">    its content based on the data from a datasource.</span>
+<span class="sd">    This block optionally subscribes to a state and uses a generator function</span>
+<span class="sd">    to render its content based on the data from a datasource.</span>
 
 <span class="sd">        :hierarchy: [Blocks | Text | TextBlock]</span>
 <span class="sd">        :relates-to:</span>
@@ -118,12 +118,13 @@
 
 <span class="sd">        :rationale: &quot;Enhanced with style customization parameters to allow</span>
 <span class="sd">         fine-grained control over text block appearance while maintaining</span>
-<span class="sd">         backward compatibility.&quot;</span>
+<span class="sd">         backward compatibility. subscribes_to is now optional.&quot;</span>
 <span class="sd">        :contract:</span>
-<span class="sd">          - pre: &quot;A `subscribes_to` state ID and a `content_generator` function</span>
-<span class="sd">            must be provided.&quot;</span>
+<span class="sd">          - pre: &quot;A `content_generator` function must be provided.</span>
+<span class="sd">            `subscribes_to` is optional.&quot;</span>
 <span class="sd">          - post: &quot;The block renders a card with content that updates on state</span>
-<span class="sd">            change with customizable styling applied.&quot;</span>
+<span class="sd">            change (if subscribed) or displays static content with customizable</span>
+<span class="sd">            styling applied.&quot;</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -133,8 +134,8 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">datasource</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-        <span class="n">subscribes_to</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
         <span class="n">content_generator</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span> <span class="n">Component</span> <span class="o">|</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">subscribes_to</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="c1"># Style customization parameters</span>
         <span class="n">card_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -152,11 +153,11 @@
 <span class="sd">            block_id: A unique identifier for this block instance.</span>
 <span class="sd">            datasource: An instance of a class that implements the</span>
 <span class="sd">                BaseDataSource interface.</span>
-<span class="sd">            subscribes_to: The state ID(s) to which this block subscribes to</span>
-<span class="sd">                receive updates. Can be a single state ID string or a list of</span>
-<span class="sd">                state IDs.</span>
 <span class="sd">            content_generator: A function that takes a DataFrame and returns a</span>
 <span class="sd">                Dash Component or a Markdown string.</span>
+<span class="sd">            subscribes_to: Optional state ID(s) to which this block subscribes</span>
+<span class="sd">                to receive updates. Can be a single state ID string, a list of</span>
+<span class="sd">                state IDs, or None for static content. Defaults to None.</span>
 <span class="sd">            title: An optional title for the block&#39;s card.</span>
 <span class="sd">            card_style: Optional style dictionary for the card component.</span>
 <span class="sd">            card_className: Optional CSS class name for the card component.</span>
@@ -200,7 +201,8 @@
 <span class="sd">         - uses: [&quot;attribute: &#39;content_generator&#39;&quot;, &quot;attribute: &#39;title_style&#39;&quot;]</span>
 
 <span class="sd">        :rationale: &quot;Enhanced to apply style customization parameters to</span>
-<span class="sd">         content and title components.&quot;</span>
+<span class="sd">         content and title components. Works for both subscribed and</span>
+<span class="sd">         non-subscribed blocks.&quot;</span>
 <span class="sd">        :contract:</span>
 <span class="sd">         - pre: &quot;Datasource is available and content generator is set.&quot;</span>
 <span class="sd">         - post: &quot;Returns a styled CardBody with current content and title.&quot;</span>

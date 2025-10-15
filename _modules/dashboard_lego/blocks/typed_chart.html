@@ -1,0 +1,796 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dashboard_lego.blocks.typed_chart &mdash; Dashboard Lego 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Dashboard Lego
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../concepts.html">Core Concepts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Comprehensive Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Comprehensive API Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">API Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing to Dashboard Lego</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Dashboard Lego</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">dashboard_lego.blocks.typed_chart</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for dashboard_lego.blocks.typed_chart</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">TypedChartBlock - High-level chart block with built-in plot types.</span>
+
+<span class="sd">NO chart_generator needed - just specify plot_type!</span>
+
+<span class="sd">:hierarchy: [Blocks | Charts | TypedChartBlock]</span>
+<span class="sd">:relates-to:</span>
+<span class="sd"> - motivated_by: &quot;v0.15.0: High-level API requiring minimal user code&quot;</span>
+<span class="sd"> - implements: &quot;block: &#39;TypedChartBlock&#39; with plot registry&quot;</span>
+<span class="sd"> - uses: [&quot;module: &#39;plot_registry&#39;&quot;, &quot;class: &#39;BaseBlock&#39;&quot;]</span>
+
+<span class="sd">:contract:</span>
+<span class="sd"> - pre: &quot;plot_type exists in PLOT_REGISTRY&quot;</span>
+<span class="sd"> - post: &quot;Chart renders using registered plot function&quot;</span>
+<span class="sd"> - invariant: &quot;plot_kwargs passed through to plot function&quot;</span>
+<span class="sd"> - guarantee: &quot;Plot function receives pre-filtered DataFrame&quot;</span>
+
+<span class="sd">:complexity: 6</span>
+<span class="sd">:decision_cache: &quot;Registry pattern for extensibility without subclassing&quot;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">dash_bootstrap_components</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dbc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.graph_objects</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">go</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dash</span><span class="w"> </span><span class="kn">import</span> <span class="n">dcc</span><span class="p">,</span> <span class="n">html</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dash.development.base_component</span><span class="w"> </span><span class="kn">import</span> <span class="n">Component</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseBlock</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.datasource</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseDataSource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.plot_registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_plot_function</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Control</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    UI control definition for TypedChartBlock.</span>
+
+<span class="sd">    :hierarchy: [Blocks | Controls | Control]</span>
+<span class="sd">    :relates-to:</span>
+<span class="sd">     - motivated_by: &quot;Need responsive control layouts&quot;</span>
+<span class="sd">     - implements: &quot;dataclass: &#39;Control&#39;&quot;</span>
+
+<span class="sd">    :contract:</span>
+<span class="sd">     - pre: &quot;component is valid Dash component type&quot;</span>
+<span class="sd">     - post: &quot;Control can be rendered with responsive layout&quot;</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        component: Dash component class (dcc.Dropdown, dcc.Slider, etc.)</span>
+<span class="sd">        props: Props dictionary for the component</span>
+<span class="sd">        col_props: Bootstrap column sizing (default: {&quot;xs&quot;: 12, &quot;md&quot;: &quot;auto&quot;})</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">component</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Component</span><span class="p">]</span>
+    <span class="n">props</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">col_props</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;xs&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span> <span class="s2">&quot;md&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">}</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="TypedChartBlock">
+<a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.typed_chart.TypedChartBlock">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TypedChartBlock</span><span class="p">(</span><span class="n">BaseBlock</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    High-level chart block using plot type registry.</span>
+
+<span class="sd">    NO chart_generator needed - specify plot_type and plot_params!</span>
+
+<span class="sd">    :hierarchy: [Blocks | Charts | TypedChartBlock]</span>
+<span class="sd">    :relates-to:</span>
+<span class="sd">     - motivated_by: &quot;Eliminate chart_generator requirement for common plots&quot;</span>
+<span class="sd">     - implements: &quot;block: &#39;TypedChartBlock&#39;&quot;</span>
+<span class="sd">     - uses: [&quot;module: &#39;plot_registry&#39;&quot;, &quot;class: &#39;BaseBlock&#39;&quot;]</span>
+
+<span class="sd">    :rationale: &quot;Registry pattern allows zero-code chart creation for 90% of cases&quot;</span>
+<span class="sd">    :contract:</span>
+<span class="sd">     - pre: &quot;plot_type exists in PLOT_REGISTRY&quot;</span>
+<span class="sd">     - post: &quot;Chart renders via registered function with kwargs passed through&quot;</span>
+<span class="sd">     - invariant: &quot;Block never stores data, always calls get_processed_data()&quot;</span>
+<span class="sd">     - kwargs_flow: &quot;plot_kwargs → plot_function(**plot_kwargs)&quot;</span>
+
+<span class="sd">    :complexity: 6</span>
+<span class="sd">    :decision_cache: &quot;Single block type for all chart types via registry&quot;</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; chart = TypedChartBlock(</span>
+<span class="sd">        ...     block_id=&quot;sales_hist&quot;,</span>
+<span class="sd">        ...     datasource=datasource,</span>
+<span class="sd">        ...     plot_type=&#39;histogram&#39;,</span>
+<span class="sd">        ...     plot_params={&#39;x&#39;: &#39;price&#39;},</span>
+<span class="sd">        ...     plot_kwargs={&#39;bins&#39;: 30, &#39;title&#39;: &#39;Price Distribution&#39;},</span>
+<span class="sd">        ...     subscribes_to=&#39;control-category&#39;</span>
+<span class="sd">        ... )</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="TypedChartBlock.__init__">
+<a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.typed_chart.TypedChartBlock.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span>
+        <span class="n">plot_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">plot_params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">plot_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">controls</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">subscribes_to</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">transform_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="c1"># Styling</span>
+        <span class="n">card_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">card_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">title_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">title_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">loading_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+        <span class="n">graph_config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">graph_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize TypedChartBlock.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Charts | TypedChartBlock | Initialization]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;High-level API requiring minimal code&quot;</span>
+<span class="sd">         - motivated_by: &quot;v0.15.0: Block-specific data transformations&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;__init__&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;plot_type valid, plot_params contains required keys&quot;</span>
+<span class="sd">         - post: &quot;Block ready to render&quot;</span>
+<span class="sd">         - kwargs_flow: &quot;plot_kwargs stored and passed to plot function&quot;</span>
+<span class="sd">         - transform_flow: &quot;transform_fn → specialized datasource via BaseBlock&quot;</span>
+
+<span class="sd">        :complexity: 5</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            block_id: Unique identifier for this block</span>
+<span class="sd">            datasource: DataSource instance</span>
+<span class="sd">            plot_type: Type from PLOT_REGISTRY</span>
+<span class="sd">                      Examples: &#39;histogram&#39;, &#39;scatter&#39;, &#39;overlay_histogram&#39;</span>
+<span class="sd">            plot_params: Plot-specific parameters (column names, bins, etc.)</span>
+<span class="sd">                        Example: {&#39;x&#39;: &#39;age&#39;, &#39;y&#39;: &#39;salary&#39;, &#39;color&#39;: &#39;dept&#39;}</span>
+<span class="sd">            plot_kwargs: Additional kwargs PASSED TO plot function</span>
+<span class="sd">                        Example: {&#39;title&#39;: &#39;My Chart&#39;, &#39;opacity&#39;: 0.7}</span>
+<span class="sd">                        KEY POINT: These go directly to plotly!</span>
+<span class="sd">            title: Block title (shown in card header)</span>
+<span class="sd">            controls: Optional embedded controls</span>
+<span class="sd">            subscribes_to: External state IDs to subscribe to</span>
+<span class="sd">            transform_fn: Optional block-specific data transformation</span>
+<span class="sd">                         Applied AFTER global filters</span>
+<span class="sd">                         Signature: lambda df: df (returns transformed DataFrame)</span>
+<span class="sd">                         Examples:</span>
+<span class="sd">                         - lambda df: df.groupby(&#39;category&#39;)[&#39;sales&#39;].sum().reset_index()</span>
+<span class="sd">                         - lambda df: df.pivot_table(index=&#39;region&#39;, columns=&#39;product&#39;, values=&#39;revenue&#39;)</span>
+<span class="sd">                         - lambda df: df[df[&#39;price&#39;] &gt; 100]</span>
+<span class="sd">            card_style, card_className: Card styling</span>
+<span class="sd">            loading_type: Loading animation type</span>
+<span class="sd">            graph_config: Plotly graph configuration</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plot_type</span> <span class="o">=</span> <span class="n">plot_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plot_params</span> <span class="o">=</span> <span class="n">plot_params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plot_kwargs</span> <span class="o">=</span> <span class="n">plot_kwargs</span> <span class="ow">or</span> <span class="p">{}</span>  <span class="c1"># KEY: Store for passthrough</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plot_func</span> <span class="o">=</span> <span class="n">get_plot_function</span><span class="p">(</span><span class="n">plot_type</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controls</span> <span class="o">=</span> <span class="n">controls</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">title</span> <span class="ow">or</span> <span class="n">plot_type</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
+
+        <span class="c1"># Store styling</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">card_style</span> <span class="o">=</span> <span class="n">card_style</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">card_className</span> <span class="o">=</span> <span class="n">card_className</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title_style</span> <span class="o">=</span> <span class="n">title_style</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title_className</span> <span class="o">=</span> <span class="n">title_className</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loading_type</span> <span class="o">=</span> <span class="n">loading_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">graph_config</span> <span class="o">=</span> <span class="n">graph_config</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">graph_style</span> <span class="o">=</span> <span class="n">graph_style</span>
+
+        <span class="c1"># Build subscribes dict</span>
+        <span class="c1"># CRITICAL: Do NOT subscribe to own controls here - they&#39;re handled by</span>
+        <span class="c1"># block-centric callbacks via list_control_inputs()</span>
+        <span class="c1"># Only subscribe to external states (e.g. global filters)</span>
+        <span class="n">external_states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_subscribes_to</span><span class="p">(</span><span class="n">subscribes_to</span><span class="p">)</span>
+
+        <span class="n">subscribes_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">state</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_chart</span> <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">external_states</span><span class="p">}</span>
+
+        <span class="c1"># Build publishes for own controls</span>
+        <span class="n">publishes_list</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;state_id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">block_id</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">ctrl</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;component_prop&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">}</span>
+            <span class="k">for</span> <span class="n">ctrl</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="p">]</span>
+
+        <span class="c1"># Pass to parent - BaseBlock handles registration and transform_fn!</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">block_id</span><span class="p">,</span>
+            <span class="n">datasource</span><span class="p">,</span>
+            <span class="n">subscribes</span><span class="o">=</span><span class="n">subscribes_dict</span><span class="p">,</span>
+            <span class="n">publishes</span><span class="o">=</span><span class="n">publishes_list</span><span class="p">,</span>
+            <span class="n">transform_fn</span><span class="o">=</span><span class="n">transform_fn</span><span class="p">,</span>  <span class="c1"># Pass to BaseBlock for specialized datasource creation</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Init] </span><span class="si">{</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> | plot_type=</span><span class="si">{</span><span class="n">plot_type</span><span class="si">}</span><span class="s2"> | &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;controls=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_component_prop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Override to use &#39;figure&#39; property for Graph components.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;figure&quot;</span>
+
+<div class="viewcode-block" id="TypedChartBlock.output_target">
+<a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.typed_chart.TypedChartBlock.output_target">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">output_target</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns output target for chart blocks.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Charts | TypedChartBlock | OutputTarget]</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;Block initialized&quot;</span>
+<span class="sd">         - post: &quot;Returns (component_id, &#39;figure&#39;)&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">component_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_id</span><span class="p">(</span><span class="s2">&quot;container&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">component_id</span><span class="p">,</span> <span class="s2">&quot;figure&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TypedChartBlock.update_from_controls">
+<a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.typed_chart.TypedChartBlock.update_from_controls">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_from_controls</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">control_values</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update chart from block-centric callback.</span>
+
+<span class="sd">        CRITICAL: TypedChartBlock with embedded controls has subscribes={} (empty),</span>
+<span class="sd">        so BaseBlock.update_from_controls() returns None. We MUST override this</span>
+<span class="sd">        to call _update_chart directly with control_values dict.</span>
+
+<span class="sd">        :hierarchy: [Blocks | TypedChartBlock | Update]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;BaseBlock.update_from_controls returns None if subscribes empty&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;update_from_controls&#39; override&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;control_values is {ctrl_name: value} dict from StateManager&quot;</span>
+<span class="sd">         - post: &quot;Returns updated Plotly Figure&quot;</span>
+<span class="sd">         - spec_compliance: &quot;Calls _update_chart with control_values as first arg&quot;</span>
+
+<span class="sd">        :complexity: 2</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            control_values: Dict mapping control names to values (e.g. {&#39;x_col&#39;: &#39;Price&#39;})</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Updated Plotly Figure</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Pass control_values dict as first positional arg to _update_chart</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|UpdateFromControls] Calling _update_chart with control_values=</span><span class="si">{</span><span class="n">control_values</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_chart</span><span class="p">(</span><span class="n">control_values</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TypedChartBlock.get_figure">
+<a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.typed_chart.TypedChartBlock.get_figure">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_figure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Export standalone Plotly figure without Dash server.</span>
+
+<span class="sd">        This is the official API for getting a Plotly figure object that can be</span>
+<span class="sd">        saved, displayed, or further customized without running a dashboard.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            params: Optional parameters for datasource filtering.</span>
+<span class="sd">                    For blocks with controls, provide control values as dict.</span>
+<span class="sd">                    Example: {&#39;x_col&#39;: &#39;Price&#39;, &#39;y_col&#39;: &#39;Sales&#39;}</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Plotly Figure object ready for export via:</span>
+<span class="sd">            - figure.write_html(&#39;chart.html&#39;)</span>
+<span class="sd">            - figure.write_image(&#39;chart.png&#39;)  # requires kaleido</span>
+<span class="sd">            - figure.to_json()</span>
+<span class="sd">            - figure.show()</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; chart = TypedChartBlock(</span>
+<span class="sd">            ...     block_id=&quot;sales&quot;,</span>
+<span class="sd">            ...     datasource=datasource,</span>
+<span class="sd">            ...     plot_type=&quot;bar&quot;,</span>
+<span class="sd">            ...     plot_params={&quot;x&quot;: &quot;Product&quot;, &quot;y&quot;: &quot;Sales&quot;}</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; fig = chart.get_figure()</span>
+<span class="sd">            &gt;&gt;&gt; fig.write_html(&quot;sales_chart.html&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">control_values</span> <span class="o">=</span> <span class="n">params</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_from_controls</span><span class="p">(</span><span class="n">control_values</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TypedChartBlock.list_control_inputs">
+<a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.typed_chart.TypedChartBlock.list_control_inputs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">list_control_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns list of control inputs for block-centric callbacks.</span>
+
+<span class="sd">        CRITICAL: Must return the SAME IDs used in publishes registration.</span>
+<span class="sd">        Uses string IDs (f&quot;{block_id}-{ctrl}&quot;), not pattern-matching dicts.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Charts | TypedChartBlock | ControlInputs]</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;Block initialized with controls&quot;</span>
+<span class="sd">         - post: &quot;Returns list of (component_id, &#39;value&#39;) tuples matching publishes&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of control input specifications for Dash callbacks</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="c1"># CRITICAL: Use string IDs to match publishes registration</span>
+        <span class="c1"># BaseBlock._register_state_interactions will convert to pattern-matching</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">ctrl_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">ctrl_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="p">]</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_extract_control_values</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(),</span> <span class="n">kwargs</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extract control values from callback args or kwargs.</span>
+
+<span class="sd">        CRITICAL: BaseBlock.update_from_controls() passes **kwargs with dict IDs as keys.</span>
+<span class="sd">        TypedChartBlock must extract control values from these dict IDs.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Charts | TypedChartBlock | ControlExtraction]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;BaseBlock.update_from_controls contract: passes **{dict_id: value}&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_extract_control_values&#39; with kwargs support&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;kwargs contains {dict_id: value} OR args are positional values&quot;</span>
+<span class="sd">         - post: &quot;Returns {control_name: value} dict&quot;</span>
+<span class="sd">         - invariant: &quot;Handles both *args (state-centric) and **kwargs (block-centric) patterns&quot;</span>
+<span class="sd">         - spec_compliance: &quot;Satisfies BaseBlock.update_from_controls contract&quot;</span>
+
+<span class="sd">        :complexity: 3</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            args: Positional args from state-centric callbacks</span>
+<span class="sd">            kwargs: Keyword args from block-centric callbacks (dict IDs as keys)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary mapping control names to values</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; # Block-centric: kwargs = {{&#39;section&#39;: 1, &#39;type&#39;: &#39;distribution-x_col&#39;}: &#39;Price&#39;}</span>
+<span class="sd">            &gt;&gt;&gt; control_values = _extract_control_values((), kwargs)</span>
+<span class="sd">            &gt;&gt;&gt; # Result: {&#39;x_col&#39;: &#39;Price&#39;}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">control_values</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># CASE 1: Block-centric callback passes **kwargs with dict IDs</span>
+        <span class="k">if</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="c1"># Extract control name from dict ID or string ID</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;type&quot;</span> <span class="ow">in</span> <span class="n">key</span><span class="p">:</span>
+                    <span class="c1"># Pattern-matching ID: {&#39;section&#39;: 1, &#39;type&#39;: &#39;distribution-x_col&#39;}</span>
+                    <span class="n">id_str</span> <span class="o">=</span> <span class="n">key</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="c1"># String ID: &#39;distribution-x_col&#39;</span>
+                    <span class="n">id_str</span> <span class="o">=</span> <span class="n">key</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Extract] Unknown key type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># Extract control name: &quot;distribution-x_col&quot; → &quot;x_col&quot;</span>
+                <span class="n">control_name</span> <span class="o">=</span> <span class="n">id_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">control_values</span><span class="p">[</span><span class="n">control_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Extract] </span><span class="si">{</span><span class="n">control_name</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2"> (from kwargs[</span><span class="si">{</span><span class="n">id_str</span><span class="si">}</span><span class="s2">])&quot;</span>
+                <span class="p">)</span>
+
+        <span class="c1"># CASE 2: State-centric callback passes *args (positional)</span>
+        <span class="k">elif</span> <span class="n">args</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;subscribes&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="p">:</span>
+            <span class="n">state_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="c1"># CRITICAL FIX: args contains values from ALL blocks, not just this one</span>
+            <span class="c1"># We need to extract only the values for THIS block&#39;s subscribed states</span>
+            <span class="k">for</span> <span class="n">state_id</span> <span class="ow">in</span> <span class="n">state_ids</span><span class="p">:</span>
+                <span class="c1"># Find the position of this state_id in the args</span>
+                <span class="c1"># State IDs are ordered consistently across all blocks</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="c1"># Get the position of this state in the global state order</span>
+                    <span class="c1"># FIXED: Based on logs, args order is: [category, category, price, price]</span>
+                    <span class="c1"># So we need to map: filters-category -&gt; args[0], filters-min_price -&gt; args[2]</span>
+                    <span class="c1"># Map to actual args positions (based on observed pattern)</span>
+                    <span class="n">args_mapping</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;filters-category&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>  <span class="c1"># args[0] = category</span>
+                        <span class="s2">&quot;filters-min_price&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>  <span class="c1"># args[2] = price (skip args[1] which is duplicate)</span>
+                    <span class="p">}</span>
+                    <span class="k">if</span> <span class="n">state_id</span> <span class="ow">in</span> <span class="n">args_mapping</span><span class="p">:</span>
+                        <span class="n">state_index</span> <span class="o">=</span> <span class="n">args_mapping</span><span class="p">[</span><span class="n">state_id</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">state_index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+                            <span class="n">value</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="n">state_index</span><span class="p">]</span>
+                            <span class="n">control_values</span><span class="p">[</span><span class="n">state_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                                <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Extract] </span><span class="si">{</span><span class="n">state_id</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2"> (from global args[</span><span class="si">{</span><span class="n">state_index</span><span class="si">}</span><span class="s2">])&quot;</span>
+                            <span class="p">)</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Extract] Could not extract </span><span class="si">{</span><span class="n">state_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+
+        <span class="c1"># CASE 3: Initial render (no args/kwargs), use initial values from controls</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">control_values</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">ctrl_name</span><span class="p">,</span> <span class="n">ctrl</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s2">&quot;value&quot;</span> <span class="ow">in</span> <span class="n">ctrl</span><span class="o">.</span><span class="n">props</span><span class="p">:</span>
+                    <span class="n">control_values</span><span class="p">[</span><span class="n">ctrl_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">ctrl</span><span class="o">.</span><span class="n">props</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Extract] </span><span class="si">{</span><span class="n">ctrl_name</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">ctrl</span><span class="o">.</span><span class="n">props</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> (initial)&quot;</span>
+                    <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">control_values</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_plot_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">control_values</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve plot params by replacing {{placeholders}} with control values.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Charts | TypedChartBlock | ParamResolution]</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;control_values contains values from subscribed controls&quot;</span>
+<span class="sd">         - post: &quot;Returns plot_params with placeholders replaced&quot;</span>
+<span class="sd">         - invariant: &quot;Non-placeholder values unchanged&quot;</span>
+
+<span class="sd">        :complexity: 2</span>
+<span class="sd">        :decision_cache: &quot;Chose {{placeholder}} syntax for clarity&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            control_values: Dict of control_name → value</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Resolved plot_params ready for plot function</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; plot_params = {&#39;x&#39;: &#39;age&#39;, &#39;color&#39;: &#39;{{selected_category}}&#39;}</span>
+<span class="sd">            &gt;&gt;&gt; control_values = {&#39;selected_category&#39;: &#39;Premium&#39;}</span>
+<span class="sd">            &gt;&gt;&gt; resolved = _resolve_plot_params(control_values)</span>
+<span class="sd">            &gt;&gt;&gt; # Result: {&#39;x&#39;: &#39;age&#39;, &#39;color&#39;: &#39;Premium&#39;}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">resolved</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">plot_params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="n">value</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;{{&quot;</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="n">value</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;}}&quot;</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="c1"># Extract placeholder: {{control_name}} → control_name</span>
+                <span class="n">control_name</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="n">resolved</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">control_values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">control_name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Resolve] </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: </span><span class="se">{{{{</span><span class="s2">control_name</span><span class="se">}}}}</span><span class="s2"> → &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">resolved</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">resolved</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="k">return</span> <span class="n">resolved</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_update_chart</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update chart using registered plot function.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Charts | TypedChartBlock | UpdateLogic]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Core update logic with plot_kwargs passthrough&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_update_chart&#39;&quot;</span>
+<span class="sd">         - uses: [&quot;method: &#39;get_processed_data&#39;&quot;, &quot;registered plot function&quot;]</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;Subscribed state values in *args&quot;</span>
+<span class="sd">         - post: &quot;Returns figure from plot function&quot;</span>
+<span class="sd">         - data_flow: &quot;params → get_processed_data(params) → df → plot_func(df, **kwargs)&quot;</span>
+<span class="sd">         - kwargs_flow: &quot;plot_kwargs passed to plot function&quot;</span>
+
+<span class="sd">        :complexity: 4</span>
+<span class="sd">        :decision_cache: &quot;Single update method handles all plot types via registry&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            *args: Control values from subscribed states</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Plotly Figure from registered plot function</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># CRITICAL: Block-centric callbacks pass control_values dict as first positional arg</span>
+        <span class="c1"># Log what we receive for debugging</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Update] _update_chart called with args=</span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;args types=</span><span class="si">{</span><span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">args</span><span class="p">]</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">args</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">[]</span><span class="si">}</span><span class="s2">, kwargs=</span><span class="si">{</span><span class="n">kwargs</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Check if first arg is a dict (block-centric) or individual values (state-centric)</span>
+        <span class="k">if</span> <span class="n">args</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="c1"># Block-centric: first arg is control_values dict</span>
+            <span class="n">control_values</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Update] </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> | &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;plot_type=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">plot_type</span><span class="si">}</span><span class="s2"> | mode=block-centric | controls=</span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">control_values</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># State-centric or initial render</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Update] </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> | &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;plot_type=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">plot_type</span><span class="si">}</span><span class="s2"> | mode=state-centric | args=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="n">control_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_control_values</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Update] control_values=</span><span class="si">{</span><span class="n">control_values</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+            <span class="c1"># CRITICAL: Separate plot params from datasource params</span>
+            <span class="c1"># Plot params (x_col, feature, mode) are THIS block&#39;s controls → NOT for datasource</span>
+            <span class="c1"># Datasource params (session_controls-*) are EXTERNAL states → FOR datasource</span>
+            <span class="n">datasource_params</span> <span class="o">=</span> <span class="p">{}</span>
+
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">(</span><span class="n">control_values</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="c1"># If param is NOT from this block&#39;s controls → it&#39;s external state → for datasource</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="p">:</span>
+                    <span class="n">datasource_params</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|ParamSplit] block_controls=</span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;datasource_params=</span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">datasource_params</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Get filtered data (pipeline runs through cache)</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">(</span><span class="n">datasource_params</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Update] Received </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows from datasource&quot;</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Update] Empty DataFrame for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="k">return</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span><span class="o">.</span><span class="n">add_annotation</span><span class="p">(</span>
+                    <span class="n">text</span><span class="o">=</span><span class="s2">&quot;No data available&quot;</span><span class="p">,</span>
+                    <span class="n">showarrow</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">xref</span><span class="o">=</span><span class="s2">&quot;paper&quot;</span><span class="p">,</span>
+                    <span class="n">yref</span><span class="o">=</span><span class="s2">&quot;paper&quot;</span><span class="p">,</span>
+                    <span class="n">x</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                    <span class="n">y</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                <span class="p">)</span>
+
+            <span class="c1"># Resolve plot params (replace {{placeholders}})</span>
+            <span class="n">resolved_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_plot_params</span><span class="p">(</span><span class="n">control_values</span><span class="p">)</span>
+
+            <span class="c1"># Merge with plot_kwargs from constructor</span>
+            <span class="n">all_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">resolved_params</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">plot_kwargs</span><span class="p">}</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Update] Calling plot function | &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;params=</span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">all_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Call registered plot function with ALL kwargs</span>
+            <span class="n">figure</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">plot_func</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="o">**</span><span class="n">all_kwargs</span><span class="p">)</span>
+
+            <span class="c1"># Apply theme if available</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="p">:</span>
+                <span class="n">theme_layout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">get_figure_layout</span><span class="p">()</span>
+                <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="o">**</span><span class="n">theme_layout</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Update] Applied theme </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[TypedChartBlock|Update] Chart updated successfully&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">figure</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Update] Error in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span><span class="o">.</span><span class="n">add_annotation</span><span class="p">(</span>
+                <span class="n">text</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)[:</span><span class="mi">100</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">showarrow</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">xref</span><span class="o">=</span><span class="s2">&quot;paper&quot;</span><span class="p">,</span>
+                <span class="n">yref</span><span class="o">=</span><span class="s2">&quot;paper&quot;</span><span class="p">,</span>
+                <span class="n">x</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                <span class="n">y</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                <span class="n">font</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">),</span>
+            <span class="p">)</span>
+
+<div class="viewcode-block" id="TypedChartBlock.layout">
+<a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.typed_chart.TypedChartBlock.layout">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">layout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Render block layout with card, title, controls, and chart.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Charts | TypedChartBlock | Layout]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Standard card-based layout for all chart types&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;layout&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;Block initialized, theme may be available&quot;</span>
+<span class="sd">         - post: &quot;Returns Dash Component tree&quot;</span>
+
+<span class="sd">        :complexity: 3</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dash Component (Card with chart)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize with current chart</span>
+        <span class="n">initial_chart</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_chart</span><span class="p">()</span>
+
+        <span class="c1"># Build card components</span>
+        <span class="n">card_content</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Title</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">:</span>
+            <span class="n">themed_title_style</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_themed_style</span><span class="p">(</span>
+                <span class="s2">&quot;card&quot;</span><span class="p">,</span> <span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_style</span>
+            <span class="p">)</span>
+            <span class="n">title_props</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_className</span> <span class="ow">or</span> <span class="s2">&quot;card-title&quot;</span><span class="p">}</span>
+            <span class="k">if</span> <span class="n">themed_title_style</span><span class="p">:</span>
+                <span class="n">title_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">themed_title_style</span>
+
+            <span class="n">card_content</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">html</span><span class="o">.</span><span class="n">H4</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="o">**</span><span class="n">title_props</span><span class="p">))</span>
+
+        <span class="c1"># Controls row (if present)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="p">:</span>
+            <span class="n">control_components</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">control</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">comp_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_id</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                <span class="n">comp</span> <span class="o">=</span> <span class="n">control</span><span class="o">.</span><span class="n">component</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">comp_id</span><span class="p">,</span> <span class="o">**</span><span class="n">control</span><span class="o">.</span><span class="n">props</span><span class="p">)</span>
+                <span class="n">col</span> <span class="o">=</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Col</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">control</span><span class="o">.</span><span class="n">col_props</span> <span class="ow">or</span> <span class="p">{}))</span>
+                <span class="n">control_components</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+
+            <span class="n">controls_row</span> <span class="o">=</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span><span class="n">control_components</span><span class="p">,</span> <span class="n">className</span><span class="o">=</span><span class="s2">&quot;mb-1&quot;</span><span class="p">)</span>
+            <span class="n">card_content</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">controls_row</span><span class="p">)</span>
+
+        <span class="c1"># Graph</span>
+        <span class="n">graph_props</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_id</span><span class="p">(</span><span class="s2">&quot;container&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;figure&quot;</span><span class="p">:</span> <span class="n">initial_chart</span><span class="p">,</span>
+            <span class="s2">&quot;config&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph_config</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph_style</span><span class="p">:</span>
+            <span class="n">graph_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph_style</span>
+
+        <span class="n">card_content</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">dcc</span><span class="o">.</span><span class="n">Loading</span><span class="p">(</span>
+                <span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_generate_id</span><span class="p">(</span><span class="s2">&quot;loading&quot;</span><span class="p">),</span>
+                <span class="nb">type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">loading_type</span><span class="p">,</span>
+                <span class="n">children</span><span class="o">=</span><span class="n">dcc</span><span class="o">.</span><span class="n">Graph</span><span class="p">(</span><span class="o">**</span><span class="n">graph_props</span><span class="p">),</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Build card</span>
+        <span class="n">themed_card_style</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_themed_style</span><span class="p">(</span>
+            <span class="s2">&quot;card&quot;</span><span class="p">,</span> <span class="s2">&quot;background&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_style</span>
+        <span class="p">)</span>
+        <span class="c1"># h-100 ensures equal height when multiple blocks in same row</span>
+        <span class="c1"># Note: mb-4 removed, handled by Row.mb-4</span>
+        <span class="n">base_classes</span> <span class="o">=</span> <span class="s2">&quot;h-100&quot;</span>
+        <span class="n">card_props</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base_classes</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">card_className</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_className</span>
+                <span class="k">else</span> <span class="n">base_classes</span>
+            <span class="p">)</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">themed_card_style</span><span class="p">:</span>
+            <span class="n">card_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">themed_card_style</span>
+
+        <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Card</span><span class="p">(</span><span class="n">dbc</span><span class="o">.</span><span class="n">CardBody</span><span class="p">(</span><span class="n">card_content</span><span class="p">),</span> <span class="o">**</span><span class="n">card_props</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Dashboard Lego Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

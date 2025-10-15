@@ -95,6 +95,19 @@ Control Class
    :show-inheritance:
    :noindex:
 
+Typed Chart Block (v0.15.0+)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+High-level chart block with built-in plot types and automatic chart generation.
+
+.. autoclass:: dashboard_lego.blocks.typed_chart.TypedChartBlock
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :noindex:
+
+.. automethod:: dashboard_lego.blocks.typed_chart.TypedChartBlock.get_figure
+
 KPI Block
 ---------
 

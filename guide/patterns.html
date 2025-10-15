@@ -64,6 +64,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#layout-composition-pattern">Layout Composition Pattern</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#data-processing-pipeline-pattern-v0-15">Data Processing Pipeline Pattern (v0.15)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#quick-dashboard-pattern">Quick Dashboard Pattern</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#export-pattern">Export Pattern</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#ipython-magic-commands">IPython Magic Commands</a></li>
 </ul>
 </li>
@@ -118,7 +119,8 @@
 <li><p><a class="reference internal" href="#layout-composition-pattern" id="id5">Layout Composition Pattern</a></p></li>
 <li><p><a class="reference internal" href="#data-processing-pipeline-pattern-v0-15" id="id6">Data Processing Pipeline Pattern (v0.15)</a></p></li>
 <li><p><a class="reference internal" href="#quick-dashboard-pattern" id="id7">Quick Dashboard Pattern</a></p></li>
-<li><p><a class="reference internal" href="#ipython-magic-commands" id="id8">IPython Magic Commands</a></p></li>
+<li><p><a class="reference internal" href="#export-pattern" id="id8">Export Pattern</a></p></li>
+<li><p><a class="reference internal" href="#ipython-magic-commands" id="id9">IPython Magic Commands</a></p></li>
 </ul>
 </nav>
 <section id="publisher-subscriber-pattern">
@@ -346,6 +348,44 @@
 <li><p><strong>Testability</strong>: Test builder and transformer independently</p></li>
 <li><p><strong>Reusability</strong>: Same components can be used in multiple dashboards</p></li>
 </ol>
+<p><strong>Cache Sharing (v0.15.2):</strong></p>
+<p>Cache objects are automatically shared across datasource instances to prevent duplicate builds:</p>
+<ul class="simple">
+<li><p><strong>Same cache_dir</strong>: Multiple datasources with identical <code class="docutils literal notranslate"><span class="pre">cache_dir</span></code> paths share cache</p></li>
+<li><p><strong>In-memory</strong>: All <code class="docutils literal notranslate"><span class="pre">cache_dir=None</span></code> datasources share single global in-memory cache</p></li>
+<li><p><strong>Stage1 (Build) optimization</strong>: When using <code class="docutils literal notranslate"><span class="pre">with_transform_fn()</span></code>, the derived datasource
+reuses the parent’s cache → <code class="docutils literal notranslate"><span class="pre">build()</span></code> executes only once</p></li>
+</ul>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseDataSource</span><span class="p">,</span> <span class="n">DataBuilder</span>
+
+<span class="c1"># Create main datasource</span>
+<span class="n">main_ds</span> <span class="o">=</span> <span class="n">BaseDataSource</span><span class="p">(</span>
+    <span class="n">data_builder</span><span class="o">=</span><span class="n">MyDataBuilder</span><span class="p">(),</span>
+    <span class="n">cache_dir</span><span class="o">=</span><span class="kc">None</span>  <span class="c1"># In-memory cache</span>
+<span class="p">)</span>
+
+<span class="c1"># Create derived datasource with additional transform</span>
+<span class="n">filtered_ds</span> <span class="o">=</span> <span class="n">main_ds</span><span class="o">.</span><span class="n">with_transform_fn</span><span class="p">(</span>
+    <span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Category&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;A&#39;</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="c1"># Cache is shared automatically:</span>
+<span class="k">assert</span> <span class="n">main_ds</span><span class="o">.</span><span class="n">cache</span> <span class="ow">is</span> <span class="n">filtered_ds</span><span class="o">.</span><span class="n">cache</span>  <span class="c1"># True!</span>
+
+<span class="c1"># Stage1 (builder.build) executes only ONCE:</span>
+<span class="n">data1</span> <span class="o">=</span> <span class="n">main_ds</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>      <span class="c1"># Triggers build()</span>
+<span class="n">data2</span> <span class="o">=</span> <span class="n">filtered_ds</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>  <span class="c1"># Reuses cached build, only applies filter</span>
+
+<span class="c1"># Result: No duplicate expensive data loading/processing</span>
+</pre></div>
+</div>
+<p><strong>When cache sharing happens:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Explicit matching</strong>: <code class="docutils literal notranslate"><span class="pre">BaseDataSource(...,</span> <span class="pre">cache_dir=&quot;/path&quot;)</span></code> → all instances with same path share cache</p></li>
+<li><p><strong>In-memory default</strong>: <code class="docutils literal notranslate"><span class="pre">BaseDataSource(...,</span> <span class="pre">cache_dir=None)</span></code> → all in-memory instances share cache</p></li>
+<li><p><strong>Derived datasources</strong>: <code class="docutils literal notranslate"><span class="pre">ds.with_transform_fn(...)</span></code> → automatically inherits parent’s cache</p></li>
+</ol>
 </section>
 <section id="quick-dashboard-pattern">
 <h2><a class="toc-backref" href="#id7" role="doc-backlink">Quick Dashboard Pattern</a><a class="headerlink" href="#quick-dashboard-pattern" title="Link to this heading"></a></h2>
@@ -478,8 +518,31 @@ pip<span class="w"> </span>install<span class="w"> </span>jupyter-dash
 <li><p><strong>Type safety</strong>: Validates card specifications at runtime</p></li>
 </ol>
 </section>
+<section id="export-pattern">
+<h2><a class="toc-backref" href="#id8" role="doc-backlink">Export Pattern</a><a class="headerlink" href="#export-pattern" title="Link to this heading"></a></h2>
+<p>Export dashboard figures for static reports and notebooks.</p>
+<p><strong>Single Figure:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">chart</span> <span class="o">=</span> <span class="n">TypedChartBlock</span><span class="p">(</span>
+    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;chart&quot;</span><span class="p">,</span>
+    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;scatter&quot;</span><span class="p">,</span>
+    <span class="n">plot_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="s2">&quot;Y&quot;</span><span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">chart</span><span class="o">.</span><span class="n">get_figure</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">write_html</span><span class="p">(</span><span class="s2">&quot;chart.html&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Layout Export:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">layout</span> <span class="o">=</span> <span class="p">[[</span><span class="n">chart1</span><span class="p">,</span> <span class="n">chart2</span><span class="p">],</span> <span class="p">[</span><span class="n">chart3</span><span class="p">]]</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">export_layout_to_figure</span><span class="p">(</span><span class="n">layout</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Dashboard&quot;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">write_html</span><span class="p">(</span><span class="s2">&quot;dashboard.html&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="export.html#guide-export"><span class="std std-ref">Exporting Figures</span></a> for complete documentation.</p>
+</section>
 <section id="ipython-magic-commands">
-<h2><a class="toc-backref" href="#id8" role="doc-backlink">IPython Magic Commands</a><a class="headerlink" href="#ipython-magic-commands" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id9" role="doc-backlink">IPython Magic Commands</a><a class="headerlink" href="#ipython-magic-commands" title="Link to this heading"></a></h2>
 <p>For even faster dashboard creation in Jupyter notebooks, Dashboard Lego provides
 IPython magic commands that reduce code to a single line.</p>
 <p><strong>Loading the Extension:</strong></p>

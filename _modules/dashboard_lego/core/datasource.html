@@ -141,6 +141,18 @@
 <span class="sd">    :decision_cache: &quot;Chose 2-stage over 3-stage for semantic clarity&quot;</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="c1"># LLM:METADATA</span>
+    <span class="c1"># :hierarchy: [Core | DataSources | BaseDataSource | CacheRegistry]</span>
+    <span class="c1"># :relates-to:</span>
+    <span class="c1">#  - motivated_by: &quot;Cache sharing prevents duplicate Stage1 builds when same builder reused across datasources created via with_transform_fn() [Contract-Fix-CacheSharing]&quot;</span>
+    <span class="c1">#  - implements: &quot;Class-level cache registry for transparent cache reuse based on cache_dir matching&quot;</span>
+    <span class="c1"># :contract:</span>
+    <span class="c1">#  - invariant: &quot;Same cache_dir → same Cache instance; All cache_dir=None → single shared in-memory cache&quot;</span>
+    <span class="c1"># :complexity: 2</span>
+    <span class="c1"># :decision_cache: &quot;Class-level dict registry over singleton pattern: simpler, transparent, no global state pollution [decision-cache-registry-001]&quot;</span>
+    <span class="c1"># LLM:END</span>
+    <span class="n">_cache_registry</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Cache</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
 <div class="viewcode-block" id="BaseDataSource.__init__">
 <a class="viewcode-back" href="../../../api/core.html#dashboard_lego.core.datasource.BaseDataSource.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
@@ -175,10 +187,35 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">BaseDataSource</span><span class="p">)</span>
 
-        <span class="c1"># Initialize cache</span>
+        <span class="c1"># LLM:METADATA</span>
+        <span class="c1"># :hierarchy: [Core | DataSources | BaseDataSource | CacheInitialization]</span>
+        <span class="c1"># :relates-to:</span>
+        <span class="c1">#  - motivated_by: &quot;Cache sharing prevents duplicate Stage1 builds by reusing Cache objects for matching cache_dir [Contract-Fix-CacheSharing]&quot;</span>
+        <span class="c1">#  - implements: &quot;Cache registry lookup and reuse logic in __init__&quot;</span>
+        <span class="c1"># :contract:</span>
+        <span class="c1">#  - pre: &quot;cache_dir is str or None, cache_ttl is int&quot;</span>
+        <span class="c1">#  - post: &quot;self.cache is set to shared or new Cache instance&quot;</span>
+        <span class="c1">#  - invariant: &quot;Same cache_dir → reuses existing Cache from registry; Different cache_dir → creates new Cache&quot;</span>
+        <span class="c1"># :complexity: 3</span>
+        <span class="c1"># LLM:END</span>
+
+        <span class="c1"># Initialize cache with transparent sharing</span>
+        <span class="n">cache_key</span> <span class="o">=</span> <span class="n">cache_dir</span> <span class="k">if</span> <span class="n">cache_dir</span> <span class="k">else</span> <span class="s2">&quot;__in_memory__&quot;</span>
+
         <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">Cache</span><span class="p">(</span><span class="n">directory</span><span class="o">=</span><span class="n">cache_dir</span><span class="p">,</span> <span class="n">expire</span><span class="o">=</span><span class="n">cache_ttl</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;[BaseDataSource|Init] Cache initialized&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">cache_key</span> <span class="ow">in</span> <span class="n">BaseDataSource</span><span class="o">.</span><span class="n">_cache_registry</span><span class="p">:</span>
+                <span class="c1"># Reuse existing cache for same cache_dir</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">BaseDataSource</span><span class="o">.</span><span class="n">_cache_registry</span><span class="p">[</span><span class="n">cache_key</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;[BaseDataSource|Init] Reused cache | key=</span><span class="si">{</span><span class="n">cache_key</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Create new cache and register it</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">Cache</span><span class="p">(</span><span class="n">directory</span><span class="o">=</span><span class="n">cache_dir</span><span class="p">,</span> <span class="n">expire</span><span class="o">=</span><span class="n">cache_ttl</span><span class="p">)</span>
+                <span class="n">BaseDataSource</span><span class="o">.</span><span class="n">_cache_registry</span><span class="p">[</span><span class="n">cache_key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;[BaseDataSource|Init] Created new cache | key=</span><span class="si">{</span><span class="n">cache_key</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[BaseDataSource|Init] Cache failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">CacheError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cache initialization failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
@@ -191,6 +228,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span> <span class="o">=</span> <span class="n">data_builder</span> <span class="ow">or</span> <span class="n">DataBuilder</span><span class="p">(</span><span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data_transformer</span> <span class="o">=</span> <span class="n">data_transformer</span> <span class="ow">or</span> <span class="n">DataTransformer</span><span class="p">(</span><span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">param_classifier</span> <span class="o">=</span> <span class="n">param_classifier</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache_dir</span> <span class="o">=</span> <span class="n">cache_dir</span>  <span class="c1"># Store original cache_dir for cloning</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cache_ttl</span> <span class="o">=</span> <span class="n">cache_ttl</span>
 
         <span class="c1"># NO stored state</span>
@@ -215,7 +253,7 @@
 <span class="sd">        :contract:</span>
 <span class="sd">         - pre: &quot;stage is valid string, params is dict&quot;</span>
 <span class="sd">         - post: &quot;Returns stable cache key unique to stage + params + handler&quot;</span>
-<span class="sd">         - invariant: &quot;Different builders/transformers get different caches&quot;</span>
+<span class="sd">         - invariant: &quot;Different builders/transformers get different cache keys; Same cache_dir → shared Cache object&quot;</span>
 
 <span class="sd">        :decision_cache: &quot;Use hash(type(handler)) for classes, id() for lambdas&quot;</span>
 
@@ -360,9 +398,7 @@
             <span class="n">data_builder</span><span class="o">=</span><span class="n">builder</span><span class="p">,</span>
             <span class="n">data_transformer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data_transformer</span><span class="p">,</span>
             <span class="n">param_classifier</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">param_classifier</span><span class="p">,</span>
-            <span class="n">cache_dir</span><span class="o">=</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">directory</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">,</span> <span class="s2">&quot;directory&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
-            <span class="p">),</span>
+            <span class="n">cache_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_dir</span><span class="p">,</span>  <span class="c1"># Use original cache_dir for cache sharing</span>
             <span class="n">cache_ttl</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_ttl</span><span class="p">,</span>
         <span class="p">)</span></div>
 
@@ -454,9 +490,7 @@
             <span class="n">data_builder</span><span class="o">=</span><span class="n">lambda_builder</span><span class="p">,</span>
             <span class="n">data_transformer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data_transformer</span><span class="p">,</span>
             <span class="n">param_classifier</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">param_classifier</span><span class="p">,</span>
-            <span class="n">cache_dir</span><span class="o">=</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">directory</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">,</span> <span class="s2">&quot;directory&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
-            <span class="p">),</span>
+            <span class="n">cache_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_dir</span><span class="p">,</span>  <span class="c1"># Use original cache_dir for cache sharing</span>
             <span class="n">cache_ttl</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_ttl</span><span class="p">,</span>
         <span class="p">)</span></div>
 
@@ -486,9 +520,7 @@
             <span class="n">data_builder</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="p">,</span>
             <span class="n">data_transformer</span><span class="o">=</span><span class="n">transformer</span><span class="p">,</span>
             <span class="n">param_classifier</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">param_classifier</span><span class="p">,</span>
-            <span class="n">cache_dir</span><span class="o">=</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">directory</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">,</span> <span class="s2">&quot;directory&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
-            <span class="p">),</span>
+            <span class="n">cache_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_dir</span><span class="p">,</span>  <span class="c1"># Use original cache_dir for cache sharing</span>
             <span class="n">cache_ttl</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_ttl</span><span class="p">,</span>
         <span class="p">)</span></div>
 
@@ -601,13 +633,12 @@
         <span class="p">)</span>
 
         <span class="c1"># 3. Return a new datasource instance (clone) with the new chained transformer</span>
+        <span class="c1"># Use stored cache_dir to ensure cache registry key matches parent</span>
         <span class="k">return</span> <span class="n">BaseDataSource</span><span class="p">(</span>
             <span class="n">data_builder</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="p">,</span>
             <span class="n">data_transformer</span><span class="o">=</span><span class="n">chained_transformer</span><span class="p">,</span>
             <span class="n">param_classifier</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">param_classifier</span><span class="p">,</span>
-            <span class="n">cache_dir</span><span class="o">=</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">directory</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">,</span> <span class="s2">&quot;directory&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
-            <span class="p">),</span>
+            <span class="n">cache_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_dir</span><span class="p">,</span>  <span class="c1"># Use original cache_dir for cache sharing</span>
             <span class="n">cache_ttl</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_ttl</span><span class="p">,</span>
         <span class="p">)</span></div>
 
