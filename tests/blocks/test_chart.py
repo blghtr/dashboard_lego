@@ -333,3 +333,37 @@ class TestMultiStateSubscription:
             subscribers = state_manager.dependency_graph[state_id]["subscribers"]
             assert len(subscribers) == 1
             assert subscribers[0]["component_id"] == "test_chart-container"
+
+
+class TestFigureExport:
+    def test_get_figure_returns_plotly_figure(self, datasource_factory):
+        """Test get_figure returns valid Plotly Figure."""
+        chart = TypedChartBlock(
+            block_id="test",
+            datasource=datasource_factory(
+                get_processed_data=pd.DataFrame({"x": [1, 2], "y": [3, 4]})
+            ),
+            plot_type="scatter",
+            plot_params={"x": "x", "y": "y"},
+        )
+
+        fig = chart.get_figure()
+
+        assert isinstance(fig, go.Figure)
+        assert len(fig.data) > 0
+
+    def test_get_figure_with_params(self, datasource_factory):
+        """Test get_figure accepts parameters."""
+        chart = TypedChartBlock(
+            block_id="test",
+            datasource=datasource_factory(
+                get_processed_data=pd.DataFrame({"x": [1, 2], "y": [3, 4]})
+            ),
+            plot_type="scatter",
+            plot_params={"x": "{{x_col}}", "y": "y"},
+            controls={"x_col": Control(component=dbc.Select, props={"options": []})},
+        )
+
+        fig = chart.get_figure(params={"x_col": "x"})
+
+        assert isinstance(fig, go.Figure)

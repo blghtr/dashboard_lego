@@ -435,6 +435,35 @@ For full control with pre-built blocks:
 4. **Universal**: Works in Jupyter, Python scripts, anywhere Dash runs
 5. **Type safety**: Validates card specifications at runtime
 
+Export Pattern
+--------------
+
+Export dashboard figures for static reports and notebooks.
+
+**Single Figure:**
+
+.. code-block:: python
+
+   chart = TypedChartBlock(
+       block_id="chart",
+       datasource=datasource,
+       plot_type="scatter",
+       plot_params={"x": "X", "y": "Y"}
+   )
+
+   fig = chart.get_figure()
+   fig.write_html("chart.html")
+
+**Layout Export:**
+
+.. code-block:: python
+
+   layout = [[chart1, chart2], [chart3]]
+   fig = export_layout_to_figure(layout, title="Dashboard")
+   fig.write_html("dashboard.html")
+
+See :ref:`guide-export` for complete documentation.
+
 IPython Magic Commands
 -----------------------
 

@@ -6,6 +6,7 @@ This module defines the abstract base class for all dashboard blocks.
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
 
+import plotly.graph_objects as go
 from dash.development.base_component import Component
 
 # Use forward references for type hints to avoid circular imports
@@ -436,6 +437,17 @@ class BaseBlock(ABC):
         """
         self.logger.debug(f"Rendering layout for block {self.block_id}")
         pass
+
+    def get_figure(
+        self, params: Optional[Dict[str, Any]] = None
+    ) -> Optional[go.Figure]:
+        """
+        Export standalone Plotly figure (chart blocks only).
+
+        Returns:
+            Plotly Figure for chart blocks, None for non-chart blocks.
+        """
+        return None  # Default implementation for non-chart blocks
 
     def register_callbacks(self, app: Any):
         """

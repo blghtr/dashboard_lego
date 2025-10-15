@@ -248,6 +248,38 @@ class TypedChartBlock(BaseBlock):
         )
         return self._update_chart(control_values)
 
+    def get_figure(self, params: Optional[Dict[str, Any]] = None) -> go.Figure:
+        """
+        Export standalone Plotly figure without Dash server.
+
+        This is the official API for getting a Plotly figure object that can be
+        saved, displayed, or further customized without running a dashboard.
+
+        Args:
+            params: Optional parameters for datasource filtering.
+                    For blocks with controls, provide control values as dict.
+                    Example: {'x_col': 'Price', 'y_col': 'Sales'}
+
+        Returns:
+            Plotly Figure object ready for export via:
+            - figure.write_html('chart.html')
+            - figure.write_image('chart.png')  # requires kaleido
+            - figure.to_json()
+            - figure.show()
+
+        Example:
+            >>> chart = TypedChartBlock(
+            ...     block_id="sales",
+            ...     datasource=datasource,
+            ...     plot_type="bar",
+            ...     plot_params={"x": "Product", "y": "Sales"}
+            ... )
+            >>> fig = chart.get_figure()
+            >>> fig.write_html("sales_chart.html")
+        """
+        control_values = params or {}
+        return self.update_from_controls(control_values)
+
     def list_control_inputs(self) -> list[tuple[str, str]]:
         """
         Returns list of control inputs for block-centric callbacks.

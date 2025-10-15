@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 import dash_bootstrap_components as dbc
+import plotly.graph_objects as go
 from dash import dcc, html
 from dash.dependencies import Input, Output
 from dash.development.base_component import Component
@@ -1385,6 +1386,47 @@ class DashboardPage:
         except Exception as e:
             self.logger.error(f"Error registering callbacks: {e}", exc_info=True)
             raise
+
+    def export_to_figure(
+        self,
+        params: Optional[Dict[str, Any]] = None,
+        title: Optional[str] = None,
+    ) -> go.Figure:
+        """
+        Export entire dashboard layout to single Plotly figure.
+
+        Combines all chart blocks into a single figure using subplots.
+        Non-chart blocks (metrics, text, controls) are skipped.
+
+        Args:
+            params: Optional parameters for filtering data in all blocks
+            title: Optional title for the combined figure
+
+        Returns:
+            Single Plotly Figure with all charts in grid layout
+
+        Example:
+            >>> page = DashboardPage(title="Sales Dashboard", blocks=layout)
+            >>> fig = page.export_to_figure(title="Q4 Sales Report")
+            >>> fig.write_html("dashboard_export.html")
+
+        Note:
+            Requires dashboard to be built without navigation (single layout).
+            For navigation dashboards, export sections individually.
+        """
+        if self.navigation:
+            raise ValueError(
+                "Cannot export navigation dashboard. "
+                "Export individual sections using section factories."
+            )
+
+        from dashboard_lego.utils.layout_export import export_layout_to_figure
+
+        return export_layout_to_figure(
+            self.layout_structure,
+            params=params,
+            title=title or self.title,
+        )
 
     def _setup_callback_error_handling(self, app: Any):
         """
