@@ -11,6 +11,28 @@ import pytest
 from dashboard_lego.core.datasource import BaseDataSource
 
 
+@pytest.fixture(autouse=True)
+def clear_cache_registry():
+    """
+    Clear cache registry before each test to prevent test interference.
+
+    :hierarchy: [Testing | Fixtures | Cache Management]
+    :relates-to:
+     - motivated_by: "Tests fail due to shared cache registry between tests causing data contamination"
+     - implements: "fixture: 'clear_cache_registry'"
+    :contract:
+     - pre: "Test is starting"
+     - post: "Cache registry is cleared, no shared state between tests"
+    """
+    # Clear cache registry before test
+    BaseDataSource._cache_registry.clear()
+
+    yield
+
+    # Clear cache registry after test
+    BaseDataSource._cache_registry.clear()
+
+
 @pytest.fixture
 def datasource_factory():
     """
