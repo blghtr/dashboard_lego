@@ -24,7 +24,7 @@ for proper DashboardPage integration.
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from dashboard_lego.blocks.single_metric import SingleMetricBlock
-from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.datasource import DataSource
 from dashboard_lego.utils.logger import get_logger
 
 logger = get_logger(__name__, "MetricsFactory")
@@ -32,7 +32,7 @@ logger = get_logger(__name__, "MetricsFactory")
 
 def get_metric_row(
     metrics_spec: Dict[str, Dict[str, Any]],
-    datasource: BaseDataSource,
+    datasource: DataSource,
     subscribes_to: Optional[Union[str, List[str]]] = None,
     row_options: Optional[Dict[str, Any]] = None,
     block_id_prefix: str = "metric",

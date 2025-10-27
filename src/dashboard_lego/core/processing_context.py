@@ -3,7 +3,7 @@ This module defines the DataProcessingContext for the data pipeline.
 
 :hierarchy: [Core | DataSources | DataProcessingContext]
 :relates-to:
- - motivated_by: "Refactor: Separate preprocessing and filtering parameters through pipeline"
+ - motivated_by: "Refactor: Separate preprocessing and filtering parameters"
  - implements: "dataclass: 'DataProcessingContext'"
  - uses: []
 
@@ -13,11 +13,11 @@ This module defines the DataProcessingContext for the data pipeline.
  - invariant: "raw_params always contains original input"
 
 :complexity: 3
-:decision_cache: "Chose dataclass for immutability and clear structure over dict"
+:decision_cache: "Chose dataclass for immutability and clear structure"
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Tuple
 
 from dashboard_lego.utils.logger import get_logger
 
@@ -28,12 +28,12 @@ class DataProcessingContext:
     Context object for data processing pipeline stages.
 
     This context separates preprocessing parameters (which affect data transformation)
-    from filtering parameters (which affect data subsetting) to enable staged caching
-    and clearer separation of concerns.
+    from filtering parameters (which affect data subsetting) to enable staged
+    caching and clearer separation of concerns.
 
     :hierarchy: [Core | DataSources | DataProcessingContext]
     :relates-to:
-     - motivated_by: "Need to pass preprocessing and filtering params separately through pipeline"
+     - motivated_by: "Need to pass preprocessing and filtering params separately"
      - implements: "dataclass: 'DataProcessingContext'"
 
     :contract:
@@ -50,7 +50,8 @@ class DataProcessingContext:
     Example:
         >>> context = DataProcessingContext.from_params(
         ...     {'category': 'Electronics', 'min_price': 100},
-        ...     lambda k: 'filter' if k in ['category', 'min_price'] else 'preprocess'
+        ...     lambda k: ('filter', k) if k in ['category', 'min_price']
+        ...              else ('preprocess', k)
         ... )
         >>> context.filtering_params
         {'category': 'Electronics', 'min_price': 100}
@@ -64,44 +65,52 @@ class DataProcessingContext:
     def from_params(
         cls,
         params: Optional[Dict[str, Any]] = None,
-        param_classifier: Optional[Callable[[str], str]] = None,
+        param_classifier: Optional[Callable[[str], Tuple[str, str]]] = None,
     ) -> "DataProcessingContext":
         """
         Create context by classifying params into preprocessing vs filtering.
 
         :hierarchy: [Core | DataSources | DataProcessingContext | Factory]
         :relates-to:
-         - motivated_by: "Need flexible param classification for different use cases"
+         - motivated_by: "Need flexible param classification for different uses"
          - implements: "classmethod: 'from_params'"
 
         :contract:
-         - pre: "params can be None or dict, param_classifier can be None or callable"
+         - pre: "params can be None or dict, param_classifier can be None"
          - post: "Returns DataProcessingContext with classified params"
          - invariant: "raw_params always equals input params"
 
         Args:
             params: Raw params dict from controls. If None, treated as empty dict.
-            param_classifier: Optional function that returns 'preprocess' or 'filter'
-                            for each param key. If None, all params are treated as
-                            preprocessing params (backward compatible default).
+            param_classifier: Optional function that returns a tuple of
+                            (category, formatted_key) for each param key. If None,
+                            all params are treated as preprocessing params
+                            (backward compatible default).
 
-                            Signature: (param_key: str) -> str
-                            Return value must be either 'preprocess' or 'filter'
+                            Signature: (param_key: str) -> Tuple[str, str]
+                            Return value: (category: str, formatted_key: str)
+                            where category must be either 'preprocess' or 'filter'
+                            and formatted_key is the parameter name to use in context
 
         Returns:
             DataProcessingContext with classified params
 
         Example:
             >>> def classifier(key):
-            ...     return 'filter' if key.startswith('filter_') else 'preprocess'
+            ...     if key.startswith('filter_'):
+            ...         return ('filter', key[7:])  # Remove 'filter_' prefix
+            ...     elif key.startswith('preproc_'):
+            ...         return ('preprocess', key[8:])  # Remove prefix
+            ...     else:
+            ...         return ('preprocess', key)
             >>> ctx = DataProcessingContext.from_params(
             ...     {'preproc_agg': 'sum', 'filter_cat': 'A'},
             ...     classifier
             ... )
             >>> ctx.preprocessing_params
-            {'preproc_agg': 'sum'}
+            {'agg': 'sum'}
             >>> ctx.filtering_params
-            {'filter_cat': 'A'}
+            {'cat': 'A'}
         """
         logger = get_logger(__name__, DataProcessingContext)
 
@@ -114,7 +123,7 @@ class DataProcessingContext:
         for key, value in params.items():
             if param_classifier:
                 try:
-                    category = param_classifier(key)
+                    category, key = param_classifier(key)
                     if category in (
                         "filter",
                         "transform",

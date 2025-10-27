@@ -25,7 +25,7 @@ import pytest
 from dashboard_lego.blocks import get_metric_row
 from dashboard_lego.blocks.text import TextBlock
 from dashboard_lego.blocks.typed_chart import TypedChartBlock
-from dashboard_lego.core import BaseDataSource, DataBuilder
+from dashboard_lego.core import DataBuilder, DataSource
 from dashboard_lego.core.page import DashboardPage
 from dashboard_lego.utils.plot_registry import register_plot_type
 
@@ -75,11 +75,11 @@ class TestSimpleDashboardE2E:
                     super().__init__(**kwargs)
                     self.file_path = file_path
 
-                def build(self, params):
+                def build(self, **params):
                     return pd.read_csv(self.file_path)
 
             # Create data source with builder
-            datasource = BaseDataSource(data_builder=TestDataBuilder(csv_path))
+            datasource = DataSource(data_builder=TestDataBuilder(csv_path))
 
             # Create dashboard blocks with get_metric_row factory
             metric_blocks, _ = get_metric_row(
@@ -159,11 +159,11 @@ class TestSimpleDashboardE2E:
                     super().__init__(**kwargs)
                     self.file_path = file_path
 
-                def build(self, params):
+                def build(self, **params):
                     return pd.read_csv(self.file_path)
 
             # Create data source with builder
-            datasource = BaseDataSource(data_builder=CSVDataBuilder(csv_path))
+            datasource = DataSource(data_builder=CSVDataBuilder(csv_path))
 
             # Validate data processing by getting data
             df = datasource.get_processed_data()
@@ -201,11 +201,11 @@ class TestSimpleDashboardE2E:
                     super().__init__(**kwargs)
                     self.file_path = file_path
 
-                def build(self, params):
+                def build(self, **params):
                     return pd.read_csv(self.file_path)
 
             # Create data source
-            datasource = BaseDataSource(data_builder=MultiBlockDataBuilder(csv_path))
+            datasource = DataSource(data_builder=MultiBlockDataBuilder(csv_path))
 
             # Create various blocks with get_metric_row factory
             metric_blocks, _ = get_metric_row(

@@ -69,7 +69,7 @@ class TestTypedChartBlock:
 
         # Verify block was created with correct plot function
         assert block.block_id == "test_chart"
-        assert block.plot_type == "test_mock_plot"
+        assert block._plot_type == "test_mock_plot"
         assert block.plot_func == mock_plot_fn
         assert block.datasource == mock_ds
 
@@ -367,3 +367,60 @@ class TestFigureExport:
         fig = chart.get_figure(params={"x_col": "x"})
 
         assert isinstance(fig, go.Figure)
+
+    def test_color_passthrough_to_plot_function(self, datasource_factory, mock_plot_fn):
+        """Test that color parameter is passed to plot function."""
+        df = pd.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6], "color": ["A", "B", "C"]})
+        mock_ds = datasource_factory(get_processed_data=df)
+
+        chart = TypedChartBlock(
+            block_id="test_color",
+            datasource=mock_ds,
+            plot_type="test_mock_plot",
+            plot_params={"x": "x", "y": "y", "color": "color"},
+            plot_kwargs={"title": "Color Test"},
+        )
+
+        # Call _update_chart to trigger plot function
+        chart._update_chart()
+
+        # Verify plot function was called with color parameter
+        mock_plot_fn.assert_called_once()
+        call_args = mock_plot_fn.call_args
+        assert "color" in call_args.kwargs
+        assert call_args.kwargs["color"] == "color"
+        assert "title" in call_args.kwargs
+        assert call_args.kwargs["title"] == "Color Test"
+
+    def test_initial_render_with_control_defaults(
+        self, datasource_factory, mock_plot_fn
+    ):
+        """Test that initial render uses control default values."""
+        df = pd.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})
+        mock_ds = datasource_factory(get_processed_data=df)
+
+        controls = {
+            "x_col": Control(
+                component=dcc.Dropdown, props={"options": ["x", "y"], "value": "x"}
+            ),
+            "y_col": Control(
+                component=dcc.Dropdown, props={"options": ["x", "y"], "value": "y"}
+            ),
+        }
+
+        chart = TypedChartBlock(
+            block_id="test_defaults",
+            datasource=mock_ds,
+            plot_type="test_mock_plot",
+            plot_params={"x": "{{x_col}}", "y": "{{y_col}}"},
+            controls=controls,
+        )
+
+        # Call layout() which should use control defaults
+        layout = chart.layout()
+
+        # Verify plot function was called with resolved defaults
+        mock_plot_fn.assert_called_once()
+        call_args = mock_plot_fn.call_args
+        assert call_args.kwargs["x"] == "x"  # Resolved from control default
+        assert call_args.kwargs["y"] == "y"  # Resolved from control default

@@ -9,7 +9,7 @@ import pytest
 from dash import html
 
 from dashboard_lego.blocks.base import BaseBlock
-from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.datasource import DataSource
 from dashboard_lego.core.page import DashboardPage
 from dashboard_lego.utils.exceptions import ConfigurationError
 
@@ -18,8 +18,8 @@ from dashboard_lego.utils.exceptions import ConfigurationError
 class MockBlock(BaseBlock):
     def __init__(self, block_id, datasource=None, **kwargs):
         if datasource is None:
-            # Create a mock that passes the isinstance(datasource, BaseDataSource) check
-            datasource = MagicMock(spec=BaseDataSource)
+            # Create a mock that passes the isinstance(datasource, DataSource) check
+            datasource = MagicMock(spec=DataSource)
         super().__init__(block_id, datasource, **kwargs)
         # Mock the layout to be a simple Div with the block_id
         self._layout = html.Div(self.block_id, id=self._generate_id("container"))
@@ -39,7 +39,7 @@ def mock_app():
 @pytest.fixture
 def mock_datasource():
     """Fixture to create a mock datasource that passes type checks."""
-    return MagicMock(spec=BaseDataSource)
+    return MagicMock(spec=DataSource)
 
 
 def test_page_init_registers_blocks(mocker, mock_datasource):

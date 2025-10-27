@@ -46,7 +46,7 @@ def test_csv_source_loads_file(sample_csv_path):
 def test_csv_source_invalid_path():
     """Test that CsvDataSource handles non-existent file gracefully.
 
-    In v0.15.0, BaseDataSource catches errors and returns empty DataFrame
+    In v0.15.0, DataSource catches errors and returns empty DataFrame
     to maintain dashboard stability.
     """
     source = CsvDataSource(file_path="nonexistent_file_that_does_not_exist.csv")
@@ -62,14 +62,14 @@ def test_csv_source_with_filters(sample_csv_path):
     from dashboard_lego.core import DataTransformer
 
     class SimpleFilter(DataTransformer):
-        def transform(self, data, params):
+        def transform(self, data, **kwargs):
             df = data.copy()
-            if "min_col1" in params:
-                df = df[df["col1"] >= params["min_col1"]]
+            if "min_col1" in kwargs:
+                df = df[df["col1"] >= kwargs["min_col1"]]
             return df
 
     def classifier(key):
-        return "transform" if key == "min_col1" else "build"
+        return ("transform", key) if key == "min_col1" else ("build", key)
 
     source = CsvDataSource(
         file_path=sample_csv_path,
@@ -134,14 +134,14 @@ def test_get_processed_data_with_params(sample_csv_path):
     from dashboard_lego.core import DataTransformer
 
     class ParamFilter(DataTransformer):
-        def transform(self, data, params):
+        def transform(self, data, **kwargs):
             df = data.copy()
-            if "category" in params:
-                df = df[df["col2"] == params["category"]]
+            if "category" in kwargs:
+                df = df[df["col2"] == kwargs["category"]]
             return df
 
     def classifier(key):
-        return "transform" if key == "category" else "build"
+        return ("transform", key) if key == "category" else ("build", key)
 
     source = CsvDataSource(
         file_path=sample_csv_path,

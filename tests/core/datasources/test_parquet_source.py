@@ -55,14 +55,14 @@ def test_parquet_source_with_filters(sample_parquet_path):
     from dashboard_lego.core import DataTransformer
 
     class SimpleFilter(DataTransformer):
-        def transform(self, data, params):
+        def transform(self, data, **kwargs):
             df = data.copy()
-            if "min_val" in params:
-                df = df[df["col1"] >= params["min_val"]]
+            if "min_val" in kwargs:
+                df = df[df["col1"] >= kwargs["min_val"]]
             return df
 
     def classifier(key):
-        return "transform" if key == "min_val" else "build"
+        return ("transform", key) if key == "min_val" else ("build", key)
 
     source = ParquetDataSource(
         file_path=sample_parquet_path,
@@ -114,14 +114,14 @@ def test_parquet_source_caching_with_different_params(sample_parquet_path, tmp_p
     from dashboard_lego.core import DataTransformer
 
     class SimpleFilter(DataTransformer):
-        def transform(self, data, params):
+        def transform(self, data, **kwargs):
             df = data.copy()
-            if "min_val" in params:
-                df = df[df["col1"] >= params["min_val"]]
+            if "min_val" in kwargs:
+                df = df[df["col1"] >= kwargs["min_val"]]
             return df
 
     def classifier(key):
-        return "transform"
+        return ("transform", key)
 
     cache_dir = str(tmp_path / "cache")
     source = ParquetDataSource(

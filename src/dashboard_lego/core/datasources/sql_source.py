@@ -9,12 +9,10 @@ SQL data source with built-in DataBuilder.
 :complexity: 3
 """
 
-from typing import Any, Dict
-
 import pandas as pd
 
 from dashboard_lego.core.data_builder import DataBuilder
-from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.datasource import DataSource
 from dashboard_lego.utils.exceptions import DataLoadError
 
 try:
@@ -42,7 +40,7 @@ class SqlDataBuilder(DataBuilder):
         self.connection_uri = connection_uri
         self.query = query
 
-    def build(self, params: Dict[str, Any]) -> pd.DataFrame:
+    def build(self, **params) -> pd.DataFrame:
         """Execute SQL query."""
         self.logger.info("[SqlDataBuilder] Executing query")
         try:
@@ -61,7 +59,7 @@ class SqlDataBuilder(DataBuilder):
             raise DataLoadError(f"Failed to execute SQL query: {e}") from e
 
 
-class SqlDataSource(BaseDataSource):
+class SqlDataSource(DataSource):
     """
     SQL data source.
 

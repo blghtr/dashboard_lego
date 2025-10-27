@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 import pandas as pd
 import pytest
 
-from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.datasource import DataSource
 
 
 @pytest.fixture(autouse=True)
@@ -25,18 +25,18 @@ def clear_cache_registry():
      - post: "Cache registry is cleared, no shared state between tests"
     """
     # Clear cache registry before test
-    BaseDataSource._cache_registry.clear()
+    DataSource._cache_registry.clear()
 
     yield
 
     # Clear cache registry after test
-    BaseDataSource._cache_registry.clear()
+    DataSource._cache_registry.clear()
 
 
 @pytest.fixture
 def datasource_factory():
     """
-    A factory fixture that creates mock BaseDataSource objects.
+    A factory fixture that creates mock DataSource objects.
 
     This allows tests to easily configure the data that a block will receive.
 
@@ -55,7 +55,7 @@ def datasource_factory():
                       Example: `get_kpis={"sales": 100}`
 
         """
-        mock_ds = MagicMock(spec=BaseDataSource)
+        mock_ds = MagicMock(spec=DataSource)
         for method_name, return_value in kwargs.items():
             # Set the return_value for the mocked method
             setattr(mock_ds, method_name, MagicMock(return_value=return_value))

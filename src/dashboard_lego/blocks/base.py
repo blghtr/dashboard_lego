@@ -10,7 +10,7 @@ import plotly.graph_objects as go
 from dash.development.base_component import Component
 
 # Use forward references for type hints to avoid circular imports
-from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.datasource import DataSource
 from dashboard_lego.core.state import StateManager
 from dashboard_lego.utils.exceptions import BlockError, ConfigurationError
 from dashboard_lego.utils.logger import get_logger
@@ -29,7 +29,7 @@ class BaseBlock(ABC):
            instantiation from state registration to solve chicken-and-egg
            problem with DashboardPage"
          - implements: "interface: 'BaseBlock'"
-         - uses: ["interface: 'BaseDataSource'", "class: 'StateManager'"]
+         - uses: ["interface: 'DataSource'", "class: 'StateManager'"]
 
         :rationale: "Registration logic was moved from __init__ to a
          separate method to allow DashboardPage to inject the
@@ -41,14 +41,14 @@ class BaseBlock(ABC):
 
     """
 
-    def __init__(self, block_id: str, datasource: BaseDataSource, **kwargs):
+    def __init__(self, block_id: str, datasource: DataSource, **kwargs):
         """
         Initializes the BaseBlock.
 
         Args:
             block_id: A unique identifier for this block instance.
             datasource: An instance of a class that implements the
-                       BaseDataSource interface.
+                       DataSource interface.
             allow_duplicate_output: If True, allows this block to share output targets
                                   with other blocks (useful for overlay scenarios).
 
@@ -63,8 +63,8 @@ class BaseBlock(ABC):
             error_msg = "block_id must be a non-empty string."
             self.logger.error(error_msg)
             raise ConfigurationError(error_msg)
-        if not isinstance(datasource, BaseDataSource):
-            error_msg = "datasource must be an instance of BaseDataSource."
+        if not isinstance(datasource, DataSource):
+            error_msg = "datasource must be an instance of DataSource."
             self.logger.error(error_msg)
             raise ConfigurationError(error_msg)
 
@@ -72,6 +72,9 @@ class BaseBlock(ABC):
         self.datasource = datasource
         self.publishes: List[Dict[str, str]] = kwargs.get("publishes") or []
         self.subscribes: Dict[str, Callable] = kwargs.get("subscribes") or {}
+        # Don't override controls if already set by subclass
+        if not hasattr(self, "controls"):
+            self.controls: Dict = {}
         self.allow_duplicate_output: bool = kwargs.get("allow_duplicate_output", False)
 
         # Navigation context for pattern matching callbacks
@@ -132,7 +135,10 @@ class BaseBlock(ABC):
                         f"{publisher_component_id}.{component_prop}"
                     )
                     state_manager.register_publisher(
-                        state_id, publisher_component_id, component_prop
+                        state_id,
+                        publisher_component_id,
+                        component_prop,
+                        dep_param_name=pub_info.get("dep_param_name"),
                     )
 
             # Register as a subscriber
@@ -166,6 +172,30 @@ class BaseBlock(ABC):
             raise BlockError(
                 f"Failed to register state interactions for " f"{self.block_id}: {e}"
             ) from e
+
+    def set_initial_external_values(self, initial_values: Dict[str, Any]) -> None:
+        """
+        Receive initial values for externally subscribed states.
+
+        Called by DashboardPage before layout() to provide initial state values.
+
+        :hierarchy: [Feature | Initial State Sync | BaseBlock]
+        :relates-to:
+         - motivated_by: "Blocks need initial external state values before rendering"
+         - implements: "method: 'set_initial_external_values'"
+
+        :contract:
+         - pre: "initial_values contains {state_id: value} for external states"
+         - post: "Block has initial external state values available for layout()"
+
+        Args:
+            initial_values: Dict mapping state_id to initial value
+        """
+        self.logger.debug(
+            f"Received initial values for {self.block_id}: "
+            f"{list(initial_values.keys())}"
+        )
+        self._initial_external_values = initial_values
 
     def _set_theme_config(self, theme_config: "ThemeConfig") -> None:
         """
@@ -221,8 +251,13 @@ class BaseBlock(ABC):
         # Start with theme styles if available
         if self.theme_config:
             base_style = self.theme_config.get_component_style(component_type, element)
+            self.logger.debug(f"Applied theme style: {component_type}.{element}")
         else:
             base_style = {}
+            self.logger.debug(
+                f"Theme not available for {component_type}.{element}, "
+                f"using fallback"
+            )
 
         # Merge with user overrides (overrides take precedence)
         if overrides:
@@ -410,8 +445,8 @@ class BaseBlock(ABC):
          - post: "Returns result of subscription callback"
          - spec_compliance: "Passes control_values as single dict argument"
 
-        :complexity: 2
-        :decision_cache: "Pass control_values dict directly instead of unpacking to **kwargs"
+        :complexity: 3
+        :decision_cache: "Find callback matching changed states instead of using first one"
 
         Args:
             control_values: Dictionary of control name -> value mappings (e.g. {'x_col': 'Price'})
@@ -419,11 +454,20 @@ class BaseBlock(ABC):
         Returns:
             The result of the subscription callback
         """
-        if not self.subscribes:
+        if not self.subscribes and not self.controls:
             return None
 
-        # Get the first subscription callback
-        callback_fn = next(iter(self.subscribes.values()))
+        # Find callback that matches one of the changed states
+        # If multiple states changed, use any matching callback (they should be equivalent)
+        callback_fn = None
+        for state_name in control_values.keys():
+            if state_name in self.subscribes:
+                callback_fn = self.subscribes[state_name]
+                break
+
+        # Fallback to first callback if no exact match found
+        if callback_fn is None:
+            callback_fn = next(iter(self.subscribes.values()))
 
         # CRITICAL: Pass control_values dict directly, not as **kwargs
         # TypedChartBlock callbacks expect: callback(control_values_dict)

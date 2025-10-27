@@ -20,7 +20,7 @@ import pytest
 from dash import html
 
 from dashboard_lego.blocks.base import BaseBlock
-from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.datasource import DataSource
 from dashboard_lego.core.state import StateManager
 from dashboard_lego.utils.exceptions import ConfigurationError
 
@@ -33,8 +33,8 @@ class ConcreteTestBlock(BaseBlock):
 
 @pytest.fixture
 def mock_datasource():
-    """Fixture for a mocked BaseDataSource."""
-    return MagicMock(spec=BaseDataSource)
+    """Fixture for a mocked DataSource."""
+    return MagicMock(spec=DataSource)
 
 
 @pytest.fixture
@@ -101,16 +101,16 @@ def test_base_block_init_invalid_datasource():
     :hierarchy: [Testing | Unit Tests | Blocks | BaseBlock | Init | InvalidDatasource]
     :covers:
      - object: "BaseBlock.__init__"
-     - requirement: "datasource must be an instance of BaseDataSource."
+     - requirement: "datasource must be an instance of DataSource."
 
-    :scenario: "Providing an object that is not a BaseDataSource instance raises a TypeError."
+    :scenario: "Providing an object that is not a DataSource instance raises a TypeError."
     :contract:
-     - pre: "datasource is not a BaseDataSource instance."
+     - pre: "datasource is not a DataSource instance."
      - post: "TypeError is raised."
 
     """
     with pytest.raises(
-        ConfigurationError, match="datasource must be an instance of BaseDataSource."
+        ConfigurationError, match="datasource must be an instance of DataSource."
     ):
         ConcreteTestBlock(block_id="test", datasource=object())
 
@@ -142,7 +142,7 @@ def test_register_with_state_manager(mock_datasource, mock_state_manager):
     block._register_state_interactions(mock_state_manager)
 
     mock_state_manager.register_publisher.assert_called_once_with(
-        "filter-a", "my-block-a", "value"
+        "filter-a", "my-block-a", "value", dep_param_name=None
     )
     mock_state_manager.register_subscriber.assert_called_once_with(
         "filter-b", "my-block-container", "children", subscribes["filter-b"]

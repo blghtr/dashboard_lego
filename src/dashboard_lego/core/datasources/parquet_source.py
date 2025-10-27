@@ -9,12 +9,10 @@ Parquet data source with built-in DataBuilder.
 :complexity: 2
 """
 
-from typing import Any, Dict
-
 import pandas as pd
 
 from dashboard_lego.core.data_builder import DataBuilder
-from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.datasource import DataSource
 from dashboard_lego.utils.exceptions import DataLoadError
 
 
@@ -32,7 +30,7 @@ class ParquetDataBuilder(DataBuilder):
         super().__init__(**kwargs)
         self.file_path = file_path
 
-    def build(self, params: Dict[str, Any]) -> pd.DataFrame:
+    def build(self, **params) -> pd.DataFrame:
         """Load Parquet file."""
         self.logger.info(f"[ParquetDataBuilder] Loading {self.file_path}")
         try:
@@ -49,7 +47,7 @@ class ParquetDataBuilder(DataBuilder):
             raise DataLoadError(f"Failed to load Parquet: {e}") from e
 
 
-class ParquetDataSource(BaseDataSource):
+class ParquetDataSource(DataSource):
     """
     Parquet data source.
 

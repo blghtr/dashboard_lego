@@ -75,14 +75,14 @@ def test_sql_source_with_parameters():
     from dashboard_lego.core import DataTransformer
 
     class SqlFilter(DataTransformer):
-        def transform(self, data, params):
+        def transform(self, data, **kwargs):
             df = data.copy()
-            if "min_id" in params:
-                df = df[df["id"] >= params["min_id"]]
+            if "min_id" in kwargs:
+                df = df[df["id"] >= kwargs["min_id"]]
             return df
 
     def classifier(key):
-        return "transform"
+        return ("transform", key)
 
     with patch(
         "dashboard_lego.core.datasources.sql_source.create_engine"
@@ -140,14 +140,14 @@ def test_sql_source_caching_with_different_params(tmp_path):
     from dashboard_lego.core import DataTransformer
 
     class SqlFilter(DataTransformer):
-        def transform(self, data, params):
+        def transform(self, data, **kwargs):
             df = data.copy()
-            if "status" in params:
-                df = df[df["status"] == params["status"]]
+            if "status" in kwargs:
+                df = df[df["status"] == kwargs["status"]]
             return df
 
     def classifier(key):
-        return "transform"
+        return ("transform", key)
 
     cache_dir = str(tmp_path / "cache")
 

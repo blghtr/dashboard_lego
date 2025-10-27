@@ -47,7 +47,7 @@ def test_data_filter_default_returns_unchanged_data():
     df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
 
     # Act
-    result = data_filter.transform(df, {})
+    result = data_filter.transform(df)
 
     # Assert
     pd.testing.assert_frame_equal(result, df)
@@ -61,7 +61,7 @@ def test_data_filter_does_not_modify_input():
     df_copy = df.copy()
 
     # Act
-    result = data_filter.transform(df, {})
+    result = data_filter.transform(df)
 
     # Assert - input unchanged
     pd.testing.assert_frame_equal(df, df_copy)

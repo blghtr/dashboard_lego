@@ -10,7 +10,7 @@ including datasource, controls, and logger.
 from dataclasses import dataclass
 from typing import Any, Dict
 
-from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.datasource import DataSource
 from dashboard_lego.utils.logger import get_logger
 
 
@@ -28,7 +28,7 @@ class ChartContext:
          - motivated_by: "Architectural Conclusion: Unified chart generator signatures
            enable consistent chart creation across different block types"
          - implements: "datatype: 'ChartContext'"
-         - uses: ["interface: 'BaseDataSource'", "module: 'utils.logger'"]
+         - uses: ["interface: 'DataSource'", "module: 'utils.logger'"]
 
         :rationale: "Chose immutable dataclass for thread safety and clear interface contract."
         :contract:
@@ -37,7 +37,7 @@ class ChartContext:
 
     """
 
-    datasource: BaseDataSource
+    datasource: DataSource
     controls: Dict[str, Any]
     logger: Any = None
 

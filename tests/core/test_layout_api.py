@@ -19,7 +19,7 @@ import pytest
 from dash import html
 
 from dashboard_lego.blocks.base import BaseBlock
-from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.datasource import DataSource
 from dashboard_lego.core.page import DashboardPage
 from dashboard_lego.utils.exceptions import ConfigurationError
 
@@ -33,7 +33,7 @@ class _DummyBlock(BaseBlock):
         return self._layout
 
 
-class _DummySource(BaseDataSource):
+class _DummySource(DataSource):
     def _load_raw_data(self, params: dict):
         return None
 

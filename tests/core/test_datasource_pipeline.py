@@ -1,5 +1,5 @@
 """
-Integration tests for BaseDataSource 2-stage pipeline (v0.15.0).
+Integration tests for DataSource 2-stage pipeline (v0.15.0).
 
 Tests the 2-stage data processing pipeline:
 - Stage 1: Build (load + process)
@@ -10,7 +10,7 @@ Tests the 2-stage data processing pipeline:
 :relates-to:
  - motivated_by: "Need integration tests for v0.15.0 2-stage pipeline"
  - implements: "test_suite: 'Pipeline Integration v0.15'"
- - uses: ["class: 'BaseDataSource'", "class: 'DataBuilder'", "class: 'DataTransformer'"]
+ - uses: ["class: 'DataSource'", "class: 'DataBuilder'", "class: 'DataTransformer'"]
 
 :contract:
  - pre: "Pipeline components are functional"
@@ -25,7 +25,7 @@ import tempfile
 import pandas as pd
 import pytest
 
-from dashboard_lego.core import BaseDataSource, DataBuilder, DataTransformer
+from dashboard_lego.core import DataBuilder, DataSource, DataTransformer
 
 
 # Test fixtures
@@ -72,7 +72,7 @@ class SampleDataBuilder(DataBuilder):
         super().__init__(**kwargs)
         self.file_path = file_path
 
-    def build(self, params):
+    def build(self, **kwargs):
         """Load CSV and add calculated Revenue column."""
         df = pd.read_csv(self.file_path)
 
@@ -86,14 +86,14 @@ class SampleDataBuilder(DataBuilder):
 class SampleDataTransformer(DataTransformer):
     """Test filter that filters by category and price."""
 
-    def transform(self, data, params):
+    def transform(self, data, **kwargs):
         df = data.copy()
 
-        if "category" in params and params["category"]:
-            df = df[df["Category"] == params["category"]]
+        if "category" in kwargs and kwargs["category"]:
+            df = df[df["Category"] == kwargs["category"]]
 
-        if "min_price" in params and params["min_price"]:
-            df = df[df["Price"] >= params["min_price"]]
+        if "min_price" in kwargs and kwargs["min_price"]:
+            df = df[df["Price"] >= kwargs["min_price"]]
 
         return df
 
@@ -103,9 +103,11 @@ def test_pipeline_full_flow(sample_csv_file, temp_cache_dir):
 
     # Arrange
     def classifier(key):
-        return "transform" if key in ["category", "min_price"] else "build"
+        return (
+            ("transform", key) if key in ["category", "min_price"] else ("build", key)
+        )
 
-    datasource = BaseDataSource(
+    datasource = DataSource(
         data_builder=SampleDataBuilder(sample_csv_file),
         data_transformer=SampleDataTransformer(),
         param_classifier=classifier,
@@ -126,9 +128,9 @@ def test_pipeline_staged_caching_filter_only(sample_csv_file, temp_cache_dir):
 
     # Arrange
     def classifier(key):
-        return "transform" if key in ["category"] else "build"
+        return ("transform", key) if key in ["category"] else ("build", key)
 
-    datasource = BaseDataSource(
+    datasource = DataSource(
         data_builder=SampleDataBuilder(sample_csv_file),
         data_transformer=SampleDataTransformer(),
         param_classifier=classifier,
@@ -154,7 +156,7 @@ def test_pipeline_staged_caching_filter_only(sample_csv_file, temp_cache_dir):
 def test_pipeline_no_builder(sample_csv_file, temp_cache_dir):
     """Test pipeline with only filter (no builder)."""
 
-    datasource = BaseDataSource(
+    datasource = DataSource(
         data_transformer=SampleDataTransformer(),
         cache_dir=temp_cache_dir,
     )
@@ -170,7 +172,7 @@ def test_pipeline_no_builder(sample_csv_file, temp_cache_dir):
 def test_pipeline_no_filter(sample_csv_file, temp_cache_dir):
     """Test pipeline with only builder (no filter)."""
 
-    datasource = BaseDataSource(
+    datasource = DataSource(
         data_builder=SampleDataBuilder(sample_csv_file),
         cache_dir=temp_cache_dir,
     )
@@ -193,18 +195,18 @@ def test_pipeline_cache_reuse(sample_csv_file, temp_cache_dir):
             super().__init__(**kwargs)
             self.file_path = file_path
 
-        def build(self, params):
+        def build(self, **params):
             call_count["build"] += 1
             df = pd.read_csv(self.file_path)
             df["Revenue"] = df["Price"] * df["Quantity"]
             return df
 
     class CountingFilter(DataTransformer):
-        def transform(self, data, params):
+        def transform(self, data, **kwargs):
             call_count["filter"] += 1
             return data.copy()
 
-    datasource = BaseDataSource(
+    datasource = DataSource(
         data_builder=CountingDataBuilder(sample_csv_file),
         data_transformer=CountingFilter(),
         cache_dir=temp_cache_dir,
@@ -223,9 +225,11 @@ def test_pipeline_combined_filters(sample_csv_file, temp_cache_dir):
     """Test multiple filter parameters working together."""
 
     def classifier(key):
-        return "transform" if key in ["category", "min_price"] else "build"
+        return (
+            ("transform", key) if key in ["category", "min_price"] else ("build", key)
+        )
 
-    datasource = BaseDataSource(
+    datasource = DataSource(
         data_builder=SampleDataBuilder(sample_csv_file),
         data_transformer=SampleDataTransformer(),
         param_classifier=classifier,
@@ -244,7 +248,7 @@ def test_pipeline_combined_filters(sample_csv_file, temp_cache_dir):
 def test_pipeline_no_param_classifier(sample_csv_file, temp_cache_dir):
     """Test pipeline without param classifier (backward compatible)."""
 
-    datasource = BaseDataSource(
+    datasource = DataSource(
         data_builder=SampleDataBuilder(sample_csv_file),
         data_transformer=SampleDataTransformer(),
         cache_dir=temp_cache_dir,

@@ -28,7 +28,7 @@ from dash import html
 from dash.development.base_component import Component
 
 from dashboard_lego.blocks.base import BaseBlock
-from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.datasource import DataSource
 from dashboard_lego.utils.formatting import format_number
 
 
@@ -67,7 +67,7 @@ class SingleMetricBlock(BaseBlock):
     def __init__(
         self,
         block_id: str,
-        datasource: BaseDataSource,
+        datasource: DataSource,
         metric_spec: Dict[str, Any],
         subscribes_to: Union[str, List[str], None] = None,
         **kwargs,

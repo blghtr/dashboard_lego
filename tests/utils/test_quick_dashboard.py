@@ -14,11 +14,10 @@ import pandas as pd
 import pytest
 
 from dashboard_lego.blocks import SingleMetricBlock, TextBlock, TypedChartBlock
-from dashboard_lego.core import BaseDataSource
+from dashboard_lego.core import DataSource
 from dashboard_lego.utils.quick_dashboard import (
     InMemoryDataBuilder,
     _create_block_from_spec,
-    _detect_jupyter,
     _get_theme_url_and_config,
     _smart_layout,
     quick_dashboard,
@@ -67,24 +66,6 @@ class TestInMemoryDataBuilder:
         assert result.empty
 
 
-class TestDetectJupyter:
-    """Test Jupyter environment detection."""
-
-    def test_detect_jupyter_in_ipython(self, monkeypatch):
-        """Test detection when in IPython/Jupyter."""
-
-        def fake_get_ipython():
-            return Mock(spec=["config"])
-
-        monkeypatch.setattr("builtins.get_ipython", fake_get_ipython, raising=False)
-        assert _detect_jupyter() is True
-
-    def test_detect_jupyter_not_in_ipython(self, monkeypatch):
-        """Test detection when not in IPython/Jupyter."""
-        monkeypatch.delattr("builtins.get_ipython", raising=False)
-        assert _detect_jupyter() is False
-
-
 class TestGetThemeUrlAndConfig:
     """Test theme URL and config mapping."""
 
@@ -113,7 +94,7 @@ class TestCreateBlockFromSpec:
     def datasource(self):
         """Create test datasource."""
         df = pd.DataFrame({"Sales": [100, 200], "Product": ["A", "B"]})
-        return BaseDataSource(data_builder=InMemoryDataBuilder(df), cache_ttl=0)
+        return DataSource(data_builder=InMemoryDataBuilder(df), cache_ttl=0)
 
     def test_create_metric_block(self, datasource):
         """Test creating metric block from spec."""
@@ -176,7 +157,9 @@ class TestCreateBlockFromSpec:
         """Test that text card without content raises."""
         card_spec = {"type": "text"}  # Missing content
 
-        with pytest.raises(ValueError, match="missing required field: content"):
+        with pytest.raises(
+            ValueError, match="Text card missing required field: 'content'"
+        ):
             _create_block_from_spec(card_spec, datasource, "test")
 
     def test_unknown_card_type(self, datasource):
@@ -194,7 +177,7 @@ class TestSmartLayout:
     def datasource(self):
         """Create test datasource."""
         df = pd.DataFrame({"Sales": [100, 200], "Revenue": [1000, 2000]})
-        return BaseDataSource(data_builder=InMemoryDataBuilder(df), cache_ttl=0)
+        return DataSource(data_builder=InMemoryDataBuilder(df), cache_ttl=0)
 
     def test_pure_metrics(self, datasource):
         """Test layout with only metrics (all in one row)."""
@@ -524,7 +507,7 @@ class TestQuickDashboardAdvancedMode:
     def sample_blocks(self):
         """Create sample blocks."""
         df = pd.DataFrame({"Sales": [100, 200], "Product": ["A", "B"]})
-        datasource = BaseDataSource(data_builder=InMemoryDataBuilder(df), cache_ttl=0)
+        datasource = DataSource(data_builder=InMemoryDataBuilder(df), cache_ttl=0)
 
         return [
             SingleMetricBlock(
@@ -543,17 +526,36 @@ class TestQuickDashboardAdvancedMode:
 
     def test_advanced_mode_with_blocks(self, sample_blocks):
         """Test advanced mode with pre-built blocks."""
-        app = quick_dashboard(blocks=sample_blocks)
+        # Create datasource for advanced mode
+        df = pd.DataFrame({"Product": ["A", "B"], "Sales": [100, 200]})
+        datasource = DataSource(data_builder=InMemoryDataBuilder(df))
+        app = quick_dashboard(datasource=datasource, blocks=sample_blocks)
 
         assert isinstance(app, dash.Dash)
         assert app.layout is not None
 
     def test_advanced_mode_too_many_blocks(self, sample_blocks):
         """Test that more than 4 blocks raises."""
-        blocks = sample_blocks * 3  # 6 blocks
+        # Create unique blocks to avoid duplicate output targets
+        blocks = []
+        for i in range(6):  # 6 blocks
+            blocks.append(
+                SingleMetricBlock(
+                    block_id=f"m{i}",
+                    datasource=sample_blocks[0].datasource,
+                    metric_spec={
+                        "column": "Sales",
+                        "agg": "sum",
+                        "title": f"Metric {i}",
+                    },
+                )
+            )
+        # Create datasource for advanced mode
+        df = pd.DataFrame({"Product": ["A", "B"], "Sales": [100, 200]})
+        datasource = DataSource(data_builder=InMemoryDataBuilder(df))
 
         with pytest.raises(ValueError, match="Too many blocks"):
-            quick_dashboard(blocks=blocks)
+            quick_dashboard(datasource=datasource, blocks=blocks)
 
 
 class TestQuickDashboardContractValidation:
@@ -580,8 +582,8 @@ class TestQuickDashboardContractValidation:
 
     def test_no_disk_io_cache_ttl_zero(self, sample_df):
         """Test that datasource uses cache_ttl=0 (no disk writes)."""
-        # Spy on BaseDataSource initialization to check cache_ttl
-        original_init = BaseDataSource.__init__
+        # Spy on DataSource initialization to check cache_ttl
+        original_init = DataSource.__init__
 
         captured_cache_ttl = None
 
@@ -590,7 +592,7 @@ class TestQuickDashboardContractValidation:
             captured_cache_ttl = kwargs.get("cache_ttl")
             return original_init(self, *args, **kwargs)
 
-        with patch.object(BaseDataSource, "__init__", spy_init):
+        with patch.object(DataSource, "__init__", spy_init):
             quick_dashboard(
                 df=sample_df,
                 cards=[

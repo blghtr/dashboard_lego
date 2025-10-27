@@ -5,18 +5,18 @@ import plotly.graph_objects as go
 import pytest
 
 from dashboard_lego.blocks.typed_chart import TypedChartBlock
-from dashboard_lego.core import BaseDataSource, DataBuilder
+from dashboard_lego.core import DataBuilder, DataSource
 from dashboard_lego.utils.layout_export import export_layout_to_figure
 
 
 class SampleDataBuilder(DataBuilder):
-    def build(self, params):
+    def build(self, **kwargs):
         return pd.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})
 
 
 @pytest.fixture
 def sample_datasource():
-    return BaseDataSource(data_builder=SampleDataBuilder())
+    return DataSource(data_builder=SampleDataBuilder())
 
 
 def test_export_single_row_layout(sample_datasource):

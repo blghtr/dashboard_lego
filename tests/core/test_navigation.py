@@ -20,7 +20,7 @@ import pytest
 from dash import html
 
 from dashboard_lego.blocks.base import BaseBlock
-from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.datasource import DataSource
 from dashboard_lego.core.page import DashboardPage, NavigationConfig, NavigationSection
 from dashboard_lego.utils.exceptions import ConfigurationError
 
@@ -30,7 +30,7 @@ class MockBlock(BaseBlock):
 
     def __init__(self, block_id, datasource=None, **kwargs):
         if datasource is None:
-            datasource = MagicMock(spec=BaseDataSource)
+            datasource = MagicMock(spec=DataSource)
         super().__init__(block_id, datasource, **kwargs)
         self._layout = html.Div(self.block_id, id=self._generate_id("container"))
 
@@ -49,7 +49,7 @@ def mock_app():
 @pytest.fixture
 def mock_datasource():
     """Fixture for mock datasource."""
-    return MagicMock(spec=BaseDataSource)
+    return MagicMock(spec=DataSource)
 
 
 def test_navigation_config_creation():

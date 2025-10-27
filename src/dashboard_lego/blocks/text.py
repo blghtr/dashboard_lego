@@ -63,7 +63,7 @@ class TextBlock(BaseBlock):
         Args:
             block_id: A unique identifier for this block instance.
             datasource: An instance of a class that implements the
-                BaseDataSource interface.
+                DataSource interface.
             content_generator: A function that takes a DataFrame and returns a
                 Dash Component or a Markdown string.
             subscribes_to: Optional state ID(s) to which this block subscribes

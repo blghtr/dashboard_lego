@@ -19,6 +19,16 @@ import pytest
 from dashboard_lego.core.processing_context import DataProcessingContext
 
 
+def create_classifier(filter_condition):
+    """Helper to create classifier functions that return (category, key) tuples."""
+
+    def classifier(key):
+        category = "filter" if filter_condition(key) else "preprocess"
+        return (category, key)
+
+    return classifier
+
+
 def test_context_creation_with_no_params():
     """Test creating context with no params."""
     # Act
@@ -65,8 +75,7 @@ def test_context_with_custom_classifier():
         "filter_min_value": 10,
     }
 
-    def classifier(key):
-        return "filter" if key.startswith("filter_") else "preprocess"
+    classifier = create_classifier(lambda key: key.startswith("filter_"))
 
     # Act
     context = DataProcessingContext.from_params(params, classifier)
@@ -85,8 +94,7 @@ def test_context_preserves_raw_params():
     # Arrange
     params = {"a": 1, "b": 2, "c": 3}
 
-    def classifier(key):
-        return "filter" if key == "b" else "preprocess"
+    classifier = create_classifier(lambda key: key == "b")
 
     # Act
     context = DataProcessingContext.from_params(params, classifier)
@@ -115,7 +123,7 @@ def test_context_classifier_returns_preprocess_by_default():
     params = {"a": 1, "b": 2}
 
     def classifier(key):
-        return "something_else" if key == "a" else "filter"
+        return ("something_else" if key == "a" else "filter", key)
 
     # Act
     context = DataProcessingContext.from_params(params, classifier)
@@ -135,7 +143,7 @@ def test_context_handles_classifier_exceptions():
     def failing_classifier(key):
         if key == "bad":
             raise ValueError("Classifier error")
-        return "filter"
+        return ("filter", key)
 
     # Act
     context = DataProcessingContext.from_params(params, failing_classifier)
@@ -158,8 +166,7 @@ def test_context_with_complex_param_types():
         "none": None,
     }
 
-    def classifier(key):
-        return "filter" if key in ["string", "list"] else "preprocess"
+    classifier = create_classifier(lambda key: key in ["string", "list"])
 
     # Act
     context = DataProcessingContext.from_params(params, classifier)
@@ -210,8 +217,7 @@ def test_context_classifier_with_control_panel_prefix():
         "init_param": "value",
     }
 
-    def classifier(key):
-        return "filter" if key.startswith("control_panel-") else "preprocess"
+    classifier = create_classifier(lambda key: key.startswith("control_panel-"))
 
     # Act
     context = DataProcessingContext.from_params(params, classifier)
@@ -230,7 +236,7 @@ def test_context_empty_classifier_returns():
     params = {"a": 1}
 
     def classifier(key):
-        return ""  # Empty string
+        return ("", key)  # Empty string
 
     # Act
     context = DataProcessingContext.from_params(params, classifier)
@@ -245,7 +251,7 @@ def test_context_classifier_case_sensitivity():
     params = {"a": 1, "b": 2}
 
     def classifier(key):
-        return "Filter" if key == "a" else "filter"  # Capital F
+        return ("Filter" if key == "a" else "filter", key)  # Capital F
 
     # Act
     context = DataProcessingContext.from_params(params, classifier)
@@ -262,8 +268,7 @@ def test_context_all_params_to_filter():
     # Arrange
     params = {"a": 1, "b": 2, "c": 3}
 
-    def classifier(key):
-        return "filter"
+    classifier = create_classifier(lambda key: True)  # All keys are filters
 
     # Act
     context = DataProcessingContext.from_params(params, classifier)
@@ -280,7 +285,7 @@ def test_context_with_many_params():
     params = {f"param_{i}": i for i in range(100)}
 
     def classifier(key):
-        return "filter" if int(key.split("_")[1]) % 2 == 0 else "preprocess"
+        return ("filter" if int(key.split("_")[1]) % 2 == 0 else "preprocess", key)
 
     # Act
     context = DataProcessingContext.from_params(params, classifier)

@@ -8,7 +8,7 @@ Tests the complete flow: DataSource → Block with transform → Rendered data
  - motivated_by: "v0.15.0: Block-specific data transformations feature"
  - implements: "test_suite: 'BlockTransformations'"
  - uses: [
-     "class: 'BaseDataSource'",
+     "class: 'DataSource'",
      "class: 'TypedChartBlock'",
      "class: 'ChainedTransformer'"
    ]
@@ -26,7 +26,7 @@ import pytest
 from pandas.testing import assert_frame_equal
 
 from dashboard_lego.blocks.typed_chart import TypedChartBlock
-from dashboard_lego.core import BaseDataSource, DataBuilder, DataTransformer
+from dashboard_lego.core import DataBuilder, DataSource, DataTransformer
 
 
 # <semantic_block: test_fixtures>
@@ -43,7 +43,7 @@ class SampleDataBuilder(DataBuilder):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def build(self, params):
+    def build(self, **kwargs):
         """Build sample sales data."""
         # Generate proper test data with both categories and regions
         data = []
@@ -72,11 +72,11 @@ class CategoryFilter(DataTransformer):
      - implements: "class: 'CategoryFilter'"
     """
 
-    def transform(self, data, params):
+    def transform(self, data, **kwargs):
         """Filter by category if param provided."""
         df = data.copy()
-        if "category" in params:
-            df = df[df["category"] == params["category"]]
+        if "category" in kwargs:
+            df = df[df["category"] == kwargs["category"]]
         return df
 
 
@@ -99,7 +99,7 @@ def test_block_with_simple_transform():
     """
     # Setup datasource
     builder = SampleDataBuilder()
-    datasource = BaseDataSource(data_builder=builder)
+    datasource = DataSource(data_builder=builder)
 
     # Create block with transform that filters high-value sales
     block = TypedChartBlock(
@@ -138,7 +138,7 @@ def test_block_with_aggregation_transform():
     """
     # Setup datasource
     builder = SampleDataBuilder()
-    datasource = BaseDataSource(data_builder=builder)
+    datasource = DataSource(data_builder=builder)
 
     # Create block with aggregation transform
     block = TypedChartBlock(
@@ -185,7 +185,7 @@ def test_block_with_global_filter_and_transform():
     def classifier(key):
         return "transform" if key == "category" else "build"
 
-    datasource = BaseDataSource(
+    datasource = DataSource(
         data_builder=builder,
         data_transformer=global_filter,
         param_classifier=classifier,
@@ -237,7 +237,7 @@ def test_multiple_blocks_different_transforms():
     """
     # Setup shared datasource
     builder = SampleDataBuilder()
-    datasource = BaseDataSource(data_builder=builder)
+    datasource = DataSource(data_builder=builder)
 
     # Block 1: Aggregate by category
     block1 = TypedChartBlock(
@@ -295,7 +295,7 @@ def test_block_with_pivot_transform():
     """
     # Setup datasource
     builder = SampleDataBuilder()
-    datasource = BaseDataSource(data_builder=builder)
+    datasource = DataSource(data_builder=builder)
 
     # Create block with pivot transform
     block = TypedChartBlock(
@@ -337,7 +337,7 @@ def test_block_with_complex_multi_step_transform():
     """
     # Setup datasource
     builder = SampleDataBuilder()
-    datasource = BaseDataSource(data_builder=builder)
+    datasource = DataSource(data_builder=builder)
 
     # Complex transform: filter high sales, aggregate by category, calculate average
     def complex_transform(df):
@@ -393,7 +393,7 @@ def test_block_transform_with_embedded_controls():
 
     # Setup datasource
     builder = SampleDataBuilder()
-    datasource = BaseDataSource(data_builder=builder)
+    datasource = DataSource(data_builder=builder)
 
     # Create block with both transform and controls
     block = TypedChartBlock(

@@ -29,7 +29,7 @@ import pytest
 from selenium.common.exceptions import SessionNotCreatedException, WebDriverException
 
 from dashboard_lego.blocks import SingleMetricBlock, TypedChartBlock, get_metric_row
-from dashboard_lego.core import BaseDataSource, DashboardPage, DataBuilder
+from dashboard_lego.core import DashboardPage, DataBuilder, DataSource
 
 # Skip all tests in this module if ChromeDriver is incompatible
 pytestmark = pytest.mark.skipif(
@@ -57,7 +57,7 @@ class SimpleDataBuilder(DataBuilder):
 @pytest.fixture
 def test_datasource():
     """Create test datasource."""
-    return BaseDataSource(data_builder=SimpleDataBuilder())
+    return DataSource(data_builder=SimpleDataBuilder())
 
 
 def test_content_driven_heights_mixed_blocks(dash_duo, test_datasource):
