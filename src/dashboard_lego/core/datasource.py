@@ -29,10 +29,21 @@ Example usage with lambda functions:
     ...     transform_fn=lambda df: df.groupby('category').sum().reset_index()
     ... )
     >>> result = ds.get_processed_data({'file': 'sales.csv'})
+    >>>
+    >>> # With cache prewarming
+    >>> ds = DataSource(
+    ...     build_fn=lambda params: pd.read_csv(params.get('file', 'default.csv')),
+    ...     transform_fn=lambda df: df.groupby('category').sum().reset_index(),
+    ...     cache_prewarm_params=[
+    ...         {'file': 'sales.csv', 'category': 'Electronics'},
+    ...         {'file': 'sales.csv', 'category': 'Home'}
+    ...     ]
+    ... )
+    >>> # Cache is now prewarmed for these parameter combinations
 """
 
 import json
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import pandas as pd
 from diskcache import Cache
@@ -90,6 +101,7 @@ class DataSource:
         cache_ttl: int = 300,
         build_fn: Optional[Callable[[Dict[str, Any]], pd.DataFrame]] = None,
         transform_fn: Optional[Callable[[pd.DataFrame], pd.DataFrame]] = None,
+        cache_prewarm_params: Optional[List[Dict[str, Any]]] = None,
         **kwargs,
     ):
         """
@@ -115,6 +127,8 @@ class DataSource:
                      If provided, creates LambdaBuilder automatically. Signature: lambda params: df
             transform_fn: Optional lambda function for simple data transformation: DataFrame → DataFrame.
                          If provided, creates LambdaTransformer automatically. Signature: lambda df: df
+            cache_prewarm_params: Optional list of parameter dictionaries to prewarm cache during initialization.
+                                 Each dict will be processed through the 2-stage pipeline to populate cache.
         """
 
         def _default_param_classifier(k: str) -> str:
@@ -260,6 +274,65 @@ class DataSource:
             f"builder={type(self.data_builder).__name__} | "
             f"transformer={type(self.data_transformer).__name__}"
         )
+
+        # Prewarm cache if parameters provided
+        if cache_prewarm_params:
+            self._prewarm_cache(cache_prewarm_params)
+
+    def _prewarm_cache(self, prewarm_list: List[Dict[str, Any]]) -> None:
+        """
+        Prewarm cache with provided parameter sets.
+
+        :hierarchy: [Core | DataSources | DataSource | CachePrewarm]
+        :relates-to:
+         - motivated_by: "v0.15.0: Cache prewarming for faster first access"
+         - implements: "method: '_prewarm_cache'"
+
+        :contract:
+         - pre: "prewarm_list is list of parameter dictionaries"
+         - post: "Cache populated with Stage 1 (and Stage 2 if transform params present)"
+         - invariant: "Errors are logged but do not stop prewarming process"
+
+        :complexity: 3
+
+        Args:
+            prewarm_list: List of parameter dictionaries to prewarm cache with
+        """
+        self.logger.info(
+            f"[DataSource|Prewarm] Starting cache prewarm with {len(prewarm_list)} parameter sets"
+        )
+
+        from dashboard_lego.core.processing_context import DataProcessingContext
+
+        for idx, raw_params in enumerate(prewarm_list):
+            try:
+                # Split parameters into preprocessing and filtering
+                context = DataProcessingContext.from_params(
+                    raw_params, self._param_classifier
+                )
+
+                # Always run Stage 1: Build
+                self.logger.debug(
+                    f"[DataSource|Prewarm] Item #{idx}: Building with params {context.preprocessing_params}"
+                )
+                built_data = self._get_or_build(context.preprocessing_params)
+
+                # Run Stage 2: Transform only if filtering params are present and non-empty
+                if context.filtering_params:
+                    self.logger.debug(
+                        f"[DataSource|Prewarm] Item #{idx}: Transforming with params {context.filtering_params}"
+                    )
+                    _ = self._get_or_transform(built_data, context.filtering_params)
+                else:
+                    self.logger.debug(
+                        f"[DataSource|Prewarm] Item #{idx}: Skipping transform stage (no filtering params)"
+                    )
+
+            except Exception as e:
+                self.logger.warning(f"[DataSource|Prewarm] Skipped item #{idx}: {e}")
+                continue
+
+        self.logger.info("[DataSource|Prewarm] Cache prewarm completed")
 
     def _get_cache_key(self, stage: str, params: Dict[str, Any]) -> str:
         """

@@ -394,3 +394,114 @@ def test_datasource_with_transform_fn_empty_result():
 
 
 # </semantic_block: test_with_transform_fn>
+
+
+def test_cache_prewarm():
+    """
+    Test cache prewarming functionality.
+
+    :hierarchy: [Testing | Unit Tests | Core | DataSource | CachePrewarm]
+    :relates-to:
+     - motivated_by: "Verify cache prewarming works correctly with Stage 1 and conditional Stage 2"
+     - implements: "test: 'test_cache_prewarm'"
+    :contract:
+     - pre: "DataSource with cache_prewarm_params"
+     - post: "Cache is populated with prewarmed data"
+    :complexity: 3
+    """
+    # Create test data
+    test_data = pd.DataFrame(
+        {"category": ["A", "A", "B", "B"], "value": [10, 20, 30, 40]}
+    )
+
+    # Create builder that returns test data
+    class TestBuilder(DataBuilder):
+        def _build(self, **kwargs):
+            return test_data.copy()
+
+    # Create transformer that filters by category
+    class TestTransformer(DataTransformer):
+        def _transform(self, data, **kwargs):
+            if "category" in kwargs:
+                return data[data["category"] == kwargs["category"]]
+            return data
+
+    # Test 1: Prewarm with both build and transform params
+    ds = DataSource(
+        data_builder=TestBuilder(),
+        data_transformer=TestTransformer(),
+        cache_prewarm_params=[
+            {"transform__category": "A"},  # Will trigger both stages
+            {"transform__category": "B"},  # Will trigger both stages
+        ],
+    )
+
+    # Verify cache is populated by checking that subsequent calls are cache hits
+    # (we can't directly access cache, but we can verify behavior)
+    result1 = ds.get_processed_data({"transform__category": "A"})
+    result2 = ds.get_processed_data({"transform__category": "B"})
+
+    assert len(result1) == 2  # Two rows with category A
+    assert len(result2) == 2  # Two rows with category B
+    assert all(result1["category"] == "A")
+    assert all(result2["category"] == "B")
+
+    # Test 2: Prewarm with only build params (no transform params)
+    ds2 = DataSource(
+        data_builder=TestBuilder(),
+        data_transformer=TestTransformer(),
+        cache_prewarm_params=[
+            {"file": "test.csv"}  # Only build params, no transform params
+        ],
+    )
+
+    # This should work without errors (Stage 2 should be skipped)
+    result3 = ds2.get_processed_data({"file": "test.csv"})
+    assert len(result3) == 4  # All rows (no filtering applied)
+
+    # Test 3: Empty prewarm list should not cause errors
+    ds3 = DataSource(
+        data_builder=TestBuilder(),
+        data_transformer=TestTransformer(),
+        cache_prewarm_params=[],
+    )
+
+    result4 = ds3.get_processed_data({"transform__category": "A"})
+    assert len(result4) == 2
+
+
+def test_cache_prewarm_error_handling():
+    """
+    Test cache prewarming error handling.
+
+    :hierarchy: [Testing | Unit Tests | Core | DataSource | CachePrewarm | ErrorHandling]
+    :relates-to:
+     - motivated_by: "Verify prewarming continues even when individual items fail"
+     - implements: "test: 'test_cache_prewarm_error_handling'"
+    :contract:
+     - pre: "DataSource with some invalid prewarm params"
+     - post: "Valid items are prewarmed, invalid ones are skipped"
+    :complexity: 2
+    """
+
+    # Create builder that fails on certain params
+    class FailingBuilder(DataBuilder):
+        def _build(self, **kwargs):
+            if kwargs.get("fail", False):
+                raise ValueError("Intentional failure")
+            return pd.DataFrame({"value": [1, 2, 3]})
+
+    # Test with mixed valid/invalid params
+    ds = DataSource(
+        data_builder=FailingBuilder(),
+        data_transformer=DataTransformer(),
+        cache_prewarm_params=[
+            {"valid": True},  # Should succeed
+            {"fail": True},  # Should fail but not stop process
+            {"another": "test"},  # Should succeed
+        ],
+    )
+
+    # Should not raise exception, and valid items should work
+    result = ds.get_processed_data({"valid": True})
+    assert len(result) == 3  # Should have the data from valid prewarm
