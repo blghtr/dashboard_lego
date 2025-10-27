@@ -211,6 +211,15 @@ See the complete interactive dashboard example in `examples/02_interactive_dashb
 
 ## 🎨 Presets and Layouts
 
+### Base Preset
+
+All presets inherit from `BasePreset`, which provides flexible control configuration:
+- `controls=False` (default): No controls, expects values in kwargs
+- `controls=True`: Create default controls for all parameters
+- `controls=dict`: Custom control configuration (enable/disable or override specific controls)
+
+**Auto-sizing Controls:** All controls now automatically size to content width by default, using Bootstrap `col-auto` for responsive layouts and capping maximum width at 40 characters for optimal readability.
+
 ### EDA Presets
 
 Presets are ready-to-use blocks for standard data analysis tasks (EDA) that significantly reduce boilerplate code:
@@ -219,6 +228,7 @@ Presets are ready-to-use blocks for standard data analysis tasks (EDA) that sign
 - **`GroupedHistogramPreset`**: Creates an interactive histogram with dropdowns for column and grouping selection
 - **`MissingValuesPreset`**: Displays a bar chart showing the percentage of missing values for each column, helping quickly assess data quality
 - **`BoxPlotPreset`**: Allows comparing distributions of a numeric feature across different categories using interactive box plot charts
+- **`KneePlotPreset`**: Knee/elbow plot for optimization analysis and cluster validation with optional automatic knee detection
 
 Example usage of presets can be found in `examples/03_presets_dashboard.py`.
 
@@ -226,10 +236,9 @@ Example usage of presets can be found in `examples/03_presets_dashboard.py`.
 
 Machine learning visualization presets for common ML workflows:
 
-- **`MetricCardBlock`**: Compact display for ML metrics in a list format
 - **`ConfusionMatrixPreset`**: Interactive confusion matrix visualization
 - **`FeatureImportancePreset`**: Feature importance charts for model interpretation
-- **`ROC_CurvePreset`**: ROC curve visualization for classification models
+- **`RocAucCurvePreset`**: ROC curve visualization for binary and multi-class classification models
 
 ### Layout Presets
 
