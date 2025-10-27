@@ -463,7 +463,7 @@ def test_control_panel_default_col_props(datasource):
     control_elements = block._build_control_elements()
     dropdown_col = control_elements.children[0]
 
-    # Verify default col_props are applied
+    # Verify default col_props are applied (now md="auto" by default)
     assert dropdown_col.xs == 12
     assert dropdown_col.md == "auto"
 
@@ -497,3 +497,48 @@ def test_control_panel_update_controls(datasource, basic_controls):
     # Should return a component (Row with controls)
     assert result is not None
     assert type(result).__name__ == "Row"
+
+
+def test_control_panel_auto_size_functionality(datasource):
+    """Test that auto_size controls apply correct styling and column props."""
+    controls = {
+        "auto_dropdown": Control(
+            component=dcc.Dropdown,
+            props={"options": ["Short", "Very Long Option Name"]},
+            auto_size=True,
+            max_ch=40,
+        ),
+        "auto_input": Control(
+            component=dcc.Input,
+            props={"type": "text", "placeholder": "Enter text"},
+            auto_size=True,
+            max_ch=30,
+        ),
+        "disabled_auto": Control(
+            component=dcc.Dropdown,
+            props={"options": ["A", "B"]},
+            auto_size=False,
+            col_props={"xs": 12, "md": 6},
+        ),
+    }
+
+    block = ControlPanelBlock(
+        block_id="test_auto_size",
+        datasource=datasource,
+        title="Auto Size Test",
+        controls=controls,
+    )
+
+    control_elements = block._build_control_elements()
+
+    # Test auto-sized dropdown
+    auto_dropdown_col = control_elements.children[0]
+    assert auto_dropdown_col.md == "auto"  # Should use md="auto" for auto_size
+
+    # Test auto-sized input
+    auto_input_col = control_elements.children[1]
+    assert auto_input_col.md == "auto"  # Should use md="auto" for auto_size
+
+    # Test disabled auto-size
+    disabled_col = control_elements.children[2]
+    assert disabled_col.md == 6  # Should use explicit col_props when auto_size=False
