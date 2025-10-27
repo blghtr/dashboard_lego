@@ -9,13 +9,16 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from dash import html
+from dash import dcc, html
 from sklearn.metrics import confusion_matrix
 
 from dashboard_lego.blocks.base import BaseBlock
-from dashboard_lego.blocks.typed_chart import TypedChartBlock
-from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.blocks.typed_chart import Control
+from dashboard_lego.core.datasource import DataSource
+from dashboard_lego.presets.base_preset import BasePreset
 from dashboard_lego.utils.plot_registry import register_plot_type
+
+#  TODO: Refactor this from scratch
 
 
 class ModelSummaryBlock(BaseBlock):
@@ -39,7 +42,7 @@ class ModelSummaryBlock(BaseBlock):
     def __init__(
         self,
         block_id: str,
-        datasource: BaseDataSource,
+        datasource: DataSource,
         title: str = "Model Summary",
         # Style customization parameters
         card_style: Optional[Dict[str, Any]] = None,
@@ -133,13 +136,18 @@ def plot_confusion_matrix(
 register_plot_type("confusion_matrix", plot_confusion_matrix)
 
 
-class ConfusionMatrixPreset(TypedChartBlock):
+class ConfusionMatrixPreset(BasePreset):
     """
-    Confusion matrix preset using TypedChartBlock.
+    Confusion matrix preset using BasePreset.
 
     Refactored from StaticChartBlock in v0.15.
 
     :hierarchy: [Presets | ML | ConfusionMatrixPreset]
+    :relates-to:
+     - motivated_by: "v0.15.0: ML preset using BasePreset"
+     - implements: "preset: 'ConfusionMatrixPreset'"
+     - uses: ["class: 'BasePreset'"]
+
     :contract:
      - pre: "Datasource has y_true_col and y_pred_col columns"
      - post: "Renders confusion matrix heatmap"
@@ -150,23 +158,153 @@ class ConfusionMatrixPreset(TypedChartBlock):
     def __init__(
         self,
         block_id: str,
-        datasource: BaseDataSource,
+        datasource: DataSource,
         y_true_col: str,
         y_pred_col: str,
         title: str = "Confusion Matrix",
         subscribes_to: Union[str, List[str], None] = None,
+        controls: bool = False,
         **kwargs,
     ):
+        """
+        Initialize confusion matrix preset.
+
+        Args:
+            block_id: Unique identifier
+            datasource: Data source instance
+            y_true_col: Column name for true labels
+            y_pred_col: Column name for predicted labels
+            title: Chart title
+            subscribes_to: State ID(s) to subscribe to
+            controls: Control configuration (False=no controls, True=default controls)
+            **kwargs: Additional styling parameters
+        """
+        # Store parameters for use in properties
+        self._y_true_col = y_true_col
+        self._y_pred_col = y_pred_col
+        self._datasource = datasource
+        self._block_id = block_id
+
         super().__init__(
             block_id=block_id,
             datasource=datasource,
-            plot_type="confusion_matrix",
-            plot_params={"y_true_col": y_true_col, "y_pred_col": y_pred_col},
-            plot_kwargs={"title": title},
-            title=title,
             subscribes_to=subscribes_to,
+            title=title,
+            controls=controls,
             **kwargs,
         )
+
+    @property
+    def default_controls(self) -> Dict[str, Control]:
+        """
+        Default control definitions for confusion matrix preset.
+
+        Returns:
+            Dictionary mapping control names to Control objects
+        """
+        # Get columns from datasource for control options
+        df = self._datasource.get_processed_data()
+        categorical_cols = df.select_dtypes(
+            include=["object", "category"]
+        ).columns.tolist()
+
+        return {
+            "y_true_col": Control(
+                component=dcc.Dropdown,
+                props={
+                    "options": categorical_cols,
+                    "value": self._y_true_col,
+                    "clearable": False,
+                    "style": {"minWidth": "150px"},
+                },
+            ),
+            "y_pred_col": Control(
+                component=dcc.Dropdown,
+                props={
+                    "options": categorical_cols,
+                    "value": self._y_pred_col,
+                    "clearable": False,
+                    "style": {"minWidth": "150px"},
+                },
+            ),
+        }
+
+    @property
+    def plot_type(self) -> str:
+        """Plot type identifier for confusion matrix."""
+        return "confusion_matrix"
+
+    def _validate_datasource(self, datasource: DataSource) -> None:
+        """
+        Validate datasource requirements for confusion matrix.
+
+        Args:
+            datasource: DataSource instance to validate
+
+        Raises:
+            ValueError: If datasource doesn't have required columns
+        """
+        df = datasource.get_processed_data()
+        if self._y_true_col not in df.columns:
+            raise ValueError(f"Column '{self._y_true_col}' not found in datasource")
+        if self._y_pred_col not in df.columns:
+            raise ValueError(f"Column '{self._y_pred_col}' not found in datasource")
+
+    def _build_plot_params(
+        self, final_controls: Dict[str, Control], kwargs: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Build plot_params for confusion matrix.
+
+        Args:
+            final_controls: Final control configuration
+            kwargs: Additional parameters and fallback values
+
+        Returns:
+            Dictionary of plot parameters
+        """
+        plot_params = {}
+
+        if "y_true_col" in final_controls:
+            plot_params["y_true_col"] = "{{y_true_col}}"
+        else:
+            plot_params["y_true_col"] = kwargs.get("y_true_col", self._y_true_col)
+
+        if "y_pred_col" in final_controls:
+            plot_params["y_pred_col"] = "{{y_pred_col}}"
+        else:
+            plot_params["y_pred_col"] = kwargs.get("y_pred_col", self._y_pred_col)
+
+        return plot_params
+
+    def _build_plot_kwargs(
+        self, final_controls: Dict[str, Control], kwargs: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Build plot_kwargs for confusion matrix.
+
+        Args:
+            final_controls: Final control configuration
+            kwargs: Additional parameters and fallback values
+
+        Returns:
+            Dictionary of plot kwargs
+        """
+        return {"title": kwargs.get("title", "Confusion Matrix")}
+
+    def _get_plot_title(self, final_controls: Dict[str, Control]) -> Optional[str]:
+        """
+        Get dynamic plot title for confusion matrix.
+
+        Args:
+            final_controls: Final control configuration
+
+        Returns:
+            Dynamic title string with placeholders or None
+        """
+        if "y_true_col" in final_controls and "y_pred_col" in final_controls:
+            return "Confusion Matrix: {{y_true_col}} vs {{y_pred_col}}"
+        return None
 
 
 # Register ROC curve plot
@@ -219,13 +357,18 @@ def plot_roc_curve(
 register_plot_type("roc_curve", plot_roc_curve)
 
 
-class RocAucCurvePreset(TypedChartBlock):
+class RocAucCurvePreset(BasePreset):
     """
-    ROC curve preset using TypedChartBlock.
+    ROC curve preset using BasePreset.
 
     Refactored from StaticChartBlock in v0.15.
 
     :hierarchy: [Presets | ML | RocAucCurvePreset]
+    :relates-to:
+     - motivated_by: "v0.15.0: ML preset using BasePreset"
+     - implements: "preset: 'RocAucCurvePreset'"
+     - uses: ["class: 'BasePreset'"]
+
     :contract:
      - pre: "Datasource has y_true_col and y_score_cols"
      - post: "Renders ROC curve (binary or multi-class)"
@@ -236,23 +379,156 @@ class RocAucCurvePreset(TypedChartBlock):
     def __init__(
         self,
         block_id: str,
-        datasource: BaseDataSource,
+        datasource: DataSource,
         y_true_col: str,
         y_score_cols: list[str],
         title: str = "ROC Curve",
         subscribes_to: Union[str, List[str], None] = None,
+        controls: bool = False,
         **kwargs,
     ):
+        """
+        Initialize ROC curve preset.
+
+        Args:
+            block_id: Unique identifier
+            datasource: Data source instance
+            y_true_col: Column name for true labels
+            y_score_cols: List of column names for prediction scores
+            title: Chart title
+            subscribes_to: State ID(s) to subscribe to
+            controls: Control configuration (False=no controls, True=default controls)
+            **kwargs: Additional styling parameters
+        """
+        # Store parameters for use in properties
+        self._y_true_col = y_true_col
+        self._y_score_cols = y_score_cols
+        self._datasource = datasource
+        self._block_id = block_id
+
         super().__init__(
             block_id=block_id,
             datasource=datasource,
-            plot_type="roc_curve",
-            plot_params={"y_true_col": y_true_col, "y_score_cols": y_score_cols},
-            plot_kwargs={"title": title},
-            title=title,
             subscribes_to=subscribes_to,
+            title=title,
+            controls=controls,
             **kwargs,
         )
+
+    @property
+    def default_controls(self) -> Dict[str, Control]:
+        """
+        Default control definitions for ROC curve preset.
+
+        Returns:
+            Dictionary mapping control names to Control objects
+        """
+        # Get columns from datasource for control options
+        df = self._datasource.get_processed_data()
+        categorical_cols = df.select_dtypes(
+            include=["object", "category"]
+        ).columns.tolist()
+        numerical_cols = df.select_dtypes(include=["float64", "int64"]).columns.tolist()
+
+        return {
+            "y_true_col": Control(
+                component=dcc.Dropdown,
+                props={
+                    "options": categorical_cols,
+                    "value": self._y_true_col,
+                    "clearable": False,
+                    "style": {"minWidth": "150px"},
+                },
+            ),
+            "y_score_cols": Control(
+                component=dcc.Dropdown,
+                props={
+                    "options": numerical_cols,
+                    "value": self._y_score_cols,
+                    "multi": True,
+                    "clearable": False,
+                    "style": {"minWidth": "150px"},
+                },
+            ),
+        }
+
+    @property
+    def plot_type(self) -> str:
+        """Plot type identifier for ROC curve."""
+        return "roc_curve"
+
+    def _validate_datasource(self, datasource: DataSource) -> None:
+        """
+        Validate datasource requirements for ROC curve.
+
+        Args:
+            datasource: DataSource instance to validate
+
+        Raises:
+            ValueError: If datasource doesn't have required columns
+        """
+        df = datasource.get_processed_data()
+        if self._y_true_col not in df.columns:
+            raise ValueError(f"Column '{self._y_true_col}' not found in datasource")
+        for col in self._y_score_cols:
+            if col not in df.columns:
+                raise ValueError(f"Column '{col}' not found in datasource")
+
+    def _build_plot_params(
+        self, final_controls: Dict[str, Control], kwargs: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Build plot_params for ROC curve.
+
+        Args:
+            final_controls: Final control configuration
+            kwargs: Additional parameters and fallback values
+
+        Returns:
+            Dictionary of plot parameters
+        """
+        plot_params = {}
+
+        if "y_true_col" in final_controls:
+            plot_params["y_true_col"] = "{{y_true_col}}"
+        else:
+            plot_params["y_true_col"] = kwargs.get("y_true_col", self._y_true_col)
+
+        if "y_score_cols" in final_controls:
+            plot_params["y_score_cols"] = "{{y_score_cols}}"
+        else:
+            plot_params["y_score_cols"] = kwargs.get("y_score_cols", self._y_score_cols)
+
+        return plot_params
+
+    def _build_plot_kwargs(
+        self, final_controls: Dict[str, Control], kwargs: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Build plot_kwargs for ROC curve.
+
+        Args:
+            final_controls: Final control configuration
+            kwargs: Additional parameters and fallback values
+
+        Returns:
+            Dictionary of plot kwargs
+        """
+        return {"title": kwargs.get("title", "ROC Curve")}
+
+    def _get_plot_title(self, final_controls: Dict[str, Control]) -> Optional[str]:
+        """
+        Get dynamic plot title for ROC curve.
+
+        Args:
+            final_controls: Final control configuration
+
+        Returns:
+            Dynamic title string with placeholders or None
+        """
+        if "y_true_col" in final_controls:
+            return "ROC Curve: {{y_true_col}}"
+        return None
 
 
 # Register plot function for feature importance
@@ -280,17 +556,17 @@ def plot_feature_importance_horizontal(
 register_plot_type("feature_importance_horizontal", plot_feature_importance_horizontal)
 
 
-class FeatureImportancePreset(TypedChartBlock):
+class FeatureImportancePreset(BasePreset):
     """
-    Feature importance preset using TypedChartBlock.
+    Feature importance preset using BasePreset.
 
     Refactored from StaticChartBlock in v0.15.
 
     :hierarchy: [Presets | ML | FeatureImportancePreset]
     :relates-to:
-     - motivated_by: "v0.15: Use TypedChartBlock with plot_registry"
+     - motivated_by: "v0.15: Use BasePreset with plot_registry"
      - implements: "preset: 'FeatureImportancePreset'"
-     - uses: ["block: 'TypedChartBlock'"]
+     - uses: ["class: 'BasePreset'"]
 
     :contract:
      - pre: "Datasource returns df with feature_col and importance_col"
@@ -302,20 +578,151 @@ class FeatureImportancePreset(TypedChartBlock):
     def __init__(
         self,
         block_id: str,
-        datasource: BaseDataSource,
+        datasource: DataSource,
         feature_col: str,
         importance_col: str,
         title: str = "Feature Importance",
         subscribes_to: Union[str, List[str], None] = None,
+        controls: bool = True,
         **kwargs,
     ):
+        """
+        Initialize feature importance preset.
+
+        Args:
+            block_id: Unique identifier
+            datasource: Data source instance
+            feature_col: Column name for feature names
+            importance_col: Column name for importance values
+            title: Chart title
+            subscribes_to: State ID(s) to subscribe to
+            controls: Control configuration (False=no controls, True=default controls)
+            **kwargs: Additional styling parameters
+        """
+        # Store parameters for use in properties
+        self._feature_col = feature_col
+        self._importance_col = importance_col
+        self._datasource = datasource
+        self._block_id = block_id
+
         super().__init__(
             block_id=block_id,
             datasource=datasource,
-            plot_type="feature_importance_horizontal",
-            plot_params={"x": importance_col, "y": feature_col},
-            plot_kwargs={"title": title},
-            title=title,
             subscribes_to=subscribes_to,
+            title=title,
+            controls=controls,
             **kwargs,
         )
+
+    @property
+    def default_controls(self) -> Dict[str, Control]:
+        """
+        Default control definitions for feature importance preset.
+
+        Returns:
+            Dictionary mapping control names to Control objects
+        """
+        # Get columns from datasource for control options
+        df = self._datasource.get_processed_data()
+        categorical_cols = df.select_dtypes(
+            include=["object", "category"]
+        ).columns.tolist()
+        numerical_cols = df.select_dtypes(include=["float64", "int64"]).columns.tolist()
+
+        return {
+            "feature_col": Control(
+                component=dcc.Dropdown,
+                props={
+                    "options": categorical_cols,
+                    "value": self._feature_col,
+                    "clearable": False,
+                    "style": {"minWidth": "150px"},
+                },
+            ),
+            "importance_col": Control(
+                component=dcc.Dropdown,
+                props={
+                    "options": numerical_cols,
+                    "value": self._importance_col,
+                    "clearable": False,
+                    "style": {"minWidth": "150px"},
+                },
+            ),
+        }
+
+    @property
+    def plot_type(self) -> str:
+        """Plot type identifier for feature importance."""
+        return "feature_importance_horizontal"
+
+    def _validate_datasource(self, datasource: DataSource) -> None:
+        """
+        Validate datasource requirements for feature importance.
+
+        Args:
+            datasource: DataSource instance to validate
+
+        Raises:
+            ValueError: If datasource doesn't have required columns
+        """
+        df = datasource.get_processed_data()
+        if self._feature_col not in df.columns:
+            raise ValueError(f"Column '{self._feature_col}' not found in datasource")
+        if self._importance_col not in df.columns:
+            raise ValueError(f"Column '{self._importance_col}' not found in datasource")
+
+    def _build_plot_params(
+        self, final_controls: Dict[str, Control], kwargs: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Build plot_params for feature importance.
+
+        Args:
+            final_controls: Final control configuration
+            kwargs: Additional parameters and fallback values
+
+        Returns:
+            Dictionary of plot parameters
+        """
+        plot_params = {}
+
+        if "importance_col" in final_controls:
+            plot_params["x"] = "{{importance_col}}"
+        else:
+            plot_params["x"] = kwargs.get("importance_col", self._importance_col)
+
+        if "feature_col" in final_controls:
+            plot_params["y"] = "{{feature_col}}"
+        else:
+            plot_params["y"] = kwargs.get("feature_col", self._feature_col)
+
+        return plot_params
+
+    def _build_plot_kwargs(
+        self, final_controls: Dict[str, Control], kwargs: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Build plot_kwargs for feature importance.
+
+        Args:
+            final_controls: Final control configuration
+            kwargs: Additional parameters and fallback values
+
+        Returns:
+            Dictionary of plot kwargs
+        """
+        return {"title": kwargs.get("title", "Feature Importance")}
+
+    def _get_plot_title(self, final_controls: Dict[str, Control]) -> Optional[str]:
+        """
+        Get dynamic plot title for feature importance.
+
+        Args:
+            final_controls: Final control configuration
+
+        Returns:
+            Dynamic title string with placeholders or None
+        """
+        if "feature_col" in final_controls:
+            return "Feature Importance: {{feature_col}}"
+        return None

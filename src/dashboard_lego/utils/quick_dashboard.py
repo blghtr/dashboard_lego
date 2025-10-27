@@ -11,7 +11,7 @@ advanced (pre-built blocks).
  - motivated_by: "Users need rapid prototyping without boilerplate:
                   instant visualization in 3-5 lines for exploration"
  - implements: "quick_dashboard() factory with smart layout algorithm"
- - uses: ["BaseDataSource", "DashboardPage", "get_metric_row",
+ - uses: ["DataSource", "DashboardPage", "get_metric_row",
           "TypedChartBlock"]
 
 :contract:
@@ -35,11 +35,12 @@ import pandas as pd
 
 from dashboard_lego.blocks.base import BaseBlock
 from dashboard_lego.blocks.metrics_factory import get_metric_row
+from dashboard_lego.blocks.minimal_chart import MinimalChartBlock
 from dashboard_lego.blocks.single_metric import SingleMetricBlock
 from dashboard_lego.blocks.text import TextBlock
 from dashboard_lego.blocks.typed_chart import TypedChartBlock
 from dashboard_lego.core.data_builder import DataBuilder
-from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.datasource import DataSource
 from dashboard_lego.core.page import DashboardPage
 from dashboard_lego.core.theme import ThemeConfig
 from dashboard_lego.presets.layouts import one_column, two_column_6_6
@@ -79,7 +80,7 @@ class InMemoryDataBuilder(DataBuilder):
     Example:
         >>> df = pd.read_csv("data.csv")
         >>> builder = InMemoryDataBuilder(df)
-        >>> datasource = BaseDataSource(data_builder=builder, cache_ttl=0)
+        >>> datasource = DataSource(data_builder=builder, cache_ttl=0)
     """
 
     def __init__(self, df: pd.DataFrame, **kwargs: Any):
@@ -101,7 +102,7 @@ class InMemoryDataBuilder(DataBuilder):
             f"rows={len(df)} | cols={len(df.columns)}"
         )
 
-    def build(self, params: Dict[str, Any]) -> pd.DataFrame:
+    def build(self, params: Dict[str, Any] = None) -> pd.DataFrame:
         """
         Return the wrapped DataFrame.
 
@@ -113,35 +114,6 @@ class InMemoryDataBuilder(DataBuilder):
         """
         logger.debug("[Utils|JupyterFactory|InMemoryDataBuilder] Returning DataFrame")
         return self._df
-
-
-# LLM:METADATA
-# :hierarchy: [Utils | JupyterFactory | _detect_jupyter]
-# :relates-to:
-#  - motivated_by: "JupyterDash requires detection of Jupyter environment to enable inline display mode, avoids ImportError in non-Jupyter Python scripts [jupyter-detection]"
-#  - implements: "Helper function that checks for IPython kernel presence [_detect_jupyter]"
-#  - uses: ["get_ipython: IPython builtin for kernel detection"]
-# :contract:
-#  - pre: "None (no parameters)"
-#  - post: "returns True if in Jupyter/IPython kernel, False otherwise"
-#  - invariant: "deterministic (same environment always returns same result), no side effects"
-# :complexity: 1
-# :decision_cache: "get_ipython() over sys.modules check: more reliable for detecting interactive kernel [decision-jupyter-detect-001]"
-# LLM:END
-
-
-def _detect_jupyter() -> bool:
-    """
-    Detect if running in Jupyter/IPython environment.
-
-    Returns:
-        True if in Jupyter kernel, False otherwise
-    """
-    try:
-        get_ipython  # type: ignore
-        return True
-    except NameError:
-        return False
 
 
 # LLM:METADATA
@@ -223,7 +195,7 @@ def _get_theme_url_and_config(theme_name: str) -> tuple:
 # :relates-to:
 #  - motivated_by: "Simple mode card specs need conversion to BaseBlock instances for DashboardPage layout API, factory pattern eliminates boilerplate [card-factory]"
 #  - implements: "Factory function that creates SingleMetricBlock, TypedChartBlock, or TextBlock from dict spec [_create_block_from_spec]"
-#  - uses: ["SingleMetricBlock, TypedChartBlock, TextBlock: block constructors", "BaseDataSource: data pipeline"]
+#  - uses: ["SingleMetricBlock, TypedChartBlock, TextBlock: block constructors", "DataSource: data pipeline"]
 # :contract:
 #  - pre: "card_spec is dict with 'type' key and type-specific required fields (column/agg/title for metric, plot_type/x/y/title for chart, content for text)"
 #  - post: "returns BaseBlock instance configured from spec"
@@ -233,9 +205,65 @@ def _get_theme_url_and_config(theme_name: str) -> tuple:
 # LLM:END
 
 
+def _validate_card_spec(card_spec: Dict[str, Any]) -> None:
+    """
+    Validate card specification format and required fields.
+
+    Args:
+        card_spec: Card specification dict
+
+    Raises:
+        ValueError: If card spec is invalid
+    """
+    if not isinstance(card_spec, dict):
+        raise ValueError("Card spec must be a dictionary")
+
+    card_type = card_spec.get("type")
+    if not card_type:
+        raise ValueError("Card spec missing required field: 'type'")
+
+    if card_type == "metric":
+        required = {"column", "agg", "title"}
+        missing = required - set(card_spec.keys())
+        if missing:
+            raise ValueError(f"Metric card missing required fields: {missing}")
+
+    elif card_type in ["chart", "minimal_chart"]:
+        if card_type == "chart":
+            required = {"plot_type", "x", "y", "title"}
+        else:  # minimal_chart
+            required = {"x", "y", "title"}
+        missing = required - set(card_spec.keys())
+        if missing:
+            raise ValueError(f"{card_type} card missing required fields: {missing}")
+
+    elif card_type == "text":
+        if "content" not in card_spec:
+            raise ValueError("Text card missing required field: 'content'")
+
+    elif card_type == "control_panel":
+        if "title" not in card_spec:
+            raise ValueError("Control panel missing required field: 'title'")
+        controls = card_spec.get("controls", [])
+        if not isinstance(controls, list):
+            raise ValueError("Control panel 'controls' must be a list")
+        for i, ctrl in enumerate(controls):
+            if not isinstance(ctrl, dict):
+                raise ValueError(f"Control {i} must be a dictionary")
+            if "name" not in ctrl:
+                raise ValueError(f"Control {i} missing required field: 'name'")
+            if "type" not in ctrl:
+                raise ValueError(f"Control {i} missing required field: 'type'")
+
+    else:
+        raise ValueError(
+            f"Unknown card type: '{card_type}'. Supported: metric, chart, minimal_chart, text, control_panel"
+        )
+
+
 def _create_block_from_spec(
     card_spec: Dict[str, Any],
-    datasource: BaseDataSource,
+    datasource: DataSource,
     block_id: str,
 ) -> BaseBlock:
     """
@@ -252,17 +280,12 @@ def _create_block_from_spec(
     Raises:
         ValueError: If card type unknown or required fields missing
     """
+    # Validate card spec first
+    _validate_card_spec(card_spec)
+
     card_type = card_spec.get("type")
 
     if card_type == "metric":
-        # Validate required fields
-        required = {"column", "agg", "title"}
-        if not required.issubset(card_spec.keys()):
-            missing = required - card_spec.keys()
-            raise ValueError(
-                f"Metric card missing required fields: {missing}. "
-                f"Required: column, agg, title"
-            )
 
         # Build metric spec
         metric_spec = {
@@ -283,16 +306,7 @@ def _create_block_from_spec(
             metric_spec=metric_spec,
         )
 
-    elif card_type == "chart":
-        # Validate required fields
-        required = {"plot_type", "x", "y", "title"}
-        if not required.issubset(card_spec.keys()):
-            missing = required - card_spec.keys()
-            raise ValueError(
-                f"Chart card missing required fields: {missing}. "
-                f"Required: plot_type, x, y, title"
-            )
-
+    elif card_type in ["chart", "minimal_chart"]:
         # Build plot params
         plot_params = {"x": card_spec["x"], "y": card_spec["y"]}
         if "color" in card_spec:
@@ -300,24 +314,70 @@ def _create_block_from_spec(
         if "size" in card_spec:
             plot_params["size"] = card_spec["size"]
 
-        logger.debug(
-            f"[Utils|JupyterFactory] Creating chart block | "
-            f"plot_type={card_spec['plot_type']} | params={plot_params}"
-        )
+        # Optional subscriptions to external states
+        # Supports: string, list of strings, or list of dicts with dep_param_name
+        subscribes_to = card_spec.get("subscribes_to")
+        if subscribes_to:
+            if isinstance(subscribes_to, str):
+                if "-" not in subscribes_to:
+                    logger.warning(
+                        f"[Utils|JupyterFactory] subscribes_to='{subscribes_to}' may be malformed; "
+                        f"expected 'blockId-controlName'"
+                    )
+            elif isinstance(subscribes_to, list):
+                for sub in subscribes_to:
+                    if isinstance(sub, dict):
+                        # Dict format with optional dep_param_name
+                        if "state_id" not in sub:
+                            logger.warning(
+                                f"[Utils|JupyterFactory] subscribes_to dict item missing 'state_id': {sub}"
+                            )
+                    elif isinstance(sub, str):
+                        # Legacy string format
+                        if "-" not in sub:
+                            logger.warning(
+                                f"[Utils|JupyterFactory] subscribes_to list item '{sub}' may be malformed; "
+                                f"expected 'blockId-controlName'"
+                            )
+                    else:
+                        logger.warning(
+                            f"[Utils|JupyterFactory] subscribes_to list item must be string or dict, got {type(sub)}"
+                        )
+            else:
+                logger.warning(
+                    f"[Utils|JupyterFactory] subscribes_to must be string, list of strings, or list of dicts, got {type(subscribes_to)}"
+                )
 
-        return TypedChartBlock(
+        # Determine plot type and block class
+        if card_type == "chart":
+            plot_type = card_spec["plot_type"]
+            block_class = TypedChartBlock
+            logger.debug(
+                f"[Utils|JupyterFactory] Creating chart block | "
+                f"plot_type={plot_type} | params={plot_params}"
+            )
+        else:  # minimal_chart
+            plot_type = card_spec.get("plot_type", "scatter")  # Default to scatter
+            block_class = MinimalChartBlock
+            logger.debug(
+                f"[Utils|JupyterFactory] Creating minimal chart block | "
+                f"plot_type={plot_type} | params={plot_params}"
+            )
+
+        return block_class(
             block_id=block_id,
             datasource=datasource,
-            plot_type=card_spec["plot_type"],
+            plot_type=plot_type,
             plot_params=plot_params,
-            plot_kwargs={"title": card_spec["title"]},
-            title=card_spec["title"],
+            plot_kwargs={},  # No title in plot_kwargs, use plot_title instead
+            title=card_spec.get("title"),  # Static card title
+            plot_title=card_spec.get(
+                "plot_title"
+            ),  # Dynamic plot title with placeholders
+            subscribes_to=subscribes_to,
         )
 
     elif card_type == "text":
-        # Validate required fields
-        if "content" not in card_spec:
-            raise ValueError("Text card missing required field: content")
 
         logger.debug("[Utils|JupyterFactory] Creating text block")
 
@@ -330,10 +390,21 @@ def _create_block_from_spec(
             content_generator=lambda df: content_text,
         )
 
-    else:
-        raise ValueError(
-            f"Unknown card type: '{card_type}'. "
-            f"Supported: 'metric', 'chart', 'text'"
+    elif card_type == "control_panel":
+        logger.debug("[Utils|JupyterFactory] Creating control panel block")
+
+        # Import ControlPanelBlock and Control
+        # Build controls from spec using shared helper
+        from dashboard_lego.blocks.control_helpers import build_controls_from_spec
+        from dashboard_lego.blocks.control_panel import ControlPanelBlock
+
+        controls = build_controls_from_spec(card_spec.get("controls", []))
+
+        return ControlPanelBlock(
+            block_id=block_id,
+            datasource=datasource,
+            title=card_spec["title"],
+            controls=controls,
         )
 
 
@@ -356,7 +427,7 @@ def _create_block_from_spec(
 # LLM:END
 
 
-def _smart_layout(card_specs: List[Dict[str, Any]], datasource: BaseDataSource) -> List:
+def _smart_layout(card_specs: List[Dict[str, Any]], datasource: DataSource) -> List:
     """
     Create notebook-friendly layout with smart metric grouping.
 
@@ -473,7 +544,7 @@ def _smart_layout(card_specs: List[Dict[str, Any]], datasource: BaseDataSource) 
 #  - implements: "Factory function accepting DataFrame + card specs OR pre-built blocks, returns ready-to-run app with optional JupyterDash inline display support [quick_dashboard]"
 #  - uses: [
 #      "InMemoryDataBuilder: wraps DataFrame for zero-disk-I/O data pipeline",
-#      "BaseDataSource: in-memory data pipeline (cache_ttl=0 for no disk writes)",
+#      "DataSource: in-memory data pipeline (cache_ttl=0 for no disk writes)",
 #      "DashboardPage: layout assembly and theme integration",
 #      "SingleMetricBlock, TypedChartBlock, TextBlock: card rendering from specs",
 #      "_create_block_from_spec: card spec to block conversion factory",
@@ -493,6 +564,7 @@ def _smart_layout(card_specs: List[Dict[str, Any]], datasource: BaseDataSource) 
 
 def quick_dashboard(
     df: Optional[pd.DataFrame] = None,
+    datasource: Optional[DataSource] = None,
     cards: Optional[List[Dict[str, Any]]] = None,
     blocks: Optional[List[BaseBlock]] = None,
     title: str = "Quick Dashboard",
@@ -501,7 +573,7 @@ def quick_dashboard(
     """
     Create a quick dashboard for Jupyter notebooks and Python scripts.
 
-    Supports two modes: simple (DataFrame + card specs) and advanced (pre-built blocks).
+    Supports two modes: simple (DataFrame + card specs) and advanced (datasource + pre-built blocks).
     Returns a ready-to-run Dash app.
 
     Simple mode example (DataFrame + card specs):
@@ -528,10 +600,10 @@ def quick_dashboard(
 
     Advanced mode example (pre-built blocks):
         >>> from dashboard_lego.blocks import SingleMetricBlock, TypedChartBlock
-        >>> from dashboard_lego.core import BaseDataSource, DataBuilder
+        >>> from dashboard_lego.core import DataSource, DataBuilder
         >>>
         >>> # Create custom blocks with full control
-        >>> datasource = BaseDataSource(...)
+        >>> datasource = DataSource(...)
         >>> blocks = [
         ...     SingleMetricBlock(block_id="m1", datasource=datasource, ...),
         ...     TypedChartBlock(block_id="c1", datasource=datasource, ...)
@@ -541,8 +613,10 @@ def quick_dashboard(
         >>> app.run(debug=True)  # Opens in browser
 
     Args:
-        df: DataFrame for simple mode (mutually exclusive with blocks).
+        df: DataFrame for simple mode (mutually exclusive with datasource).
             Must be non-empty pandas DataFrame.
+        datasource: DataSource for advanced mode (mutually exclusive with df).
+            Must be valid DataSource instance.
         cards: List of card specifications (1-4 cards, simple mode only).
             Each card is a dict with:
             - Metric card: {"type": "metric", "column": str, "agg": str,
@@ -550,8 +624,9 @@ def quick_dashboard(
             - Chart card: {"type": "chart", "plot_type": str, "x": str,
               "y": str, "title": str, "color": str (optional), "size": str (optional)}
             - Text card: {"type": "text", "content": str}
+            (mutually exclusive with blocks)
         blocks: List of BaseBlock instances (1-4 blocks, advanced mode only).
-            Mutually exclusive with df/cards.
+            Mutually exclusive with cards.
         title: Dashboard title (default: "Quick Dashboard")
         theme: Theme name - any Bootstrap theme name or custom:
             light, dark, lux, cyborg, bootstrap, cerulean, cosmo, flatly, etc.
@@ -576,58 +651,61 @@ def quick_dashboard(
         f"title={title} | theme={theme}"
     )
 
-    # Contract validation: mutually exclusive modes
-    if df is not None and blocks is not None:
+    if df is not None and datasource is not None:
         raise ValueError(
-            "Cannot provide both 'df' and 'blocks'. "
+            "Cannot provide both 'df' and 'datasource'. "
+            "Use simple mode (df + cards) OR advanced mode (datasource), not both."
+        )
+
+    if df is None and datasource is None:
+        raise ValueError(
+            "Must provide either 'df' (simple mode) or 'datasource' (advanced mode)"
+        )
+
+    if cards is not None and blocks is not None:
+        raise ValueError(
+            "Cannot provide both 'cards' and 'blocks'. "
             "Use simple mode (df + cards) OR advanced mode (blocks), not both."
         )
 
-    if df is None and blocks is None:
+    if cards is None and blocks is None:
         raise ValueError(
             "Must provide either 'df' (simple mode) or 'blocks' (advanced mode)"
+            "Use simple mode (df + cards) OR advanced mode (blocks), not both."
         )
+
+    if df is not None and (cards is None or len(cards) == 0):
+        raise ValueError("Simple mode requires 'cards' list with 1-4 card specs")
 
     # Simple mode: build blocks from card specs using smart layout
     if df is not None:
-        if cards is None or len(cards) == 0:
-            raise ValueError("Simple mode requires 'cards' list with 1-4 card specs")
-
-        if len(cards) > 4:
-            raise ValueError(
-                f"Too many cards: {len(cards)}. Maximum 4 cards for quick_dashboard()"
-            )
-
         logger.debug(
             f"[Utils|QuickDashboard|quick_dashboard] Simple mode | "
             f"cards={len(cards)} | df_shape={df.shape}"
         )
 
         # Create in-memory datasource (cache_ttl=0 for no disk writes)
-        datasource = BaseDataSource(
+        datasource = DataSource(
             data_builder=InMemoryDataBuilder(df),
             cache_ttl=0,  # No disk caching
         )
 
+    if blocks is None:
         # Use smart layout (creates blocks internally with get_metric_row)
         try:
             layout = _smart_layout(cards, datasource)
         except Exception as e:
             raise ValueError(f"Error creating layout: {e}") from e
 
-    # Advanced mode: use blocks directly with simple layout
     else:
-        if len(blocks) > 4:  # type: ignore
-            raise ValueError(
-                f"Too many blocks: {len(blocks)}. Maximum 4 blocks for quick_dashboard()"  # type: ignore
-            )
-
         logger.debug(
             f"[Utils|QuickDashboard|quick_dashboard] Advanced mode | blocks={len(blocks)}"  # type: ignore
         )
 
         # For advanced mode, use simple layout (no smart grouping)
         count = len(blocks)  # type: ignore
+        if count > 4:
+            raise ValueError("Too many blocks")
         if count == 1:
             layout = one_column(blocks)  # type: ignore
         elif count == 2:
@@ -656,20 +734,6 @@ def quick_dashboard(
         "[Utils|JupyterFactory|quick_dashboard] Creating Dash app "
         "(compatible with Jupyter notebooks)"
     )
-    app = dash.Dash(
-        __name__,
-        external_stylesheets=[theme_url],
-        suppress_callback_exceptions=True,
-    )
-
-    # Build layout and register callbacks
-    app.layout = page.build_layout()
-    page.register_callbacks(app)
-
-    card_count = len(cards) if df is not None else len(blocks)  # type: ignore
-    logger.info(
-        f"[Utils|QuickDashboard|quick_dashboard] EXIT | "
-        f"app_type=Dash | cards={card_count} | ready=True"
-    )
+    app = page.create_app()
 
     return app

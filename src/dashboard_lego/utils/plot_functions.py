@@ -152,6 +152,21 @@ def plot_scatter(
         return go.Figure()
 
     try:
+        # Auto-compute range_color for continuous color scales (if not provided)
+        if (
+            color
+            and color in df_clean.columns
+            and pd.api.types.is_numeric_dtype(df_clean[color])
+        ):
+            if "range_color" not in kwargs:
+                color_min = df_clean[color].min()
+                color_max = df_clean[color].max()
+                kwargs["range_color"] = [color_min, color_max]
+                logger.debug(
+                    f"[plot_scatter] Auto-computed range_color=[{color_min}, {color_max}] "
+                    f"from filtered data"
+                )
+
         fig = px.scatter(
             df_clean, x=x, y=y, color=color, size=size, title=title, **kwargs
         )
