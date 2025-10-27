@@ -990,45 +990,6 @@ class DashboardMagics(Magics):
                 print(f"❌ Process '{target}' not found")
                 print("💡 Use '%dashboard_kill' (no arguments) to see active processes")
 
-
-def load_ipython_extension(ipython: Any) -> None:
-    """
-    Load Dashboard Lego magic functions into IPython.
-
-    Called when user runs: %load_ext dashboard_lego.ipython_magics
-
-    Args:
-        ipython: IPython InteractiveShell instance
-    """
-    ipython.register_magics(DashboardMagics)
-    print("✅ Dashboard Lego magics loaded!")
-    print("\nAvailable commands:")
-    print(
-        "  %dashboard df --metric col agg title [color] --chart type x y title [--nonblocking]"
-    )
-    print("  %%dashboard_cell  # Use YAML config in cell")
-    print("  %dashboard_theme [theme_name]")
-    print("  %dashboard_kill [process_id|all]  # New: Kill background processes")
-    print("  %plotly_export block --format html --output file.html --title 'Title'")
-    print("  %plotly_show block --title 'Title' --width 800 --height 600")
-    print("  %%plotly_export_cell")
-    print("\nExamples:")
-    print('  %dashboard df -m Sales sum "Total Sales" success -c bar Product Sales')
-    print("  %dashboard df --nonblocking  # Run in background")
-    print("  %dashboard_kill dashboard_12345  # Stop specific process")
-    print("  %dashboard_kill all  # Stop all processes")
-    print('  %plotly_export chart -f html -o my_chart.html -t "Sales Analysis"')
-    print("\nCell magic YAML format:")
-    print("  %%dashboard_cell")
-    print("  nonblocking: true")
-    print("  dataframe: $df  # Variable interpolation")
-    print('  title: "Dashboard for $dataset"')
-    print("  cards:")
-    print('    - metric: $sales_col, sum, "Total $sales_col"')
-    print('    - chart: bar, $x_col, $y_col, "$x_col vs $y_col"')
-    print("\nTry: %dashboard_theme to see available themes")
-    print("Try: %dashboard_kill to see active processes")
-
     @cell_magic
     def plotly_export_cell(self, line: str, cell: str) -> None:
         """
@@ -1209,6 +1170,45 @@ def load_ipython_extension(ipython: Any) -> None:
             config["exports"].append(current_export)
 
         return config
+
+
+def load_ipython_extension(ipython: Any) -> None:
+    """
+    Load Dashboard Lego magic functions into IPython.
+
+    Called when user runs: %load_ext dashboard_lego.ipython_magics
+
+    Args:
+        ipython: IPython InteractiveShell instance
+    """
+    ipython.register_magics(DashboardMagics)
+    print("✅ Dashboard Lego magics loaded!")
+    print("\nAvailable commands:")
+    print(
+        "  %dashboard df --metric col agg title [color] --chart type x y title [--nonblocking]"
+    )
+    print("  %%dashboard_cell  # Use YAML config in cell")
+    print("  %dashboard_theme [theme_name]")
+    print("  %dashboard_kill [process_id|all]  # New: Kill background processes")
+    print("  %plotly_export block --format html --output file.html --title 'Title'")
+    print("  %plotly_show block --title 'Title' --width 800 --height 600")
+    print("  %%plotly_export_cell")
+    print("\nExamples:")
+    print('  %dashboard df -m Sales sum "Total Sales" success -c bar Product Sales')
+    print("  %dashboard df --nonblocking  # Run in background")
+    print("  %dashboard_kill dashboard_12345  # Stop specific process")
+    print("  %dashboard_kill all  # Stop all processes")
+    print('  %plotly_export chart -f html -o my_chart.html -t "Sales Analysis"')
+    print("\nCell magic YAML format:")
+    print("  %%dashboard_cell")
+    print("  nonblocking: true")
+    print("  dataframe: $df  # Variable interpolation")
+    print('  title: "Dashboard for $dataset"')
+    print("  cards:")
+    print('    - metric: $sales_col, sum, "Total $sales_col"')
+    print('    - chart: bar, $x_col, $y_col, "$x_col vs $y_col"')
+    print("\nTry: %dashboard_theme to see available themes")
+    print("Try: %dashboard_kill to see active processes")
 
 
 def unload_ipython_extension(ipython: Any) -> None:

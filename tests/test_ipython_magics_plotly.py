@@ -12,14 +12,14 @@ from dashboard_lego.core import DataBuilder, DataSource
 from dashboard_lego.ipython_magics import DashboardMagics
 
 
-class TestDataBuilder(DataBuilder):
+class MockDataBuilder(DataBuilder):
     def build(self, params):
         return pd.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})
 
 
 @pytest.fixture
 def mock_datasource():
-    return DataSource(data_builder=TestDataBuilder())
+    return DataSource(data_builder=MockDataBuilder())
 
 
 @pytest.fixture
@@ -37,12 +37,22 @@ def sample_chart(mock_datasource):
 def mock_shell(sample_chart):
     shell = MagicMock()
     shell.user_ns = {"test_chart": sample_chart, "_dashboard_theme": "lux"}
+    # Make shell look like a proper IPython shell for traitlets
+    shell.__class__.__name__ = "InteractiveShell"
     return shell
 
 
 @pytest.fixture
 def magics(mock_shell):
-    return DashboardMagics(mock_shell)
+    # Create magics without calling super().__init__ to avoid traitlets issues
+    magics = DashboardMagics.__new__(DashboardMagics)
+    magics.shell = mock_shell
+    # Initialize user namespace defaults
+    if "_dashboard_theme" not in mock_shell.user_ns:
+        mock_shell.user_ns["_dashboard_theme"] = "lux"
+    if "_dashboard_processes" not in mock_shell.user_ns:
+        mock_shell.user_ns["_dashboard_processes"] = {}
+    return magics
 
 
 class TestPlotlyExportMagic:
