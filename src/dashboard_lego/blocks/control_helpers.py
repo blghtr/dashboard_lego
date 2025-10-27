@@ -30,7 +30,7 @@ logger = get_logger(__name__)
 
 
 def build_controls_from_spec(
-    controls_spec: Optional[List[Dict[str, Any]]]
+    controls_spec: Optional[List[Dict[str, Any]]],
 ) -> Dict[str, Control]:
     """
     Build Control objects from specification with normalization.
