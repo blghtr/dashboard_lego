@@ -115,10 +115,21 @@
 <span class="sd">    ...     transform_fn=lambda df: df.groupby(&#39;category&#39;).sum().reset_index()</span>
 <span class="sd">    ... )</span>
 <span class="sd">    &gt;&gt;&gt; result = ds.get_processed_data({&#39;file&#39;: &#39;sales.csv&#39;})</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # With cache prewarming</span>
+<span class="sd">    &gt;&gt;&gt; ds = DataSource(</span>
+<span class="sd">    ...     build_fn=lambda params: pd.read_csv(params.get(&#39;file&#39;, &#39;default.csv&#39;)),</span>
+<span class="sd">    ...     transform_fn=lambda df: df.groupby(&#39;category&#39;).sum().reset_index(),</span>
+<span class="sd">    ...     cache_prewarm_params=[</span>
+<span class="sd">    ...         {&#39;file&#39;: &#39;sales.csv&#39;, &#39;category&#39;: &#39;Electronics&#39;},</span>
+<span class="sd">    ...         {&#39;file&#39;: &#39;sales.csv&#39;, &#39;category&#39;: &#39;Home&#39;}</span>
+<span class="sd">    ...     ]</span>
+<span class="sd">    ... )</span>
+<span class="sd">    &gt;&gt;&gt; # Cache is now prewarmed for these parameter combinations</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">diskcache</span><span class="w"> </span><span class="kn">import</span> <span class="n">Cache</span>
@@ -180,6 +191,7 @@
         <span class="n">cache_ttl</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">300</span><span class="p">,</span>
         <span class="n">build_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">transform_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">cache_prewarm_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -205,6 +217,8 @@
 <span class="sd">                     If provided, creates LambdaBuilder automatically. Signature: lambda params: df</span>
 <span class="sd">            transform_fn: Optional lambda function for simple data transformation: DataFrame → DataFrame.</span>
 <span class="sd">                         If provided, creates LambdaTransformer automatically. Signature: lambda df: df</span>
+<span class="sd">            cache_prewarm_params: Optional list of parameter dictionaries to prewarm cache during initialization.</span>
+<span class="sd">                                 Each dict will be processed through the 2-stage pipeline to populate cache.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">_default_param_classifier</span><span class="p">(</span><span class="n">k</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -349,8 +363,67 @@
             <span class="sa">f</span><span class="s2">&quot;[DataSource|Init] 2-stage pipeline ready | &quot;</span>
             <span class="sa">f</span><span class="s2">&quot;builder=</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> | &quot;</span>
             <span class="sa">f</span><span class="s2">&quot;transformer=</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_transformer</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="p">)</span></div>
+        <span class="p">)</span>
 
+        <span class="c1"># Prewarm cache if parameters provided</span>
+        <span class="k">if</span> <span class="n">cache_prewarm_params</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prewarm_cache</span><span class="p">(</span><span class="n">cache_prewarm_params</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_prewarm_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prewarm_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Prewarm cache with provided parameter sets.</span>
+
+<span class="sd">        :hierarchy: [Core | DataSources | DataSource | CachePrewarm]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;v0.15.0: Cache prewarming for faster first access&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_prewarm_cache&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;prewarm_list is list of parameter dictionaries&quot;</span>
+<span class="sd">         - post: &quot;Cache populated with Stage 1 (and Stage 2 if transform params present)&quot;</span>
+<span class="sd">         - invariant: &quot;Errors are logged but do not stop prewarming process&quot;</span>
+
+<span class="sd">        :complexity: 3</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            prewarm_list: List of parameter dictionaries to prewarm cache with</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;[DataSource|Prewarm] Starting cache prewarm with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">prewarm_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> parameter sets&quot;</span>
+        <span class="p">)</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.processing_context</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataProcessingContext</span>
+
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">raw_params</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">prewarm_list</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Split parameters into preprocessing and filtering</span>
+                <span class="n">context</span> <span class="o">=</span> <span class="n">DataProcessingContext</span><span class="o">.</span><span class="n">from_params</span><span class="p">(</span>
+                    <span class="n">raw_params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_param_classifier</span>
+                <span class="p">)</span>
+
+                <span class="c1"># Always run Stage 1: Build</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;[DataSource|Prewarm] Item #</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">: Building with params </span><span class="si">{</span><span class="n">context</span><span class="o">.</span><span class="n">preprocessing_params</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="n">built_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_or_build</span><span class="p">(</span><span class="n">context</span><span class="o">.</span><span class="n">preprocessing_params</span><span class="p">)</span>
+
+                <span class="c1"># Run Stage 2: Transform only if filtering params are present and non-empty</span>
+                <span class="k">if</span> <span class="n">context</span><span class="o">.</span><span class="n">filtering_params</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;[DataSource|Prewarm] Item #</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">: Transforming with params </span><span class="si">{</span><span class="n">context</span><span class="o">.</span><span class="n">filtering_params</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                    <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_or_transform</span><span class="p">(</span><span class="n">built_data</span><span class="p">,</span> <span class="n">context</span><span class="o">.</span><span class="n">filtering_params</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;[DataSource|Prewarm] Item #</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">: Skipping transform stage (no filtering params)&quot;</span>
+                    <span class="p">)</span>
+
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[DataSource|Prewarm] Skipped item #</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[DataSource|Prewarm] Cache prewarm completed&quot;</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_cache_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
