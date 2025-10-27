@@ -29,7 +29,7 @@ from dash import dcc, html
 from dash.development.base_component import Component
 
 from dashboard_lego.blocks.base import BaseBlock
-from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.datasource import DataSource
 from dashboard_lego.utils.plot_registry import get_plot_function
 
 
@@ -40,17 +40,20 @@ class Control:
 
     :hierarchy: [Blocks | Controls | Control]
     :relates-to:
-     - motivated_by: "Need responsive control layouts"
+     - motivated_by: "Need responsive control layouts with content-based sizing"
      - implements: "dataclass: 'Control'"
 
     :contract:
      - pre: "component is valid Dash component type"
-     - post: "Control can be rendered with responsive layout"
+     - post: "Control can be rendered with responsive layout and optional auto-sizing"
 
     Attributes:
         component: Dash component class (dcc.Dropdown, dcc.Slider, etc.)
         props: Props dictionary for the component
         col_props: Bootstrap column sizing (default: {"xs": 12, "md": "auto"})
+        dep_param_name: Optional parameter name override for datasource (default: None)
+        auto_size: Enable content-based sizing instead of full width (default: True)
+        max_ch: Maximum width in characters for auto-sized controls (default: 40)
     """
 
     component: Type[Component]
@@ -58,6 +61,9 @@ class Control:
     col_props: Optional[Dict[str, Any]] = field(
         default_factory=lambda: {"xs": 12, "md": "auto"}
     )
+    dep_param_name: Optional[str] = None
+    auto_size: bool = True
+    max_ch: Optional[int] = 40
 
 
 class TypedChartBlock(BaseBlock):
@@ -96,13 +102,14 @@ class TypedChartBlock(BaseBlock):
     def __init__(
         self,
         block_id: str,
-        datasource: BaseDataSource,
+        datasource: DataSource,
         plot_type: str,
         plot_params: Dict[str, Any],
         plot_kwargs: Optional[Dict[str, Any]] = None,
         title: Optional[str] = None,
+        plot_title: Optional[str] = None,
         controls: Optional[Dict[str, Control]] = None,
-        subscribes_to: Union[str, List[str], None] = None,
+        subscribes_to: Union[str, List[str], Dict[str, Any], None] = None,
         transform_fn: Optional[Callable[[pd.DataFrame], pd.DataFrame]] = None,
         # Styling
         card_style: Optional[Dict[str, Any]] = None,
@@ -155,12 +162,13 @@ class TypedChartBlock(BaseBlock):
             loading_type: Loading animation type
             graph_config: Plotly graph configuration
         """
-        self.plot_type = plot_type
+        self._plot_type = plot_type
         self.plot_params = plot_params
         self.plot_kwargs = plot_kwargs or {}  # KEY: Store for passthrough
-        self.plot_func = get_plot_function(plot_type)
+        self.plot_func = get_plot_function(self._plot_type)
         self.controls = controls or {}
-        self.title = title or plot_type.replace("_", " ").title()
+        self.title = title or self._plot_type.replace("_", " ").title()
+        self.plot_title = plot_title  # Dynamic plot title with placeholders
 
         # Store styling
         self.card_style = card_style
@@ -179,6 +187,30 @@ class TypedChartBlock(BaseBlock):
 
         subscribes_dict = {state: self._update_chart for state in external_states}
 
+        # Store dep_param_name mapping for datasource parameter resolution
+        # Format: {state_id: dep_param_name}
+        self._dep_param_names: Dict[str, str] = {}
+        if isinstance(subscribes_to, list):
+            for item in subscribes_to:
+                if isinstance(item, dict) and "state_id" in item:
+                    state_id = item["state_id"]
+                    if "dep_param_name" in item:
+                        self._dep_param_names[state_id] = item["dep_param_name"]
+
+        # Extract from embedded controls
+        if self.controls:
+            for control_name, control_obj in self.controls.items():
+                if (
+                    hasattr(control_obj, "dep_param_name")
+                    and control_obj.dep_param_name
+                ):
+                    # For embedded controls, key is just control_name (after normalization)
+                    self._dep_param_names[control_name] = control_obj.dep_param_name
+                    self.logger.debug(
+                        f"[TypedChartBlock|Init] Embedded control dep_param_name: "
+                        f"{control_name} → {control_obj.dep_param_name}"
+                    )
+
         # Build publishes for own controls
         publishes_list = [
             {"state_id": f"{block_id}-{ctrl}", "component_prop": "value"}
@@ -196,7 +228,7 @@ class TypedChartBlock(BaseBlock):
         )
 
         self.logger.info(
-            f"[TypedChartBlock|Init] {block_id} | plot_type={plot_type} | "
+            f"[TypedChartBlock|Init] {block_id} | plot_type={self._plot_type} | "
             f"controls={len(self.controls)}"
         )
 
@@ -278,7 +310,7 @@ class TypedChartBlock(BaseBlock):
             >>> fig.write_html("sales_chart.html")
         """
         control_values = params or {}
-        return self.update_from_controls(control_values)
+        return self._update_chart(control_values)
 
     def list_control_inputs(self) -> list[tuple[str, str]]:
         """
@@ -367,32 +399,21 @@ class TypedChartBlock(BaseBlock):
         # CASE 2: State-centric callback passes *args (positional)
         elif args and hasattr(self, "subscribes") and self.subscribes:
             state_ids = list(self.subscribes.keys())
-            # CRITICAL FIX: args contains values from ALL blocks, not just this one
-            # We need to extract only the values for THIS block's subscribed states
-            for state_id in state_ids:
-                # Find the position of this state_id in the args
-                # State IDs are ordered consistently across all blocks
-                try:
-                    # Get the position of this state in the global state order
-                    # FIXED: Based on logs, args order is: [category, category, price, price]
-                    # So we need to map: filters-category -> args[0], filters-min_price -> args[2]
-                    # Map to actual args positions (based on observed pattern)
-                    args_mapping = {
-                        "filters-category": 0,  # args[0] = category
-                        "filters-min_price": 2,  # args[2] = price (skip args[1] which is duplicate)
-                    }
-                    if state_id in args_mapping:
-                        state_index = args_mapping[state_id]
-                        if state_index < len(args):
-                            value = args[state_index]
-                            control_values[state_id] = value
-                            self.logger.debug(
-                                f"[TypedChartBlock|Extract] {state_id}={value} (from global args[{state_index}])"
-                            )
-                except (ValueError, IndexError) as e:
-                    self.logger.warning(
-                        f"[TypedChartBlock|Extract] Could not extract {state_id}: {e}"
-                    )
+            # For external subscriptions, args should contain values in the same order as state_ids
+            if len(args) >= len(state_ids):
+                for i, state_id in enumerate(state_ids):
+                    if i < len(args):
+                        value = args[i]
+                        # Extract control name from state_id: "metric_controls-metric_selector" -> "metric_selector"
+                        control_name = state_id.split("-")[-1]
+                        control_values[control_name] = value
+                        self.logger.debug(
+                            f"[TypedChartBlock|Extract] {control_name}={value} (from {state_id})"
+                        )
+            else:
+                self.logger.warning(
+                    f"[TypedChartBlock|Extract] Not enough args ({len(args)}) for states ({len(state_ids)})"
+                )
 
         # CASE 3: Initial render (no args/kwargs), use initial values from controls
         if not control_values and self.controls:
@@ -404,6 +425,191 @@ class TypedChartBlock(BaseBlock):
                     )
 
         return control_values
+
+    def _resolve_string_placeholders(
+        self, value: Any, control_values: Dict[str, Any]
+    ) -> Any:
+        """
+        Resolve {{placeholders}} in string values.
+
+        Supports two modes:
+        - Standalone: "{{name}}" → returns control value (any type)
+        - Inline: "Text {{name}}" → string with substitutions
+
+        Args:
+            value: Value to resolve (any type)
+            control_values: {control_name: control_value} (may contain normalized keys)
+
+        Returns:
+            Resolved value (type depends on mode)
+        """
+        if not isinstance(value, str):
+            return value
+
+        # Helper function to find control value by name (with suffix matching and reverse mapping)
+        def find_control_value(control_name: str):
+            """Find control value by exact match, suffix match, or reverse dep_param_name mapping"""
+            # Try exact match first
+            if control_name in control_values:
+                return True, control_values[control_name]
+
+            # Try suffix match: any key ending with "-control_name"
+            suffix = f"-{control_name}"
+            matching_keys = [k for k in control_values.keys() if k.endswith(suffix)]
+            if matching_keys:
+                return True, control_values[matching_keys[0]]
+
+            # Try reverse mapping: find normalized key that maps back to this control name
+            # Check if any control has dep_param_name that matches a key in control_values
+            for ctrl_name, ctrl_obj in (self.controls or {}).items():
+                if hasattr(ctrl_obj, "dep_param_name") and ctrl_obj.dep_param_name:
+                    if (
+                        ctrl_obj.dep_param_name in control_values
+                        and ctrl_name == control_name
+                    ):
+                        return True, control_values[ctrl_obj.dep_param_name]
+
+            # Try embedded controls as fallback
+            if (
+                control_name in self.controls
+                and "value" in self.controls[control_name].props
+            ):
+                return True, self.controls[control_name].props["value"]
+
+            return False, None
+
+        # Check if entire string is a standalone placeholder
+        if value.startswith("{{") and value.endswith("}}"):
+            control_name = value[2:-2].strip()
+            found, result = find_control_value(control_name)
+
+            if found:
+                return result
+            else:
+                self.logger.warning(
+                    f"[TypedChartBlock|Resolve] Standalone placeholder '{control_name}' unresolved → None"
+                )
+                return None
+
+        # Handle inline placeholders using regex
+        import re
+
+        placeholder_pattern = r"\{\{([a-zA-Z_][a-zA-Z0-9_]*)\}\}"
+
+        def replace_placeholder(match):
+            control_name = match.group(1)
+            found, result = find_control_value(control_name)
+
+            if found:
+                return str(result)
+            else:
+                self.logger.warning(
+                    f"[TypedChartBlock|Resolve] Inline placeholder '{control_name}' unresolved → empty"
+                )
+                return ""
+
+        return re.sub(placeholder_pattern, replace_placeholder, value)
+
+    def _extract_datasource_params(
+        self, control_values: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Extract datasource parameters from control values.
+
+        Routes values to datasource based on:
+        1. External subscribed states → datasource params (UNLESS used only in plot_params placeholders)
+        2. NOT embedded controls → pass through if not recognized
+
+        :hierarchy: [Blocks | Charts | TypedChartBlock | ParamExtraction]
+        :relates-to:
+         - motivated_by: "Clear routing of control values to datasource"
+         - implements: "method: '_extract_datasource_params'"
+
+        :contract:
+         - pre: "control_values has normalized keys"
+         - post: "Returns {param_name: value} for datasource.get_processed_data()"
+
+        Args:
+            control_values: Normalized {state_id/control_name: value}
+
+        Returns:
+            Dict of parameters for datasource
+        """
+
+        # Helper: Check if a control is used ONLY in plot_params placeholders (not for datasource)
+        def is_plot_params_only(control_key: str) -> bool:
+            """Returns True if control is referenced in plot_params but should not go to datasource"""
+            # Extract short name from state_id (e.g., "quick_card_0-metric_selector_1" → "metric_selector_1")
+            short_name = (
+                control_key.split("-")[-1] if "-" in control_key else control_key
+            )
+
+            # Check if used in plot_params as {{placeholder}}
+            for param_value in self.plot_params.values():
+                if (
+                    isinstance(param_value, str)
+                    and f"{{{{{short_name}}}}}" in param_value
+                ):
+                    return True
+
+            # Check plot_kwargs (e.g., title)
+            for kwarg_value in self.plot_kwargs.values():
+                if (
+                    isinstance(kwarg_value, str)
+                    and f"{{{{{short_name}}}}}" in kwarg_value
+                ):
+                    # If used ONLY in title (not in params), it's visual-only
+                    return True
+
+            return False
+
+        datasource_params = {}
+
+        for key, value in control_values.items():
+            # Rule 1: External subscribed states → datasource (UNLESS plot-params-only)
+            if key in (self.subscribes or {}):
+                if is_plot_params_only(key):
+                    self.logger.debug(
+                        f"[TypedChartBlock|Datasource] {key} (external state) "
+                        f"→ SKIPPED (used only in plot_params placeholders)"
+                    )
+                    continue
+
+                # Keys are already normalized by _normalize_control_keys
+                # Check if explicit dep_param_name was provided
+                if key in self._dep_param_names:
+                    param_name = self._dep_param_names[key]
+                    self.logger.debug(
+                        f"[TypedChartBlock|Datasource] {key} (external state) "
+                        f"→ datasource param '{param_name}' (from dep_param_name)"
+                    )
+                else:
+                    # Use key as-is (already normalized)
+                    param_name = key
+                    self.logger.debug(
+                        f"[TypedChartBlock|Datasource] {key} (external state) "
+                        f"→ datasource param '{param_name}' (normalized key)"
+                    )
+
+                datasource_params[param_name] = value
+
+            # Rule 2: NOT embedded control AND NOT known system key → maybe datasource
+            elif key not in (self.controls or {}) and key not in ["section", "type"]:
+                # This is legacy support or external param
+                datasource_params[key] = value
+                self.logger.debug(
+                    f"[TypedChartBlock|Datasource] {key} (unknown) "
+                    f"→ datasource param '{key}' (passthrough)"
+                )
+
+            # Embedded controls: skip (not for datasource)
+            else:
+                self.logger.debug(
+                    f"[TypedChartBlock|Datasource] {key} (embedded control) "
+                    f"→ skipped"
+                )
+
+        return datasource_params
 
     def _resolve_plot_params(self, control_values: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -433,20 +639,10 @@ class TypedChartBlock(BaseBlock):
         resolved = {}
 
         for key, value in self.plot_params.items():
-            if (
-                isinstance(value, str)
-                and value.startswith("{{")
-                and value.endswith("}}")
-            ):
-                # Extract placeholder: {{control_name}} → control_name
-                control_name = value[2:-2].strip()
-                resolved[key] = control_values.get(control_name, value)
-                self.logger.debug(
-                    f"[TypedChartBlock|Resolve] {key}: {{{{control_name}}}} → "
-                    f"{resolved[key]}"
-                )
-            else:
-                resolved[key] = value
+            resolved[key] = self._resolve_string_placeholders(value, control_values)
+            self.logger.debug(
+                f"[TypedChartBlock|Resolve] {key}: {value} → {resolved[key]}"
+            )
 
         return resolved
 
@@ -461,7 +657,7 @@ class TypedChartBlock(BaseBlock):
          - uses: ["method: 'get_processed_data'", "registered plot function"]
 
         :contract:
-         - pre: "Subscribed state values in *args"
+         - pre: "args[0] is {state_id: value} dict or initial values dict"
          - post: "Returns figure from plot function"
          - data_flow: "params → get_processed_data(params) → df → plot_func(df, **kwargs)"
          - kwargs_flow: "plot_kwargs passed to plot function"
@@ -470,31 +666,30 @@ class TypedChartBlock(BaseBlock):
         :decision_cache: "Single update method handles all plot types via registry"
 
         Args:
-            *args: Control values from subscribed states
+            *args: Control values from subscribed states (dict with state IDs)
 
         Returns:
             Plotly Figure from registered plot function
         """
-        # CRITICAL: Block-centric callbacks pass control_values dict as first positional arg
         # Log what we receive for debugging
         self.logger.debug(
             f"[TypedChartBlock|Update] _update_chart called with args={args}, "
             f"args types={[type(a).__name__ for a in args] if args else []}, kwargs={kwargs}"
         )
 
-        # Check if first arg is a dict (block-centric) or individual values (state-centric)
-        if args and len(args) > 0 and isinstance(args[0], dict):
-            # Block-centric: first arg is control_values dict
+        # Check if first arg is a dict (multi-state or block-centric) or individual values (legacy)
+        if args and isinstance(args[0], dict):
+            # Multi-state or block-centric: first arg is control_values dict with state IDs
             control_values = args[0]
             self.logger.info(
                 f"[TypedChartBlock|Update] {self.block_id} | "
-                f"plot_type={self.plot_type} | mode=block-centric | controls={list(control_values.keys())}"
+                f"plot_type={self._plot_type} | mode=dict | controls={list(control_values.keys())}"
             )
         else:
-            # State-centric or initial render
+            # Legacy state-centric or initial render
             self.logger.info(
                 f"[TypedChartBlock|Update] {self.block_id} | "
-                f"plot_type={self.plot_type} | mode=state-centric | args={len(args)}"
+                f"plot_type={self._plot_type} | mode=legacy | args={len(args)}"
             )
             control_values = self._extract_control_values(args, kwargs)
 
@@ -503,18 +698,11 @@ class TypedChartBlock(BaseBlock):
                 f"[TypedChartBlock|Update] control_values={control_values}"
             )
 
-            # CRITICAL: Separate plot params from datasource params
-            # Plot params (x_col, feature, mode) are THIS block's controls → NOT for datasource
-            # Datasource params (session_controls-*) are EXTERNAL states → FOR datasource
-            datasource_params = {}
-
-            for key, value in (control_values or {}).items():
-                # If param is NOT from this block's controls → it's external state → for datasource
-                if key not in self.controls:
-                    datasource_params[key] = value
+            # Use new method for clear datasource parameter routing
+            datasource_params = self._extract_datasource_params(control_values)
 
             self.logger.debug(
-                f"[TypedChartBlock|ParamSplit] block_controls={list(self.controls.keys())}, "
+                f"[TypedChartBlock|ParamSplit] "
                 f"datasource_params={list(datasource_params.keys())}"
             )
 
@@ -525,11 +713,35 @@ class TypedChartBlock(BaseBlock):
             )
 
             if df.empty:
+                # Build context-aware error message
+                error_context = []
+
+                # Check if filters were applied
+                if datasource_params:
+                    applied_filters = [f"{k}={v}" for k, v in datasource_params.items()]
+                    error_context.append(
+                        f"Applied filters: {', '.join(applied_filters)}"
+                    )
+                else:
+                    error_context.append("No filters applied")
+
+                # Check if external states were used
+                external_states = [
+                    k for k in control_values.keys() if k in (self.subscribes or {})
+                ]
+                if external_states:
+                    error_context.append(
+                        f"External states: {', '.join(external_states)}"
+                    )
+
+                context_msg = " | ".join(error_context)
+
                 self.logger.warning(
-                    f"[TypedChartBlock|Update] Empty DataFrame for {self.block_id}"
+                    f"[TypedChartBlock|Update] Empty DataFrame for {self.block_id} | {context_msg}"
                 )
+
                 return go.Figure().add_annotation(
-                    text="No data available",
+                    text=f"No data available ({context_msg})",
                     showarrow=False,
                     xref="paper",
                     yref="paper",
@@ -540,16 +752,31 @@ class TypedChartBlock(BaseBlock):
             # Resolve plot params (replace {{placeholders}})
             resolved_params = self._resolve_plot_params(control_values)
 
-            # Merge with plot_kwargs from constructor
-            all_kwargs = {**resolved_params, **self.plot_kwargs}
+            # Resolve plot_kwargs (replace {{placeholders}})
+            resolved_kwargs = {
+                k: self._resolve_string_placeholders(v, control_values)
+                for k, v in self.plot_kwargs.items()
+            }
+
+            # Add dynamic plot_title if provided
+            if self.plot_title:
+                resolved_plot_title = self._resolve_string_placeholders(
+                    self.plot_title, control_values
+                )
+                if resolved_plot_title:
+                    resolved_kwargs["title"] = resolved_plot_title
+
+            # Drop None values
+            all_kwargs = {k: v for k, v in resolved_kwargs.items() if v is not None}
 
             self.logger.debug(
                 f"[TypedChartBlock|Update] Calling plot function | "
-                f"params={list(all_kwargs.keys())}"
+                f"resolved_params={list(resolved_params.keys())} | "
+                f"all_kwargs={list(all_kwargs.keys())}"
             )
 
-            # Call registered plot function with ALL kwargs
-            figure = self.plot_func(df, **all_kwargs)
+            # Call registered plot function with resolved params and kwargs
+            figure = self.plot_func(df, **resolved_params, **all_kwargs)
 
             # Apply theme if available
             if self.theme_config:
@@ -594,13 +821,32 @@ class TypedChartBlock(BaseBlock):
         Returns:
             Dash Component (Card with chart)
         """
-        # Initialize with current chart
-        initial_chart = self._update_chart()
+        # Collect initial values from BOTH embedded controls AND external states
+        initial_values = {
+            name: ctrl.props.get("value")
+            for name, ctrl in (self.controls or {}).items()
+        }
+
+        # Add external state initial values if available
+        if hasattr(self, "_initial_external_values"):
+            external_states = list(self.subscribes.keys()) if self.subscribes else []
+            for state_id in external_states:
+                if state_id in self._initial_external_values:
+                    initial_values[state_id] = self._initial_external_values[state_id]
+
+        self.logger.debug(
+            f"[TypedChartBlock|Layout] Initial render | "
+            f"embedded_controls={list(self.controls.keys()) if self.controls else []} | "
+            f"external_states={list(self.subscribes.keys()) if self.subscribes else []} | "
+            f"initial_values={list(initial_values.keys())}"
+        )
+
+        initial_chart = self._update_chart(initial_values)
 
         # Build card components
         card_content = []
 
-        # Title
+        # Title (static card title, no placeholders supported)
         if self.title:
             themed_title_style = self._get_themed_style(
                 "card", "title", self.title_style
@@ -609,15 +855,85 @@ class TypedChartBlock(BaseBlock):
             if themed_title_style:
                 title_props["style"] = themed_title_style
 
-            card_content.append(html.H4(self.title, **title_props))
+            # Static title: render once (no placeholders in card title)
+            title_component = html.H4(self.title, **title_props)
+            card_content.append(title_component)
 
         # Controls row (if present)
         if self.controls:
             control_components = []
             for key, control in self.controls.items():
                 comp_id = self._generate_id(key)
-                comp = control.component(id=comp_id, **control.props)
-                col = dbc.Col(comp, **(control.col_props or {}))
+
+                # Apply auto-size logic if enabled
+                if control.auto_size:
+                    comp_props = control.props.copy()
+                    col_props = (control.col_props or {}).copy()
+
+                    # Ensure column uses md="auto" if not explicitly set
+                    if "md" not in col_props:
+                        col_props["md"] = "auto"
+
+                    # Apply auto-size styling based on component type
+                    if control.component.__name__ == "Dropdown":  # dcc.Dropdown
+                        # Compute longest label for min-width
+                        longest_label_ch = self._compute_longest_label_ch(
+                            comp_props.get("options", [])
+                        )
+                        cap = control.max_ch or 40
+                        min_width_ch = min(max(longest_label_ch + 3, 10), cap)
+
+                        # Build auto-size style
+                        auto_style = {
+                            "display": "inline-block",
+                            "width": "fit-content",
+                            "maxWidth": f"{cap}ch",
+                            "minWidth": f"{min_width_ch}ch",
+                        }
+
+                        # Merge with existing style
+                        existing_style = comp_props.get("style", {})
+                        if isinstance(existing_style, dict):
+                            auto_style.update(existing_style)
+                        comp_props["style"] = auto_style
+
+                        self.logger.debug(
+                            f"[TypedChartBlock|AutoSize] Applied dcc.Dropdown auto-size | "
+                            f"longest_label={longest_label_ch}ch | min_width={min_width_ch}ch | max_width={cap}ch"
+                        )
+
+                    elif control.component.__name__ in [
+                        "Select",
+                        "Input",
+                        "Switch",
+                    ]:  # dbc components
+                        # Add Bootstrap w-auto class
+                        existing_class = comp_props.get("className", "")
+                        if "w-auto" not in existing_class:
+                            comp_props["className"] = f"{existing_class} w-auto".strip()
+
+                        # Add character-based width constraints
+                        cap = control.max_ch or 40
+                        auto_style = {"minWidth": "10ch", "maxWidth": f"{cap}ch"}
+
+                        # Merge with existing style
+                        existing_style = comp_props.get("style", {})
+                        if isinstance(existing_style, dict):
+                            auto_style.update(existing_style)
+                        comp_props["style"] = auto_style
+
+                        self.logger.debug(
+                            f"[TypedChartBlock|AutoSize] Applied dbc.{control.component.__name__} auto-size | "
+                            f"max_width={cap}ch"
+                        )
+
+                    comp = control.component(id=comp_id, **comp_props)
+                    col = dbc.Col(comp, **col_props)
+                else:
+                    # Standard rendering without auto-size
+                    comp = control.component(id=comp_id, **control.props)
+                    col = dbc.Col(comp, **(control.col_props or {}))
+
                 control_components.append(col)
 
             controls_row = dbc.Row(control_components, className="mb-1")
@@ -658,3 +974,40 @@ class TypedChartBlock(BaseBlock):
             card_props["style"] = themed_card_style
 
         return dbc.Card(dbc.CardBody(card_content), **card_props)
+
+    def _compute_longest_label_ch(self, options: List[Any]) -> int:
+        """
+        Compute the longest label length in characters from dropdown options.
+
+        :hierarchy: [Blocks | Charts | TypedChartBlock | AutoSize]
+        :relates-to:
+         - motivated_by: "Auto-size controls need to know content width for min-width calculation"
+         - implements: "method: '_compute_longest_label_ch'"
+
+        :contract:
+         - pre: "options is list of strings or dicts with label/value"
+         - post: "Returns integer character count of longest label"
+
+        Args:
+            options: List of option strings or dicts with 'label' or 'value' keys
+
+        Returns:
+            Character count of longest label (minimum 1)
+        """
+        if not options:
+            return 1
+
+        max_length = 0
+        for option in options:
+            if isinstance(option, str):
+                length = len(option)
+            elif isinstance(option, dict):
+                # Try 'label' first, then 'value' as fallback
+                text = option.get("label") or option.get("value", "")
+                length = len(str(text))
+            else:
+                length = len(str(option))
+
+            max_length = max(max_length, length)
+
+        return max(max_length, 1)  # Minimum 1 character
