@@ -1,7 +1,7 @@
 """
-Unit tests for BaseDataSource (v0.15.0 - 2-stage pipeline).
+Unit tests for DataSource (v0.15.0 - 2-stage pipeline).
 
-:hierarchy: [Testing | Unit Tests | Core | BaseDataSource]
+:hierarchy: [Testing | Unit Tests | Core | DataSource]
 :complexity: 4
 """
 
@@ -12,7 +12,7 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
 
-from dashboard_lego.core import BaseDataSource, DataBuilder, DataTransformer
+from dashboard_lego.core import DataBuilder, DataSource, DataTransformer
 from dashboard_lego.utils.exceptions import DataLoadError
 
 
@@ -26,13 +26,13 @@ def clear_cache_registry():
      - motivated_by: "Cache registry persists across tests, causing cache hits from previous tests to pollute results [Test-Isolation]"
     :contract:
      - pre: "Called automatically before each test"
-     - post: "BaseDataSource._cache_registry is empty dict"
+     - post: "DataSource._cache_registry is empty dict"
     :complexity: 1
     """
-    BaseDataSource._cache_registry.clear()
+    DataSource._cache_registry.clear()
     yield
     # Cleanup after test as well
-    BaseDataSource._cache_registry.clear()
+    DataSource._cache_registry.clear()
 
 
 # Simple test data builder
@@ -45,7 +45,7 @@ class SampleDataBuilder(DataBuilder):
             data if data is not None else pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
         )
 
-    def build(self, params):
+    def build(self, **kwargs):
         return self.data.copy()
 
 
@@ -53,17 +53,17 @@ class SampleDataBuilder(DataBuilder):
 class SampleDataTransformer(DataTransformer):
     """Sample filter that filters by min value."""
 
-    def transform(self, data, params):
+    def transform(self, data, **kwargs):
         df = data.copy()
-        if "min_a" in params:
-            df = df[df["a"] >= params["min_a"]]
+        if "min_a" in kwargs:
+            df = df[df["a"] >= kwargs["min_a"]]
         return df
 
 
 def test_datasource_in_memory_caching_hit():
     """Test that in-memory cache works correctly."""
     builder = SampleDataBuilder()
-    datasource = BaseDataSource(data_builder=builder)
+    datasource = DataSource(data_builder=builder)
 
     # First call - cache miss
     data1 = datasource.get_processed_data()
@@ -79,7 +79,7 @@ def test_datasource_disk_caching_hit(tmp_path):
     """Test that disk cache works correctly."""
     cache_dir = str(tmp_path / "cache")
     builder = SampleDataBuilder()
-    datasource = BaseDataSource(data_builder=builder, cache_dir=cache_dir)
+    datasource = DataSource(data_builder=builder, cache_dir=cache_dir)
 
     # First call
     data1 = datasource.get_processed_data()
@@ -96,9 +96,9 @@ def test_datasource_caching_miss():
     filter_obj = SampleDataTransformer()
 
     def classifier(key):
-        return "transform" if key == "min_a" else "build"
+        return ("transform", key) if key == "min_a" else ("build", key)
 
-    datasource = BaseDataSource(
+    datasource = DataSource(
         data_builder=builder, data_transformer=filter_obj, param_classifier=classifier
     )
 
@@ -115,7 +115,7 @@ def test_datasource_cache_ttl_configuration(tmp_path):
     cache_dir = str(tmp_path / "cache")
     builder = SampleDataBuilder()
 
-    datasource = BaseDataSource(
+    datasource = DataSource(
         data_builder=builder, cache_dir=cache_dir, cache_ttl=1  # 1 second TTL
     )
 
@@ -135,7 +135,7 @@ def test_datasource_cache_ttl_configuration(tmp_path):
 def test_datasource_load_error_handling():
     """Test error handling when data building fails.
 
-    In v0.15.0, BaseDataSource catches exceptions and returns empty DataFrame
+    In v0.15.0, DataSource catches exceptions and returns empty DataFrame
     instead of propagating them to maintain dashboard stability.
     """
 
@@ -143,7 +143,7 @@ def test_datasource_load_error_handling():
         def build(self, params):
             raise ValueError("Build error")
 
-    datasource = BaseDataSource(data_builder=ErrorBuilder())
+    datasource = DataSource(data_builder=ErrorBuilder())
 
     # Should return empty DataFrame, not raise
     result = datasource.get_processed_data()
@@ -163,7 +163,7 @@ def test_datasource_numpy_serialization(tmp_path):
     )
 
     builder = SampleDataBuilder(data=df)
-    datasource = BaseDataSource(data_builder=builder, cache_dir=cache_dir)
+    datasource = DataSource(data_builder=builder, cache_dir=cache_dir)
 
     # First call
     data1 = datasource.get_processed_data()
@@ -181,9 +181,9 @@ def test_datasource_with_transform_fn_basic():
     """
     Test with_transform_fn() creates specialized datasource with block transform.
 
-    :hierarchy: [Testing | Unit Tests | BaseDataSource | WithTransform]
+    :hierarchy: [Testing | Unit Tests | DataSource | WithTransform]
     :covers:
-     - target: "BaseDataSource.with_transform_fn"
+     - target: "DataSource.with_transform_fn"
      - requirement: "Creates new datasource with additional transform"
 
     :scenario: "Basic transform function applied after global filter"
@@ -192,7 +192,7 @@ def test_datasource_with_transform_fn_basic():
     """
     df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
     builder = SampleDataBuilder(data=df)
-    datasource = BaseDataSource(data_builder=builder)
+    datasource = DataSource(data_builder=builder)
 
     # Create specialized datasource with transform
     transform_fn = lambda df: df[df["a"] >= 2]
@@ -210,9 +210,9 @@ def test_datasource_with_transform_fn_preserves_original():
     """
     Test with_transform_fn() does not modify original datasource.
 
-    :hierarchy: [Testing | Unit Tests | BaseDataSource | Immutability]
+    :hierarchy: [Testing | Unit Tests | DataSource | Immutability]
     :covers:
-     - target: "BaseDataSource.with_transform_fn"
+     - target: "DataSource.with_transform_fn"
      - requirement: "Immutable pattern - original unchanged"
 
     :scenario: "Original datasource returns unchanged data"
@@ -221,7 +221,7 @@ def test_datasource_with_transform_fn_preserves_original():
     """
     df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
     builder = SampleDataBuilder(data=df)
-    original_ds = BaseDataSource(data_builder=builder)
+    original_ds = DataSource(data_builder=builder)
 
     # Create specialized datasource
     transform_fn = lambda df: df[df["a"] >= 2]
@@ -240,9 +240,9 @@ def test_datasource_with_transform_fn_and_global_filter():
     """
     Test with_transform_fn() chains with global filter correctly.
 
-    :hierarchy: [Testing | Unit Tests | BaseDataSource | Chaining]
+    :hierarchy: [Testing | Unit Tests | DataSource | Chaining]
     :covers:
-     - target: "BaseDataSource.with_transform_fn"
+     - target: "DataSource.with_transform_fn"
      - requirement: "Block transform applied AFTER global filter"
 
     :scenario: "Global filter → Block transform pipeline"
@@ -258,7 +258,7 @@ def test_datasource_with_transform_fn_and_global_filter():
     def classifier(key):
         return "transform" if key == "min_a" else "build"
 
-    datasource = BaseDataSource(
+    datasource = DataSource(
         data_builder=builder,
         data_transformer=global_filter,
         param_classifier=classifier,
@@ -283,9 +283,9 @@ def test_datasource_with_transform_fn_aggregation():
     """
     Test with_transform_fn() with aggregation function.
 
-    :hierarchy: [Testing | Unit Tests | BaseDataSource | Aggregation]
+    :hierarchy: [Testing | Unit Tests | DataSource | Aggregation]
     :covers:
-     - target: "BaseDataSource.with_transform_fn"
+     - target: "DataSource.with_transform_fn"
      - requirement: "Supports aggregation transforms"
 
     :scenario: "Transform aggregates data by grouping"
@@ -296,7 +296,7 @@ def test_datasource_with_transform_fn_aggregation():
         {"category": ["A", "B", "A", "B", "C"], "value": [10, 20, 30, 40, 50]}
     )
     builder = SampleDataBuilder(data=df)
-    datasource = BaseDataSource(data_builder=builder)
+    datasource = DataSource(data_builder=builder)
 
     # Block transform: aggregate by category
     agg_transform = lambda df: df.groupby("category")["value"].sum().reset_index()
@@ -314,9 +314,9 @@ def test_datasource_with_transform_fn_caching():
     """
     Test with_transform_fn() shares Stage1 cache with original datasource.
 
-    :hierarchy: [Testing | Unit Tests | BaseDataSource | CacheSharing]
+    :hierarchy: [Testing | Unit Tests | DataSource | CacheSharing]
     :covers:
-     - target: "BaseDataSource.with_transform_fn"
+     - target: "DataSource.with_transform_fn"
      - requirement: "Specialized datasource shares Stage1 cache (same builder)"
 
     :scenario: "Stage1 cache shared, Stage2 cache independent"
@@ -324,7 +324,7 @@ def test_datasource_with_transform_fn_caching():
     :complexity: 3
     """
     # LLM:METADATA
-    # :hierarchy: [Testing | Unit Tests | BaseDataSource | CacheSharing]
+    # :hierarchy: [Testing | Unit Tests | DataSource | CacheSharing]
     # :relates-to:
     #  - motivated_by: "Verify cache sharing contract: same builder → shared Stage1 cache → build() called only once [Contract-CacheSharing]"
     # :contract:
@@ -340,15 +340,15 @@ def test_datasource_with_transform_fn_caching():
     build_count = 0
     original_build = builder.build
 
-    def tracked_build(params):
+    def tracked_build(**kwargs):
         nonlocal build_count
         build_count += 1
-        return original_build(params)
+        return original_build(**kwargs)
 
     builder.build = tracked_build
 
     # Create original datasource
-    datasource = BaseDataSource(data_builder=builder)
+    datasource = DataSource(data_builder=builder)
 
     # Create specialized datasource via with_transform_fn
     transform_fn = lambda df: df[df["a"] >= 2]
@@ -370,9 +370,9 @@ def test_datasource_with_transform_fn_empty_result():
     """
     Test with_transform_fn() handles empty results gracefully.
 
-    :hierarchy: [Testing | Unit Tests | BaseDataSource | EmptyResult]
+    :hierarchy: [Testing | Unit Tests | DataSource | EmptyResult]
     :covers:
-     - target: "BaseDataSource.with_transform_fn"
+     - target: "DataSource.with_transform_fn"
      - requirement: "Handles empty DataFrame from transform"
 
     :scenario: "Transform filters out all rows"
@@ -381,7 +381,7 @@ def test_datasource_with_transform_fn_empty_result():
     """
     df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
     builder = SampleDataBuilder(data=df)
-    datasource = BaseDataSource(data_builder=builder)
+    datasource = DataSource(data_builder=builder)
 
     # Transform that filters everything
     transform_fn = lambda df: df[df["a"] > 100]

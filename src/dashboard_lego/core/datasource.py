@@ -1,19 +1,34 @@
 """
 This module defines the base data source with stateless 2-stage pipeline.
 
-:hierarchy: [Core | DataSources | BaseDataSource]
+:hierarchy: [Core | DataSources | DataSource]
 :relates-to:
- - motivated_by: "v0.15.0 Refactor: Stateless architecture with 2-stage pipeline"
- - implements: "interface: 'BaseDataSource' with stateless pipeline"
+ - motivated_by: "v0.15.0 Refactor: Stateless architecture with 2-stage pipeline + optional lambda functions"
+ - implements: "interface: 'DataSource' with stateless pipeline and lambda function support"
  - uses: ["library: 'diskcache'", "class: 'DataBuilder'", "class: 'DataFilter'"]
 
 :contract:
- - pre: "data_builder and data_filter provided"
+ - pre: "data_builder and data_filter provided OR build_fn/transform_fn for simple cases"
  - post: "get_processed_data(params) runs Build → Filter pipeline"
  - invariant: "NO stored data state, NO abstract methods, only cache"
 
 :complexity: 7
-:decision_cache: "2-stage pipeline (Build → Filter) for semantic clarity"
+:decision_cache: "2-stage pipeline (Build → Filter) for semantic clarity + lambda functions for simplicity"
+
+Example usage with lambda functions:
+    >>> # Simple datasource with lambda functions
+    >>> ds = DataSource(
+    ...     build_fn=lambda params: pd.DataFrame({'x': [1, 2, 3]}),
+    ...     transform_fn=lambda df: df * 2
+    ... )
+    >>> result = ds.get_processed_data()
+    >>>
+    >>> # More complex with parameters
+    >>> ds = DataSource(
+    ...     build_fn=lambda params: pd.read_csv(params.get('file', 'default.csv')),
+    ...     transform_fn=lambda df: df.groupby('category').sum().reset_index()
+    ... )
+    >>> result = ds.get_processed_data({'file': 'sales.csv'})
 """
 
 import json
@@ -27,7 +42,7 @@ from dashboard_lego.utils.formatting import NumpyEncoder
 from dashboard_lego.utils.logger import get_logger
 
 
-class BaseDataSource:
+class DataSource:
     """
     Base data source with stateless 2-stage pipeline.
 
@@ -38,10 +53,10 @@ class BaseDataSource:
     NO STORED STATE - data computed fresh each call via cache.
     NO ABSTRACT METHODS - fully concrete base class.
 
-    :hierarchy: [Core | DataSources | BaseDataSource]
+    :hierarchy: [Core | DataSources | DataSource]
     :relates-to:
      - motivated_by: "v0.15.0: 2-stage pipeline for semantic clarity"
-     - implements: "class: 'BaseDataSource' stateless"
+     - implements: "class: 'DataSource' stateless"
      - uses: ["library: 'diskcache'", "class: 'DataBuilder'", "class: 'DataFilter'"]
 
     :rationale: "2-stage pipeline (Build → Filter) simpler than 3-stage"
@@ -55,7 +70,7 @@ class BaseDataSource:
     """
 
     # LLM:METADATA
-    # :hierarchy: [Core | DataSources | BaseDataSource | CacheRegistry]
+    # :hierarchy: [Core | DataSources | DataSource | CacheRegistry]
     # :relates-to:
     #  - motivated_by: "Cache sharing prevents duplicate Stage1 builds when same builder reused across datasources created via with_transform_fn() [Contract-Fix-CacheSharing]"
     #  - implements: "Class-level cache registry for transparent cache reuse based on cache_dir matching"
@@ -73,33 +88,47 @@ class BaseDataSource:
         param_classifier: Optional[Callable[[str], str]] = None,
         cache_dir: Optional[str] = None,
         cache_ttl: int = 300,
+        build_fn: Optional[Callable[[Dict[str, Any]], pd.DataFrame]] = None,
+        transform_fn: Optional[Callable[[pd.DataFrame], pd.DataFrame]] = None,
         **kwargs,
     ):
         """
         Initialize datasource with 2-stage pipeline.
 
-        :hierarchy: [Core | DataSources | BaseDataSource | Initialization]
+        :hierarchy: [Core | DataSources | DataSource | Initialization]
         :relates-to:
-         - motivated_by: "v0.15.0: 2-stage pipeline configuration"
+         - motivated_by: "v0.15.0: 2-stage pipeline configuration with optional lambda functions"
          - implements: "method: '__init__'"
 
         :contract:
-         - pre: "data_builder and data_transformer optional"
-         - post: "2-stage pipeline ready"
+         - pre: "data_builder, data_transformer, build_fn, transform_fn are optional"
+         - post: "2-stage pipeline ready with handlers created from functions if provided"
          - stages: "Build → Transform"
 
         Args:
-            data_builder: DataBuilder for stage 1 (load + process)
-            data_transformer: DataTransformer for stage 2 (filtering/aggregation)
-            param_classifier: Routes params: 'build' or 'transform'
-                             Default: all params → 'build'
+            data_builder: DataBuilder for stage 1 (load + process). If None and build_fn provided, creates LambdaBuilder.
+            data_transformer: DataTransformer for stage 2 (filtering/aggregation). If None and transform_fn provided, creates LambdaTransformer.
+            param_classifier: Routes params: 'build' or 'transform'. Default: 'build__' → 'build', 'transform__' → 'transform'.
             cache_dir: Directory for disk cache. If None, uses in-memory cache.
             cache_ttl: Time-to-live for cache entries in seconds.
+            build_fn: Optional lambda function for simple data building: Dict[str, Any] → DataFrame.
+                     If provided, creates LambdaBuilder automatically. Signature: lambda params: df
+            transform_fn: Optional lambda function for simple data transformation: DataFrame → DataFrame.
+                         If provided, creates LambdaTransformer automatically. Signature: lambda df: df
         """
-        self.logger = get_logger(__name__, BaseDataSource)
+
+        def _default_param_classifier(k: str) -> str:
+            if "__" not in k:
+                return "build", k
+            category, key = k.split("__")
+            if category not in ("build", "transform"):
+                category = "build"
+            return category, key
+
+        self.logger = get_logger(__name__, DataSource)
 
         # LLM:METADATA
-        # :hierarchy: [Core | DataSources | BaseDataSource | CacheInitialization]
+        # :hierarchy: [Core | DataSources | DataSource | CacheInitialization]
         # :relates-to:
         #  - motivated_by: "Cache sharing prevents duplicate Stage1 builds by reusing Cache objects for matching cache_dir [Contract-Fix-CacheSharing]"
         #  - implements: "Cache registry lookup and reuse logic in __init__"
@@ -114,31 +143,112 @@ class BaseDataSource:
         cache_key = cache_dir if cache_dir else "__in_memory__"
 
         try:
-            if cache_key in BaseDataSource._cache_registry:
+            if cache_key in DataSource._cache_registry:
                 # Reuse existing cache for same cache_dir
-                self.cache = BaseDataSource._cache_registry[cache_key]
-                self.logger.debug(
-                    f"[BaseDataSource|Init] Reused cache | key={cache_key}"
-                )
+                self.cache = DataSource._cache_registry[cache_key]
+                self.logger.debug(f"[DataSource|Init] Reused cache | key={cache_key}")
             else:
                 # Create new cache and register it
                 self.cache = Cache(directory=cache_dir, expire=cache_ttl)
-                BaseDataSource._cache_registry[cache_key] = self.cache
+                DataSource._cache_registry[cache_key] = self.cache
                 self.logger.debug(
-                    f"[BaseDataSource|Init] Created new cache | key={cache_key}"
+                    f"[DataSource|Init] Created new cache | key={cache_key}"
                 )
         except Exception as e:
-            self.logger.error(f"[BaseDataSource|Init] Cache failed: {e}")
+            self.logger.error(f"[DataSource|Init] Cache failed: {e}")
             raise CacheError(f"Cache initialization failed: {e}") from e
 
         # Import here to avoid circular imports
         from dashboard_lego.core.data_builder import DataBuilder
         from dashboard_lego.core.data_transformer import DataTransformer
 
+        # LLM:METADATA
+        # :hierarchy: [Core | DataSources | DataSource | HandlerCreation]
+        # :relates-to:
+        #  - motivated_by: "Create handlers from lambda functions if provided in constructor"
+        #  - implements: "Lambda handler creation logic in __init__"
+        # :contract:
+        #  - pre: "build_fn and transform_fn are optional callables"
+        #  - post: "data_builder and data_transformer are set (either provided or created from functions)"
+        # :complexity: 3
+        # LLM:END
+        # Create handlers from lambda functions if provided
+        final_data_builder = data_builder
+        final_data_transformer = data_transformer
+
+        if build_fn is not None:
+            # Create LambdaBuilder from build_fn
+            class LambdaBuilder(DataBuilder):
+                """
+                Wraps a simple lambda function as a DataBuilder.
+
+                :hierarchy: [Core | DataSources | LambdaBuilder]
+                :relates-to:
+                 - motivated_by: "Wrap user lambda in DataBuilder interface"
+                 - implements: "class: 'LambdaBuilder'"
+
+                :contract:
+                 - pre: "Receives lambda: params → df"
+                 - post: "Conforms to DataBuilder interface"
+                """
+
+                def __init__(
+                    self, func: Callable[[Dict[str, Any]], pd.DataFrame], **kwargs
+                ):
+                    super().__init__(**kwargs)
+                    self.func = func
+
+                def build(self, params: Dict[str, Any]) -> pd.DataFrame:
+                    """Apply the wrapped lambda function."""
+                    return self.func(params)
+
+            final_data_builder = LambdaBuilder(build_fn, logger=self.logger)
+            self.logger.debug("[DataSource|Init] Created LambdaBuilder from build_fn")
+
+        if transform_fn is not None:
+            # Create LambdaTransformer from transform_fn
+            class LambdaTransformer(DataTransformer):
+                """
+                Wraps a simple lambda function as a DataTransformer.
+
+                :hierarchy: [Core | DataSources | LambdaTransformer]
+                :relates-to:
+                 - motivated_by: "Wrap user lambda in DataTransformer interface"
+                 - implements: "class: 'LambdaTransformer'"
+
+                :contract:
+                 - pre: "Receives simple lambda: df → df"
+                 - post: "Conforms to DataTransformer interface"
+                 - invariant: "Ignores params (block transforms don't need them)"
+                """
+
+                def __init__(
+                    self, func: Callable[[pd.DataFrame], pd.DataFrame], **kwargs
+                ):
+                    super().__init__(**kwargs)
+                    self.func = func
+
+                def transform(
+                    self, data: pd.DataFrame, params: Dict[str, Any]
+                ) -> pd.DataFrame:
+                    """Apply the wrapped lambda function."""
+                    # Block-specific transforms don't use params
+                    return self.func(data)
+
+            final_data_transformer = LambdaTransformer(transform_fn, logger=self.logger)
+            self.logger.debug(
+                "[DataSource|Init] Created LambdaTransformer from transform_fn"
+            )
+
         # Initialize 2-stage pipeline
-        self.data_builder = data_builder or DataBuilder(logger=self.logger)
-        self.data_transformer = data_transformer or DataTransformer(logger=self.logger)
-        self.param_classifier = param_classifier
+        self.data_builder = final_data_builder or DataBuilder(logger=self.logger)
+        self.data_transformer = final_data_transformer or DataTransformer(
+            logger=self.logger
+        )
+
+        if param_classifier is None:
+            param_classifier = _default_param_classifier
+        self._param_classifier = param_classifier
         self.cache_dir = cache_dir  # Store original cache_dir for cloning
         self.cache_ttl = cache_ttl
 
@@ -146,7 +256,7 @@ class BaseDataSource:
         self._current_params: Dict[str, Any] = {}
 
         self.logger.info(
-            f"[BaseDataSource|Init] 2-stage pipeline ready | "
+            f"[DataSource|Init] 2-stage pipeline ready | "
             f"builder={type(self.data_builder).__name__} | "
             f"transformer={type(self.data_transformer).__name__}"
         )
@@ -155,7 +265,7 @@ class BaseDataSource:
         """
         Create cache key for specific pipeline stage.
 
-        :hierarchy: [Core | DataSources | BaseDataSource | Caching]
+        :hierarchy: [Core | DataSources | DataSource | Caching]
         :relates-to:
          - motivated_by: "Stage-specific cache keys INCLUDING handler instance"
          - implements: "method: '_get_cache_key'"
@@ -208,7 +318,7 @@ class BaseDataSource:
 
         Stage 1: Build (load + process).
 
-        :hierarchy: [Core | DataSources | BaseDataSource | Stage1]
+        :hierarchy: [Core | DataSources | DataSource | Stage1]
         :contract:
          - pre: "params is dict"
          - post: "Returns complete built DataFrame"
@@ -222,6 +332,9 @@ class BaseDataSource:
         Returns:
             Complete built DataFrame
         """
+        if not params:
+            self.logger.warning(f"[Stage1|Build] No params | params={params}")
+
         key = self._get_cache_key("built", params)
 
         if key in self.cache:
@@ -231,7 +344,7 @@ class BaseDataSource:
         self.logger.info("[Stage1|Build] Cache MISS | building")
 
         # Call DataBuilder.build() - handles load + process
-        built_data = self.data_builder.build(params)
+        built_data = self.data_builder.build(**params)
 
         if not isinstance(built_data, pd.DataFrame):
             raise DataLoadError(
@@ -242,7 +355,7 @@ class BaseDataSource:
         self.logger.info(f"[Stage1|Build] Complete | rows={len(built_data)}")
         return built_data
 
-    def _get_or_filter(
+    def _get_or_transform(
         self, built_data: pd.DataFrame, params: Dict[str, Any]
     ) -> pd.DataFrame:
         """
@@ -250,7 +363,7 @@ class BaseDataSource:
 
         Stage 2: Filter.
 
-        :hierarchy: [Core | DataSources | BaseDataSource | Stage2]
+        :hierarchy: [Core | DataSources | DataSource | Stage2]
         :contract:
          - pre: "built_data is DataFrame, params is dict"
          - post: "Returns filtered DataFrame"
@@ -265,6 +378,11 @@ class BaseDataSource:
         Returns:
             Filtered DataFrame
         """
+        if built_data is None or built_data.empty:
+            self.logger.warning(
+                f"[Stage2|Transform] No built_data | built_data={built_data}"
+            )
+            return built_data
         key = self._get_cache_key("filtered", params)
 
         if key in self.cache:
@@ -272,7 +390,7 @@ class BaseDataSource:
             return self.cache[key]
 
         self.logger.info("[Stage2|Transform] Cache MISS | transforming")
-        filtered_data = self.data_transformer.transform(built_data, params)
+        filtered_data = self.data_transformer.transform(built_data, **params)
 
         if not isinstance(filtered_data, pd.DataFrame):
             raise DataLoadError(
@@ -283,16 +401,16 @@ class BaseDataSource:
         self.logger.info(f"[Stage2|Transform] Complete | rows={len(filtered_data)}")
         return filtered_data
 
-    def with_builder(self, builder: Union[Any, Callable]) -> "BaseDataSource":
+    def with_builder(self, builder: Union[Any, Callable]) -> "DataSource":
         """
         Return new datasource with replaced builder.
 
         Immutable pattern for flexible data pipeline composition.
 
-        :hierarchy: [Core | DataSources | BaseDataSource | WithBuilder]
+        :hierarchy: [Core | DataSources | DataSource | WithBuilder]
         :contract:
          - pre: "builder is DataBuilder instance"
-         - post: "Returns new BaseDataSource (does NOT modify self)"
+         - post: "Returns new DataSource (does NOT modify self)"
 
         :complexity: 2
 
@@ -300,26 +418,26 @@ class BaseDataSource:
             builder: DataBuilder instance
 
         Returns:
-            New BaseDataSource with specified builder
+            New DataSource with specified builder
         """
-        return BaseDataSource(
+        return DataSource(
             data_builder=builder,
             data_transformer=self.data_transformer,
-            param_classifier=self.param_classifier,
+            param_classifier=self._param_classifier,
             cache_dir=self.cache_dir,  # Use original cache_dir for cache sharing
             cache_ttl=self.cache_ttl,
         )
 
     def with_builder_fn(
         self, build_fn: Callable[[Dict[str, Any]], pd.DataFrame]
-    ) -> "BaseDataSource":
+    ) -> "DataSource":
         """
         Returns a new datasource instance with a lambda-based builder.
 
         Convenience factory for simple build logic without creating DataBuilder class.
         Symmetric to with_transform_fn() for consistency.
 
-        :hierarchy: [Core | DataSources | BaseDataSource | WithBuilderFn]
+        :hierarchy: [Core | DataSources | DataSource | WithBuilderFn]
         :relates-to:
          - motivated_by: "v0.15.0: Symmetric API with with_transform_fn()"
          - implements: "method: 'with_builder_fn'"
@@ -328,7 +446,7 @@ class BaseDataSource:
         :rationale: "Lambda-based builder for simple cases, avoiding class boilerplate"
         :contract:
          - pre: "build_fn is callable: Dict[str, Any] → DataFrame"
-         - post: "Returns new BaseDataSource with lambda builder"
+         - post: "Returns new DataSource with lambda builder"
          - invariant: "Original datasource unchanged (immutable)"
 
         :complexity: 2
@@ -342,24 +460,24 @@ class BaseDataSource:
                      - lambda p: generate_sample_data(n=p.get('rows', 100))
 
         Returns:
-            New BaseDataSource instance with lambda builder.
+            New DataSource instance with lambda builder.
             Original datasource is unchanged.
 
         Example:
             >>> # Create datasource with lambda builder
-            >>> ds = BaseDataSource().with_builder_fn(
+            >>> ds = DataSource().with_builder_fn(
             ...     lambda params: pd.read_csv('data.csv')
             ... )
             >>>
             >>> # Or with params
-            >>> ds = BaseDataSource().with_builder_fn(
+            >>> ds = DataSource().with_builder_fn(
             ...     lambda params: pd.read_csv(params.get('file', 'default.csv'))
             ... )
         """
         from dashboard_lego.core.data_builder import DataBuilder
 
         self.logger.debug(
-            "[BaseDataSource|WithBuilderFn] Creating datasource with lambda builder"
+            "[DataSource|WithBuilderFn] Creating datasource with lambda builder"
         )
 
         # Wrap lambda in DataBuilder
@@ -389,26 +507,29 @@ class BaseDataSource:
 
         lambda_builder = LambdaBuilder(build_fn, logger=self.logger)
 
-        self.logger.info("[BaseDataSource|WithBuilderFn] Created lambda builder")
+        self.logger.info("[DataSource|WithBuilderFn] Created lambda builder")
 
-        return BaseDataSource(
+        return DataSource(
             data_builder=lambda_builder,
             data_transformer=self.data_transformer,
-            param_classifier=self.param_classifier,
+            param_classifier=self._param_classifier,
             cache_dir=self.cache_dir,  # Use original cache_dir for cache sharing
             cache_ttl=self.cache_ttl,
+            # Explicitly pass None for lambda functions since we're setting data_builder
+            build_fn=None,
+            transform_fn=None,
         )
 
-    def with_transformer(self, transformer: Any) -> "BaseDataSource":
+    def with_transformer(self, transformer: Any) -> "DataSource":
         """
         Return new datasource with replaced transformer.
 
         Immutable pattern for flexible data pipeline composition.
 
-        :hierarchy: [Core | DataSources | BaseDataSource | WithTransformer]
+        :hierarchy: [Core | DataSources | DataSource | WithTransformer]
         :contract:
          - pre: "transformer is DataTransformer instance"
-         - post: "Returns new BaseDataSource (does NOT modify self)"
+         - post: "Returns new DataSource (does NOT modify self)"
 
         :complexity: 2
 
@@ -416,19 +537,22 @@ class BaseDataSource:
             transformer: DataTransformer instance
 
         Returns:
-            New BaseDataSource with specified transformer
+            New DataSource with specified transformer
         """
-        return BaseDataSource(
+        return DataSource(
             data_builder=self.data_builder,
             data_transformer=transformer,
-            param_classifier=self.param_classifier,
+            param_classifier=self._param_classifier,
             cache_dir=self.cache_dir,  # Use original cache_dir for cache sharing
             cache_ttl=self.cache_ttl,
+            # Explicitly pass None for lambda functions since we're setting data_transformer
+            build_fn=None,
+            transform_fn=None,
         )
 
     def with_transform_fn(
         self, transform_fn: Callable[[pd.DataFrame], pd.DataFrame]
-    ) -> "BaseDataSource":
+    ) -> "DataSource":
         """
         Returns a new datasource instance with an additional transformation step
         chained AFTER the main data transformer.
@@ -437,7 +561,7 @@ class BaseDataSource:
         transformations. The new transformer is chained after the existing one,
         preserving the global filter → block transform order.
 
-        :hierarchy: [Core | DataSources | BaseDataSource | WithTransform]
+        :hierarchy: [Core | DataSources | DataSource | WithTransform]
         :relates-to:
          - motivated_by: "v0.15.0: Block-specific data transformations"
          - implements: "method: 'with_transform_fn'"
@@ -446,7 +570,7 @@ class BaseDataSource:
         :rationale: "Immutable pattern creates specialized clone without modifying original"
         :contract:
          - pre: "transform_fn is callable: DataFrame → DataFrame"
-         - post: "Returns new BaseDataSource with chained transformer"
+         - post: "Returns new DataSource with chained transformer"
          - invariant: "Original datasource unchanged (immutable)"
          - cache: "New datasource has independent cache keys"
 
@@ -462,12 +586,12 @@ class BaseDataSource:
                          - lambda df: df.query("price > 100")
 
         Returns:
-            New BaseDataSource instance with chained transformer.
+            New DataSource instance with chained transformer.
             Original datasource is unchanged.
 
         Example:
             >>> # Original datasource with global filter
-            >>> main_ds = BaseDataSource(
+            >>> main_ds = DataSource(
             ...     data_builder=CSVBuilder("sales.csv"),
             ...     data_transformer=CategoryFilter()  # Global filter
             ... )
@@ -487,7 +611,7 @@ class BaseDataSource:
         )
 
         self.logger.debug(
-            "[BaseDataSource|WithTransform] Creating specialized datasource clone"
+            "[DataSource|WithTransform] Creating specialized datasource clone"
         )
 
         # 1. Create a new transformer from the provided function
@@ -510,9 +634,7 @@ class BaseDataSource:
                 super().__init__(**kwargs)
                 self.func = func
 
-            def transform(
-                self, data: pd.DataFrame, params: Dict[str, Any]
-            ) -> pd.DataFrame:
+            def transform(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
                 """Apply the wrapped lambda function."""
                 # Block-specific transforms don't use params
                 return self.func(data)
@@ -527,18 +649,21 @@ class BaseDataSource:
         )
 
         self.logger.info(
-            f"[BaseDataSource|WithTransform] Chained: "
+            f"[DataSource|WithTransform] Chained: "
             f"{type(self.data_transformer).__name__} → LambdaTransformer"
         )
 
         # 3. Return a new datasource instance (clone) with the new chained transformer
         # Use stored cache_dir to ensure cache registry key matches parent
-        return BaseDataSource(
+        return DataSource(
             data_builder=self.data_builder,
             data_transformer=chained_transformer,
-            param_classifier=self.param_classifier,
+            param_classifier=self._param_classifier,
             cache_dir=self.cache_dir,  # Use original cache_dir for cache sharing
             cache_ttl=self.cache_ttl,
+            # Explicitly pass None for lambda functions since we're setting data_transformer
+            build_fn=None,
+            transform_fn=None,
         )
 
     def get_processed_data(
@@ -570,13 +695,13 @@ class BaseDataSource:
             # Classify params
             from dashboard_lego.core.processing_context import DataProcessingContext
 
-            context = DataProcessingContext.from_params(params, self.param_classifier)
+            context = DataProcessingContext.from_params(params, self._param_classifier)
 
             # Stage 1: Build (load + process)
             built_data = self._get_or_build(context.preprocessing_params)
 
             # Stage 2: Filter
-            filtered_data = self._get_or_filter(built_data, context.filtering_params)
+            filtered_data = self._get_or_transform(built_data, context.filtering_params)
 
             self.logger.info(
                 f"[get_processed_data] Pipeline complete | rows={len(filtered_data)}"

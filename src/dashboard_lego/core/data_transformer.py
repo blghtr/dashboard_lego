@@ -19,7 +19,7 @@ Renamed from DataFilter in v0.15 for semantic clarity.
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Optional
 
 import pandas as pd
 
@@ -86,7 +86,7 @@ class DataTransformer:
         self.logger = logger or get_logger(__name__, DataTransformer)
         self.logger.debug("DataTransformer initialized")
 
-    def transform(self, data: pd.DataFrame, params: Dict[str, Any]) -> pd.DataFrame:
+    def transform(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         Transform data based on params.
 
@@ -96,47 +96,88 @@ class DataTransformer:
          - implements: "method: 'transform'"
 
         :contract:
-         - pre: "data is valid DataFrame, params is dict"
+         - pre: "data is valid DataFrame"
          - post: "Returns transformed DataFrame (any shape/structure allowed)"
          - invariant: "Does not modify input DataFrame"
 
-        :complexity: 1
-        :decision_cache: "Clean contract for any df→df transformation"
+        This method provides state protection wrapper around _transform().
+        Override _transform() in subclass to implement transformation logic.
 
         Args:
             data: Built DataFrame to transform
-            params: Transformation parameters
-                   (from transform_params in DataProcessingContext)
+            **kwargs: Transformation parameters
 
         Returns:
             Transformed DataFrame (can be filtered, aggregated, reshaped, etc.)
 
-        Note:
-            Override this method in subclasses for custom transformation logic.
-            Default implementation returns data unchanged.
-            Always work on a copy to avoid modifying the original.
-
-        Examples:
-            >>> # Filtering
+        Example:
             >>> class PriceFilter(DataTransformer):
-            ...     def transform(self, data, params):
+            ...     def _transform(self, data, params):
             ...         df = data.copy()
             ...         if 'min_price' in params:
             ...             df = df[df['Price'] >= params['min_price']]
             ...         return df
+        """
+        # State protection: Reset any mutable state before transforming
+        self._reset_mutable_state()
 
-            >>> # Aggregation
-            >>> class CategoryAggregator(DataTransformer):
-            ...     def transform(self, data, params):
-            ...         return data.groupby('Category')['Sales'].sum().reset_index()
+        # Call the actual transform implementation
+        return self._transform(data, **kwargs)
+
+    def _reset_mutable_state(self) -> None:
+        """
+        Reset mutable state to prevent accumulation across transforms.
+
+        Override in subclass to reset any mutable instance variables.
+        Called automatically before each transform().
+
+        :hierarchy: [Core | DataSources | DataTransformer | StateProtection]
+        :contract:
+         - pre: "Transformer has mutable state"
+         - post: "All mutable state reset to initial state"
+         - invariant: "Called before every transform()"
+
+        Example:
+            >>> class MyTransformer(DataTransformer):
+            ...     def __init__(self):
+            ...         super().__init__()
+            ...         self._cache = {}
+            ...         self._accumulator = []
+            ...
+            ...     def _reset_mutable_state(self):
+            ...         self._cache = {}  # Reset cache
+            ...         self._accumulator = []  # Reset accumulator
+        """
+        # Default: no-op (no mutable state to reset)
+        pass
+
+    def _transform(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        Abstract transform implementation.
+
+        Override this method in subclass to implement transformation logic.
+        This method is called by transform() after state reset.
+
+        :hierarchy: [Core | DataSources | DataTransformer | TransformImplementation]
+        :contract:
+         - pre: "Mutable state has been reset"
+         - post: "Returns transformed DataFrame (any shape/structure allowed)"
+         - invariant: "Pure function (no side effects on instance state)"
+
+        Args:
+            data: Built DataFrame to transform
+            **kwargs: Transformation parameters
+
+        Returns:
+            Transformed DataFrame (can be filtered, aggregated, reshaped, etc.)
         """
         self.logger.debug(
-            f"[DataTransformer] Transforming {len(data)} rows with params: {list(params.keys())}"
+            f"[DataTransformer|_Transform] Transforming {len(data)} rows with kwargs: {list(kwargs.keys())}"
         )
 
         # Default: no transformation, return data as-is
         self.logger.debug(
-            "[DataTransformer] Using default implementation (no transformation)"
+            "[DataTransformer|_Transform] Using default implementation (no transformation)"
         )
         return data
 
@@ -203,7 +244,7 @@ class ChainedTransformer(DataTransformer):
             f"{type(transformer_2).__name__}"
         )
 
-    def transform(self, data: pd.DataFrame, params: Dict[str, Any]) -> pd.DataFrame:
+    def _transform(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         Apply transformers sequentially.
 
@@ -213,7 +254,7 @@ class ChainedTransformer(DataTransformer):
         :hierarchy: [Core | DataSources | ChainedTransformer | Transform]
         :relates-to:
          - motivated_by: "Sequential transformation preserves order"
-         - implements: "method: 'transform'"
+         - implements: "method: '_transform'"
 
         :contract:
          - pre: "data is valid DataFrame, params is dict"
@@ -237,20 +278,20 @@ class ChainedTransformer(DataTransformer):
             >>> final = transformer_2.transform(filtered, {})
         """
         self.logger.debug(
-            f"[ChainedTransformer|Transform] Starting chain | "
-            f"input_rows={len(data)} | params={list(params.keys())}"
+            f"[ChainedTransformer|_Transform] Starting chain | "
+            f"input_rows={len(data)} | params={list(kwargs.keys())}"
         )
 
         # Step 1: Apply the global filter with its params
-        filtered_data = self.transformer_1.transform(data, params)
+        filtered_data = self.transformer_1.transform(data, **kwargs)
         self.logger.debug(
-            f"[ChainedTransformer|Transform] After transformer_1: {len(filtered_data)} rows"
+            f"[ChainedTransformer|_Transform] After transformer_1: {len(filtered_data)} rows"
         )
 
         # Step 2: Apply the block-specific transform (it does not need params)
-        final_data = self.transformer_2.transform(filtered_data, {})
+        final_data = self.transformer_2.transform(filtered_data)
         self.logger.debug(
-            f"[ChainedTransformer|Transform] After transformer_2: {len(final_data)} rows"
+            f"[ChainedTransformer|_Transform] After transformer_2: {len(final_data)} rows"
         )
 
         return final_data

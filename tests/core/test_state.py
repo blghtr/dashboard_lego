@@ -56,6 +56,44 @@ class TestStateManager:
         assert publisher_info["component_prop"] == "value"
         assert "subscribers" in state_manager.dependency_graph["test_state"]
 
+    def test_register_publisher_with_dep_param_name(self, state_manager: StateManager):
+        """
+        :scenario: Verifies that a publisher with dep_param_name is correctly registered.
+        :strategy: Register publisher with dep_param_name and verify storage.
+        :contract:
+        :pre: A publisher with dep_param_name is registered.
+        :post: The dep_param_name is stored in _dep_param_names dict.
+
+        """
+        state_manager.register_publisher(
+            state_id="test_state",
+            component_id="test_publisher",
+            component_prop="value",
+            dep_param_name="transform__window_step",
+        )
+
+        assert "test_state" in state_manager.dependency_graph
+        assert "test_state" in state_manager._dep_param_names
+        assert state_manager._dep_param_names["test_state"] == "transform__window_step"
+
+    def test_register_publisher_without_dep_param_name(
+        self, state_manager: StateManager
+    ):
+        """
+        :scenario: Verifies that a publisher without dep_param_name works correctly.
+        :strategy: Register publisher without dep_param_name and verify no storage.
+        :contract:
+        :pre: A publisher without dep_param_name is registered.
+        :post: The state is registered but no dep_param_name is stored.
+
+        """
+        state_manager.register_publisher(
+            state_id="test_state", component_id="test_publisher", component_prop="value"
+        )
+
+        assert "test_state" in state_manager.dependency_graph
+        assert "test_state" not in state_manager._dep_param_names
+
     def test_register_subscriber_success(self, state_manager: StateManager):
         """
         :scenario: Verifies that a subscriber is correctly registered for a pre-existing state.

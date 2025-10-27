@@ -57,11 +57,11 @@ class FilterByCategoryTransformer(DataTransformer):
      - implements: "class: 'FilterByCategoryTransformer'"
     """
 
-    def transform(self, data, params):
+    def transform(self, data, **kwargs):
         """Filter data by category if param provided."""
         df = data.copy()
-        if "category" in params:
-            df = df[df["category"] == params["category"]]
+        if "category" in kwargs:
+            df = df[df["category"] == kwargs["category"]]
         return df
 
 
@@ -75,7 +75,7 @@ class AggregateTransformer(DataTransformer):
      - implements: "class: 'AggregateTransformer'"
     """
 
-    def transform(self, data, params):
+    def transform(self, data, **kwargs):
         """Aggregate value by category (ignores params)."""
         return data.groupby("category")["value"].sum().reset_index()
 
@@ -90,10 +90,10 @@ class MultiplyTransformer(DataTransformer):
      - implements: "class: 'MultiplyTransformer'"
     """
 
-    def transform(self, data, params):
+    def transform(self, data, **kwargs):
         """Multiply value by factor from params."""
         df = data.copy()
-        factor = params.get("factor", 1)
+        factor = kwargs.get("factor", 1)
         df["value"] = df["value"] * factor
         return df
 
@@ -119,7 +119,7 @@ def test_default_transformer_returns_data_unchanged(sample_data):
     :complexity: 1
     """
     transformer = DataTransformer()
-    result = transformer.transform(sample_data, {})
+    result = transformer.transform(sample_data)
     assert_frame_equal(result, sample_data)
 
 
@@ -137,7 +137,7 @@ def test_filter_transformer_with_params(sample_data):
     :complexity: 2
     """
     transformer = FilterByCategoryTransformer()
-    result = transformer.transform(sample_data, {"category": "A"})
+    result = transformer.transform(sample_data, category="A")
 
     expected = sample_data[sample_data["category"] == "A"]
     assert_frame_equal(result.reset_index(drop=True), expected.reset_index(drop=True))
@@ -158,7 +158,7 @@ def test_filter_transformer_without_params(sample_data):
     :complexity: 1
     """
     transformer = FilterByCategoryTransformer()
-    result = transformer.transform(sample_data, {})
+    result = transformer.transform(sample_data)
     assert_frame_equal(result, sample_data)
 
 
@@ -184,7 +184,7 @@ def test_chained_transformer_applies_sequential(sample_data):
     chained = ChainedTransformer(filter_transformer, agg_transformer)
 
     # Should filter first (category='A'), then aggregate
-    result = chained.transform(sample_data, {"category": "A"})
+    result = chained.transform(sample_data, category="A")
 
     # After filter: 2 rows with category A (values 10, 30)
     # After aggregate: 1 row with category A, value 40
@@ -211,20 +211,20 @@ def test_chained_transformer_params_flow(sample_data):
     params_received_2 = []
 
     class TrackingTransformer1(DataTransformer):
-        def transform(self, data, params):
-            params_received_1.append(params.copy())
+        def transform(self, data, **kwargs):
+            params_received_1.append(kwargs.copy())
             return data
 
     class TrackingTransformer2(DataTransformer):
-        def transform(self, data, params):
-            params_received_2.append(params.copy())
+        def transform(self, data, **kwargs):
+            params_received_2.append(kwargs.copy())
             return data
 
     transformer1 = TrackingTransformer1()
     transformer2 = TrackingTransformer2()
     chained = ChainedTransformer(transformer1, transformer2)
 
-    chained.transform(sample_data, {"category": "A"})
+    chained.transform(sample_data, category="A")
 
     # First transformer should receive the params
     assert len(params_received_1) == 1
@@ -253,13 +253,13 @@ def test_chained_transformer_preserves_order(sample_data):
 
     # Order 1: Filter then Multiply
     chain1 = ChainedTransformer(filter_transformer, multiply_transformer)
-    result1 = chain1.transform(sample_data, {"category": "A"})  # Filter gets this
+    result1 = chain1.transform(sample_data, category="A")  # Filter gets this
     # Filter to category A (2 rows), then multiply by 1 (no change from multiply)
     assert len(result1) == 2
 
     # Order 2: Multiply then Filter
     chain2 = ChainedTransformer(multiply_transformer, filter_transformer)
-    result2 = chain2.transform(sample_data, {"factor": 2})  # Multiply gets this
+    result2 = chain2.transform(sample_data, factor=2)  # Multiply gets this
     # Multiply all values by 2, then no filter (all rows returned)
     assert len(result2) == 5
     assert result2["value"].tolist() == [20, 40, 60, 80, 100]
@@ -281,9 +281,9 @@ def test_chained_transformer_multiple_filters(sample_data):
     filter_category = FilterByCategoryTransformer()
 
     class FilterByPriceTransformer(DataTransformer):
-        def transform(self, data, params):
+        def transform(self, data, **kwargs):
             df = data.copy()
-            min_price = params.get("min_price")
+            min_price = kwargs.get("min_price")
             if min_price:
                 df = df[df["price"] >= min_price]
             return df
@@ -292,7 +292,7 @@ def test_chained_transformer_multiple_filters(sample_data):
     chained = ChainedTransformer(filter_category, filter_price)
 
     # Filter to category A (2 rows), then no price filter
-    result = chained.transform(sample_data, {"category": "A"})
+    result = chained.transform(sample_data, category="A")
     assert len(result) == 2
 
 
@@ -314,7 +314,7 @@ def test_chained_transformer_empty_result(sample_data):
     chained = ChainedTransformer(filter_transformer, agg_transformer)
 
     # Filter to non-existent category
-    result = chained.transform(sample_data, {"category": "Z"})
+    result = chained.transform(sample_data, category="Z")
 
     # Should return empty DataFrame
     assert len(result) == 0
@@ -339,7 +339,7 @@ def test_chained_transformer_error_propagation(sample_data):
     """
 
     class ErrorTransformer(DataTransformer):
-        def transform(self, data, params):
+        def transform(self, data, **kwargs):
             raise ValueError("Test error")
 
     error_transformer = ErrorTransformer()
@@ -347,7 +347,85 @@ def test_chained_transformer_error_propagation(sample_data):
     chained = ChainedTransformer(error_transformer, agg_transformer)
 
     with pytest.raises(ValueError, match="Test error"):
-        chained.transform(sample_data, {})
+        chained.transform(sample_data)
 
 
 # </semantic_block: test_error_handling>
+
+
+# <semantic_block: test_mutable_state_reset>
+class MutableStateTransformer(DataTransformer):
+    """Test transformer that accumulates state."""
+
+    def __init__(self):
+        super().__init__()
+        self._rows = []
+
+    def _reset_mutable_state(self):
+        """Reset mutable state to prevent accumulation."""
+        self._rows = []
+
+    def _transform(self, data, **kwargs):
+        """Transform that accumulates rows."""
+        for _, row in data.iterrows():
+            self._rows.append(row.to_dict())
+        return pd.DataFrame(self._rows)
+
+
+def test_mutable_state_reset():
+    """
+    Test that _reset_mutable_state prevents state accumulation.
+
+    :hierarchy: [Testing | Unit Tests | DataTransformer | MutableStateReset]
+    :covers:
+     - target: "DataTransformer._reset_mutable_state"
+     - requirement: "Prevents state accumulation across transform calls"
+
+    :scenario: "Multiple transform calls don't accumulate state"
+    :priority: "P1"
+    :complexity: 3
+    """
+    transformer = MutableStateTransformer()
+
+    # First transform
+    data1 = pd.DataFrame({"x": [1, 2], "y": [10, 20]})
+    result1 = transformer.transform(data1)
+
+    assert len(result1) == 2
+    assert transformer._rows == [{"x": 1, "y": 10}, {"x": 2, "y": 20}]
+
+    # Second transform - should not accumulate
+    data2 = pd.DataFrame({"x": [3], "y": [30]})
+    result2 = transformer.transform(data2)
+
+    # Should only have data2 rows, not accumulated
+    assert len(result2) == 1
+    assert transformer._rows == [{"x": 3, "y": 30}]
+
+
+def test_chained_transformer_uses_transform():
+    """
+    Test that ChainedTransformer uses _transform method.
+
+    :hierarchy: [Testing | Unit Tests | ChainedTransformer | TransformMethod]
+    :covers:
+     - target: "ChainedTransformer.transform"
+     - requirement: "Uses _transform method for state reset"
+
+    :scenario: "ChainedTransformer calls _transform on both transformers"
+    :priority: "P1"
+    :complexity: 2
+    """
+    transformer1 = MutableStateTransformer()
+    transformer2 = MutableStateTransformer()
+    chained = ChainedTransformer(transformer1, transformer2)
+
+    data = pd.DataFrame({"x": [1], "y": [10]})
+    result = chained.transform(data)
+
+    # Both transformers should have reset state
+    assert len(transformer1._rows) == 1
+    assert len(transformer2._rows) == 1
+
+
+# </semantic_block: test_mutable_state_reset>

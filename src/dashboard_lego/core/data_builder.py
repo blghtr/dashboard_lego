@@ -23,7 +23,7 @@ Handles ALL data preparation BEFORE filtering stage:
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Optional
 
 import pandas as pd
 
@@ -60,18 +60,18 @@ class DataBuilder:
         self.logger = logger or get_logger(__name__, DataBuilder)
         self.logger.info("[DataBuilder|Init] Initialized")
 
-    def build(self, params: Dict[str, Any]) -> pd.DataFrame:
+    def build(self, **kwargs) -> pd.DataFrame:
         """
         Build complete dataset (load + process).
 
         :hierarchy: [Core | Pipeline | DataBuilder | Build]
         :contract:
-         - pre: "params is dict"
+         - pre: -
          - post: "Returns complete DataFrame ready for filtering"
          - invariant: "Same params → same output"
 
-        Override in subclass to implement building logic.
-        Default: returns empty DataFrame (no-op).
+        This method provides state protection wrapper around _build().
+        Override _build() in subclass to implement building logic.
 
         Args:
             params: Construction parameters
@@ -86,12 +86,64 @@ class DataBuilder:
             ...         super().__init__(**kwargs)
             ...         self.file_path = file_path
             ...
-            ...     def build(self, params):
+            ...     def _build(self, params):
             ...         # Load
             ...         df = pd.read_csv(self.file_path)
             ...         # Process
             ...         df['Revenue'] = df['Price'] * df['Quantity']
             ...         return df
         """
-        self.logger.debug("[DataBuilder|Build] No-op builder (empty DataFrame)")
+        # State protection: Reset any mutable state before building
+        self._reset_mutable_state()
+
+        # Call the actual build implementation
+        return self._build(**kwargs)
+
+    def _reset_mutable_state(self) -> None:
+        """
+        Reset mutable state to prevent accumulation across builds.
+
+        Override in subclass to reset any mutable instance variables.
+        Called automatically before each build().
+
+        :hierarchy: [Core | Pipeline | DataBuilder | StateProtection]
+        :contract:
+         - pre: "Builder has mutable state"
+         - post: "All mutable state reset to initial state"
+         - invariant: "Called before every build()"
+
+        Example:
+            >>> class MyBuilder(DataBuilder):
+            ...     def __init__(self):
+            ...         super().__init__()
+            ...         self._rows = []
+            ...         self._cache = {}
+            ...
+            ...     def _reset_mutable_state(self):
+            ...         self._rows = []  # Reset accumulation
+            ...         self._cache = {}  # Reset cache
+        """
+        # Default: no-op (no mutable state to reset)
+        pass
+
+    def _build(self, **kwargs) -> pd.DataFrame:
+        """
+        Abstract build implementation.
+
+        Override this method in subclass to implement building logic.
+        This method is called by build() after state reset.
+
+        :hierarchy: [Core | Pipeline | DataBuilder | BuildImplementation]
+        :contract:
+         - pre: "Mutable state has been reset"
+         - post: "Returns complete DataFrame ready for filtering"
+         - invariant: "Pure function (no side effects on instance state)"
+
+        Args:
+            params: Construction parameters
+
+        Returns:
+            Complete built DataFrame
+        """
+        self.logger.debug("[DataBuilder|_Build] No-op builder (empty DataFrame)")
         return pd.DataFrame()

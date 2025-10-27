@@ -3,7 +3,7 @@ This module defines the StateManager for handling interactivity between blocks.
 
 """
 
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from dash.dependencies import MATCH, Input, Output
 
@@ -71,8 +71,19 @@ class StateManager:
         self.dependency_graph: Dict[str, Dict[str, Any]] = {}
         # Track registered outputs for idempotency (navigation lazy-loading support)
         self._registered_outputs = set()  # Set of (component_id, component_prop) tuples
+        # Track publisher values for initial state sync
+        self._publisher_values = {}  # {state_id: current_value}
+        self._publisher_components = {}  # {state_id: (component_id, component_prop)}
+        # Track dep_param_name mappings for parameter name overrides
+        self._dep_param_names: Dict[str, str] = {}  # {state_id: dep_param_name}
 
-    def register_publisher(self, state_id: str, component_id: str, component_prop: str):
+    def register_publisher(
+        self,
+        state_id: str,
+        component_id: str,
+        component_prop: str,
+        dep_param_name: Optional[str] = None,
+    ):
         """
         Registers a component property as a provider of a certain state.
 
@@ -97,6 +108,18 @@ class StateManager:
             "component_id": component_id,
             "component_prop": component_prop,
         }
+
+        # Track for initial values
+        self._publisher_components[state_id] = (component_id, component_prop)
+        # Store dep_param_name if provided
+        if dep_param_name:
+            self._dep_param_names[state_id] = dep_param_name
+            self.logger.debug(
+                f"Registered dep_param_name: {state_id} → {dep_param_name}"
+            )
+        # Initial value is None until Dash provides it
+        if state_id not in self._publisher_values:
+            self._publisher_values[state_id] = None
 
         self.logger.info(f"Publisher registered for state: {state_id}")
 
@@ -147,6 +170,30 @@ class StateManager:
             f"(total subscribers: "
             f"{len(self.dependency_graph[state_id]['subscribers'])})"
         )
+
+    def get_initial_publisher_values(self) -> Dict[str, Any]:
+        """
+        Get initial values of all registered publishers.
+
+        :hierarchy: [Feature | Initial State Sync | StateManager]
+        :relates-to:
+         - motivated_by: "Blocks need initial state values before rendering"
+         - implements: "method: 'get_initial_publisher_values'"
+
+        :contract:
+         - pre: "Publishers are registered"
+         - post: "Returns {state_id: None or value} for all states"
+
+        Returns:
+            Dict mapping state_id to initial value (None if not available)
+        """
+        self.logger.debug(
+            f"Getting initial publisher values for {len(self.dependency_graph)} states"
+        )
+        return {
+            state_id: self._publisher_values.get(state_id)
+            for state_id in self.dependency_graph.keys()
+        }
 
     @staticmethod
     def _make_hashable_key(component_id: Union[str, Dict], component_prop: str):
@@ -270,8 +317,10 @@ class StateManager:
 
                 # NEW: Skip if already registered (idempotency for navigation lazy-loading)
                 if output_key in self._registered_outputs:
-                    self.logger.debug(
-                        f"⏭️  Callback for {component_id}.{component_prop} already registered, skipping"
+                    self.logger.warning(
+                        f"⏭️  Callback for {component_id}.{component_prop} already "
+                        f"registered from previous invocation - SKIPPING to avoid duplicate. "
+                        f"If this is a navigation page reload, verify block removal didn't fail."
                     )
                     continue
 
@@ -309,7 +358,7 @@ class StateManager:
                 )
 
                 # Create callback that handles multiple inputs
-                callback_func = self._create_multi_input_callback(state_infos)
+                callback_func = self._create_multi_input_callback(state_infos, block)
 
                 # Register callback with Dash
                 # CRITICAL: State-centric callbacks should NOT use prevent_initial_call
@@ -476,7 +525,7 @@ class StateManager:
                                 f"with {len(args)} values ({len(external_values)} external Input + {len(own_control_values)} own Input)"
                             )
 
-                            # Build control_values dict
+                            # Build control_values dict with mixed key formats
                             control_values = {}
 
                             # 1. Add external input values (triggers callback on change)
@@ -504,8 +553,18 @@ class StateManager:
                                     f"(from Input {component_id}.{prop})"
                                 )
 
+                            # Normalize control value keys for consistent handling
+                            normalized_control_values = self._normalize_control_keys(
+                                control_values, block_ref
+                            )
+                            self.logger.debug(
+                                f"🔧 Normalized control keys: {list(normalized_control_values.keys())}"
+                            )
+
                             # Call the block's update method
-                            return block_ref.update_from_controls(control_values)
+                            return block_ref.update_from_controls(
+                                normalized_control_values
+                            )
                         except Exception as e:
                             self.logger.error(
                                 f"Error in callback for block {block_ref.block_id}: {e}",
@@ -694,24 +753,26 @@ class StateManager:
             return None
 
     def _create_multi_input_callback(
-        self, state_infos: List[Dict[str, Any]]
+        self, state_infos: List[Dict[str, Any]], block: Any = None
     ) -> Callable:
         """
         Creates a callback function that handles multiple input states.
 
         :hierarchy: [Feature | Multi-State Subscription | Callback Creation]
         :relates-to:
-         - motivated_by: "Bug Fix: Support blocks subscribing to multiple states"
+         - motivated_by: "Bug Fix: Support blocks subscribing to multiple states with dep_param_name normalization"
          - implements: "method: '_create_multi_input_callback'"
 
         :rationale: "When a block subscribes to multiple states, the callback
-         receives multiple input values and must call the block's update function."
+         receives multiple input values and must call the block's update function.
+         Normalizes control keys using dep_param_name before passing to block."
         :contract:
          - pre: "state_infos contains callback_fn and state metadata for each input."
-         - post: "Returns a function that processes all input values."
+         - post: "Returns a function that processes all input values with normalized keys."
 
         Args:
             state_infos: List of dicts with 'state_id', 'publisher', 'callback_fn'.
+            block: Optional block reference for key normalization.
 
         Returns:
             A callback function that accepts multiple input values.
@@ -722,9 +783,11 @@ class StateManager:
             """
             Callback that receives multiple input values from different states.
 
-            Since all state_infos point to the same callback_fn (same subscriber),
-            we just call it once with the first value that triggered the callback.
+            Builds state mapping dict and passes to block for explicit state ID handling.
 
+            :contract:
+             - pre: "values tuple contains one value per input in registration order"
+             - post: "Calls callback_fn with normalized {param_name: value} mapping dict"
             """
             self.logger.info(
                 f"🔔 Multi-input callback triggered with {len(values)} values"
@@ -732,14 +795,14 @@ class StateManager:
             self.logger.debug(f"Values: {values}")
             self.logger.debug(f"Value types: {[type(v) for v in values]}")
 
-            # Log state_ids and values mapping for debugging
+            # Build state mapping dict for explicit state ID handling
             state_mapping = {}
             for idx, info in enumerate(state_infos):
                 if idx < len(values):
                     state_id = info["state_id"]
                     value = values[idx]
                     state_mapping[state_id] = value
-                    self.logger.info(
+                    self.logger.debug(
                         f"🎯 State mapping: {state_id} = {value} (type: {type(value).__name__})"
                     )
                 else:
@@ -747,13 +810,25 @@ class StateManager:
 
             self.logger.info(f"📋 Complete state mapping: {state_mapping}")
 
+            # Normalize control keys using dep_param_name if block is available
+            if block:
+                normalized_mapping = self._normalize_control_keys(state_mapping, block)
+                self.logger.debug(
+                    f"🔧 Normalized control keys: {list(normalized_mapping.keys())}"
+                )
+            else:
+                normalized_mapping = state_mapping
+                self.logger.warning("⚠️ No block reference, skipping key normalization")
+
             try:
                 # All state_infos have the same callback_fn (same subscriber block)
-                # Just call it with the first triggering value
-                # Dash's callback context can be used if block needs to know which input triggered
+                # Pass normalized mapping dict for explicit param name handling
                 callback_fn = state_infos[0]["callback_fn"]
-                self.logger.debug(f"📞 Calling callback_fn: {callback_fn.__name__}")
-                result = callback_fn(*values)
+                callback_name = getattr(callback_fn, "__name__", str(callback_fn))
+                self.logger.debug(f"📞 Calling callback_fn: {callback_name}")
+                result = callback_fn(
+                    normalized_mapping
+                )  # ← FIXED: Pass normalized dict
 
                 self.logger.info("✅ Multi-input callback completed successfully")
                 return result
@@ -818,3 +893,94 @@ class StateManager:
                 return tuple(None for _ in subscribers)
 
         return callback_wrapper
+
+    def _normalize_control_keys(
+        self, control_values: Dict[str, Any], block: Any
+    ) -> Dict[str, Any]:
+        """
+        Normalize control value keys for consistent handling.
+
+        Converts mixed key formats to consistent format:
+        - External state_ids: apply dep_param_name if available
+        - Embedded control IDs: extract short name and apply dep_param_name if available
+
+        :hierarchy: [Feature | Key Normalization | StateManager]
+        :relates-to:
+         - motivated_by: "Control value keys have inconsistent formats between external states and embedded controls"
+         - implements: "method: '_normalize_control_keys'"
+
+        :contract:
+         - pre: "control_values has mixed {state_id and component_id: value}"
+         - post: "Returns normalized {dep_param_name or control_name: value}"
+
+        Args:
+            control_values: Mixed format dict from callback args
+            block: Block instance to check controls
+
+        Returns:
+            Normalized dict with consistent key format
+        """
+        normalized = {}
+
+        for key, value in control_values.items():
+            final_key = key  # Default: keep as-is
+
+            # Case 1: External state (from another block)
+            if key in (block.subscribes or {}):
+                # Check if StateManager has dep_param_name for this state
+                if key in self._dep_param_names:
+                    final_key = self._dep_param_names[key]
+                    self.logger.debug(
+                        f"  External state {key} → {final_key} (dep_param_name)"
+                    )
+                else:
+                    self.logger.debug(
+                        f"  External state {key} → {key} (no dep_param_name)"
+                    )
+
+            # Case 2: Embedded control (from this block)
+            elif isinstance(key, str) and "-" in key:
+                control_name = key.split("-")[-1]
+                if control_name in (block.controls or {}):
+                    control_obj = block.controls[control_name]
+                    if (
+                        hasattr(control_obj, "dep_param_name")
+                        and control_obj.dep_param_name
+                    ):
+                        final_key = control_obj.dep_param_name
+                        self.logger.debug(
+                            f"  Embedded control {key} → {final_key} (dep_param_name)"
+                        )
+                    else:
+                        final_key = control_name
+                        self.logger.debug(
+                            f"  Embedded control {key} → {control_name} (short name)"
+                        )
+                else:
+                    # Unknown format - pass through
+                    final_key = key
+            else:
+                # Unknown format - pass through
+                final_key = key
+
+            normalized[final_key] = value
+
+        return normalized
+
+    def clear_registered_outputs(self) -> None:
+        """
+        Clear registered output cache.
+
+        Use when blocks are being re-rendered (e.g., section removal).
+
+        :hierarchy: [Feature | Callback Management | StateManager]
+        :relates-to:
+         - motivated_by: "Navigation lazy-loading needs to clear callback cache"
+         - implements: "method: 'clear_registered_outputs'"
+
+        :contract:
+         - pre: "No active callbacks in Dash"
+         - post: "_registered_outputs is empty"
+        """
+        self.logger.info(f"Clearing {len(self._registered_outputs)} registered outputs")
+        self._registered_outputs.clear()
