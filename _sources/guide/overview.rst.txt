@@ -12,7 +12,7 @@ Architecture Hierarchy
    ├── core/                  # Core orchestration and state management
    │   ├── page.py           # DashboardPage: main orchestrator
    │   ├── state.py          # StateManager: publisher/subscriber coordination
-   │   ├── datasource.py     # BaseDataSource: concrete data interface (v0.15)
+   │   ├── datasource.py     # DataSource: concrete data interface (v0.15)
    │   ├── data_builder.py   # DataBuilder: data construction (v0.15)
    │   ├── data_transformer.py # DataTransformer: data transformation (v0.15)
    │   ├── theme.py          # ThemeConfig: styling system
@@ -44,7 +44,7 @@ Module Dependency Graph
        ├─> StateManager (state coordination)
        ├─> ThemeConfig (styling)
        ├─> BaseBlock (components)
-       │   ├─> BaseDataSource (data)
+       │   ├─> DataSource (data)
        │   └─> StateManager (registration)
        └─> Navigation (multi-section pages)
 
@@ -54,7 +54,7 @@ Module Dependency Graph
        ├─> MetricsBlock (replaces KPIBlock pattern)
        └─> TextBlock
 
-   BaseDataSource (concrete, uses composition)
+   DataSource (concrete, uses composition)
        ├─> DataBuilder (build stage)
        └─> DataTransformer (transform stage)
 

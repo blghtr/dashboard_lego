@@ -48,6 +48,7 @@
 <p class="caption" role="heading"><span class="caption-text">Comprehensive Guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Comprehensive API Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/magics.html">IPython Magic Commands</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -114,7 +115,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">dash.development.base_component</span><span class="w"> </span><span class="kn">import</span> <span class="n">Component</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseBlock</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.datasource</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseDataSource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.datasource</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataSource</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.plot_registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_plot_function</span>
 
 
@@ -125,17 +126,20 @@
 
 <span class="sd">    :hierarchy: [Blocks | Controls | Control]</span>
 <span class="sd">    :relates-to:</span>
-<span class="sd">     - motivated_by: &quot;Need responsive control layouts&quot;</span>
+<span class="sd">     - motivated_by: &quot;Need responsive control layouts with content-based sizing&quot;</span>
 <span class="sd">     - implements: &quot;dataclass: &#39;Control&#39;&quot;</span>
 
 <span class="sd">    :contract:</span>
 <span class="sd">     - pre: &quot;component is valid Dash component type&quot;</span>
-<span class="sd">     - post: &quot;Control can be rendered with responsive layout&quot;</span>
+<span class="sd">     - post: &quot;Control can be rendered with responsive layout and optional auto-sizing&quot;</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        component: Dash component class (dcc.Dropdown, dcc.Slider, etc.)</span>
 <span class="sd">        props: Props dictionary for the component</span>
 <span class="sd">        col_props: Bootstrap column sizing (default: {&quot;xs&quot;: 12, &quot;md&quot;: &quot;auto&quot;})</span>
+<span class="sd">        dep_param_name: Optional parameter name override for datasource (default: None)</span>
+<span class="sd">        auto_size: Enable content-based sizing instead of full width (default: True)</span>
+<span class="sd">        max_ch: Maximum width in characters for auto-sized controls (default: 40)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">component</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Component</span><span class="p">]</span>
@@ -143,6 +147,9 @@
     <span class="n">col_props</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
         <span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;xs&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span> <span class="s2">&quot;md&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">}</span>
     <span class="p">)</span>
+    <span class="n">dep_param_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">auto_size</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">max_ch</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">40</span>
 
 
 <div class="viewcode-block" id="TypedChartBlock">
@@ -185,13 +192,14 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span>
+        <span class="n">datasource</span><span class="p">:</span> <span class="n">DataSource</span><span class="p">,</span>
         <span class="n">plot_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">plot_params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
         <span class="n">plot_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">plot_title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">controls</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">subscribes_to</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">subscribes_to</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">transform_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="c1"># Styling</span>
         <span class="n">card_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -244,12 +252,13 @@
 <span class="sd">            loading_type: Loading animation type</span>
 <span class="sd">            graph_config: Plotly graph configuration</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">plot_type</span> <span class="o">=</span> <span class="n">plot_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_plot_type</span> <span class="o">=</span> <span class="n">plot_type</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">plot_params</span> <span class="o">=</span> <span class="n">plot_params</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">plot_kwargs</span> <span class="o">=</span> <span class="n">plot_kwargs</span> <span class="ow">or</span> <span class="p">{}</span>  <span class="c1"># KEY: Store for passthrough</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">plot_func</span> <span class="o">=</span> <span class="n">get_plot_function</span><span class="p">(</span><span class="n">plot_type</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plot_func</span> <span class="o">=</span> <span class="n">get_plot_function</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_plot_type</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">controls</span> <span class="o">=</span> <span class="n">controls</span> <span class="ow">or</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">title</span> <span class="ow">or</span> <span class="n">plot_type</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">title</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plot_type</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plot_title</span> <span class="o">=</span> <span class="n">plot_title</span>  <span class="c1"># Dynamic plot title with placeholders</span>
 
         <span class="c1"># Store styling</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">card_style</span> <span class="o">=</span> <span class="n">card_style</span>
@@ -268,6 +277,30 @@
 
         <span class="n">subscribes_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">state</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_chart</span> <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">external_states</span><span class="p">}</span>
 
+        <span class="c1"># Store dep_param_name mapping for datasource parameter resolution</span>
+        <span class="c1"># Format: {state_id: dep_param_name}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dep_param_names</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subscribes_to</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">subscribes_to</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;state_id&quot;</span> <span class="ow">in</span> <span class="n">item</span><span class="p">:</span>
+                    <span class="n">state_id</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;state_id&quot;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="s2">&quot;dep_param_name&quot;</span> <span class="ow">in</span> <span class="n">item</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_dep_param_names</span><span class="p">[</span><span class="n">state_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;dep_param_name&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Extract from embedded controls</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">control_name</span><span class="p">,</span> <span class="n">control_obj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="nb">hasattr</span><span class="p">(</span><span class="n">control_obj</span><span class="p">,</span> <span class="s2">&quot;dep_param_name&quot;</span><span class="p">)</span>
+                    <span class="ow">and</span> <span class="n">control_obj</span><span class="o">.</span><span class="n">dep_param_name</span>
+                <span class="p">):</span>
+                    <span class="c1"># For embedded controls, key is just control_name (after normalization)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_dep_param_names</span><span class="p">[</span><span class="n">control_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">control_obj</span><span class="o">.</span><span class="n">dep_param_name</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Init] Embedded control dep_param_name: &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">control_name</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">control_obj</span><span class="o">.</span><span class="n">dep_param_name</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+
         <span class="c1"># Build publishes for own controls</span>
         <span class="n">publishes_list</span> <span class="o">=</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">&quot;state_id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">block_id</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">ctrl</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;component_prop&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">}</span>
@@ -285,7 +318,7 @@
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Init] </span><span class="si">{</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> | plot_type=</span><span class="si">{</span><span class="n">plot_type</span><span class="si">}</span><span class="s2"> | &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Init] </span><span class="si">{</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> | plot_type=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_plot_type</span><span class="si">}</span><span class="s2"> | &quot;</span>
             <span class="sa">f</span><span class="s2">&quot;controls=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span></div>
 
@@ -376,7 +409,7 @@
 <span class="sd">            &gt;&gt;&gt; fig.write_html(&quot;sales_chart.html&quot;)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">control_values</span> <span class="o">=</span> <span class="n">params</span> <span class="ow">or</span> <span class="p">{}</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_from_controls</span><span class="p">(</span><span class="n">control_values</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_chart</span><span class="p">(</span><span class="n">control_values</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="TypedChartBlock.list_control_inputs">
@@ -469,32 +502,21 @@
         <span class="c1"># CASE 2: State-centric callback passes *args (positional)</span>
         <span class="k">elif</span> <span class="n">args</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;subscribes&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="p">:</span>
             <span class="n">state_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-            <span class="c1"># CRITICAL FIX: args contains values from ALL blocks, not just this one</span>
-            <span class="c1"># We need to extract only the values for THIS block&#39;s subscribed states</span>
-            <span class="k">for</span> <span class="n">state_id</span> <span class="ow">in</span> <span class="n">state_ids</span><span class="p">:</span>
-                <span class="c1"># Find the position of this state_id in the args</span>
-                <span class="c1"># State IDs are ordered consistently across all blocks</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="c1"># Get the position of this state in the global state order</span>
-                    <span class="c1"># FIXED: Based on logs, args order is: [category, category, price, price]</span>
-                    <span class="c1"># So we need to map: filters-category -&gt; args[0], filters-min_price -&gt; args[2]</span>
-                    <span class="c1"># Map to actual args positions (based on observed pattern)</span>
-                    <span class="n">args_mapping</span> <span class="o">=</span> <span class="p">{</span>
-                        <span class="s2">&quot;filters-category&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>  <span class="c1"># args[0] = category</span>
-                        <span class="s2">&quot;filters-min_price&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>  <span class="c1"># args[2] = price (skip args[1] which is duplicate)</span>
-                    <span class="p">}</span>
-                    <span class="k">if</span> <span class="n">state_id</span> <span class="ow">in</span> <span class="n">args_mapping</span><span class="p">:</span>
-                        <span class="n">state_index</span> <span class="o">=</span> <span class="n">args_mapping</span><span class="p">[</span><span class="n">state_id</span><span class="p">]</span>
-                        <span class="k">if</span> <span class="n">state_index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
-                            <span class="n">value</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="n">state_index</span><span class="p">]</span>
-                            <span class="n">control_values</span><span class="p">[</span><span class="n">state_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                                <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Extract] </span><span class="si">{</span><span class="n">state_id</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2"> (from global args[</span><span class="si">{</span><span class="n">state_index</span><span class="si">}</span><span class="s2">])&quot;</span>
-                            <span class="p">)</span>
-                <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Extract] Could not extract </span><span class="si">{</span><span class="n">state_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
-                    <span class="p">)</span>
+            <span class="c1"># For external subscriptions, args should contain values in the same order as state_ids</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">state_ids</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">state_id</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">state_ids</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+                        <span class="n">value</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                        <span class="c1"># Extract control name from state_id: &quot;metric_controls-metric_selector&quot; -&gt; &quot;metric_selector&quot;</span>
+                        <span class="n">control_name</span> <span class="o">=</span> <span class="n">state_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="n">control_values</span><span class="p">[</span><span class="n">control_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Extract] </span><span class="si">{</span><span class="n">control_name</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2"> (from </span><span class="si">{</span><span class="n">state_id</span><span class="si">}</span><span class="s2">)&quot;</span>
+                        <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Extract] Not enough args (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="si">}</span><span class="s2">) for states (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">state_ids</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span>
+                <span class="p">)</span>
 
         <span class="c1"># CASE 3: Initial render (no args/kwargs), use initial values from controls</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">control_values</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="p">:</span>
@@ -506,6 +528,191 @@
                     <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">control_values</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_string_placeholders</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">control_values</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve {{placeholders}} in string values.</span>
+
+<span class="sd">        Supports two modes:</span>
+<span class="sd">        - Standalone: &quot;{{name}}&quot; → returns control value (any type)</span>
+<span class="sd">        - Inline: &quot;Text {{name}}&quot; → string with substitutions</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            value: Value to resolve (any type)</span>
+<span class="sd">            control_values: {control_name: control_value} (may contain normalized keys)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Resolved value (type depends on mode)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">value</span>
+
+        <span class="c1"># Helper function to find control value by name (with suffix matching and reverse mapping)</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">find_control_value</span><span class="p">(</span><span class="n">control_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Find control value by exact match, suffix match, or reverse dep_param_name mapping&quot;&quot;&quot;</span>
+            <span class="c1"># Try exact match first</span>
+            <span class="k">if</span> <span class="n">control_name</span> <span class="ow">in</span> <span class="n">control_values</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="n">control_values</span><span class="p">[</span><span class="n">control_name</span><span class="p">]</span>
+
+            <span class="c1"># Try suffix match: any key ending with &quot;-control_name&quot;</span>
+            <span class="n">suffix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;-</span><span class="si">{</span><span class="n">control_name</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">matching_keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">control_values</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">suffix</span><span class="p">)]</span>
+            <span class="k">if</span> <span class="n">matching_keys</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="n">control_values</span><span class="p">[</span><span class="n">matching_keys</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+
+            <span class="c1"># Try reverse mapping: find normalized key that maps back to this control name</span>
+            <span class="c1"># Check if any control has dep_param_name that matches a key in control_values</span>
+            <span class="k">for</span> <span class="n">ctrl_name</span><span class="p">,</span> <span class="n">ctrl_obj</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">controls</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ctrl_obj</span><span class="p">,</span> <span class="s2">&quot;dep_param_name&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ctrl_obj</span><span class="o">.</span><span class="n">dep_param_name</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="p">(</span>
+                        <span class="n">ctrl_obj</span><span class="o">.</span><span class="n">dep_param_name</span> <span class="ow">in</span> <span class="n">control_values</span>
+                        <span class="ow">and</span> <span class="n">ctrl_name</span> <span class="o">==</span> <span class="n">control_name</span>
+                    <span class="p">):</span>
+                        <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="n">control_values</span><span class="p">[</span><span class="n">ctrl_obj</span><span class="o">.</span><span class="n">dep_param_name</span><span class="p">]</span>
+
+            <span class="c1"># Try embedded controls as fallback</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">control_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span>
+                <span class="ow">and</span> <span class="s2">&quot;value&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="p">[</span><span class="n">control_name</span><span class="p">]</span><span class="o">.</span><span class="n">props</span>
+            <span class="p">):</span>
+                <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="p">[</span><span class="n">control_name</span><span class="p">]</span><span class="o">.</span><span class="n">props</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
+
+            <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span>
+
+        <span class="c1"># Check if entire string is a standalone placeholder</span>
+        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;{{&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">value</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;}}&quot;</span><span class="p">):</span>
+            <span class="n">control_name</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="n">found</span><span class="p">,</span> <span class="n">result</span> <span class="o">=</span> <span class="n">find_control_value</span><span class="p">(</span><span class="n">control_name</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">found</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">result</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Resolve] Standalone placeholder &#39;</span><span class="si">{</span><span class="n">control_name</span><span class="si">}</span><span class="s2">&#39; unresolved → None&quot;</span>
+                <span class="p">)</span>
+                <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="c1"># Handle inline placeholders using regex</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+
+        <span class="n">placeholder_pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;\{\{([a-zA-Z_][a-zA-Z0-9_]*)\}\}&quot;</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">replace_placeholder</span><span class="p">(</span><span class="n">match</span><span class="p">):</span>
+            <span class="n">control_name</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">found</span><span class="p">,</span> <span class="n">result</span> <span class="o">=</span> <span class="n">find_control_value</span><span class="p">(</span><span class="n">control_name</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">found</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Resolve] Inline placeholder &#39;</span><span class="si">{</span><span class="n">control_name</span><span class="si">}</span><span class="s2">&#39; unresolved → empty&quot;</span>
+                <span class="p">)</span>
+                <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">placeholder_pattern</span><span class="p">,</span> <span class="n">replace_placeholder</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_extract_datasource_params</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">control_values</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extract datasource parameters from control values.</span>
+
+<span class="sd">        Routes values to datasource based on:</span>
+<span class="sd">        1. External subscribed states → datasource params (UNLESS used only in plot_params placeholders)</span>
+<span class="sd">        2. NOT embedded controls → pass through if not recognized</span>
+
+<span class="sd">        :hierarchy: [Blocks | Charts | TypedChartBlock | ParamExtraction]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Clear routing of control values to datasource&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_extract_datasource_params&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;control_values has normalized keys&quot;</span>
+<span class="sd">         - post: &quot;Returns {param_name: value} for datasource.get_processed_data()&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            control_values: Normalized {state_id/control_name: value}</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict of parameters for datasource</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Helper: Check if a control is used ONLY in plot_params placeholders (not for datasource)</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">is_plot_params_only</span><span class="p">(</span><span class="n">control_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Returns True if control is referenced in plot_params but should not go to datasource&quot;&quot;&quot;</span>
+            <span class="c1"># Extract short name from state_id (e.g., &quot;quick_card_0-metric_selector_1&quot; → &quot;metric_selector_1&quot;)</span>
+            <span class="n">short_name</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">control_key</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;-&quot;</span> <span class="ow">in</span> <span class="n">control_key</span> <span class="k">else</span> <span class="n">control_key</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Check if used in plot_params as {{placeholder}}</span>
+            <span class="k">for</span> <span class="n">param_value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">plot_params</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="nb">isinstance</span><span class="p">(</span><span class="n">param_value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+                    <span class="ow">and</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">{{{{</span><span class="si">{</span><span class="n">short_name</span><span class="si">}</span><span class="se">}}}}</span><span class="s2">&quot;</span> <span class="ow">in</span> <span class="n">param_value</span>
+                <span class="p">):</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+
+            <span class="c1"># Check plot_kwargs (e.g., title)</span>
+            <span class="k">for</span> <span class="n">kwarg_value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">plot_kwargs</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwarg_value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+                    <span class="ow">and</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">{{{{</span><span class="si">{</span><span class="n">short_name</span><span class="si">}</span><span class="se">}}}}</span><span class="s2">&quot;</span> <span class="ow">in</span> <span class="n">kwarg_value</span>
+                <span class="p">):</span>
+                    <span class="c1"># If used ONLY in title (not in params), it&#39;s visual-only</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="n">datasource_params</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">control_values</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># Rule 1: External subscribed states → datasource (UNLESS plot-params-only)</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span> <span class="ow">or</span> <span class="p">{}):</span>
+                <span class="k">if</span> <span class="n">is_plot_params_only</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Datasource] </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> (external state) &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;→ SKIPPED (used only in plot_params placeholders)&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># Keys are already normalized by _normalize_control_keys</span>
+                <span class="c1"># Check if explicit dep_param_name was provided</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dep_param_names</span><span class="p">:</span>
+                    <span class="n">param_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dep_param_names</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Datasource] </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> (external state) &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;→ datasource param &#39;</span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s2">&#39; (from dep_param_name)&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Use key as-is (already normalized)</span>
+                    <span class="n">param_name</span> <span class="o">=</span> <span class="n">key</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Datasource] </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> (external state) &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;→ datasource param &#39;</span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s2">&#39; (normalized key)&quot;</span>
+                    <span class="p">)</span>
+
+                <span class="n">datasource_params</span><span class="p">[</span><span class="n">param_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+            <span class="c1"># Rule 2: NOT embedded control AND NOT known system key → maybe datasource</span>
+            <span class="k">elif</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">controls</span> <span class="ow">or</span> <span class="p">{})</span> <span class="ow">and</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;section&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">]:</span>
+                <span class="c1"># This is legacy support or external param</span>
+                <span class="n">datasource_params</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Datasource] </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> (unknown) &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;→ datasource param &#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39; (passthrough)&quot;</span>
+                <span class="p">)</span>
+
+            <span class="c1"># Embedded controls: skip (not for datasource)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Datasource] </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> (embedded control) &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;→ skipped&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">datasource_params</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_plot_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">control_values</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -535,20 +742,10 @@
         <span class="n">resolved</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">plot_params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="p">(</span>
-                <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
-                <span class="ow">and</span> <span class="n">value</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;{{&quot;</span><span class="p">)</span>
-                <span class="ow">and</span> <span class="n">value</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;}}&quot;</span><span class="p">)</span>
-            <span class="p">):</span>
-                <span class="c1"># Extract placeholder: {{control_name}} → control_name</span>
-                <span class="n">control_name</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-                <span class="n">resolved</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">control_values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">control_name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Resolve] </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: </span><span class="se">{{{{</span><span class="s2">control_name</span><span class="se">}}}}</span><span class="s2"> → &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">resolved</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">resolved</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="n">resolved</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_string_placeholders</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">control_values</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Resolve] </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">resolved</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">resolved</span>
 
@@ -563,7 +760,7 @@
 <span class="sd">         - uses: [&quot;method: &#39;get_processed_data&#39;&quot;, &quot;registered plot function&quot;]</span>
 
 <span class="sd">        :contract:</span>
-<span class="sd">         - pre: &quot;Subscribed state values in *args&quot;</span>
+<span class="sd">         - pre: &quot;args[0] is {state_id: value} dict or initial values dict&quot;</span>
 <span class="sd">         - post: &quot;Returns figure from plot function&quot;</span>
 <span class="sd">         - data_flow: &quot;params → get_processed_data(params) → df → plot_func(df, **kwargs)&quot;</span>
 <span class="sd">         - kwargs_flow: &quot;plot_kwargs passed to plot function&quot;</span>
@@ -572,31 +769,30 @@
 <span class="sd">        :decision_cache: &quot;Single update method handles all plot types via registry&quot;</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            *args: Control values from subscribed states</span>
+<span class="sd">            *args: Control values from subscribed states (dict with state IDs)</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Plotly Figure from registered plot function</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># CRITICAL: Block-centric callbacks pass control_values dict as first positional arg</span>
         <span class="c1"># Log what we receive for debugging</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Update] _update_chart called with args=</span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s2">, &quot;</span>
             <span class="sa">f</span><span class="s2">&quot;args types=</span><span class="si">{</span><span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">args</span><span class="p">]</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">args</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">[]</span><span class="si">}</span><span class="s2">, kwargs=</span><span class="si">{</span><span class="n">kwargs</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
 
-        <span class="c1"># Check if first arg is a dict (block-centric) or individual values (state-centric)</span>
-        <span class="k">if</span> <span class="n">args</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="c1"># Block-centric: first arg is control_values dict</span>
+        <span class="c1"># Check if first arg is a dict (multi-state or block-centric) or individual values (legacy)</span>
+        <span class="k">if</span> <span class="n">args</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="c1"># Multi-state or block-centric: first arg is control_values dict with state IDs</span>
             <span class="n">control_values</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Update] </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> | &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;plot_type=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">plot_type</span><span class="si">}</span><span class="s2"> | mode=block-centric | controls=</span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">control_values</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;plot_type=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_plot_type</span><span class="si">}</span><span class="s2"> | mode=dict | controls=</span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">control_values</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># State-centric or initial render</span>
+            <span class="c1"># Legacy state-centric or initial render</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Update] </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> | &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;plot_type=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">plot_type</span><span class="si">}</span><span class="s2"> | mode=state-centric | args=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;plot_type=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_plot_type</span><span class="si">}</span><span class="s2"> | mode=legacy | args=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
             <span class="n">control_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_control_values</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
 
@@ -605,18 +801,11 @@
                 <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Update] control_values=</span><span class="si">{</span><span class="n">control_values</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
-            <span class="c1"># CRITICAL: Separate plot params from datasource params</span>
-            <span class="c1"># Plot params (x_col, feature, mode) are THIS block&#39;s controls → NOT for datasource</span>
-            <span class="c1"># Datasource params (session_controls-*) are EXTERNAL states → FOR datasource</span>
-            <span class="n">datasource_params</span> <span class="o">=</span> <span class="p">{}</span>
-
-            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">(</span><span class="n">control_values</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="c1"># If param is NOT from this block&#39;s controls → it&#39;s external state → for datasource</span>
-                <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="p">:</span>
-                    <span class="n">datasource_params</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="c1"># Use new method for clear datasource parameter routing</span>
+            <span class="n">datasource_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_datasource_params</span><span class="p">(</span><span class="n">control_values</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|ParamSplit] block_controls=</span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|ParamSplit] &quot;</span>
                 <span class="sa">f</span><span class="s2">&quot;datasource_params=</span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">datasource_params</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
@@ -627,11 +816,35 @@
             <span class="p">)</span>
 
             <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+                <span class="c1"># Build context-aware error message</span>
+                <span class="n">error_context</span> <span class="o">=</span> <span class="p">[]</span>
+
+                <span class="c1"># Check if filters were applied</span>
+                <span class="k">if</span> <span class="n">datasource_params</span><span class="p">:</span>
+                    <span class="n">applied_filters</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">datasource_params</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
+                    <span class="n">error_context</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Applied filters: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">applied_filters</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">error_context</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;No filters applied&quot;</span><span class="p">)</span>
+
+                <span class="c1"># Check if external states were used</span>
+                <span class="n">external_states</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">control_values</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span> <span class="ow">or</span> <span class="p">{})</span>
+                <span class="p">]</span>
+                <span class="k">if</span> <span class="n">external_states</span><span class="p">:</span>
+                    <span class="n">error_context</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;External states: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">external_states</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+
+                <span class="n">context_msg</span> <span class="o">=</span> <span class="s2">&quot; | &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">error_context</span><span class="p">)</span>
+
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Update] Empty DataFrame for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Update] Empty DataFrame for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">context_msg</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
+
                 <span class="k">return</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span><span class="o">.</span><span class="n">add_annotation</span><span class="p">(</span>
-                    <span class="n">text</span><span class="o">=</span><span class="s2">&quot;No data available&quot;</span><span class="p">,</span>
+                    <span class="n">text</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;No data available (</span><span class="si">{</span><span class="n">context_msg</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span>
                     <span class="n">showarrow</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                     <span class="n">xref</span><span class="o">=</span><span class="s2">&quot;paper&quot;</span><span class="p">,</span>
                     <span class="n">yref</span><span class="o">=</span><span class="s2">&quot;paper&quot;</span><span class="p">,</span>
@@ -642,16 +855,31 @@
             <span class="c1"># Resolve plot params (replace {{placeholders}})</span>
             <span class="n">resolved_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_plot_params</span><span class="p">(</span><span class="n">control_values</span><span class="p">)</span>
 
-            <span class="c1"># Merge with plot_kwargs from constructor</span>
-            <span class="n">all_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">resolved_params</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">plot_kwargs</span><span class="p">}</span>
+            <span class="c1"># Resolve plot_kwargs (replace {{placeholders}})</span>
+            <span class="n">resolved_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">k</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_string_placeholders</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">control_values</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">plot_kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Add dynamic plot_title if provided</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">plot_title</span><span class="p">:</span>
+                <span class="n">resolved_plot_title</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_string_placeholders</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">plot_title</span><span class="p">,</span> <span class="n">control_values</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="n">resolved_plot_title</span><span class="p">:</span>
+                    <span class="n">resolved_kwargs</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">resolved_plot_title</span>
+
+            <span class="c1"># Drop None values</span>
+            <span class="n">all_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">resolved_kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">}</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Update] Calling plot function | &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;params=</span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">all_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;resolved_params=</span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">resolved_params</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2"> | &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;all_kwargs=</span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">all_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
-            <span class="c1"># Call registered plot function with ALL kwargs</span>
-            <span class="n">figure</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">plot_func</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="o">**</span><span class="n">all_kwargs</span><span class="p">)</span>
+            <span class="c1"># Call registered plot function with resolved params and kwargs</span>
+            <span class="n">figure</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">plot_func</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="o">**</span><span class="n">resolved_params</span><span class="p">,</span> <span class="o">**</span><span class="n">all_kwargs</span><span class="p">)</span>
 
             <span class="c1"># Apply theme if available</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="p">:</span>
@@ -698,13 +926,32 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Dash Component (Card with chart)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Initialize with current chart</span>
-        <span class="n">initial_chart</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_chart</span><span class="p">()</span>
+        <span class="c1"># Collect initial values from BOTH embedded controls AND external states</span>
+        <span class="n">initial_values</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">name</span><span class="p">:</span> <span class="n">ctrl</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">ctrl</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">controls</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Add external state initial values if available</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_initial_external_values&quot;</span><span class="p">):</span>
+            <span class="n">external_states</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span> <span class="k">else</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">state_id</span> <span class="ow">in</span> <span class="n">external_states</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">state_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_external_values</span><span class="p">:</span>
+                    <span class="n">initial_values</span><span class="p">[</span><span class="n">state_id</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_external_values</span><span class="p">[</span><span class="n">state_id</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Layout] Initial render | &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;embedded_controls=</span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">[]</span><span class="si">}</span><span class="s2"> | &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;external_states=</span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">[]</span><span class="si">}</span><span class="s2"> | &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;initial_values=</span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">initial_values</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+        <span class="n">initial_chart</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_chart</span><span class="p">(</span><span class="n">initial_values</span><span class="p">)</span>
 
         <span class="c1"># Build card components</span>
         <span class="n">card_content</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="c1"># Title</span>
+        <span class="c1"># Title (static card title, no placeholders supported)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">:</span>
             <span class="n">themed_title_style</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_themed_style</span><span class="p">(</span>
                 <span class="s2">&quot;card&quot;</span><span class="p">,</span> <span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_style</span>
@@ -713,15 +960,85 @@
             <span class="k">if</span> <span class="n">themed_title_style</span><span class="p">:</span>
                 <span class="n">title_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">themed_title_style</span>
 
-            <span class="n">card_content</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">html</span><span class="o">.</span><span class="n">H4</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="o">**</span><span class="n">title_props</span><span class="p">))</span>
+            <span class="c1"># Static title: render once (no placeholders in card title)</span>
+            <span class="n">title_component</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">H4</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="o">**</span><span class="n">title_props</span><span class="p">)</span>
+            <span class="n">card_content</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">title_component</span><span class="p">)</span>
 
         <span class="c1"># Controls row (if present)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="p">:</span>
             <span class="n">control_components</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">control</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">comp_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_id</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-                <span class="n">comp</span> <span class="o">=</span> <span class="n">control</span><span class="o">.</span><span class="n">component</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">comp_id</span><span class="p">,</span> <span class="o">**</span><span class="n">control</span><span class="o">.</span><span class="n">props</span><span class="p">)</span>
-                <span class="n">col</span> <span class="o">=</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Col</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">control</span><span class="o">.</span><span class="n">col_props</span> <span class="ow">or</span> <span class="p">{}))</span>
+
+                <span class="c1"># Apply auto-size logic if enabled</span>
+                <span class="k">if</span> <span class="n">control</span><span class="o">.</span><span class="n">auto_size</span><span class="p">:</span>
+                    <span class="n">comp_props</span> <span class="o">=</span> <span class="n">control</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                    <span class="n">col_props</span> <span class="o">=</span> <span class="p">(</span><span class="n">control</span><span class="o">.</span><span class="n">col_props</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+                    <span class="c1"># Ensure column uses md=&quot;auto&quot; if not explicitly set</span>
+                    <span class="k">if</span> <span class="s2">&quot;md&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">col_props</span><span class="p">:</span>
+                        <span class="n">col_props</span><span class="p">[</span><span class="s2">&quot;md&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span>
+
+                    <span class="c1"># Apply auto-size styling based on component type</span>
+                    <span class="k">if</span> <span class="n">control</span><span class="o">.</span><span class="n">component</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;Dropdown&quot;</span><span class="p">:</span>  <span class="c1"># dcc.Dropdown</span>
+                        <span class="c1"># Compute longest label for min-width</span>
+                        <span class="n">longest_label_ch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_longest_label_ch</span><span class="p">(</span>
+                            <span class="n">comp_props</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;options&quot;</span><span class="p">,</span> <span class="p">[])</span>
+                        <span class="p">)</span>
+                        <span class="n">cap</span> <span class="o">=</span> <span class="n">control</span><span class="o">.</span><span class="n">max_ch</span> <span class="ow">or</span> <span class="mi">40</span>
+                        <span class="n">min_width_ch</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">longest_label_ch</span> <span class="o">+</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">cap</span><span class="p">)</span>
+
+                        <span class="c1"># Build auto-size style</span>
+                        <span class="n">auto_style</span> <span class="o">=</span> <span class="p">{</span>
+                            <span class="s2">&quot;display&quot;</span><span class="p">:</span> <span class="s2">&quot;inline-block&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="s2">&quot;fit-content&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;maxWidth&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cap</span><span class="si">}</span><span class="s2">ch&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">min_width_ch</span><span class="si">}</span><span class="s2">ch&quot;</span><span class="p">,</span>
+                        <span class="p">}</span>
+
+                        <span class="c1"># Merge with existing style</span>
+                        <span class="n">existing_style</span> <span class="o">=</span> <span class="n">comp_props</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;style&quot;</span><span class="p">,</span> <span class="p">{})</span>
+                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">existing_style</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                            <span class="n">auto_style</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">existing_style</span><span class="p">)</span>
+                        <span class="n">comp_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">auto_style</span>
+
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|AutoSize] Applied dcc.Dropdown auto-size | &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;longest_label=</span><span class="si">{</span><span class="n">longest_label_ch</span><span class="si">}</span><span class="s2">ch | min_width=</span><span class="si">{</span><span class="n">min_width_ch</span><span class="si">}</span><span class="s2">ch | max_width=</span><span class="si">{</span><span class="n">cap</span><span class="si">}</span><span class="s2">ch&quot;</span>
+                        <span class="p">)</span>
+
+                    <span class="k">elif</span> <span class="n">control</span><span class="o">.</span><span class="n">component</span><span class="o">.</span><span class="vm">__name__</span> <span class="ow">in</span> <span class="p">[</span>
+                        <span class="s2">&quot;Select&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Input&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Switch&quot;</span><span class="p">,</span>
+                    <span class="p">]:</span>  <span class="c1"># dbc components</span>
+                        <span class="c1"># Add Bootstrap w-auto class</span>
+                        <span class="n">existing_class</span> <span class="o">=</span> <span class="n">comp_props</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;className&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="s2">&quot;w-auto&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">existing_class</span><span class="p">:</span>
+                            <span class="n">comp_props</span><span class="p">[</span><span class="s2">&quot;className&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">existing_class</span><span class="si">}</span><span class="s2"> w-auto&quot;</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+                        <span class="c1"># Add character-based width constraints</span>
+                        <span class="n">cap</span> <span class="o">=</span> <span class="n">control</span><span class="o">.</span><span class="n">max_ch</span> <span class="ow">or</span> <span class="mi">40</span>
+                        <span class="n">auto_style</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="s2">&quot;10ch&quot;</span><span class="p">,</span> <span class="s2">&quot;maxWidth&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cap</span><span class="si">}</span><span class="s2">ch&quot;</span><span class="p">}</span>
+
+                        <span class="c1"># Merge with existing style</span>
+                        <span class="n">existing_style</span> <span class="o">=</span> <span class="n">comp_props</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;style&quot;</span><span class="p">,</span> <span class="p">{})</span>
+                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">existing_style</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                            <span class="n">auto_style</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">existing_style</span><span class="p">)</span>
+                        <span class="n">comp_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">auto_style</span>
+
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|AutoSize] Applied dbc.</span><span class="si">{</span><span class="n">control</span><span class="o">.</span><span class="n">component</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> auto-size | &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;max_width=</span><span class="si">{</span><span class="n">cap</span><span class="si">}</span><span class="s2">ch&quot;</span>
+                        <span class="p">)</span>
+
+                    <span class="n">comp</span> <span class="o">=</span> <span class="n">control</span><span class="o">.</span><span class="n">component</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">comp_id</span><span class="p">,</span> <span class="o">**</span><span class="n">comp_props</span><span class="p">)</span>
+                    <span class="n">col</span> <span class="o">=</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Col</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="o">**</span><span class="n">col_props</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Standard rendering without auto-size</span>
+                    <span class="n">comp</span> <span class="o">=</span> <span class="n">control</span><span class="o">.</span><span class="n">component</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">comp_id</span><span class="p">,</span> <span class="o">**</span><span class="n">control</span><span class="o">.</span><span class="n">props</span><span class="p">)</span>
+                    <span class="n">col</span> <span class="o">=</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Col</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">control</span><span class="o">.</span><span class="n">col_props</span> <span class="ow">or</span> <span class="p">{}))</span>
+
                 <span class="n">control_components</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
 
             <span class="n">controls_row</span> <span class="o">=</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span><span class="n">control_components</span><span class="p">,</span> <span class="n">className</span><span class="o">=</span><span class="s2">&quot;mb-1&quot;</span><span class="p">)</span>
@@ -762,7 +1079,44 @@
             <span class="n">card_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">themed_card_style</span>
 
         <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Card</span><span class="p">(</span><span class="n">dbc</span><span class="o">.</span><span class="n">CardBody</span><span class="p">(</span><span class="n">card_content</span><span class="p">),</span> <span class="o">**</span><span class="n">card_props</span><span class="p">)</span></div>
-</div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_longest_label_ch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the longest label length in characters from dropdown options.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Charts | TypedChartBlock | AutoSize]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Auto-size controls need to know content width for min-width calculation&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_compute_longest_label_ch&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;options is list of strings or dicts with label/value&quot;</span>
+<span class="sd">         - post: &quot;Returns integer character count of longest label&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            options: List of option strings or dicts with &#39;label&#39; or &#39;value&#39; keys</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Character count of longest label (minimum 1)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">options</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+
+        <span class="n">max_length</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">option</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">option</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">option</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">option</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="c1"># Try &#39;label&#39; first, then &#39;value&#39; as fallback</span>
+                <span class="n">text</span> <span class="o">=</span> <span class="n">option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;label&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">text</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">option</span><span class="p">))</span>
+
+            <span class="n">max_length</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">max_length</span><span class="p">,</span> <span class="n">length</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">max_length</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># Minimum 1 character</span></div>
 
 </pre></div>
 

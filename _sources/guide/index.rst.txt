@@ -21,5 +21,6 @@ This comprehensive guide provides detailed documentation of all modules, classes
    presets
    utils
    patterns
+   magics
    contracts
    reference

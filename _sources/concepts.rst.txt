@@ -251,7 +251,7 @@ Example Scenarios
 .. code-block:: python
 
    # Global filter applies first, then block transform
-   datasource = BaseDataSource(
+   datasource = DataSource(
        data_builder=builder,
        data_transformer=DateRangeFilter()  # Global filter
    )

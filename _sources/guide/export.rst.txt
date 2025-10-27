@@ -14,7 +14,7 @@ Export individual chart blocks using the ``get_figure()`` method:
 .. code-block:: python
 
    from dashboard_lego.blocks import TypedChartBlock
-   from dashboard_lego.core import BaseDataSource, DataBuilder
+   from dashboard_lego.core import DataSource, DataBuilder
 
    # Create chart block
    chart = TypedChartBlock(

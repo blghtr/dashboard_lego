@@ -1,0 +1,776 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IPython Magic Commands &mdash; Dashboard Lego 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Contracts and Guarantees" href="contracts.html" />
+    <link rel="prev" title="Integration Patterns" href="patterns.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Dashboard Lego
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../concepts.html">Core Concepts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Comprehensive Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Comprehensive API Guide</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">IPython Magic Commands</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dashboard-creation">Dashboard Creation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#quick-dashboard-from-dataframe">Quick Dashboard from DataFrame</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cell-magic-dashboard">Cell Magic Dashboard</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#understanding-control-bindings">Understanding Control Bindings</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#how-controls-wire-together-new">How Controls Wire Together (NEW)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#yaml-example-control-panel-with-chart">YAML Example: Control Panel with Chart</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#multiple-charts-from-one-control-panel">Multiple Charts from One Control Panel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#advanced-chart-with-embedded-controls">Advanced: Chart with Embedded Controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dynamic-marker-size-configuration">Dynamic Marker Size Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#state-id-anatomy">State ID Anatomy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#explicit-parameter-naming-with-dep-param-name">Explicit Parameter Naming with dep_param_name</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#practical-workflow">Practical Workflow</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#theme-management">Theme Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#plotly-export">Plotly Export</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#export-figures-to-files">Export Figures to Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#display-in-notebook">Display in Notebook</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#batch-export">Batch Export</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#common-patterns">Common Patterns</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#error-messages">Error Messages</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/modules.html">API Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing to Dashboard Lego</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Dashboard Lego</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Comprehensive API Guide</a></li>
+      <li class="breadcrumb-item active">IPython Magic Commands</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guide/magics.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="ipython-magic-commands">
+<span id="guide-magics"></span><h1>IPython Magic Commands<a class="headerlink" href="#ipython-magic-commands" title="Link to this heading"></a></h1>
+<p>Dashboard Lego provides IPython magic commands for ultra-fast dashboard creation and Plotly figure export directly from Jupyter notebooks.</p>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<p>First, load the extension in your Jupyter notebook:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="n">load_ext</span> <span class="n">dashboard_lego</span><span class="o">.</span><span class="n">ipython_magics</span>
+</pre></div>
+</div>
+</section>
+<section id="dashboard-creation">
+<h2>Dashboard Creation<a class="headerlink" href="#dashboard-creation" title="Link to this heading"></a></h2>
+<section id="quick-dashboard-from-dataframe">
+<h3>Quick Dashboard from DataFrame<a class="headerlink" href="#quick-dashboard-from-dataframe" title="Link to this heading"></a></h3>
+<p>Create dashboards from DataFrame variables with minimal code:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load data</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;sales_data.csv&#39;</span><span class="p">)</span>
+
+<span class="c1"># Create dashboard with metrics and charts</span>
+<span class="o">%</span><span class="n">dashboard</span> <span class="n">df</span>
+  <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Sales Dashboard&quot;</span>
+  <span class="n">theme</span><span class="p">:</span> <span class="n">lux</span>
+  <span class="n">metrics</span><span class="p">:</span>
+    <span class="o">-</span> <span class="n">column</span><span class="p">:</span> <span class="n">Sales</span>
+      <span class="n">agg</span><span class="p">:</span> <span class="nb">sum</span>
+      <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Total Sales&quot;</span>
+      <span class="n">color</span><span class="p">:</span> <span class="n">success</span>
+    <span class="o">-</span> <span class="n">column</span><span class="p">:</span> <span class="n">Profit</span>
+      <span class="n">agg</span><span class="p">:</span> <span class="nb">sum</span>
+      <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Total Profit&quot;</span>
+      <span class="n">color</span><span class="p">:</span> <span class="n">info</span>
+  <span class="n">charts</span><span class="p">:</span>
+    <span class="o">-</span> <span class="n">plot_type</span><span class="p">:</span> <span class="n">bar</span>
+      <span class="n">x</span><span class="p">:</span> <span class="n">Product</span>
+      <span class="n">y</span><span class="p">:</span> <span class="n">Sales</span>
+      <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Sales by Product&quot;</span>
+    <span class="o">-</span> <span class="n">plot_type</span><span class="p">:</span> <span class="n">line</span>
+      <span class="n">x</span><span class="p">:</span> <span class="n">Date</span>
+      <span class="n">y</span><span class="p">:</span> <span class="n">Sales</span>
+      <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Sales Trend&quot;</span>
+  <span class="n">text</span><span class="p">:</span>
+    <span class="o">-</span> <span class="s2">&quot;## Summary&quot;</span>
+    <span class="o">-</span> <span class="s2">&quot;Key insights from the data&quot;</span>
+
+<span class="c1"># Simple single chart dashboard</span>
+<span class="o">%</span><span class="n">dashboard</span> <span class="n">df</span>
+  <span class="n">charts</span><span class="p">:</span>
+    <span class="o">-</span> <span class="n">plot_type</span><span class="p">:</span> <span class="n">scatter</span>
+      <span class="n">x</span><span class="p">:</span> <span class="n">Price</span>
+      <span class="n">y</span><span class="p">:</span> <span class="n">Sales</span>
+      <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Price vs Sales&quot;</span>
+</pre></div>
+</div>
+<p><strong>Configuration Keys:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">dataframe</span></code>: Name of DataFrame variable (required)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">title</span></code>: Dashboard title</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">theme</span></code>: Theme name (uses current preference if not specified)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">port</span></code>: Server port (default: 8050)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">environment</span></code>: List of variable names to import from IPython namespace</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cards</span></code>: List of card specifications with optional controls</p></li>
+</ul>
+<p><strong>Card Types:</strong>
+- <strong>Metric:</strong> <code class="docutils literal notranslate"><span class="pre">column</span></code>, <code class="docutils literal notranslate"><span class="pre">agg</span></code>, <code class="docutils literal notranslate"><span class="pre">title</span></code>, <code class="docutils literal notranslate"><span class="pre">color</span></code> (optional)
+- <strong>Chart:</strong> <code class="docutils literal notranslate"><span class="pre">plot_type</span></code>, <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code>, <code class="docutils literal notranslate"><span class="pre">title</span></code>, <code class="docutils literal notranslate"><span class="pre">controls</span></code> (optional)
+- <strong>Minimal Chart:</strong> <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code>, <code class="docutils literal notranslate"><span class="pre">title</span></code>, <code class="docutils literal notranslate"><span class="pre">plot_type</span></code> (optional, defaults to scatter), <code class="docutils literal notranslate"><span class="pre">controls</span></code> (optional)
+- <strong>Text:</strong> <code class="docutils literal notranslate"><span class="pre">content</span></code>
+- <strong>Control Panel:</strong> <code class="docutils literal notranslate"><span class="pre">title</span></code>, <code class="docutils literal notranslate"><span class="pre">controls</span></code></p>
+<p><strong>Control Types:</strong>
+- <strong>Dropdown:</strong> <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">type:</span> <span class="pre">dropdown</span></code>, <code class="docutils literal notranslate"><span class="pre">options</span></code>, <code class="docutils literal notranslate"><span class="pre">value</span></code>, <code class="docutils literal notranslate"><span class="pre">col_props</span></code>
+- <strong>Slider:</strong> <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">type:</span> <span class="pre">slider</span></code>, <code class="docutils literal notranslate"><span class="pre">min</span></code>, <code class="docutils literal notranslate"><span class="pre">max</span></code>, <code class="docutils literal notranslate"><span class="pre">step</span></code>, <code class="docutils literal notranslate"><span class="pre">value</span></code>, <code class="docutils literal notranslate"><span class="pre">marks</span></code>
+- <strong>Input:</strong> <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">type:</span> <span class="pre">input</span></code>, <code class="docutils literal notranslate"><span class="pre">input_type</span></code>, <code class="docutils literal notranslate"><span class="pre">placeholder</span></code>, <code class="docutils literal notranslate"><span class="pre">value</span></code></p>
+<p><strong>Environment Variables:</strong>
+- Use <code class="docutils literal notranslate"><span class="pre">$variable_name</span></code> syntax to reference variables from IPython namespace
+- Variables must be declared in <code class="docutils literal notranslate"><span class="pre">environment</span></code> list for security</p>
+<p>Available themes: lux, dark, light, cyborg, slate, solar, superhero, minty, flatly, cosmo, cerulean, journal, litera, lumen, pulse, sandstone, simplex, sketchy, spacelab, united, yeti</p>
+</section>
+<section id="cell-magic-dashboard">
+<h3>Cell Magic Dashboard<a class="headerlink" href="#cell-magic-dashboard" title="Link to this heading"></a></h3>
+<p>Create dashboards using YAML configuration in notebook cells with support for controls and environment variables:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="o">%%</span><span class="n">dashboard_cell</span>
+<span class="n">dataframe</span><span class="p">:</span> <span class="n">df</span>
+<span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Sales Dashboard&quot;</span>
+<span class="n">theme</span><span class="p">:</span> <span class="n">lux</span>
+<span class="n">environment</span><span class="p">:</span>
+  <span class="o">-</span> <span class="n">metric_options</span>
+  <span class="o">-</span> <span class="n">color_palette</span>
+<span class="n">cards</span><span class="p">:</span>
+  <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">metric</span>
+    <span class="n">column</span><span class="p">:</span> <span class="n">Sales</span>
+    <span class="n">agg</span><span class="p">:</span> <span class="nb">sum</span>
+    <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Total Sales&quot;</span>
+    <span class="n">color</span><span class="p">:</span> <span class="n">success</span>
+  <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">chart</span>
+    <span class="n">plot_type</span><span class="p">:</span> <span class="n">scatter</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Product</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">Sales</span>
+    <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Sales Analysis&quot;</span>
+    <span class="n">controls</span><span class="p">:</span>
+      <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="n">metric_selector</span>
+        <span class="nb">type</span><span class="p">:</span> <span class="n">dropdown</span>
+        <span class="n">options</span><span class="p">:</span> <span class="err">$</span><span class="n">metric_options</span>
+        <span class="n">value</span><span class="p">:</span> <span class="s2">&quot;Sales&quot;</span>
+        <span class="n">col_props</span><span class="p">:</span> <span class="p">{</span><span class="n">xs</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span> <span class="n">md</span><span class="p">:</span> <span class="mi">6</span><span class="p">}</span>
+      <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="n">year_slider</span>
+        <span class="nb">type</span><span class="p">:</span> <span class="n">slider</span>
+        <span class="nb">min</span><span class="p">:</span> <span class="mi">2020</span>
+        <span class="nb">max</span><span class="p">:</span> <span class="mi">2024</span>
+        <span class="n">step</span><span class="p">:</span> <span class="mi">1</span>
+        <span class="n">value</span><span class="p">:</span> <span class="mi">2023</span>
+        <span class="n">marks</span><span class="p">:</span> <span class="p">{</span><span class="mi">2020</span><span class="p">:</span> <span class="s2">&quot;2020&quot;</span><span class="p">,</span> <span class="mi">2024</span><span class="p">:</span> <span class="s2">&quot;2024&quot;</span><span class="p">}</span>
+        <span class="n">col_props</span><span class="p">:</span> <span class="p">{</span><span class="n">xs</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span> <span class="n">md</span><span class="p">:</span> <span class="mi">6</span><span class="p">}</span>
+  <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">text</span>
+    <span class="n">content</span><span class="p">:</span> <span class="o">|</span>
+      <span class="c1">## Summary</span>
+
+      <span class="n">Key</span> <span class="n">insights</span> <span class="kn">from</span><span class="w"> </span><span class="nn">the</span> <span class="n">data</span><span class="p">:</span>
+      <span class="o">-</span> <span class="n">Sales</span> <span class="n">increased</span> <span class="n">by</span> <span class="mi">15</span><span class="o">%</span> <span class="n">this</span> <span class="n">quarter</span>
+      <span class="o">-</span> <span class="n">Top</span> <span class="n">performing</span> <span class="n">product</span> <span class="ow">is</span> <span class="n">Electronics</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="understanding-control-bindings">
+<h2>Understanding Control Bindings<a class="headerlink" href="#understanding-control-bindings" title="Link to this heading"></a></h2>
+<section id="how-controls-wire-together-new">
+<h3>How Controls Wire Together (NEW)<a class="headerlink" href="#how-controls-wire-together-new" title="Link to this heading"></a></h3>
+<p>Controls define what gets controlled through <strong>state identifiers</strong>. Here’s how it works:</p>
+<p><strong>1. Control Panel Publishes State</strong></p>
+<p>When you define a ControlPanelBlock with controls, each control publishes its value as a state:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ControlPanelBlock</span><span class="p">(</span>
+    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;filters&quot;</span><span class="p">,</span>  <span class="c1"># ← This becomes part of state ID</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Filters&quot;</span><span class="p">,</span>
+    <span class="n">controls</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span><span class="o">...</span><span class="p">),</span>  <span class="c1"># ← State ID: &quot;filters-category&quot;</span>
+        <span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>      <span class="c1"># ← State ID: &quot;filters-price&quot;</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>State ID formula:</strong> <code class="docutils literal notranslate"><span class="pre">{block_id}-{control_name}</span></code></p>
+<p>Examples:
+- <code class="docutils literal notranslate"><span class="pre">filters-category</span></code>
+- <code class="docutils literal notranslate"><span class="pre">filters-price</span></code>
+- <code class="docutils literal notranslate"><span class="pre">session_controls-duration</span></code></p>
+<p><strong>2. Chart/Metric Subscribes to State</strong></p>
+<p>Other blocks subscribe to these state IDs using <code class="docutils literal notranslate"><span class="pre">subscribes_to</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">TypedChartBlock</span><span class="p">(</span>
+    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;sales_chart&quot;</span><span class="p">,</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;bar&quot;</span><span class="p">,</span>
+    <span class="n">plot_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="s2">&quot;Product&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="s2">&quot;Sales&quot;</span><span class="p">},</span>
+    <span class="n">subscribes_to</span><span class="o">=</span><span class="s2">&quot;filters-category&quot;</span>  <span class="c1"># ← Subscribe to control panel state</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>3. State Changes Trigger Updates</strong></p>
+<p>When user changes control value → state updates → all subscribers re-render</p>
+</section>
+<section id="yaml-example-control-panel-with-chart">
+<h3>YAML Example: Control Panel with Chart<a class="headerlink" href="#yaml-example-control-panel-with-chart" title="Link to this heading"></a></h3>
+<p>Here’s a complete example showing how controls bind to charts:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="err">%%</span><span class="l l-Scalar l-Scalar-Plain">dashboard_cell</span>
+<span class="l l-Scalar l-Scalar-Plain">dataframe</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">df</span>
+<span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Interactive</span><span class="nv"> </span><span class="s">Dashboard&quot;</span>
+<span class="nt">cards</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># STEP 1: Define control panel</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">control_panel</span>
+<span class="w">    </span><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Filters&quot;</span>
+<span class="w">    </span><span class="nt">controls</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">category</span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dropdown</span>
+<span class="w">        </span><span class="nt">options</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Electronics&quot;</span><span class="p p-Indicator">,</span><span class="nt"> value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Electronics&quot;</span><span class="p p-Indicator">}</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Furniture&quot;</span><span class="p p-Indicator">,</span><span class="nt"> value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Furniture&quot;</span><span class="p p-Indicator">}</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Office</span><span class="nv"> </span><span class="s">Supplies&quot;</span><span class="p p-Indicator">,</span><span class="nt"> value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Supplies&quot;</span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Electronics&quot;</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">min_price</span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">slider</span>
+<span class="w">        </span><span class="nt">min</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="w">        </span><span class="nt">max</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1000</span>
+<span class="w">        </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
+
+<span class="w">  </span><span class="c1"># STEP 2: Chart subscribes to control panel states</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">chart</span>
+<span class="w">    </span><span class="nt">plot_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">scatter</span>
+<span class="w">    </span><span class="nt">x</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Product</span>
+<span class="w">    </span><span class="nt">y</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Sales</span>
+<span class="w">    </span><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Sales</span><span class="nv"> </span><span class="s">by</span><span class="nv"> </span><span class="s">Category&quot;</span>
+<span class="w">    </span><span class="c1"># Subscribe to BOTH controls</span>
+<span class="w">    </span><span class="nt">subscribes_to</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;control_panel-category&quot;</span><span class="w">    </span><span class="c1"># Listens to category dropdown</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;control_panel-min_price&quot;</span><span class="w">   </span><span class="c1"># Listens to price slider</span>
+</pre></div>
+</div>
+<p><strong>What Happens:</strong></p>
+<ol class="arabic simple">
+<li><p>Control panel block_id is automatically <code class="docutils literal notranslate"><span class="pre">control_panel</span></code> in cell magic</p></li>
+<li><p>Control names become state suffixes: <code class="docutils literal notranslate"><span class="pre">control_panel-category</span></code>, <code class="docutils literal notranslate"><span class="pre">control_panel-min_price</span></code></p></li>
+<li><p>Chart subscribes to these states</p></li>
+<li><p>When dropdown changes → state <code class="docutils literal notranslate"><span class="pre">control_panel-category</span></code> updates → chart re-renders</p></li>
+<li><p>When slider changes → state <code class="docutils literal notranslate"><span class="pre">control_panel-min_price</span></code> updates → chart re-renders</p></li>
+</ol>
+</section>
+<section id="multiple-charts-from-one-control-panel">
+<h3>Multiple Charts from One Control Panel<a class="headerlink" href="#multiple-charts-from-one-control-panel" title="Link to this heading"></a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="err">%%</span><span class="l l-Scalar l-Scalar-Plain">dashboard_cell</span>
+<span class="l l-Scalar l-Scalar-Plain">dataframe</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">df</span>
+<span class="nt">cards</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># Single control panel</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">control_panel</span>
+<span class="w">    </span><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Filters&quot;</span>
+<span class="w">    </span><span class="nt">controls</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">region</span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dropdown</span>
+<span class="w">        </span><span class="nt">options</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$region_list</span>
+<span class="w">        </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;North</span><span class="nv"> </span><span class="s">America&quot;</span>
+
+<span class="w">  </span><span class="c1"># Chart 1 subscribes</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">chart</span>
+<span class="w">    </span><span class="nt">plot_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bar</span>
+<span class="w">    </span><span class="nt">x</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Product</span>
+<span class="w">    </span><span class="nt">y</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Revenue</span>
+<span class="w">    </span><span class="nt">subscribes_to</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;control_panel-region&quot;</span>
+
+<span class="w">  </span><span class="c1"># Chart 2 subscribes to SAME control</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">chart</span>
+<span class="w">    </span><span class="nt">plot_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">line</span>
+<span class="w">    </span><span class="nt">x</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Month</span>
+<span class="w">    </span><span class="nt">y</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Profit</span>
+<span class="w">    </span><span class="nt">subscribes_to</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;control_panel-region&quot;</span>
+</pre></div>
+</div>
+<p>Result: Changing region filter updates <strong>both</strong> charts</p>
+</section>
+<section id="advanced-chart-with-embedded-controls">
+<h3>Advanced: Chart with Embedded Controls<a class="headerlink" href="#advanced-chart-with-embedded-controls" title="Link to this heading"></a></h3>
+<p>Charts can have their own internal controls that don’t affect other blocks:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">chart</span>
+<span class="w">  </span><span class="nt">plot_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">histogram</span>
+<span class="w">  </span><span class="nt">x</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Price</span>
+<span class="w">  </span><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Price</span><span class="nv"> </span><span class="s">Distribution&quot;</span>
+<span class="w">  </span><span class="c1"># These are chart-local controls (don&#39;t publish state)</span>
+<span class="w">  </span><span class="nt">controls</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">x_col</span>
+<span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dropdown</span>
+<span class="w">      </span><span class="nt">options</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Price&quot;</span><span class="p p-Indicator">,</span><span class="nt"> value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Price&quot;</span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Quantity&quot;</span><span class="p p-Indicator">,</span><span class="nt"> value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Quantity&quot;</span><span class="p p-Indicator">}</span>
+<span class="w">      </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Price&quot;</span>
+</pre></div>
+</div>
+<p><strong>Key Difference:</strong>
+- <strong>Control Panel controls</strong> → publish state → can control other blocks
+- <strong>Chart embedded controls</strong> → private to chart → don’t affect other blocks</p>
+</section>
+<section id="dynamic-marker-size-configuration">
+<h3>Dynamic Marker Size Configuration<a class="headerlink" href="#dynamic-marker-size-configuration" title="Link to this heading"></a></h3>
+<p>For scatter plots with variable marker sizes, you can configure consistent pixel-based sizing that adapts to your data range:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">chart</span>
+<span class="w">  </span><span class="nt">plot_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">scatter_minimal</span>
+<span class="w">  </span><span class="nt">x</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">session_length</span>
+<span class="w">  </span><span class="nt">y</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">max_idle</span>
+<span class="w">  </span><span class="nt">size</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{{metric_selector_2}}&quot;</span>
+<span class="w">  </span><span class="nt">plot_kwargs</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">marker_size_max_px</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">42</span>
+<span class="w">    </span><span class="nt">marker_size_min_px</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
+</pre></div>
+</div>
+<p><strong>Configuration:</strong>
+- <code class="docutils literal notranslate"><span class="pre">marker_size_max_px</span></code>: Maximum marker size in pixels (largest data point)
+- <code class="docutils literal notranslate"><span class="pre">marker_size_min_px</span></code>: Minimum marker size in pixels (smallest data point)</p>
+<p><strong>How it works:</strong>
+- Uses Plotly’s <code class="docutils literal notranslate"><span class="pre">sizeref</span></code> formula to normalize marker sizes relative to current data range
+- Automatically adapts when filters change the underlying data
+- Ensures consistent visual scaling regardless of data distribution
+- No modification of underlying DataFrame values</p>
+</section>
+<section id="state-id-anatomy">
+<h3>State ID Anatomy<a class="headerlink" href="#state-id-anatomy" title="Link to this heading"></a></h3>
+<p>Understanding state ID structure is key:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>State ID: &quot;my_filters-category&quot;
+          └────┬────┘  └──┬──┘
+          block_id    control_name
+
+Subscribe: subscribes_to: &quot;my_filters-category&quot;
+Result: Block listens to that control panel&#39;s category control
+</pre></div>
+</div>
+</section>
+<section id="explicit-parameter-naming-with-dep-param-name">
+<h3>Explicit Parameter Naming with dep_param_name<a class="headerlink" href="#explicit-parameter-naming-with-dep-param-name" title="Link to this heading"></a></h3>
+<p>By default, when a chart subscribes to external controls, the parameter name sent to the datasource is auto-parsed from the control name. For example, subscribing to <code class="docutils literal notranslate"><span class="pre">&quot;quick_card_1-window_step_selector&quot;</span></code> would send parameter <code class="docutils literal notranslate"><span class="pre">window_step_selector</span></code> to the datasource.</p>
+<p>To explicitly control the parameter name sent to the datasource, use <code class="docutils literal notranslate"><span class="pre">dep_param_name</span></code>:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="err">%%</span><span class="l l-Scalar l-Scalar-Plain">dashboard_cell</span>
+<span class="l l-Scalar l-Scalar-Plain">datasource</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">my_datasource</span>
+<span class="nt">cards</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># Control panel with slider</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">control_panel</span>
+<span class="w">    </span><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Select</span><span class="nv"> </span><span class="s">Step&quot;</span>
+<span class="w">    </span><span class="nt">controls</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">window_step_selector</span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">slider</span>
+<span class="w">        </span><span class="nt">min</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">        </span><span class="nt">max</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+<span class="w">        </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+
+<span class="w">  </span><span class="c1"># Chart with explicit dep_param_name</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">chart</span>
+<span class="w">    </span><span class="nt">plot_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">scatter</span>
+<span class="w">    </span><span class="nt">x</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">session_length</span>
+<span class="w">    </span><span class="nt">y</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">max_idle</span>
+<span class="w">    </span><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Session</span><span class="nv"> </span><span class="s">Analysis&quot;</span>
+<span class="w">    </span><span class="nt">subscribes_to</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">state_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;quick_card_1-window_step_selector&quot;</span>
+<span class="w">        </span><span class="nt">dep_param_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;window_step&quot;</span><span class="w">  </span><span class="c1"># ← Explicit datasource param name</span>
+</pre></div>
+</div>
+<p><strong>What happens:</strong></p>
+<ol class="arabic simple">
+<li><p>User changes slider → state <code class="docutils literal notranslate"><span class="pre">quick_card_1-window_step_selector</span></code> = 3</p></li>
+<li><p>Chart receives update with <code class="docutils literal notranslate"><span class="pre">{&quot;quick_card_1-window_step_selector&quot;:</span> <span class="pre">3}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dep_param_name</span></code> remaps this to <code class="docutils literal notranslate"><span class="pre">{&quot;window_step&quot;:</span> <span class="pre">3}</span></code> for datasource</p></li>
+<li><p>Datasource receives <code class="docutils literal notranslate"><span class="pre">datasource.get_processed_data({&quot;window_step&quot;:</span> <span class="pre">3})</span></code></p></li>
+</ol>
+<p><strong>Without dep_param_name (legacy):</strong></p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">subscribes_to</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;quick_card_1-window_step_selector&quot;</span><span class="w">  </span><span class="c1"># Auto-parses to &quot;window_step_selector&quot;</span>
+</pre></div>
+</div>
+<p><strong>With dep_param_name (explicit):</strong></p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">subscribes_to</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">state_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;quick_card_1-window_step_selector&quot;</span>
+<span class="w">    </span><span class="nt">dep_param_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;window_step&quot;</span><span class="w">  </span><span class="c1"># Explicitly &quot;window_step&quot;</span>
+</pre></div>
+</div>
+<p><strong>Use Cases:</strong></p>
+<ul class="simple">
+<li><p>Your datasource expects <code class="docutils literal notranslate"><span class="pre">window_step</span></code> but control is named <code class="docutils literal notranslate"><span class="pre">window_step_selector</span></code></p></li>
+<li><p>Multiple controls map to same datasource parameter</p></li>
+<li><p>Legacy datasources with specific parameter names</p></li>
+<li><p>Cleaner API when control names don’t match datasource parameters</p></li>
+</ul>
+</section>
+<section id="practical-workflow">
+<h3>Practical Workflow<a class="headerlink" href="#practical-workflow" title="Link to this heading"></a></h3>
+<p><strong>Step 1: Define control panel with block_id</strong></p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">control_panel</span>
+<span class="w">  </span><span class="nt">block_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;filters&quot;</span><span class="w">          </span><span class="c1"># Optional, auto-generated if omitted</span>
+<span class="w">  </span><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Dashboard</span><span class="nv"> </span><span class="s">Filters&quot;</span>
+<span class="w">  </span><span class="nt">controls</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">category</span>
+<span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dropdown</span>
+<span class="w">      </span><span class="nt">options</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;A&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;B&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;C&quot;</span><span class="p p-Indicator">]</span>
+</pre></div>
+</div>
+<p><strong>Step 2: Note the state IDs produced</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">filters-category</span></code> ← This is what other blocks subscribe to</p></li>
+</ul>
+<p><strong>Step 3: Charts subscribe</strong></p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">chart</span>
+<span class="w">  </span><span class="nt">plot_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bar</span>
+<span class="w">  </span><span class="nt">x</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Product</span>
+<span class="w">  </span><span class="nt">y</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Sales</span>
+<span class="w">  </span><span class="nt">subscribes_to</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;filters-category&quot;</span><span class="w">  </span><span class="c1"># Now this chart listens to control changes</span>
+</pre></div>
+</div>
+<p><strong>Result:</strong> User changes dropdown → chart updates automatically</p>
+</section>
+</section>
+<section id="theme-management">
+<h2>Theme Management<a class="headerlink" href="#theme-management" title="Link to this heading"></a></h2>
+<p>Set default theme for future dashboards:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Set theme</span>
+<span class="o">%</span><span class="n">dashboard_theme</span> <span class="n">cyborg</span>
+
+<span class="c1"># View current theme and available options</span>
+<span class="o">%</span><span class="n">dashboard_theme</span>
+</pre></div>
+</div>
+</section>
+<section id="plotly-export">
+<h2>Plotly Export<a class="headerlink" href="#plotly-export" title="Link to this heading"></a></h2>
+<section id="export-figures-to-files">
+<h3>Export Figures to Files<a class="headerlink" href="#export-figures-to-files" title="Link to this heading"></a></h3>
+<p>Export Plotly figures from dashboard blocks:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Export as HTML with custom title</span>
+<span class="o">%</span><span class="n">plotly_export</span> <span class="n">chart_block</span>
+  <span class="nb">format</span><span class="p">:</span> <span class="n">html</span>
+  <span class="n">output</span><span class="p">:</span> <span class="n">sales_chart</span><span class="o">.</span><span class="n">html</span>
+  <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Sales Analysis&quot;</span>
+
+<span class="c1"># Export as PNG image with custom dimensions</span>
+<span class="o">%</span><span class="n">plotly_export</span> <span class="n">chart_block</span>
+  <span class="nb">format</span><span class="p">:</span> <span class="n">png</span>
+  <span class="n">output</span><span class="p">:</span> <span class="n">chart</span><span class="o">.</span><span class="n">png</span>
+  <span class="n">width</span><span class="p">:</span> <span class="mi">1000</span>
+  <span class="n">height</span><span class="p">:</span> <span class="mi">800</span>
+
+<span class="c1"># Export as JSON</span>
+<span class="o">%</span><span class="n">plotly_export</span> <span class="n">chart_block</span>
+  <span class="nb">format</span><span class="p">:</span> <span class="n">json</span>
+  <span class="n">output</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">json</span>
+
+<span class="c1"># Export with parameters for interactive controls</span>
+<span class="o">%</span><span class="n">plotly_export</span> <span class="n">histogram</span>
+  <span class="nb">format</span><span class="p">:</span> <span class="n">html</span>
+  <span class="n">output</span><span class="p">:</span> <span class="n">distribution</span><span class="o">.</span><span class="n">html</span>
+  <span class="n">params</span><span class="p">:</span>
+    <span class="n">x_col</span><span class="p">:</span> <span class="s2">&quot;Price&quot;</span>
+    <span class="n">group_by</span><span class="p">:</span> <span class="s2">&quot;Category&quot;</span>
+</pre></div>
+</div>
+<p><strong>Configuration Keys:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">block</span></code>: Name of dashboard block variable (required)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">format</span></code>: Export format (html, png, json, svg)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">output</span></code>: Output file path (required)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">title</span></code>: Figure title (for HTML)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">width</span></code>: Figure width (for images)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">height</span></code>: Figure height (for images)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">params</span></code>: JSON parameters for block.get_figure()</p></li>
+</ul>
+</section>
+<section id="display-in-notebook">
+<h3>Display in Notebook<a class="headerlink" href="#display-in-notebook" title="Link to this heading"></a></h3>
+<p>Display figures inline in Jupyter notebooks:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Show figure with custom size and title</span>
+<span class="o">%</span><span class="n">plotly_show</span> <span class="n">chart_block</span>
+  <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Interactive Chart&quot;</span>
+  <span class="n">width</span><span class="p">:</span> <span class="mi">900</span>
+  <span class="n">height</span><span class="p">:</span> <span class="mi">600</span>
+
+<span class="c1"># Show with parameters for interactive controls</span>
+<span class="o">%</span><span class="n">plotly_show</span> <span class="n">histogram</span>
+  <span class="n">params</span><span class="p">:</span>
+    <span class="n">x_col</span><span class="p">:</span> <span class="s2">&quot;Price&quot;</span>
+    <span class="n">group_by</span><span class="p">:</span> <span class="s2">&quot;Category&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="batch-export">
+<h3>Batch Export<a class="headerlink" href="#batch-export" title="Link to this heading"></a></h3>
+<p>Export multiple figures using cell magic:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="o">%%</span><span class="n">plotly_export</span>
+<span class="n">exports</span><span class="p">:</span>
+  <span class="o">-</span> <span class="n">block</span><span class="p">:</span> <span class="n">sales_chart</span>
+    <span class="nb">format</span><span class="p">:</span> <span class="n">html</span>
+    <span class="n">output</span><span class="p">:</span> <span class="n">sales_report</span><span class="o">.</span><span class="n">html</span>
+    <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Sales Analysis&quot;</span>
+  <span class="o">-</span> <span class="n">block</span><span class="p">:</span> <span class="n">profit_chart</span>
+    <span class="nb">format</span><span class="p">:</span> <span class="n">png</span>
+    <span class="n">output</span><span class="p">:</span> <span class="n">profit_analysis</span><span class="o">.</span><span class="n">png</span>
+    <span class="n">width</span><span class="p">:</span> <span class="mi">1200</span>
+    <span class="n">height</span><span class="p">:</span> <span class="mi">800</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Link to this heading"></a></h2>
+<p>Complete Workflow Example with Controls:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load extension</span>
+<span class="o">%</span><span class="n">load_ext</span> <span class="n">dashboard_lego</span><span class="o">.</span><span class="n">ipython_magics</span>
+
+<span class="c1"># Load data and prepare variables</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data.csv&#39;</span><span class="p">)</span>
+
+<span class="c1"># Prepare environment variables</span>
+<span class="n">metric_options</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;Sales&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;sales&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;Profit&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;profit&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;Revenue&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;revenue&quot;</span><span class="p">}</span>
+<span class="p">]</span>
+
+<span class="n">color_palette</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;#1f77b4&quot;</span><span class="p">,</span> <span class="s2">&quot;#ff7f0e&quot;</span><span class="p">,</span> <span class="s2">&quot;#2ca02c&quot;</span><span class="p">,</span> <span class="s2">&quot;#d62728&quot;</span><span class="p">]</span>
+
+<span class="c1"># Create dashboard with controls</span>
+<span class="o">%%</span><span class="n">dashboard_cell</span>
+<span class="n">dataframe</span><span class="p">:</span> <span class="n">df</span>
+<span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Interactive Sales Dashboard&quot;</span>
+<span class="n">theme</span><span class="p">:</span> <span class="n">lux</span>
+<span class="n">environment</span><span class="p">:</span>
+  <span class="o">-</span> <span class="n">metric_options</span>
+  <span class="o">-</span> <span class="n">color_palette</span>
+<span class="n">cards</span><span class="p">:</span>
+  <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">metric</span>
+    <span class="n">column</span><span class="p">:</span> <span class="n">Sales</span>
+    <span class="n">agg</span><span class="p">:</span> <span class="nb">sum</span>
+    <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Total Sales&quot;</span>
+    <span class="n">color</span><span class="p">:</span> <span class="n">success</span>
+  <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">chart</span>
+    <span class="n">plot_type</span><span class="p">:</span> <span class="n">scatter</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Product</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">Sales</span>
+    <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Sales Analysis&quot;</span>
+    <span class="n">controls</span><span class="p">:</span>
+      <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="n">metric_selector</span>
+        <span class="nb">type</span><span class="p">:</span> <span class="n">dropdown</span>
+        <span class="n">options</span><span class="p">:</span> <span class="err">$</span><span class="n">metric_options</span>
+        <span class="n">value</span><span class="p">:</span> <span class="s2">&quot;sales&quot;</span>
+        <span class="n">col_props</span><span class="p">:</span> <span class="p">{</span><span class="n">xs</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span> <span class="n">md</span><span class="p">:</span> <span class="mi">6</span><span class="p">}</span>
+      <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="n">year_slider</span>
+        <span class="nb">type</span><span class="p">:</span> <span class="n">slider</span>
+        <span class="nb">min</span><span class="p">:</span> <span class="mi">2020</span>
+        <span class="nb">max</span><span class="p">:</span> <span class="mi">2024</span>
+        <span class="n">step</span><span class="p">:</span> <span class="mi">1</span>
+        <span class="n">value</span><span class="p">:</span> <span class="mi">2023</span>
+        <span class="n">marks</span><span class="p">:</span> <span class="p">{</span><span class="mi">2020</span><span class="p">:</span> <span class="s2">&quot;2020&quot;</span><span class="p">,</span> <span class="mi">2024</span><span class="p">:</span> <span class="s2">&quot;2024&quot;</span><span class="p">}</span>
+        <span class="n">col_props</span><span class="p">:</span> <span class="p">{</span><span class="n">xs</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span> <span class="n">md</span><span class="p">:</span> <span class="mi">6</span><span class="p">}</span>
+
+<span class="c1"># Export charts</span>
+<span class="o">%</span><span class="n">plotly_export</span> <span class="n">sales_chart</span>
+  <span class="nb">format</span><span class="p">:</span> <span class="n">html</span>
+  <span class="n">output</span><span class="p">:</span> <span class="n">dashboard_export</span><span class="o">.</span><span class="n">html</span>
+  <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Sales Dashboard Export&quot;</span>
+
+<span class="c1"># Display in notebook</span>
+<span class="o">%</span><span class="n">plotly_show</span> <span class="n">sales_chart</span>
+  <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Interactive Sales Chart&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="common-patterns">
+<h2>Common Patterns<a class="headerlink" href="#common-patterns" title="Link to this heading"></a></h2>
+<p><strong>Quick Analysis with Controls:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Prepare environment</span>
+<span class="n">metric_options</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;Sales&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;sales&quot;</span><span class="p">},</span> <span class="p">{</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;Profit&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;profit&quot;</span><span class="p">}]</span>
+
+<span class="o">%%</span><span class="n">dashboard_cell</span>
+<span class="n">dataframe</span><span class="p">:</span> <span class="n">df</span>
+<span class="n">environment</span><span class="p">:</span>
+  <span class="o">-</span> <span class="n">metric_options</span>
+<span class="n">cards</span><span class="p">:</span>
+  <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">metric</span>
+    <span class="n">column</span><span class="p">:</span> <span class="n">col1</span>
+    <span class="n">agg</span><span class="p">:</span> <span class="n">mean</span>
+    <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Average&quot;</span>
+  <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">chart</span>
+    <span class="n">plot_type</span><span class="p">:</span> <span class="n">histogram</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">col1</span>
+    <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Distribution&quot;</span>
+    <span class="n">controls</span><span class="p">:</span>
+      <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="n">metric_selector</span>
+        <span class="nb">type</span><span class="p">:</span> <span class="n">dropdown</span>
+        <span class="n">options</span><span class="p">:</span> <span class="err">$</span><span class="n">metric_options</span>
+        <span class="n">value</span><span class="p">:</span> <span class="s2">&quot;sales&quot;</span>
+</pre></div>
+</div>
+<p><strong>Interactive Parameter Exploration:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Hyperparameter playground example</span>
+<span class="n">session_params</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;session_length&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">30</span><span class="p">],</span>
+    <span class="s1">&#39;max_idle&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">600</span><span class="p">,</span> <span class="mi">900</span><span class="p">,</span> <span class="mi">1800</span><span class="p">,</span> <span class="mi">3600</span><span class="p">,</span> <span class="mi">7200</span><span class="p">],</span>
+    <span class="s1">&#39;window_step&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">10</span><span class="p">]</span>
+<span class="p">}</span>
+
+<span class="o">%%</span><span class="n">dashboard_cell</span>
+<span class="n">dataframe</span><span class="p">:</span> <span class="n">session_hp_datasource</span>
+<span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Session Hyperparameters Playground&quot;</span>
+<span class="n">environment</span><span class="p">:</span>
+  <span class="o">-</span> <span class="n">session_params</span>
+  <span class="o">-</span> <span class="n">metric_options</span>
+<span class="n">cards</span><span class="p">:</span>
+  <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">chart</span>
+    <span class="n">plot_type</span><span class="p">:</span> <span class="n">scatter</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">session_length</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">max_idle</span>
+    <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Session Length vs Max Idle&quot;</span>
+    <span class="n">controls</span><span class="p">:</span>
+      <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="n">metric_selector</span>
+        <span class="nb">type</span><span class="p">:</span> <span class="n">dropdown</span>
+        <span class="n">options</span><span class="p">:</span> <span class="err">$</span><span class="n">metric_options</span>
+        <span class="n">value</span><span class="p">:</span> <span class="s2">&quot;n_sessions&quot;</span>
+      <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="n">window_step_slider</span>
+        <span class="nb">type</span><span class="p">:</span> <span class="n">slider</span>
+        <span class="nb">min</span><span class="p">:</span> <span class="mi">3</span>
+        <span class="nb">max</span><span class="p">:</span> <span class="mi">10</span>
+        <span class="n">step</span><span class="p">:</span> <span class="mi">1</span>
+        <span class="n">value</span><span class="p">:</span> <span class="mi">5</span>
+</pre></div>
+</div>
+<p><strong>Report Generation:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="n">plotly_export</span> <span class="n">analysis_chart</span>
+  <span class="nb">format</span><span class="p">:</span> <span class="n">html</span>
+  <span class="n">output</span><span class="p">:</span> <span class="n">report</span><span class="o">.</span><span class="n">html</span>
+  <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Analysis Results&quot;</span>
+
+<span class="o">%</span><span class="n">plotly_export</span> <span class="n">summary_chart</span>
+  <span class="nb">format</span><span class="p">:</span> <span class="n">png</span>
+  <span class="n">output</span><span class="p">:</span> <span class="n">summary</span><span class="o">.</span><span class="n">png</span>
+  <span class="n">width</span><span class="p">:</span> <span class="mi">800</span>
+  <span class="n">height</span><span class="p">:</span> <span class="mi">400</span>
+</pre></div>
+</div>
+<p><strong>Interactive Exploration:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="n">plotly_show</span> <span class="n">chart</span>
+  <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Interactive View&quot;</span>
+<span class="c1"># Now you can interact with the chart in the notebook</span>
+</pre></div>
+</div>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
+<p><strong>Block not found:</strong> Ensure the block variable exists in the notebook namespace</p>
+<p><strong>Export fails:</strong> Check file permissions and disk space</p>
+<p><strong>Display issues:</strong> Ensure plotly is properly installed and configured for Jupyter</p>
+<p><strong>Theme not applied:</strong> Use <code class="docutils literal notranslate"><span class="pre">%dashboard_theme</span></code> to set default theme before creating dashboards</p>
+</section>
+<section id="error-messages">
+<h2>Error Messages<a class="headerlink" href="#error-messages" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">❌</span> <span class="pre">Error:</span> <span class="pre">Block</span> <span class="pre">variable</span> <span class="pre">'X'</span> <span class="pre">not</span> <span class="pre">found</span></code> - Variable doesn’t exist in namespace</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">❌</span> <span class="pre">Error:</span> <span class="pre">Block</span> <span class="pre">'X'</span> <span class="pre">does</span> <span class="pre">not</span> <span class="pre">support</span> <span class="pre">figure</span> <span class="pre">export</span></code> - Block doesn’t have <code class="docutils literal notranslate"><span class="pre">get_figure()</span></code> method</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">❌</span> <span class="pre">Error:</span> <span class="pre">--output/-o</span> <span class="pre">is</span> <span class="pre">required</span></code> - Output file path not specified</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">❌</span> <span class="pre">Error:</span> <span class="pre">Environment</span> <span class="pre">variable</span> <span class="pre">'X'</span> <span class="pre">not</span> <span class="pre">found</span></code> - Variable not declared in environment list</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">❌</span> <span class="pre">Error:</span> <span class="pre">Invalid</span> <span class="pre">YAML</span> <span class="pre">format</span></code> - YAML syntax error in cell configuration</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">❌</span> <span class="pre">Error:</span> <span class="pre">Control</span> <span class="pre">'X':</span> <span class="pre">unknown</span> <span class="pre">type</span> <span class="pre">'Y'</span></code> - Unsupported control type (use dropdown, slider, input)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">❌</span> <span class="pre">Error:</span> <span class="pre">Variable</span> <span class="pre">'$X'</span> <span class="pre">not</span> <span class="pre">found</span> <span class="pre">in</span> <span class="pre">environment</span></code> - Referenced variable not in environment list</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="patterns.html" class="btn btn-neutral float-left" title="Integration Patterns" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="contracts.html" class="btn btn-neutral float-right" title="Contracts and Guarantees" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Dashboard Lego Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

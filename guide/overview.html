@@ -62,10 +62,12 @@
 <li class="toctree-l2"><a class="reference internal" href="blocks.html">Blocks Module API</a></li>
 <li class="toctree-l2"><a class="reference internal" href="presets.html">Presets Module API</a></li>
 <li class="toctree-l2"><a class="reference internal" href="patterns.html">Integration Patterns</a></li>
+<li class="toctree-l2"><a class="reference internal" href="magics.html">IPython Magic Commands</a></li>
 <li class="toctree-l2"><a class="reference internal" href="contracts.html">Contracts and Guarantees</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference.html">Quick Reference</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="magics.html">IPython Magic Commands</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -109,7 +111,7 @@
 ├── core/                  # Core orchestration and state management
 │   ├── page.py           # DashboardPage: main orchestrator
 │   ├── state.py          # StateManager: publisher/subscriber coordination
-│   ├── datasource.py     # BaseDataSource: concrete data interface (v0.15)
+│   ├── datasource.py     # DataSource: concrete data interface (v0.15)
 │   ├── data_builder.py   # DataBuilder: data construction (v0.15)
 │   ├── data_transformer.py # DataTransformer: data transformation (v0.15)
 │   ├── theme.py          # ThemeConfig: styling system
@@ -140,7 +142,7 @@
     ├─&gt; StateManager (state coordination)
     ├─&gt; ThemeConfig (styling)
     ├─&gt; BaseBlock (components)
-    │   ├─&gt; BaseDataSource (data)
+    │   ├─&gt; DataSource (data)
     │   └─&gt; StateManager (registration)
     └─&gt; Navigation (multi-section pages)
 
@@ -150,7 +152,7 @@ BaseBlock (abstract)
     ├─&gt; MetricsBlock (replaces KPIBlock pattern)
     └─&gt; TextBlock
 
-BaseDataSource (concrete, uses composition)
+DataSource (concrete, uses composition)
     ├─&gt; DataBuilder (build stage)
     └─&gt; DataTransformer (transform stage)
 

@@ -49,6 +49,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#creating-your-first-dashboard">Creating Your First Dashboard</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#step-1-define-a-data-builder">Step 1: Define a Data Builder</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-2-create-dashboard-blocks">Step 2: Create Dashboard Blocks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#interactive-charts-with-placeholders">Interactive Charts with Placeholders</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-3-create-dashboard-page">Step 3: Create Dashboard Page</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-4-run-the-application">Step 4: Run the Application</a></li>
 </ul>
@@ -64,6 +65,7 @@
 <p class="caption" role="heading"><span class="caption-text">Comprehensive Guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="guide/index.html">Comprehensive API Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guide/magics.html">IPython Magic Commands</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -108,7 +110,7 @@
 <h3>Step 1: Define a Data Builder<a class="headerlink" href="#step-1-define-a-data-builder" title="Link to this heading"></a></h3>
 <p>v0.15+ uses composition instead of inheritance. Create a <code class="xref py py-class docutils literal notranslate"><span class="pre">DataBuilder</span></code>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataBuilder</span><span class="p">,</span> <span class="n">BaseDataSource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataBuilder</span><span class="p">,</span> <span class="n">DataSource</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">SalesDataBuilder</span><span class="p">(</span><span class="n">DataBuilder</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">):</span>
@@ -122,7 +124,7 @@
         <span class="k">return</span> <span class="n">df</span>
 
 <span class="c1"># Create datasource using composition (no inheritance!)</span>
-<span class="n">datasource</span> <span class="o">=</span> <span class="n">BaseDataSource</span><span class="p">(</span>
+<span class="n">datasource</span> <span class="o">=</span> <span class="n">DataSource</span><span class="p">(</span>
     <span class="n">data_builder</span><span class="o">=</span><span class="n">SalesDataBuilder</span><span class="p">(</span><span class="s2">&quot;sample_data.csv&quot;</span><span class="p">)</span>
 <span class="p">)</span>
 </pre></div>
@@ -162,8 +164,8 @@
     <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
     <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;bar&quot;</span><span class="p">,</span>  <span class="c1"># Built-in plot type</span>
     <span class="n">plot_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="s2">&quot;Fruit&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="s2">&quot;Sales&quot;</span><span class="p">},</span>
-    <span class="n">plot_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Sales by Fruit&quot;</span><span class="p">},</span>
-    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Fruit Sales&quot;</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Fruit Sales&quot;</span><span class="p">,</span>                    <span class="c1"># Static card title</span>
+    <span class="n">plot_title</span><span class="o">=</span><span class="s2">&quot;Sales by Fruit&quot;</span><span class="p">,</span>            <span class="c1"># Dynamic plot title</span>
     <span class="n">subscribes_to</span><span class="o">=</span><span class="s2">&quot;dummy_state&quot;</span><span class="p">,</span>
     <span class="c1"># Optional: transform data at block level (v0.15+)</span>
     <span class="n">transform_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;Fruit&quot;</span><span class="p">)[</span><span class="s2">&quot;Sales&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
@@ -176,6 +178,28 @@
 the legacy <code class="docutils literal notranslate"><span class="pre">get_kpis()</span></code> method and <code class="docutils literal notranslate"><span class="pre">StaticChartBlock</span></code>.
 See <a class="reference internal" href="concepts.html"><span class="doc">Core Concepts</span></a> for more on block-level transformations.</p>
 </div>
+</section>
+<section id="interactive-charts-with-placeholders">
+<h3>Interactive Charts with Placeholders<a class="headerlink" href="#interactive-charts-with-placeholders" title="Link to this heading"></a></h3>
+<p>For interactive charts with dynamic titles and parameters, use placeholders:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Interactive chart with placeholders</span>
+<span class="n">interactive_chart</span> <span class="o">=</span> <span class="n">TypedChartBlock</span><span class="p">(</span>
+    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;interactive_sales&quot;</span><span class="p">,</span>
+    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;scatter&quot;</span><span class="p">,</span>
+    <span class="n">plot_params</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="s2">&quot;Date&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="s2">&quot;Sales&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;{{metric_selector}}&quot;</span><span class="p">,</span>  <span class="c1"># Placeholder for dynamic color</span>
+        <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="s2">&quot;{{size_selector}}&quot;</span>      <span class="c1"># Placeholder for dynamic size</span>
+    <span class="p">},</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Sales Analysis&quot;</span><span class="p">,</span>                           <span class="c1"># Static card title</span>
+    <span class="n">plot_title</span><span class="o">=</span><span class="s2">&quot;Sales by {{metric_selector}}&quot;</span><span class="p">,</span>      <span class="c1"># Dynamic plot title with placeholder</span>
+    <span class="n">subscribes_to</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;metric_selector&quot;</span><span class="p">,</span> <span class="s2">&quot;size_selector&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>See <span class="xref std std-doc">placeholders</span> for complete placeholder documentation.</p>
 </section>
 <section id="step-3-create-dashboard-page">
 <h3>Step 3: Create Dashboard Page<a class="headerlink" href="#step-3-create-dashboard-page" title="Link to this heading"></a></h3>

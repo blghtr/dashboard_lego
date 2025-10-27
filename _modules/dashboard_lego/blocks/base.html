@@ -48,6 +48,7 @@
 <p class="caption" role="heading"><span class="caption-text">Comprehensive Guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Comprehensive API Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/magics.html">IPython Magic Commands</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -95,7 +96,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">dash.development.base_component</span><span class="w"> </span><span class="kn">import</span> <span class="n">Component</span>
 
 <span class="c1"># Use forward references for type hints to avoid circular imports</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.datasource</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseDataSource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.datasource</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataSource</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.state</span><span class="w"> </span><span class="kn">import</span> <span class="n">StateManager</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockError</span><span class="p">,</span> <span class="n">ConfigurationError</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
@@ -116,7 +117,7 @@
 <span class="sd">           instantiation from state registration to solve chicken-and-egg</span>
 <span class="sd">           problem with DashboardPage&quot;</span>
 <span class="sd">         - implements: &quot;interface: &#39;BaseBlock&#39;&quot;</span>
-<span class="sd">         - uses: [&quot;interface: &#39;BaseDataSource&#39;&quot;, &quot;class: &#39;StateManager&#39;&quot;]</span>
+<span class="sd">         - uses: [&quot;interface: &#39;DataSource&#39;&quot;, &quot;class: &#39;StateManager&#39;&quot;]</span>
 
 <span class="sd">        :rationale: &quot;Registration logic was moved from __init__ to a</span>
 <span class="sd">         separate method to allow DashboardPage to inject the</span>
@@ -130,14 +131,14 @@
 
 <div class="viewcode-block" id="BaseBlock.__init__">
 <a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.base.BaseBlock.__init__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">datasource</span><span class="p">:</span> <span class="n">DataSource</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initializes the BaseBlock.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            block_id: A unique identifier for this block instance.</span>
 <span class="sd">            datasource: An instance of a class that implements the</span>
-<span class="sd">                       BaseDataSource interface.</span>
+<span class="sd">                       DataSource interface.</span>
 <span class="sd">            allow_duplicate_output: If True, allows this block to share output targets</span>
 <span class="sd">                                  with other blocks (useful for overlay scenarios).</span>
 
@@ -152,8 +153,8 @@
             <span class="n">error_msg</span> <span class="o">=</span> <span class="s2">&quot;block_id must be a non-empty string.&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">ConfigurationError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">datasource</span><span class="p">,</span> <span class="n">BaseDataSource</span><span class="p">):</span>
-            <span class="n">error_msg</span> <span class="o">=</span> <span class="s2">&quot;datasource must be an instance of BaseDataSource.&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">datasource</span><span class="p">,</span> <span class="n">DataSource</span><span class="p">):</span>
+            <span class="n">error_msg</span> <span class="o">=</span> <span class="s2">&quot;datasource must be an instance of DataSource.&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">ConfigurationError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
 
@@ -161,6 +162,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">datasource</span> <span class="o">=</span> <span class="n">datasource</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">publishes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;publishes&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;subscribes&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="c1"># Don&#39;t override controls if already set by subclass</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;controls&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">allow_duplicate_output</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;allow_duplicate_output&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
         <span class="c1"># Navigation context for pattern matching callbacks</span>
@@ -222,7 +226,10 @@
                         <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">publisher_component_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">component_prop</span><span class="si">}</span><span class="s2">&quot;</span>
                     <span class="p">)</span>
                     <span class="n">state_manager</span><span class="o">.</span><span class="n">register_publisher</span><span class="p">(</span>
-                        <span class="n">state_id</span><span class="p">,</span> <span class="n">publisher_component_id</span><span class="p">,</span> <span class="n">component_prop</span>
+                        <span class="n">state_id</span><span class="p">,</span>
+                        <span class="n">publisher_component_id</span><span class="p">,</span>
+                        <span class="n">component_prop</span><span class="p">,</span>
+                        <span class="n">dep_param_name</span><span class="o">=</span><span class="n">pub_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dep_param_name&quot;</span><span class="p">),</span>
                     <span class="p">)</span>
 
             <span class="c1"># Register as a subscriber</span>
@@ -256,6 +263,33 @@
             <span class="k">raise</span> <span class="n">BlockError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Failed to register state interactions for &quot;</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+
+<div class="viewcode-block" id="BaseBlock.set_initial_external_values">
+<a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.base.BaseBlock.set_initial_external_values">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_initial_external_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_values</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Receive initial values for externally subscribed states.</span>
+
+<span class="sd">        Called by DashboardPage before layout() to provide initial state values.</span>
+
+<span class="sd">        :hierarchy: [Feature | Initial State Sync | BaseBlock]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Blocks need initial external state values before rendering&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;set_initial_external_values&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;initial_values contains {state_id: value} for external states&quot;</span>
+<span class="sd">         - post: &quot;Block has initial external state values available for layout()&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            initial_values: Dict mapping state_id to initial value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Received initial values for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">: &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">initial_values</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initial_external_values</span> <span class="o">=</span> <span class="n">initial_values</span></div>
+
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_set_theme_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theme_config</span><span class="p">:</span> <span class="s2">&quot;ThemeConfig&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -311,8 +345,13 @@
         <span class="c1"># Start with theme styles if available</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="p">:</span>
             <span class="n">base_style</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">get_component_style</span><span class="p">(</span><span class="n">component_type</span><span class="p">,</span> <span class="n">element</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Applied theme style: </span><span class="si">{</span><span class="n">component_type</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">element</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">base_style</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Theme not available for </span><span class="si">{</span><span class="n">component_type</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">element</span><span class="si">}</span><span class="s2">, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;using fallback&quot;</span>
+            <span class="p">)</span>
 
         <span class="c1"># Merge with user overrides (overrides take precedence)</span>
         <span class="k">if</span> <span class="n">overrides</span><span class="p">:</span>
@@ -508,8 +547,8 @@
 <span class="sd">         - post: &quot;Returns result of subscription callback&quot;</span>
 <span class="sd">         - spec_compliance: &quot;Passes control_values as single dict argument&quot;</span>
 
-<span class="sd">        :complexity: 2</span>
-<span class="sd">        :decision_cache: &quot;Pass control_values dict directly instead of unpacking to **kwargs&quot;</span>
+<span class="sd">        :complexity: 3</span>
+<span class="sd">        :decision_cache: &quot;Find callback matching changed states instead of using first one&quot;</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            control_values: Dictionary of control name -&gt; value mappings (e.g. {&#39;x_col&#39;: &#39;Price&#39;})</span>
@@ -517,11 +556,20 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            The result of the subscription callback</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
 
-        <span class="c1"># Get the first subscription callback</span>
-        <span class="n">callback_fn</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+        <span class="c1"># Find callback that matches one of the changed states</span>
+        <span class="c1"># If multiple states changed, use any matching callback (they should be equivalent)</span>
+        <span class="n">callback_fn</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">state_name</span> <span class="ow">in</span> <span class="n">control_values</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">state_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="p">:</span>
+                <span class="n">callback_fn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="p">[</span><span class="n">state_name</span><span class="p">]</span>
+                <span class="k">break</span>
+
+        <span class="c1"># Fallback to first callback if no exact match found</span>
+        <span class="k">if</span> <span class="n">callback_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">callback_fn</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
 
         <span class="c1"># CRITICAL: Pass control_values dict directly, not as **kwargs</span>
         <span class="c1"># TypedChartBlock callbacks expect: callback(control_values_dict)</span>

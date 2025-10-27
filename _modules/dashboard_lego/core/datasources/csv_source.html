@@ -48,6 +48,7 @@
 <p class="caption" role="heading"><span class="caption-text">Comprehensive Guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../guide/index.html">Comprehensive API Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guide/magics.html">IPython Magic Commands</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -99,7 +100,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.data_builder</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataBuilder</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.datasource</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseDataSource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.datasource</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataSource</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoadError</span>
 
 
@@ -130,7 +131,7 @@
 
 <div class="viewcode-block" id="CsvDataBuilder.build">
 <a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.datasources.csv_source.CsvDataBuilder.build">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Load CSV file.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[CsvDataBuilder] Loading </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
@@ -152,7 +153,7 @@
 
 <div class="viewcode-block" id="CsvDataSource">
 <a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.datasources.csv_source.CsvDataSource">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">CsvDataSource</span><span class="p">(</span><span class="n">BaseDataSource</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CsvDataSource</span><span class="p">(</span><span class="n">DataSource</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    CSV data source.</span>
 

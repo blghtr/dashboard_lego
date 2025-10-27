@@ -49,6 +49,7 @@
 <p class="caption" role="heading"><span class="caption-text">Comprehensive Guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Comprehensive API Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="magics.html">IPython Magic Commands</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -91,7 +92,7 @@ enabling static report generation, notebook integration, and programmatic figure
 <h2>Single Figure Export<a class="headerlink" href="#single-figure-export" title="Link to this heading"></a></h2>
 <p>Export individual chart blocks using the <code class="docutils literal notranslate"><span class="pre">get_figure()</span></code> method:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedChartBlock</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseDataSource</span><span class="p">,</span> <span class="n">DataBuilder</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataSource</span><span class="p">,</span> <span class="n">DataBuilder</span>
 
 <span class="c1"># Create chart block</span>
 <span class="n">chart</span> <span class="o">=</span> <span class="n">TypedChartBlock</span><span class="p">(</span>

@@ -50,6 +50,7 @@
 <p class="caption" role="heading"><span class="caption-text">Comprehensive Guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="guide/index.html">Comprehensive API Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guide/magics.html">IPython Magic Commands</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -119,7 +120,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">dash_bootstrap_components</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dbc</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego</span><span class="w"> </span><span class="kn">import</span> <span class="n">DashboardPage</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseDataSource</span><span class="p">,</span> <span class="n">DataBuilder</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataSource</span><span class="p">,</span> <span class="n">DataBuilder</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">MetricsBlock</span>
 
 <span class="c1"># Define DataBuilder (v0.15+ pattern)</span>
@@ -132,7 +133,7 @@
         <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="p">)</span>
 
 <span class="c1"># Create datasource using composition</span>
-<span class="n">datasource</span> <span class="o">=</span> <span class="n">BaseDataSource</span><span class="p">(</span>
+<span class="n">datasource</span> <span class="o">=</span> <span class="n">DataSource</span><span class="p">(</span>
     <span class="n">data_builder</span><span class="o">=</span><span class="n">MyDataBuilder</span><span class="p">(</span><span class="s2">&quot;your_data.csv&quot;</span><span class="p">)</span>
 <span class="p">)</span>
 
@@ -207,8 +208,21 @@
 <li class="toctree-l2"><a class="reference internal" href="guide/blocks.html">Blocks Module API</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guide/presets.html">Presets Module API</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guide/patterns.html">Integration Patterns</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guide/magics.html">IPython Magic Commands</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guide/contracts.html">Contracts and Guarantees</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guide/reference.html">Quick Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="guide/magics.html">IPython Magic Commands</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="guide/magics.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guide/magics.html#dashboard-creation">Dashboard Creation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guide/magics.html#understanding-control-bindings">Understanding Control Bindings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guide/magics.html#theme-management">Theme Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guide/magics.html#plotly-export">Plotly Export</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guide/magics.html#examples">Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guide/magics.html#common-patterns">Common Patterns</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guide/magics.html#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guide/magics.html#error-messages">Error Messages</a></li>
 </ul>
 </li>
 </ul>

@@ -81,6 +81,7 @@
 <p class="caption" role="heading"><span class="caption-text">Comprehensive Guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="guide/index.html">Comprehensive API Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guide/magics.html">IPython Magic Commands</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -342,7 +343,7 @@ are only computed once.</p>
 </div>
 <p><strong>Scenario 2: With Global Filters</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Global filter applies first, then block transform</span>
-<span class="n">datasource</span> <span class="o">=</span> <span class="n">BaseDataSource</span><span class="p">(</span>
+<span class="n">datasource</span> <span class="o">=</span> <span class="n">DataSource</span><span class="p">(</span>
     <span class="n">data_builder</span><span class="o">=</span><span class="n">builder</span><span class="p">,</span>
     <span class="n">data_transformer</span><span class="o">=</span><span class="n">DateRangeFilter</span><span class="p">()</span>  <span class="c1"># Global filter</span>
 <span class="p">)</span>

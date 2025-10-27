@@ -48,6 +48,7 @@
 <p class="caption" role="heading"><span class="caption-text">Comprehensive Guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Comprehensive API Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/magics.html">IPython Magic Commands</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -97,15 +98,20 @@
 <span class="sd">:complexity: 4</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">dash_bootstrap_components</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dbc</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">plotly.express</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">px</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">plotly.graph_objects</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">go</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dash</span><span class="w"> </span><span class="kn">import</span> <span class="n">dcc</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.typed_chart</span><span class="w"> </span><span class="kn">import</span> <span class="n">Control</span><span class="p">,</span> <span class="n">TypedChartBlock</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.datasource</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseDataSource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.typed_chart</span><span class="w"> </span><span class="kn">import</span> <span class="n">Control</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.datasource</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataSource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.presets.base_preset</span><span class="w"> </span><span class="kn">import</span> <span class="n">BasePreset</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.plot_registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_plot_type</span>
 
+<span class="c1">#  TODO: Refactor this from scratch</span>
 <span class="c1"># ============================================================================</span>
 <span class="c1"># Custom Plot Functions for EDA</span>
 <span class="c1"># ============================================================================</span>
@@ -297,15 +303,15 @@
 
 <div class="viewcode-block" id="CorrelationHeatmapPreset">
 <a class="viewcode-back" href="../../../api/presets.html#dashboard_lego.presets.eda_presets.CorrelationHeatmapPreset">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">CorrelationHeatmapPreset</span><span class="p">(</span><span class="n">TypedChartBlock</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CorrelationHeatmapPreset</span><span class="p">(</span><span class="n">BasePreset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Correlation matrix heatmap preset using TypedChartBlock.</span>
+<span class="sd">    Correlation matrix heatmap preset using BasePreset.</span>
 
 <span class="sd">    :hierarchy: [Presets | EDA | CorrelationHeatmapPreset]</span>
-<span class="sd">        :relates-to:</span>
-<span class="sd">     - motivated_by: &quot;v0.15.0: EDA preset using TypedChartBlock&quot;</span>
-<span class="sd">          - implements: &quot;preset: &#39;CorrelationHeatmapPreset&#39;&quot;</span>
-<span class="sd">     - uses: [&quot;block: &#39;TypedChartBlock&#39;&quot;]</span>
+<span class="sd">    :relates-to:</span>
+<span class="sd">     - motivated_by: &quot;v0.15.0: EDA preset using BasePreset&quot;</span>
+<span class="sd">     - implements: &quot;preset: &#39;CorrelationHeatmapPreset&#39;&quot;</span>
+<span class="sd">     - uses: [&quot;class: &#39;BasePreset&#39;&quot;]</span>
 
 <span class="sd">    :contract:</span>
 <span class="sd">     - pre: &quot;DataFrame contains numerical columns&quot;</span>
@@ -319,9 +325,10 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span>
+        <span class="n">datasource</span><span class="p">:</span> <span class="n">DataSource</span><span class="p">,</span>
         <span class="n">subscribes_to</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Correlation Heatmap&quot;</span><span class="p">,</span>
+        <span class="n">controls</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -332,33 +339,106 @@
 <span class="sd">            datasource: Data source instance</span>
 <span class="sd">            subscribes_to: State ID to subscribe to</span>
 <span class="sd">            title: Chart title</span>
+<span class="sd">            controls: Control configuration (False=no controls, True=default controls)</span>
 <span class="sd">            **kwargs: Additional styling parameters</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">block_id</span><span class="o">=</span><span class="n">block_id</span><span class="p">,</span>
             <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
-            <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;correlation_heatmap&quot;</span><span class="p">,</span>
-            <span class="n">plot_params</span><span class="o">=</span><span class="p">{},</span>  <span class="c1"># No params needed</span>
-            <span class="n">plot_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Correlation Matrix&quot;</span><span class="p">},</span>
-            <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
             <span class="n">subscribes_to</span><span class="o">=</span><span class="n">subscribes_to</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+            <span class="n">controls</span><span class="o">=</span><span class="n">controls</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span></div>
-</div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">default_controls</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Default control definitions for correlation heatmap preset.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Empty dict - no controls needed for correlation heatmap</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_plot_type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot type identifier for correlation heatmap.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;correlation_heatmap&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_datasource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datasource</span><span class="p">:</span> <span class="n">DataSource</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validate datasource requirements for correlation heatmap.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            datasource: DataSource instance to validate</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If datasource doesn&#39;t have numerical columns</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
+        <span class="n">numerical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">numerical_cols</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;CorrelationHeatmapPreset requires at least two numerical columns&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_plot_params</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">final_controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build plot_params for correlation heatmap.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            final_controls: Final control configuration</span>
+<span class="sd">            kwargs: Additional parameters and fallback values</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Empty dict - no plot parameters needed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_plot_kwargs</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">final_controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build plot_kwargs for correlation heatmap.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            final_controls: Final control configuration</span>
+<span class="sd">            kwargs: Additional parameters and fallback values</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary of plot kwargs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="s2">&quot;Correlation Matrix&quot;</span><span class="p">)}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_plot_title</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">final_controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get dynamic plot title for correlation heatmap.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            final_controls: Final control configuration</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None - no dynamic title needed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
 
 
 
 <div class="viewcode-block" id="MissingValuesPreset">
 <a class="viewcode-back" href="../../../api/presets.html#dashboard_lego.presets.eda_presets.MissingValuesPreset">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">MissingValuesPreset</span><span class="p">(</span><span class="n">TypedChartBlock</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MissingValuesPreset</span><span class="p">(</span><span class="n">BasePreset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Missing values analysis preset using TypedChartBlock.</span>
+<span class="sd">    Missing values analysis preset using BasePreset.</span>
 
 <span class="sd">    :hierarchy: [Presets | EDA | MissingValuesPreset]</span>
 <span class="sd">    :relates-to:</span>
-<span class="sd">     - motivated_by: &quot;v0.15.0: EDA preset using TypedChartBlock&quot;</span>
+<span class="sd">     - motivated_by: &quot;v0.15.0: EDA preset using BasePreset&quot;</span>
 <span class="sd">     - implements: &quot;preset: &#39;MissingValuesPreset&#39;&quot;</span>
-<span class="sd">     - uses: [&quot;block: &#39;TypedChartBlock&#39;&quot;]</span>
+<span class="sd">     - uses: [&quot;class: &#39;BasePreset&#39;&quot;]</span>
 
 <span class="sd">    :contract:</span>
 <span class="sd">     - pre: &quot;DataFrame provided&quot;</span>
@@ -372,9 +452,10 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span>
+        <span class="n">datasource</span><span class="p">:</span> <span class="n">DataSource</span><span class="p">,</span>
         <span class="n">subscribes_to</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Missing Values Analysis&quot;</span><span class="p">,</span>
+        <span class="n">controls</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -385,33 +466,102 @@
 <span class="sd">            datasource: Data source instance</span>
 <span class="sd">            subscribes_to: State ID to subscribe to</span>
 <span class="sd">            title: Chart title</span>
+<span class="sd">            controls: Control configuration (False=no controls, True=default controls)</span>
 <span class="sd">            **kwargs: Additional styling parameters</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">block_id</span><span class="o">=</span><span class="n">block_id</span><span class="p">,</span>
             <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
-            <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;missing_values&quot;</span><span class="p">,</span>
-            <span class="n">plot_params</span><span class="o">=</span><span class="p">{},</span>  <span class="c1"># No params needed</span>
-            <span class="n">plot_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Percentage of Missing Values per Column&quot;</span><span class="p">},</span>
-            <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
             <span class="n">subscribes_to</span><span class="o">=</span><span class="n">subscribes_to</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+            <span class="n">controls</span><span class="o">=</span><span class="n">controls</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span></div>
-</div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">default_controls</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Default control definitions for missing values preset.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Empty dict - no controls needed for missing values analysis</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_plot_type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot type identifier for missing values analysis.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;missing_values&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_datasource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datasource</span><span class="p">:</span> <span class="n">DataSource</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validate datasource requirements for missing values analysis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            datasource: DataSource instance to validate</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If datasource is empty</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;MissingValuesPreset requires non-empty DataFrame&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_plot_params</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">final_controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build plot_params for missing values analysis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            final_controls: Final control configuration</span>
+<span class="sd">            kwargs: Additional parameters and fallback values</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Empty dict - no plot parameters needed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_plot_kwargs</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">final_controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build plot_kwargs for missing values analysis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            final_controls: Final control configuration</span>
+<span class="sd">            kwargs: Additional parameters and fallback values</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary of plot kwargs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="s2">&quot;Percentage of Missing Values per Column&quot;</span><span class="p">)}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_plot_title</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">final_controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get dynamic plot title for missing values analysis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            final_controls: Final control configuration</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None - no dynamic title needed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
 
 
 
 <div class="viewcode-block" id="GroupedHistogramPreset">
 <a class="viewcode-back" href="../../../api/presets.html#dashboard_lego.presets.eda_presets.GroupedHistogramPreset">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">GroupedHistogramPreset</span><span class="p">(</span><span class="n">TypedChartBlock</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">GroupedHistogramPreset</span><span class="p">(</span><span class="n">BasePreset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Interactive histogram with grouping using TypedChartBlock.</span>
+<span class="sd">    Interactive histogram with grouping using BasePreset.</span>
 
 <span class="sd">    :hierarchy: [Presets | EDA | GroupedHistogramPreset]</span>
-<span class="sd">        :relates-to:</span>
-<span class="sd">     - motivated_by: &quot;v0.15.0: Interactive histogram with controls&quot;</span>
-<span class="sd">          - implements: &quot;preset: &#39;GroupedHistogramPreset&#39;&quot;</span>
-<span class="sd">     - uses: [&quot;block: &#39;TypedChartBlock&#39;&quot;]</span>
+<span class="sd">    :relates-to:</span>
+<span class="sd">     - motivated_by: &quot;v0.15.0: Interactive histogram with controls using BasePreset&quot;</span>
+<span class="sd">     - implements: &quot;preset: &#39;GroupedHistogramPreset&#39;&quot;</span>
+<span class="sd">     - uses: [&quot;class: &#39;BasePreset&#39;&quot;]</span>
 
 <span class="sd">    :contract:</span>
 <span class="sd">     - pre: &quot;DataFrame contains numerical and categorical columns&quot;</span>
@@ -425,9 +575,10 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span>
+        <span class="n">datasource</span><span class="p">:</span> <span class="n">DataSource</span><span class="p">,</span>
         <span class="n">subscribes_to</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Distribution Analysis&quot;</span><span class="p">,</span>
+        <span class="n">controls</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -438,17 +589,39 @@
 <span class="sd">            datasource: Data source instance</span>
 <span class="sd">            subscribes_to: State ID(s) to subscribe to</span>
 <span class="sd">            title: Chart title</span>
-<span class="sd">            **kwargs: Additional styling parameters</span>
+<span class="sd">            controls: Control configuration (False=no controls, True=default controls)</span>
+<span class="sd">            **kwargs: Additional styling parameters and control values</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Get columns from datasource</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
+        <span class="c1"># Store datasource for use in properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_datasource</span> <span class="o">=</span> <span class="n">datasource</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_block_id</span> <span class="o">=</span> <span class="n">block_id</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">block_id</span><span class="o">=</span><span class="n">block_id</span><span class="p">,</span>
+            <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+            <span class="n">subscribes_to</span><span class="o">=</span><span class="n">subscribes_to</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+            <span class="n">controls</span><span class="o">=</span><span class="n">controls</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">default_controls</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Default control definitions for grouped histogram preset.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary mapping control names to Control objects</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get columns from datasource for control options</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
         <span class="n">numerical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
         <span class="n">categorical_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;None&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span>
             <span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;object&quot;</span><span class="p">,</span> <span class="s2">&quot;category&quot;</span><span class="p">]</span>
         <span class="p">)</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
 
-        <span class="c1"># Create controls</span>
-        <span class="n">controls</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="p">{</span>
             <span class="s2">&quot;x_col&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span>
                 <span class="n">component</span><span class="o">=</span><span class="n">dcc</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">,</span>
                 <span class="n">props</span><span class="o">=</span><span class="p">{</span>
@@ -469,34 +642,103 @@
             <span class="p">),</span>
         <span class="p">}</span>
 
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">block_id</span><span class="o">=</span><span class="n">block_id</span><span class="p">,</span>
-            <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
-            <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;grouped_histogram&quot;</span><span class="p">,</span>
-            <span class="n">plot_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="s2">&quot;{{x_col}}&quot;</span><span class="p">,</span> <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;{{group_by}}&quot;</span><span class="p">},</span>
-            <span class="n">plot_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;barmode&quot;</span><span class="p">:</span> <span class="s2">&quot;overlay&quot;</span><span class="p">,</span> <span class="s2">&quot;opacity&quot;</span><span class="p">:</span> <span class="mf">0.75</span><span class="p">},</span>
-            <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
-            <span class="n">controls</span><span class="o">=</span><span class="n">controls</span><span class="p">,</span>
-            <span class="n">subscribes_to</span><span class="o">=</span><span class="n">subscribes_to</span><span class="p">,</span>
-            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-        <span class="p">)</span></div>
-</div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_plot_type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot type identifier for grouped histogram.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;grouped_histogram&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_datasource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datasource</span><span class="p">:</span> <span class="n">DataSource</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validate datasource requirements for grouped histogram.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            datasource: DataSource instance to validate</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If datasource doesn&#39;t have numerical columns</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
+        <span class="n">numerical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">numerical_cols</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;GroupedHistogramPreset requires at least one numerical column&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_plot_params</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">final_controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build plot_params for grouped histogram.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            final_controls: Final control configuration</span>
+<span class="sd">            kwargs: Additional parameters and fallback values</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary of plot parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get default values from datasource</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
+        <span class="n">numerical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="n">plot_params</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="s2">&quot;x_col&quot;</span> <span class="ow">in</span> <span class="n">final_controls</span><span class="p">:</span>
+            <span class="n">plot_params</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;{{x_col}}&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plot_params</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;x_col&quot;</span><span class="p">,</span> <span class="n">numerical_cols</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="s2">&quot;group_by&quot;</span> <span class="ow">in</span> <span class="n">final_controls</span><span class="p">:</span>
+            <span class="n">plot_params</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;{{group_by}}&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plot_params</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;group_by&quot;</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">plot_params</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_plot_kwargs</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">final_controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build plot_kwargs for grouped histogram.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            final_controls: Final control configuration</span>
+<span class="sd">            kwargs: Additional parameters and fallback values</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary of plot kwargs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;barmode&quot;</span><span class="p">:</span> <span class="s2">&quot;overlay&quot;</span><span class="p">,</span> <span class="s2">&quot;opacity&quot;</span><span class="p">:</span> <span class="mf">0.75</span><span class="p">,</span> <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">)}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_plot_title</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">final_controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get dynamic plot title for grouped histogram.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            final_controls: Final control configuration</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dynamic title string with placeholders or None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;x_col&quot;</span> <span class="ow">in</span> <span class="n">final_controls</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;Distribution: {{x_col}}&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
 
 
 
 <div class="viewcode-block" id="BoxPlotPreset">
 <a class="viewcode-back" href="../../../api/presets.html#dashboard_lego.presets.eda_presets.BoxPlotPreset">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">BoxPlotPreset</span><span class="p">(</span><span class="n">TypedChartBlock</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BoxPlotPreset</span><span class="p">(</span><span class="n">BasePreset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Interactive box plot preset using TypedChartBlock.</span>
+<span class="sd">    Interactive box plot preset using BasePreset.</span>
 
 <span class="sd">    :hierarchy: [Presets | EDA | BoxPlotPreset]</span>
-<span class="sd">        :relates-to:</span>
-<span class="sd">     - motivated_by: &quot;v0.15.0: Box plot with controls&quot;</span>
+<span class="sd">    :relates-to:</span>
+<span class="sd">     - motivated_by: &quot;v0.15.0: Box plot with controls using BasePreset&quot;</span>
 <span class="sd">     - implements: &quot;preset: &#39;BoxPlotPreset&#39;&quot;</span>
-<span class="sd">     - uses: [&quot;block: &#39;TypedChartBlock&#39;&quot;]</span>
+<span class="sd">     - uses: [&quot;class: &#39;BasePreset&#39;&quot;]</span>
 
-<span class="sd">        :contract:</span>
+<span class="sd">    :contract:</span>
 <span class="sd">     - pre: &quot;DataFrame has numerical and categorical columns&quot;</span>
 <span class="sd">     - post: &quot;Renders box plot with column selection&quot;</span>
 
@@ -508,9 +750,10 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span>
+        <span class="n">datasource</span><span class="p">:</span> <span class="n">DataSource</span><span class="p">,</span>
         <span class="n">subscribes_to</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Distribution Comparison (Box Plot)&quot;</span><span class="p">,</span>
+        <span class="n">controls</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -521,22 +764,39 @@
 <span class="sd">            datasource: Data source instance</span>
 <span class="sd">            subscribes_to: State ID(s) to subscribe to</span>
 <span class="sd">            title: Chart title</span>
-<span class="sd">            **kwargs: Additional styling parameters</span>
+<span class="sd">            controls: Control configuration (False=no controls, True=default controls)</span>
+<span class="sd">            **kwargs: Additional styling parameters and control values</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Get columns from datasource</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
+        <span class="c1"># Store datasource for use in properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_datasource</span> <span class="o">=</span> <span class="n">datasource</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_block_id</span> <span class="o">=</span> <span class="n">block_id</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">block_id</span><span class="o">=</span><span class="n">block_id</span><span class="p">,</span>
+            <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+            <span class="n">subscribes_to</span><span class="o">=</span><span class="n">subscribes_to</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+            <span class="n">controls</span><span class="o">=</span><span class="n">controls</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">default_controls</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Default control definitions for box plot preset.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary mapping control names to Control objects</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get columns from datasource for control options</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
         <span class="n">numerical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
         <span class="n">categorical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span>
             <span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;object&quot;</span><span class="p">,</span> <span class="s2">&quot;category&quot;</span><span class="p">]</span>
         <span class="p">)</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">numerical_cols</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;BoxPlotPreset requires at least one numerical column&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">categorical_cols</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;BoxPlotPreset requires at least one categorical column&quot;</span><span class="p">)</span>
-
-        <span class="c1"># Create controls</span>
-        <span class="n">controls</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="p">{</span>
             <span class="s2">&quot;y_col&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span>
                 <span class="n">component</span><span class="o">=</span><span class="n">dcc</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">,</span>
                 <span class="n">props</span><span class="o">=</span><span class="p">{</span>
@@ -557,18 +817,404 @@
             <span class="p">),</span>
         <span class="p">}</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_plot_type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot type identifier for box plot.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;box_by_category&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_datasource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datasource</span><span class="p">:</span> <span class="n">DataSource</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validate datasource requirements for box plot.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            datasource: DataSource instance to validate</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If datasource doesn&#39;t have required columns</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
+        <span class="n">numerical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">categorical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span>
+            <span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;object&quot;</span><span class="p">,</span> <span class="s2">&quot;category&quot;</span><span class="p">]</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">numerical_cols</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;BoxPlotPreset requires at least one numerical column&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">categorical_cols</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;BoxPlotPreset requires at least one categorical column&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_plot_params</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">final_controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build plot_params for box plot.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            final_controls: Final control configuration</span>
+<span class="sd">            kwargs: Additional parameters and fallback values</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary of plot parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get default values from datasource</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
+        <span class="n">numerical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">categorical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span>
+            <span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;object&quot;</span><span class="p">,</span> <span class="s2">&quot;category&quot;</span><span class="p">]</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="n">plot_params</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="s2">&quot;x_col&quot;</span> <span class="ow">in</span> <span class="n">final_controls</span><span class="p">:</span>
+            <span class="n">plot_params</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;{{x_col}}&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plot_params</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;x_col&quot;</span><span class="p">,</span> <span class="n">categorical_cols</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="s2">&quot;y_col&quot;</span> <span class="ow">in</span> <span class="n">final_controls</span><span class="p">:</span>
+            <span class="n">plot_params</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;{{y_col}}&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plot_params</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;y_col&quot;</span><span class="p">,</span> <span class="n">numerical_cols</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="c1"># Color uses same as x_col</span>
+        <span class="k">if</span> <span class="s2">&quot;x_col&quot;</span> <span class="ow">in</span> <span class="n">final_controls</span><span class="p">:</span>
+            <span class="n">plot_params</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;{{x_col}}&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plot_params</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;x_col&quot;</span><span class="p">,</span> <span class="n">categorical_cols</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">plot_params</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_plot_kwargs</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">final_controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build plot_kwargs for box plot.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            final_controls: Final control configuration</span>
+<span class="sd">            kwargs: Additional parameters and fallback values</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary of plot kwargs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">)}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_plot_title</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">final_controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get dynamic plot title for box plot.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            final_controls: Final control configuration</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dynamic title string with placeholders or None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;y_col&quot;</span> <span class="ow">in</span> <span class="n">final_controls</span> <span class="ow">and</span> <span class="s2">&quot;x_col&quot;</span> <span class="ow">in</span> <span class="n">final_controls</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;Box: {{y_col}} by {{x_col}}&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="KneePlotPreset">
+<a class="viewcode-back" href="../../../api/presets.html#dashboard_lego.presets.eda_presets.KneePlotPreset">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">KneePlotPreset</span><span class="p">(</span><span class="n">BasePreset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Interactive knee/elbow plot preset using BasePreset.</span>
+
+<span class="sd">    :hierarchy: [Presets | EDA | KneePlotPreset]</span>
+<span class="sd">    :relates-to:</span>
+<span class="sd">     - motivated_by: &quot;v0.15.0: Knee/elbow plots for optimization analysis and cluster validation&quot;</span>
+<span class="sd">     - implements: &quot;preset: &#39;KneePlotPreset&#39;&quot;</span>
+<span class="sd">     - uses: [&quot;class: &#39;BasePreset&#39;&quot;, &quot;plot_type: &#39;knee_plot&#39;&quot;]</span>
+
+<span class="sd">    :contract:</span>
+<span class="sd">     - pre: &quot;DataFrame has numerical columns for x and y axes&quot;</span>
+<span class="sd">     - post: &quot;Renders knee plot with optional automatic knee detection&quot;</span>
+<span class="sd">     - dependency: &quot;Automatic knee detection requires &#39;kneed&#39; package (uv pip install kneed)&quot;</span>
+<span class="sd">     - controls: &quot;Flexible control configuration via controls parameter&quot;</span>
+
+<span class="sd">    :complexity: 3</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="KneePlotPreset.__init__">
+<a class="viewcode-back" href="../../../api/presets.html#dashboard_lego.presets.eda_presets.KneePlotPreset.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">datasource</span><span class="p">:</span> <span class="n">DataSource</span><span class="p">,</span>
+        <span class="n">subscribes_to</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Knee Plot Analysis&quot;</span><span class="p">,</span>
+        <span class="n">controls</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize knee plot preset.</span>
+
+<span class="sd">        :hierarchy: [Presets | EDA | KneePlotPreset | Initialization]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Flexible knee plot with configurable controls using BasePreset&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;__init__&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;datasource contains numerical columns&quot;</span>
+<span class="sd">         - post: &quot;Preset ready with configured controls or no controls&quot;</span>
+<span class="sd">         - controls_logic: &quot;controls=False: no controls, controls=True: default controls, controls=dict: custom control config&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            block_id: Unique identifier</span>
+<span class="sd">            datasource: Data source instance</span>
+<span class="sd">            subscribes_to: State ID(s) to subscribe to</span>
+<span class="sd">            title: Chart title</span>
+<span class="sd">            controls: Control configuration:</span>
+<span class="sd">                - False (default): No controls, expects values in kwargs</span>
+<span class="sd">                - True: Create default controls for all parameters</span>
+<span class="sd">                - Dict[str, bool|Control]: Custom control configuration:</span>
+<span class="sd">                    - bool: Enable/disable default control</span>
+<span class="sd">                    - Control: Replace with custom control</span>
+<span class="sd">            **kwargs: Additional styling parameters and control values</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Store datasource for use in properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_datasource</span> <span class="o">=</span> <span class="n">datasource</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_block_id</span> <span class="o">=</span> <span class="n">block_id</span>
+
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">block_id</span><span class="o">=</span><span class="n">block_id</span><span class="p">,</span>
             <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
-            <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;box_by_category&quot;</span><span class="p">,</span>
-            <span class="n">plot_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="s2">&quot;{{x_col}}&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="s2">&quot;{{y_col}}&quot;</span><span class="p">,</span> <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;{{x_col}}&quot;</span><span class="p">},</span>
-            <span class="n">plot_kwargs</span><span class="o">=</span><span class="p">{},</span>
+            <span class="n">subscribes_to</span><span class="o">=</span><span class="n">subscribes_to</span><span class="p">,</span>
             <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
             <span class="n">controls</span><span class="o">=</span><span class="n">controls</span><span class="p">,</span>
-            <span class="n">subscribes_to</span><span class="o">=</span><span class="n">subscribes_to</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span></div>
-</div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">default_controls</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Default control definitions for knee plot preset.</span>
+
+<span class="sd">        :hierarchy: [Presets | EDA | KneePlotPreset | DefaultControls]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Define available controls for knee plot&quot;</span>
+<span class="sd">         - implements: &quot;property: &#39;default_controls&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;datasource contains numerical columns&quot;</span>
+<span class="sd">         - post: &quot;Returns dict of Control objects for knee plot parameters&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary mapping control names to Control objects</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get columns from datasource for control options</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
+        <span class="n">numerical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;x_col&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span>
+                <span class="n">component</span><span class="o">=</span><span class="n">dcc</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">,</span>
+                <span class="n">props</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="n">numerical_cols</span><span class="p">,</span>
+                    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">numerical_cols</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="s2">&quot;clearable&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;placeholder&quot;</span><span class="p">:</span> <span class="s2">&quot;Select X column&quot;</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;y_col&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span>
+                <span class="n">component</span><span class="o">=</span><span class="n">dcc</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">,</span>
+                <span class="n">props</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="n">numerical_cols</span><span class="p">,</span>
+                    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="p">(</span>
+                        <span class="n">numerical_cols</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">numerical_cols</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span>
+                        <span class="k">else</span> <span class="n">numerical_cols</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="p">),</span>
+                    <span class="s2">&quot;clearable&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;placeholder&quot;</span><span class="p">:</span> <span class="s2">&quot;Select Y column&quot;</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;auto_knee&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span>
+                <span class="n">component</span><span class="o">=</span><span class="n">dbc</span><span class="o">.</span><span class="n">Switch</span><span class="p">,</span>
+                <span class="n">props</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;Auto Knee Detection&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;curve&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span>
+                <span class="n">component</span><span class="o">=</span><span class="n">dcc</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">,</span>
+                <span class="n">props</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">[</span>
+                        <span class="p">{</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;Concave&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;concave&quot;</span><span class="p">},</span>
+                        <span class="p">{</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;Convex&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;convex&quot;</span><span class="p">},</span>
+                    <span class="p">],</span>
+                    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;concave&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;clearable&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;direction&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span>
+                <span class="n">component</span><span class="o">=</span><span class="n">dcc</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">,</span>
+                <span class="n">props</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">[</span>
+                        <span class="p">{</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;Increasing&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;increasing&quot;</span><span class="p">},</span>
+                        <span class="p">{</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;Decreasing&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;decreasing&quot;</span><span class="p">},</span>
+                    <span class="p">],</span>
+                    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;increasing&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;clearable&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;S&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span>
+                <span class="n">component</span><span class="o">=</span><span class="n">dcc</span><span class="o">.</span><span class="n">Input</span><span class="p">,</span>
+                <span class="n">props</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;number&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;step&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+                    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+                    <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+                    <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span>
+                    <span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="s2">&quot;80px&quot;</span><span class="p">},</span>
+                    <span class="s2">&quot;placeholder&quot;</span><span class="p">:</span> <span class="s2">&quot;Sensitivity&quot;</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">),</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_plot_type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plot type identifier for knee plot.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;knee_plot&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_datasource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datasource</span><span class="p">:</span> <span class="n">DataSource</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validate datasource requirements for knee plot.</span>
+
+<span class="sd">        :hierarchy: [Presets | EDA | KneePlotPreset | Validation]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Ensure datasource has required numerical columns&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_validate_datasource&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;datasource is DataSource instance&quot;</span>
+<span class="sd">         - post: &quot;Raises ValueError if requirements not met&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            datasource: DataSource instance to validate</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If datasource doesn&#39;t have at least 2 numerical columns</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
+        <span class="n">numerical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">numerical_cols</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;KneePlotPreset requires at least two numerical columns&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_plot_params</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">final_controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build plot_params for knee plot.</span>
+
+<span class="sd">        :hierarchy: [Presets | EDA | KneePlotPreset | PlotParams]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Build plot parameters based on available controls&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_build_plot_params&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;final_controls is processed control config, kwargs contains fallback values&quot;</span>
+<span class="sd">         - post: &quot;Returns plot_params dict with x and y parameters&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            final_controls: Final control configuration</span>
+<span class="sd">            kwargs: Additional parameters and fallback values</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary of plot parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get default values from datasource</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
+        <span class="n">numerical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="n">plot_params</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="s2">&quot;x_col&quot;</span> <span class="ow">in</span> <span class="n">final_controls</span><span class="p">:</span>
+            <span class="n">plot_params</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;{{x_col}}&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plot_params</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;x_col&quot;</span><span class="p">,</span> <span class="n">numerical_cols</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="s2">&quot;y_col&quot;</span> <span class="ow">in</span> <span class="n">final_controls</span><span class="p">:</span>
+            <span class="n">plot_params</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;{{y_col}}&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plot_params</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s2">&quot;y_col&quot;</span><span class="p">,</span>
+                <span class="n">numerical_cols</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">numerical_cols</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">numerical_cols</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">plot_params</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_plot_kwargs</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">final_controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build plot_kwargs for knee plot.</span>
+
+<span class="sd">        :hierarchy: [Presets | EDA | KneePlotPreset | PlotKwargs]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Build plot kwargs based on available controls&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_build_plot_kwargs&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;final_controls is processed control config, kwargs contains fallback values&quot;</span>
+<span class="sd">         - post: &quot;Returns plot_kwargs dict with knee detection parameters&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            final_controls: Final control configuration</span>
+<span class="sd">            kwargs: Additional parameters and fallback values</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary of plot kwargs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">plot_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="s2">&quot;auto_knee&quot;</span> <span class="ow">in</span> <span class="n">final_controls</span><span class="p">:</span>
+            <span class="n">plot_kwargs</span><span class="p">[</span><span class="s2">&quot;auto_knee&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;{{auto_knee}}&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plot_kwargs</span><span class="p">[</span><span class="s2">&quot;auto_knee&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;auto_knee&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;curve&quot;</span> <span class="ow">in</span> <span class="n">final_controls</span><span class="p">:</span>
+            <span class="n">plot_kwargs</span><span class="p">[</span><span class="s2">&quot;knee_curve&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;{{curve}}&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plot_kwargs</span><span class="p">[</span><span class="s2">&quot;knee_curve&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;knee_curve&quot;</span><span class="p">,</span> <span class="s2">&quot;concave&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;direction&quot;</span> <span class="ow">in</span> <span class="n">final_controls</span><span class="p">:</span>
+            <span class="n">plot_kwargs</span><span class="p">[</span><span class="s2">&quot;knee_direction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;{{direction}}&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plot_kwargs</span><span class="p">[</span><span class="s2">&quot;knee_direction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;knee_direction&quot;</span><span class="p">,</span> <span class="s2">&quot;increasing&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;S&quot;</span> <span class="ow">in</span> <span class="n">final_controls</span><span class="p">:</span>
+            <span class="n">plot_kwargs</span><span class="p">[</span><span class="s2">&quot;knee_S&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;{{S}}&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plot_kwargs</span><span class="p">[</span><span class="s2">&quot;knee_S&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;knee_S&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">plot_kwargs</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_plot_title</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">final_controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get dynamic plot title for knee plot.</span>
+
+<span class="sd">        :hierarchy: [Presets | EDA | KneePlotPreset | PlotTitle]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Generate dynamic title when controls are available&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_get_plot_title&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;final_controls is processed control config&quot;</span>
+<span class="sd">         - post: &quot;Returns title string with placeholders or None&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            final_controls: Final control configuration</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dynamic title string with placeholders or None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;x_col&quot;</span> <span class="ow">in</span> <span class="n">final_controls</span> <span class="ow">and</span> <span class="s2">&quot;y_col&quot;</span> <span class="ow">in</span> <span class="n">final_controls</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;Knee Plot: {{x_col}} vs {{y_col}}&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
 
 </pre></div>
 

@@ -9,12 +9,12 @@ This section documents the core components that form the foundation of dashboard
    :local:
    :depth: 2
 
-BaseDataSource
+DataSource
 --------------
 
 **Location:** ``dashboard_lego.core.datasource``
 
-**Hierarchy:** ``[Core | DataSources | BaseDataSource]``
+**Hierarchy:** ``[Core | DataSources | DataSource]``
 
 **Purpose:** Concrete data source with a 2-stage processing pipeline using composition.
 
@@ -42,14 +42,14 @@ Data flows through a 2-stage pipeline with independent caching at each stage. Th
     - pre: data_builder and data_transformer are provided to the constructor via composition.
     - post: Data flows through the 2-stage pipeline: build → transform.
     - invariant: get_processed_data() always runs the pipeline, leveraging the cache at each stage.
-    - no_abstract_methods: BaseDataSource is fully concrete and should not be subclassed for data loading.
+    - no_abstract_methods: DataSource is fully concrete and should not be subclassed for data loading.
 
 Key Architectural Changes (v0.15)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 1.  **Simpler 2-Stage Pipeline**: The previous ``Load → Preprocess → Filter`` pipeline is now ``Build → Transform``.
 2.  **Semantic Clarity**: ``Build`` clearly means "construct the complete dataset from a source". ``Transform`` means "apply any df→df transformation" (filtering, aggregation, etc.).
-3.  **Composition over Inheritance**: ``BaseDataSource`` is now a concrete class. You no longer subclass it. Instead, you provide ``DataBuilder`` and ``DataTransformer`` instances to its constructor.
+3.  **Composition over Inheritance**: ``DataSource`` is now a concrete class. You no longer subclass it. Instead, you provide ``DataBuilder`` and ``DataTransformer`` instances to its constructor.
 4.  **Staged Caching**: Changing ``transform`` parameters (e.g., from a filter control) will only re-run the second stage, reusing the cached result from the ``build`` stage for better performance.
 
 Constructor
@@ -85,7 +85,7 @@ Constructor
        # All other params go to the build stage.
        return 'build'
 
-   datasource = BaseDataSource(
+   datasource = DataSource(
        data_builder=MyDataBuilder(),
        data_transformer=MyDataTransformer(),
        param_classifier=classify_params
@@ -112,7 +112,7 @@ Public Methods
            3. Transform data (cached by transform params).
        """
 
-   def with_transform_fn(self, transform_fn: Callable[[pd.DataFrame], pd.DataFrame]) -> "BaseDataSource":
+   def with_transform_fn(self, transform_fn: Callable[[pd.DataFrame], pd.DataFrame]) -> "DataSource":
        """
        Creates a new, specialized datasource instance with an additional transformation.
        This is the key to block-level transformations.
@@ -123,7 +123,7 @@ Implementation Example (v0.15 Pattern)
 
 .. code-block:: python
 
-   from dashboard_lego.core import BaseDataSource, DataBuilder, DataTransformer
+   from dashboard_lego.core import DataSource, DataBuilder, DataTransformer
    from dashboard_lego.blocks import MetricsBlock
    import pandas as pd
 
@@ -156,7 +156,7 @@ Implementation Example (v0.15 Pattern)
        return 'transform' if key.startswith('filters-') else 'build'
 
    # Step 4: Create the DataSource instance using composition
-   datasource = BaseDataSource(
+   datasource = DataSource(
        data_builder=SalesDataBuilder("sales.csv"),
        data_transformer=SalesTransformer(),
        param_classifier=param_classifier,

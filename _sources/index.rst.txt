@@ -49,7 +49,7 @@ Create a simple dashboard:
    import dash_bootstrap_components as dbc
    import pandas as pd
    from dashboard_lego import DashboardPage
-   from dashboard_lego.core import BaseDataSource, DataBuilder
+   from dashboard_lego.core import DataSource, DataBuilder
    from dashboard_lego.blocks.metrics import MetricsBlock
 
    # Define DataBuilder (v0.15+ pattern)
@@ -62,7 +62,7 @@ Create a simple dashboard:
            return pd.read_csv(self.file_path)
 
    # Create datasource using composition
-   datasource = BaseDataSource(
+   datasource = DataSource(
        data_builder=MyDataBuilder("your_data.csv")
    )
 
@@ -108,6 +108,7 @@ Contents
    :caption: Comprehensive Guide
 
    guide/index
+   guide/magics
 
 .. toctree::
    :maxdepth: 2

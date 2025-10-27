@@ -14,7 +14,7 @@ Class Summary
 Data Pipeline (v0.15)
 ^^^^^^^^^^^^^^^^^^^^^
 
-- **BaseDataSource**: Concrete data source with 2-stage pipeline → ``get_processed_data(params)``
+- **DataSource**: Concrete data source with 2-stage pipeline → ``get_processed_data(params)``
 - **DataBuilder**: Data building stage (load + process) → ``build(params)``
 - **DataTransformer**: Data transformation stage → ``transform(data, params)``
 
@@ -102,14 +102,14 @@ Minimal Dashboard
    import dash
    import dash_bootstrap_components as dbc
    from dashboard_lego import DashboardPage
-   from dashboard_lego.core import BaseDataSource, DataBuilder
+   from dashboard_lego.core import DataSource, DataBuilder
    from dashboard_lego.blocks import MetricsBlock
 
    class MyDataBuilder(DataBuilder):
        def build(self, params):
            return pd.read_csv("data.csv")
 
-   datasource = BaseDataSource(data_builder=MyDataBuilder())
+   datasource = DataSource(data_builder=MyDataBuilder())
 
    metrics = MetricsBlock(
        block_id="metrics",

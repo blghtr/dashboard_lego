@@ -11,7 +11,7 @@ Data Sources
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: dashboard_lego.core.datasource.BaseDataSource
+.. autoclass:: dashboard_lego.core.datasource.DataSource
    :members:
    :undoc-members:
    :show-inheritance:

@@ -48,6 +48,7 @@
 <p class="caption" role="heading"><span class="caption-text">Comprehensive Guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Comprehensive API Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/magics.html">IPython Magic Commands</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -88,7 +89,7 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">dash.dependencies</span><span class="w"> </span><span class="kn">import</span> <span class="n">MATCH</span><span class="p">,</span> <span class="n">Input</span><span class="p">,</span> <span class="n">Output</span>
 
@@ -159,12 +160,23 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Initializing StateManager&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dependency_graph</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="c1"># Track registered outputs for idempotency (navigation lazy-loading support)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_registered_outputs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>  <span class="c1"># Set of (component_id, component_prop) tuples</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_registered_outputs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>  <span class="c1"># Set of (component_id, component_prop) tuples</span>
+        <span class="c1"># Track publisher values for initial state sync</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_publisher_values</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># {state_id: current_value}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_publisher_components</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># {state_id: (component_id, component_prop)}</span>
+        <span class="c1"># Track dep_param_name mappings for parameter name overrides</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dep_param_names</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># {state_id: dep_param_name}</span></div>
 
 
 <div class="viewcode-block" id="StateManager.register_publisher">
 <a class="viewcode-back" href="../../../api/core.html#dashboard_lego.core.state.StateManager.register_publisher">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">register_publisher</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">component_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">component_prop</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">register_publisher</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">state_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">component_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">component_prop</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">dep_param_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Registers a component property as a provider of a certain state.</span>
 
@@ -189,6 +201,18 @@
             <span class="s2">&quot;component_id&quot;</span><span class="p">:</span> <span class="n">component_id</span><span class="p">,</span>
             <span class="s2">&quot;component_prop&quot;</span><span class="p">:</span> <span class="n">component_prop</span><span class="p">,</span>
         <span class="p">}</span>
+
+        <span class="c1"># Track for initial values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_publisher_components</span><span class="p">[</span><span class="n">state_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">component_id</span><span class="p">,</span> <span class="n">component_prop</span><span class="p">)</span>
+        <span class="c1"># Store dep_param_name if provided</span>
+        <span class="k">if</span> <span class="n">dep_param_name</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dep_param_names</span><span class="p">[</span><span class="n">state_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">dep_param_name</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Registered dep_param_name: </span><span class="si">{</span><span class="n">state_id</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">dep_param_name</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="c1"># Initial value is None until Dash provides it</span>
+        <span class="k">if</span> <span class="n">state_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_publisher_values</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_publisher_values</span><span class="p">[</span><span class="n">state_id</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Publisher registered for state: </span><span class="si">{</span><span class="n">state_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
@@ -242,6 +266,33 @@
             <span class="sa">f</span><span class="s2">&quot;(total subscribers: &quot;</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dependency_graph</span><span class="p">[</span><span class="n">state_id</span><span class="p">][</span><span class="s1">&#39;subscribers&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">)&quot;</span>
         <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="StateManager.get_initial_publisher_values">
+<a class="viewcode-back" href="../../../api/core.html#dashboard_lego.core.state.StateManager.get_initial_publisher_values">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_initial_publisher_values</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get initial values of all registered publishers.</span>
+
+<span class="sd">        :hierarchy: [Feature | Initial State Sync | StateManager]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Blocks need initial state values before rendering&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;get_initial_publisher_values&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;Publishers are registered&quot;</span>
+<span class="sd">         - post: &quot;Returns {state_id: None or value} for all states&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict mapping state_id to initial value (None if not available)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Getting initial publisher values for </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dependency_graph</span><span class="p">)</span><span class="si">}</span><span class="s2"> states&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">state_id</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_publisher_values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">state_id</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">state_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dependency_graph</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="p">}</span></div>
 
 
     <span class="nd">@staticmethod</span>
@@ -368,8 +419,10 @@
 
                 <span class="c1"># NEW: Skip if already registered (idempotency for navigation lazy-loading)</span>
                 <span class="k">if</span> <span class="n">output_key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_registered_outputs</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;⏭️  Callback for </span><span class="si">{</span><span class="n">component_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">component_prop</span><span class="si">}</span><span class="s2"> already registered, skipping&quot;</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;⏭️  Callback for </span><span class="si">{</span><span class="n">component_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">component_prop</span><span class="si">}</span><span class="s2"> already &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;registered from previous invocation - SKIPPING to avoid duplicate. &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;If this is a navigation page reload, verify block removal didn&#39;t fail.&quot;</span>
                     <span class="p">)</span>
                     <span class="k">continue</span>
 
@@ -407,7 +460,7 @@
                 <span class="p">)</span>
 
                 <span class="c1"># Create callback that handles multiple inputs</span>
-                <span class="n">callback_func</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_multi_input_callback</span><span class="p">(</span><span class="n">state_infos</span><span class="p">)</span>
+                <span class="n">callback_func</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_multi_input_callback</span><span class="p">(</span><span class="n">state_infos</span><span class="p">,</span> <span class="n">block</span><span class="p">)</span>
 
                 <span class="c1"># Register callback with Dash</span>
                 <span class="c1"># CRITICAL: State-centric callbacks should NOT use prevent_initial_call</span>
@@ -577,7 +630,7 @@
                                 <span class="sa">f</span><span class="s2">&quot;with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="si">}</span><span class="s2"> values (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">external_values</span><span class="p">)</span><span class="si">}</span><span class="s2"> external Input + </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">own_control_values</span><span class="p">)</span><span class="si">}</span><span class="s2"> own Input)&quot;</span>
                             <span class="p">)</span>
 
-                            <span class="c1"># Build control_values dict</span>
+                            <span class="c1"># Build control_values dict with mixed key formats</span>
                             <span class="n">control_values</span> <span class="o">=</span> <span class="p">{}</span>
 
                             <span class="c1"># 1. Add external input values (triggers callback on change)</span>
@@ -605,8 +658,18 @@
                                     <span class="sa">f</span><span class="s2">&quot;(from Input </span><span class="si">{</span><span class="n">component_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">prop</span><span class="si">}</span><span class="s2">)&quot;</span>
                                 <span class="p">)</span>
 
+                            <span class="c1"># Normalize control value keys for consistent handling</span>
+                            <span class="n">normalized_control_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_control_keys</span><span class="p">(</span>
+                                <span class="n">control_values</span><span class="p">,</span> <span class="n">block_ref</span>
+                            <span class="p">)</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                                <span class="sa">f</span><span class="s2">&quot;🔧 Normalized control keys: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">normalized_control_values</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+                            <span class="p">)</span>
+
                             <span class="c1"># Call the block&#39;s update method</span>
-                            <span class="k">return</span> <span class="n">block_ref</span><span class="o">.</span><span class="n">update_from_controls</span><span class="p">(</span><span class="n">control_values</span><span class="p">)</span>
+                            <span class="k">return</span> <span class="n">block_ref</span><span class="o">.</span><span class="n">update_from_controls</span><span class="p">(</span>
+                                <span class="n">normalized_control_values</span>
+                            <span class="p">)</span>
                         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
                                 <span class="sa">f</span><span class="s2">&quot;Error in callback for block </span><span class="si">{</span><span class="n">block_ref</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
@@ -796,24 +859,26 @@
             <span class="k">return</span> <span class="kc">None</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_create_multi_input_callback</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">state_infos</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">state_infos</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">block</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Creates a callback function that handles multiple input states.</span>
 
 <span class="sd">        :hierarchy: [Feature | Multi-State Subscription | Callback Creation]</span>
 <span class="sd">        :relates-to:</span>
-<span class="sd">         - motivated_by: &quot;Bug Fix: Support blocks subscribing to multiple states&quot;</span>
+<span class="sd">         - motivated_by: &quot;Bug Fix: Support blocks subscribing to multiple states with dep_param_name normalization&quot;</span>
 <span class="sd">         - implements: &quot;method: &#39;_create_multi_input_callback&#39;&quot;</span>
 
 <span class="sd">        :rationale: &quot;When a block subscribes to multiple states, the callback</span>
-<span class="sd">         receives multiple input values and must call the block&#39;s update function.&quot;</span>
+<span class="sd">         receives multiple input values and must call the block&#39;s update function.</span>
+<span class="sd">         Normalizes control keys using dep_param_name before passing to block.&quot;</span>
 <span class="sd">        :contract:</span>
 <span class="sd">         - pre: &quot;state_infos contains callback_fn and state metadata for each input.&quot;</span>
-<span class="sd">         - post: &quot;Returns a function that processes all input values.&quot;</span>
+<span class="sd">         - post: &quot;Returns a function that processes all input values with normalized keys.&quot;</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            state_infos: List of dicts with &#39;state_id&#39;, &#39;publisher&#39;, &#39;callback_fn&#39;.</span>
+<span class="sd">            block: Optional block reference for key normalization.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            A callback function that accepts multiple input values.</span>
@@ -824,9 +889,11 @@
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            Callback that receives multiple input values from different states.</span>
 
-<span class="sd">            Since all state_infos point to the same callback_fn (same subscriber),</span>
-<span class="sd">            we just call it once with the first value that triggered the callback.</span>
+<span class="sd">            Builds state mapping dict and passes to block for explicit state ID handling.</span>
 
+<span class="sd">            :contract:</span>
+<span class="sd">             - pre: &quot;values tuple contains one value per input in registration order&quot;</span>
+<span class="sd">             - post: &quot;Calls callback_fn with normalized {param_name: value} mapping dict&quot;</span>
 <span class="sd">            &quot;&quot;&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;🔔 Multi-input callback triggered with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="si">}</span><span class="s2"> values&quot;</span>
@@ -834,14 +901,14 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Values: </span><span class="si">{</span><span class="n">values</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Value types: </span><span class="si">{</span><span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">v</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">values</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-            <span class="c1"># Log state_ids and values mapping for debugging</span>
+            <span class="c1"># Build state mapping dict for explicit state ID handling</span>
             <span class="n">state_mapping</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">info</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">state_infos</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">):</span>
                     <span class="n">state_id</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;state_id&quot;</span><span class="p">]</span>
                     <span class="n">value</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
                     <span class="n">state_mapping</span><span class="p">[</span><span class="n">state_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
                         <span class="sa">f</span><span class="s2">&quot;🎯 State mapping: </span><span class="si">{</span><span class="n">state_id</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2"> (type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">)&quot;</span>
                     <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
@@ -849,13 +916,25 @@
 
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;📋 Complete state mapping: </span><span class="si">{</span><span class="n">state_mapping</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
+            <span class="c1"># Normalize control keys using dep_param_name if block is available</span>
+            <span class="k">if</span> <span class="n">block</span><span class="p">:</span>
+                <span class="n">normalized_mapping</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_control_keys</span><span class="p">(</span><span class="n">state_mapping</span><span class="p">,</span> <span class="n">block</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;🔧 Normalized control keys: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">normalized_mapping</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">normalized_mapping</span> <span class="o">=</span> <span class="n">state_mapping</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;⚠️ No block reference, skipping key normalization&quot;</span><span class="p">)</span>
+
             <span class="k">try</span><span class="p">:</span>
                 <span class="c1"># All state_infos have the same callback_fn (same subscriber block)</span>
-                <span class="c1"># Just call it with the first triggering value</span>
-                <span class="c1"># Dash&#39;s callback context can be used if block needs to know which input triggered</span>
+                <span class="c1"># Pass normalized mapping dict for explicit param name handling</span>
                 <span class="n">callback_fn</span> <span class="o">=</span> <span class="n">state_infos</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;callback_fn&quot;</span><span class="p">]</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;📞 Calling callback_fn: </span><span class="si">{</span><span class="n">callback_fn</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                <span class="n">result</span> <span class="o">=</span> <span class="n">callback_fn</span><span class="p">(</span><span class="o">*</span><span class="n">values</span><span class="p">)</span>
+                <span class="n">callback_name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">callback_fn</span><span class="p">,</span> <span class="s2">&quot;__name__&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">callback_fn</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;📞 Calling callback_fn: </span><span class="si">{</span><span class="n">callback_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">callback_fn</span><span class="p">(</span>
+                    <span class="n">normalized_mapping</span>
+                <span class="p">)</span>  <span class="c1"># ← FIXED: Pass normalized dict</span>
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Multi-input callback completed successfully&quot;</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">result</span>
@@ -919,7 +998,101 @@
                     <span class="k">return</span> <span class="kc">None</span>
                 <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">subscribers</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">callback_wrapper</span></div>
+        <span class="k">return</span> <span class="n">callback_wrapper</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_normalize_control_keys</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">control_values</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">block</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Normalize control value keys for consistent handling.</span>
+
+<span class="sd">        Converts mixed key formats to consistent format:</span>
+<span class="sd">        - External state_ids: apply dep_param_name if available</span>
+<span class="sd">        - Embedded control IDs: extract short name and apply dep_param_name if available</span>
+
+<span class="sd">        :hierarchy: [Feature | Key Normalization | StateManager]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Control value keys have inconsistent formats between external states and embedded controls&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_normalize_control_keys&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;control_values has mixed {state_id and component_id: value}&quot;</span>
+<span class="sd">         - post: &quot;Returns normalized {dep_param_name or control_name: value}&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            control_values: Mixed format dict from callback args</span>
+<span class="sd">            block: Block instance to check controls</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Normalized dict with consistent key format</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">normalized</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">control_values</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">final_key</span> <span class="o">=</span> <span class="n">key</span>  <span class="c1"># Default: keep as-is</span>
+
+            <span class="c1"># Case 1: External state (from another block)</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">subscribes</span> <span class="ow">or</span> <span class="p">{}):</span>
+                <span class="c1"># Check if StateManager has dep_param_name for this state</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dep_param_names</span><span class="p">:</span>
+                    <span class="n">final_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dep_param_names</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;  External state </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">final_key</span><span class="si">}</span><span class="s2"> (dep_param_name)&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;  External state </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> (no dep_param_name)&quot;</span>
+                    <span class="p">)</span>
+
+            <span class="c1"># Case 2: Embedded control (from this block)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;-&quot;</span> <span class="ow">in</span> <span class="n">key</span><span class="p">:</span>
+                <span class="n">control_name</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">control_name</span> <span class="ow">in</span> <span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">controls</span> <span class="ow">or</span> <span class="p">{}):</span>
+                    <span class="n">control_obj</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">controls</span><span class="p">[</span><span class="n">control_name</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="p">(</span>
+                        <span class="nb">hasattr</span><span class="p">(</span><span class="n">control_obj</span><span class="p">,</span> <span class="s2">&quot;dep_param_name&quot;</span><span class="p">)</span>
+                        <span class="ow">and</span> <span class="n">control_obj</span><span class="o">.</span><span class="n">dep_param_name</span>
+                    <span class="p">):</span>
+                        <span class="n">final_key</span> <span class="o">=</span> <span class="n">control_obj</span><span class="o">.</span><span class="n">dep_param_name</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;  Embedded control </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">final_key</span><span class="si">}</span><span class="s2"> (dep_param_name)&quot;</span>
+                        <span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">final_key</span> <span class="o">=</span> <span class="n">control_name</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;  Embedded control </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">control_name</span><span class="si">}</span><span class="s2"> (short name)&quot;</span>
+                        <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Unknown format - pass through</span>
+                    <span class="n">final_key</span> <span class="o">=</span> <span class="n">key</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Unknown format - pass through</span>
+                <span class="n">final_key</span> <span class="o">=</span> <span class="n">key</span>
+
+            <span class="n">normalized</span><span class="p">[</span><span class="n">final_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="k">return</span> <span class="n">normalized</span>
+
+<div class="viewcode-block" id="StateManager.clear_registered_outputs">
+<a class="viewcode-back" href="../../../api/core.html#dashboard_lego.core.state.StateManager.clear_registered_outputs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clear_registered_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Clear registered output cache.</span>
+
+<span class="sd">        Use when blocks are being re-rendered (e.g., section removal).</span>
+
+<span class="sd">        :hierarchy: [Feature | Callback Management | StateManager]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Navigation lazy-loading needs to clear callback cache&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;clear_registered_outputs&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;No active callbacks in Dash&quot;</span>
+<span class="sd">         - post: &quot;_registered_outputs is empty&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Clearing </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_registered_outputs</span><span class="p">)</span><span class="si">}</span><span class="s2"> registered outputs&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_registered_outputs</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
+</div>
 
 </pre></div>
 

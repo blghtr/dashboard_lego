@@ -48,6 +48,7 @@
 <p class="caption" role="heading"><span class="caption-text">Comprehensive Guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Comprehensive API Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/magics.html">IPython Magic Commands</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -94,13 +95,16 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">plotly.express</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">px</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">plotly.graph_objects</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">go</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dash</span><span class="w"> </span><span class="kn">import</span> <span class="n">html</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dash</span><span class="w"> </span><span class="kn">import</span> <span class="n">dcc</span><span class="p">,</span> <span class="n">html</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">confusion_matrix</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseBlock</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.typed_chart</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedChartBlock</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.datasource</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseDataSource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.typed_chart</span><span class="w"> </span><span class="kn">import</span> <span class="n">Control</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.datasource</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataSource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.presets.base_preset</span><span class="w"> </span><span class="kn">import</span> <span class="n">BasePreset</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.plot_registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_plot_type</span>
+
+<span class="c1">#  TODO: Refactor this from scratch</span>
 
 
 <div class="viewcode-block" id="ModelSummaryBlock">
@@ -128,7 +132,7 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span>
+        <span class="n">datasource</span><span class="p">:</span> <span class="n">DataSource</span><span class="p">,</span>
         <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Model Summary&quot;</span><span class="p">,</span>
         <span class="c1"># Style customization parameters</span>
         <span class="n">card_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -232,13 +236,18 @@
 
 <div class="viewcode-block" id="ConfusionMatrixPreset">
 <a class="viewcode-back" href="../../../api/presets.html#dashboard_lego.presets.ml_presets.ConfusionMatrixPreset">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">ConfusionMatrixPreset</span><span class="p">(</span><span class="n">TypedChartBlock</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ConfusionMatrixPreset</span><span class="p">(</span><span class="n">BasePreset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Confusion matrix preset using TypedChartBlock.</span>
+<span class="sd">    Confusion matrix preset using BasePreset.</span>
 
 <span class="sd">    Refactored from StaticChartBlock in v0.15.</span>
 
 <span class="sd">    :hierarchy: [Presets | ML | ConfusionMatrixPreset]</span>
+<span class="sd">    :relates-to:</span>
+<span class="sd">     - motivated_by: &quot;v0.15.0: ML preset using BasePreset&quot;</span>
+<span class="sd">     - implements: &quot;preset: &#39;ConfusionMatrixPreset&#39;&quot;</span>
+<span class="sd">     - uses: [&quot;class: &#39;BasePreset&#39;&quot;]</span>
+
 <span class="sd">    :contract:</span>
 <span class="sd">     - pre: &quot;Datasource has y_true_col and y_pred_col columns&quot;</span>
 <span class="sd">     - post: &quot;Renders confusion matrix heatmap&quot;</span>
@@ -251,24 +260,154 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span>
+        <span class="n">datasource</span><span class="p">:</span> <span class="n">DataSource</span><span class="p">,</span>
         <span class="n">y_true_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">y_pred_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Confusion Matrix&quot;</span><span class="p">,</span>
         <span class="n">subscribes_to</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">controls</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize confusion matrix preset.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            block_id: Unique identifier</span>
+<span class="sd">            datasource: Data source instance</span>
+<span class="sd">            y_true_col: Column name for true labels</span>
+<span class="sd">            y_pred_col: Column name for predicted labels</span>
+<span class="sd">            title: Chart title</span>
+<span class="sd">            subscribes_to: State ID(s) to subscribe to</span>
+<span class="sd">            controls: Control configuration (False=no controls, True=default controls)</span>
+<span class="sd">            **kwargs: Additional styling parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Store parameters for use in properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_y_true_col</span> <span class="o">=</span> <span class="n">y_true_col</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_y_pred_col</span> <span class="o">=</span> <span class="n">y_pred_col</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_datasource</span> <span class="o">=</span> <span class="n">datasource</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_block_id</span> <span class="o">=</span> <span class="n">block_id</span>
+
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">block_id</span><span class="o">=</span><span class="n">block_id</span><span class="p">,</span>
             <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
-            <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;confusion_matrix&quot;</span><span class="p">,</span>
-            <span class="n">plot_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;y_true_col&quot;</span><span class="p">:</span> <span class="n">y_true_col</span><span class="p">,</span> <span class="s2">&quot;y_pred_col&quot;</span><span class="p">:</span> <span class="n">y_pred_col</span><span class="p">},</span>
-            <span class="n">plot_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">title</span><span class="p">},</span>
-            <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
             <span class="n">subscribes_to</span><span class="o">=</span><span class="n">subscribes_to</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+            <span class="n">controls</span><span class="o">=</span><span class="n">controls</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span></div>
-</div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">default_controls</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Default control definitions for confusion matrix preset.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary mapping control names to Control objects</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get columns from datasource for control options</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
+        <span class="n">categorical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span>
+            <span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;object&quot;</span><span class="p">,</span> <span class="s2">&quot;category&quot;</span><span class="p">]</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;y_true_col&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span>
+                <span class="n">component</span><span class="o">=</span><span class="n">dcc</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">,</span>
+                <span class="n">props</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="n">categorical_cols</span><span class="p">,</span>
+                    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_true_col</span><span class="p">,</span>
+                    <span class="s2">&quot;clearable&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="s2">&quot;150px&quot;</span><span class="p">},</span>
+                <span class="p">},</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;y_pred_col&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span>
+                <span class="n">component</span><span class="o">=</span><span class="n">dcc</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">,</span>
+                <span class="n">props</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="n">categorical_cols</span><span class="p">,</span>
+                    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_pred_col</span><span class="p">,</span>
+                    <span class="s2">&quot;clearable&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="s2">&quot;150px&quot;</span><span class="p">},</span>
+                <span class="p">},</span>
+            <span class="p">),</span>
+        <span class="p">}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot type identifier for confusion matrix.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;confusion_matrix&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_datasource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datasource</span><span class="p">:</span> <span class="n">DataSource</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validate datasource requirements for confusion matrix.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            datasource: DataSource instance to validate</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If datasource doesn&#39;t have required columns</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_true_col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Column &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_y_true_col</span><span class="si">}</span><span class="s2">&#39; not found in datasource&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_pred_col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Column &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_y_pred_col</span><span class="si">}</span><span class="s2">&#39; not found in datasource&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_plot_params</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">final_controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build plot_params for confusion matrix.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            final_controls: Final control configuration</span>
+<span class="sd">            kwargs: Additional parameters and fallback values</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary of plot parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">plot_params</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="s2">&quot;y_true_col&quot;</span> <span class="ow">in</span> <span class="n">final_controls</span><span class="p">:</span>
+            <span class="n">plot_params</span><span class="p">[</span><span class="s2">&quot;y_true_col&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;{{y_true_col}}&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plot_params</span><span class="p">[</span><span class="s2">&quot;y_true_col&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;y_true_col&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_true_col</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;y_pred_col&quot;</span> <span class="ow">in</span> <span class="n">final_controls</span><span class="p">:</span>
+            <span class="n">plot_params</span><span class="p">[</span><span class="s2">&quot;y_pred_col&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;{{y_pred_col}}&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plot_params</span><span class="p">[</span><span class="s2">&quot;y_pred_col&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;y_pred_col&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_pred_col</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">plot_params</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_plot_kwargs</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">final_controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build plot_kwargs for confusion matrix.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            final_controls: Final control configuration</span>
+<span class="sd">            kwargs: Additional parameters and fallback values</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary of plot kwargs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="s2">&quot;Confusion Matrix&quot;</span><span class="p">)}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_plot_title</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">final_controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get dynamic plot title for confusion matrix.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            final_controls: Final control configuration</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dynamic title string with placeholders or None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;y_true_col&quot;</span> <span class="ow">in</span> <span class="n">final_controls</span> <span class="ow">and</span> <span class="s2">&quot;y_pred_col&quot;</span> <span class="ow">in</span> <span class="n">final_controls</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;Confusion Matrix: {{y_true_col}} vs {{y_pred_col}}&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
 
 
 
@@ -327,13 +466,18 @@
 
 <div class="viewcode-block" id="RocAucCurvePreset">
 <a class="viewcode-back" href="../../../api/presets.html#dashboard_lego.presets.ml_presets.RocAucCurvePreset">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">RocAucCurvePreset</span><span class="p">(</span><span class="n">TypedChartBlock</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">RocAucCurvePreset</span><span class="p">(</span><span class="n">BasePreset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    ROC curve preset using TypedChartBlock.</span>
+<span class="sd">    ROC curve preset using BasePreset.</span>
 
 <span class="sd">    Refactored from StaticChartBlock in v0.15.</span>
 
 <span class="sd">    :hierarchy: [Presets | ML | RocAucCurvePreset]</span>
+<span class="sd">    :relates-to:</span>
+<span class="sd">     - motivated_by: &quot;v0.15.0: ML preset using BasePreset&quot;</span>
+<span class="sd">     - implements: &quot;preset: &#39;RocAucCurvePreset&#39;&quot;</span>
+<span class="sd">     - uses: [&quot;class: &#39;BasePreset&#39;&quot;]</span>
+
 <span class="sd">    :contract:</span>
 <span class="sd">     - pre: &quot;Datasource has y_true_col and y_score_cols&quot;</span>
 <span class="sd">     - post: &quot;Renders ROC curve (binary or multi-class)&quot;</span>
@@ -346,24 +490,157 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span>
+        <span class="n">datasource</span><span class="p">:</span> <span class="n">DataSource</span><span class="p">,</span>
         <span class="n">y_true_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">y_score_cols</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
         <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;ROC Curve&quot;</span><span class="p">,</span>
         <span class="n">subscribes_to</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">controls</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize ROC curve preset.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            block_id: Unique identifier</span>
+<span class="sd">            datasource: Data source instance</span>
+<span class="sd">            y_true_col: Column name for true labels</span>
+<span class="sd">            y_score_cols: List of column names for prediction scores</span>
+<span class="sd">            title: Chart title</span>
+<span class="sd">            subscribes_to: State ID(s) to subscribe to</span>
+<span class="sd">            controls: Control configuration (False=no controls, True=default controls)</span>
+<span class="sd">            **kwargs: Additional styling parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Store parameters for use in properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_y_true_col</span> <span class="o">=</span> <span class="n">y_true_col</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_y_score_cols</span> <span class="o">=</span> <span class="n">y_score_cols</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_datasource</span> <span class="o">=</span> <span class="n">datasource</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_block_id</span> <span class="o">=</span> <span class="n">block_id</span>
+
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">block_id</span><span class="o">=</span><span class="n">block_id</span><span class="p">,</span>
             <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
-            <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;roc_curve&quot;</span><span class="p">,</span>
-            <span class="n">plot_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;y_true_col&quot;</span><span class="p">:</span> <span class="n">y_true_col</span><span class="p">,</span> <span class="s2">&quot;y_score_cols&quot;</span><span class="p">:</span> <span class="n">y_score_cols</span><span class="p">},</span>
-            <span class="n">plot_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">title</span><span class="p">},</span>
-            <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
             <span class="n">subscribes_to</span><span class="o">=</span><span class="n">subscribes_to</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+            <span class="n">controls</span><span class="o">=</span><span class="n">controls</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span></div>
-</div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">default_controls</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Default control definitions for ROC curve preset.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary mapping control names to Control objects</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get columns from datasource for control options</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
+        <span class="n">categorical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span>
+            <span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;object&quot;</span><span class="p">,</span> <span class="s2">&quot;category&quot;</span><span class="p">]</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">numerical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;y_true_col&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span>
+                <span class="n">component</span><span class="o">=</span><span class="n">dcc</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">,</span>
+                <span class="n">props</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="n">categorical_cols</span><span class="p">,</span>
+                    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_true_col</span><span class="p">,</span>
+                    <span class="s2">&quot;clearable&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="s2">&quot;150px&quot;</span><span class="p">},</span>
+                <span class="p">},</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;y_score_cols&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span>
+                <span class="n">component</span><span class="o">=</span><span class="n">dcc</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">,</span>
+                <span class="n">props</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="n">numerical_cols</span><span class="p">,</span>
+                    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_score_cols</span><span class="p">,</span>
+                    <span class="s2">&quot;multi&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;clearable&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="s2">&quot;150px&quot;</span><span class="p">},</span>
+                <span class="p">},</span>
+            <span class="p">),</span>
+        <span class="p">}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot type identifier for ROC curve.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;roc_curve&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_datasource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datasource</span><span class="p">:</span> <span class="n">DataSource</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validate datasource requirements for ROC curve.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            datasource: DataSource instance to validate</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If datasource doesn&#39;t have required columns</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_true_col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Column &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_y_true_col</span><span class="si">}</span><span class="s2">&#39; not found in datasource&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_score_cols</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Column &#39;</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">&#39; not found in datasource&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_plot_params</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">final_controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build plot_params for ROC curve.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            final_controls: Final control configuration</span>
+<span class="sd">            kwargs: Additional parameters and fallback values</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary of plot parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">plot_params</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="s2">&quot;y_true_col&quot;</span> <span class="ow">in</span> <span class="n">final_controls</span><span class="p">:</span>
+            <span class="n">plot_params</span><span class="p">[</span><span class="s2">&quot;y_true_col&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;{{y_true_col}}&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plot_params</span><span class="p">[</span><span class="s2">&quot;y_true_col&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;y_true_col&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_true_col</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;y_score_cols&quot;</span> <span class="ow">in</span> <span class="n">final_controls</span><span class="p">:</span>
+            <span class="n">plot_params</span><span class="p">[</span><span class="s2">&quot;y_score_cols&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;{{y_score_cols}}&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plot_params</span><span class="p">[</span><span class="s2">&quot;y_score_cols&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;y_score_cols&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_score_cols</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">plot_params</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_plot_kwargs</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">final_controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build plot_kwargs for ROC curve.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            final_controls: Final control configuration</span>
+<span class="sd">            kwargs: Additional parameters and fallback values</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary of plot kwargs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="s2">&quot;ROC Curve&quot;</span><span class="p">)}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_plot_title</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">final_controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get dynamic plot title for ROC curve.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            final_controls: Final control configuration</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dynamic title string with placeholders or None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;y_true_col&quot;</span> <span class="ow">in</span> <span class="n">final_controls</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;ROC Curve: {{y_true_col}}&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
 
 
 
@@ -397,17 +674,17 @@
 
 <div class="viewcode-block" id="FeatureImportancePreset">
 <a class="viewcode-back" href="../../../api/presets.html#dashboard_lego.presets.ml_presets.FeatureImportancePreset">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">FeatureImportancePreset</span><span class="p">(</span><span class="n">TypedChartBlock</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">FeatureImportancePreset</span><span class="p">(</span><span class="n">BasePreset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Feature importance preset using TypedChartBlock.</span>
+<span class="sd">    Feature importance preset using BasePreset.</span>
 
 <span class="sd">    Refactored from StaticChartBlock in v0.15.</span>
 
 <span class="sd">    :hierarchy: [Presets | ML | FeatureImportancePreset]</span>
 <span class="sd">    :relates-to:</span>
-<span class="sd">     - motivated_by: &quot;v0.15: Use TypedChartBlock with plot_registry&quot;</span>
+<span class="sd">     - motivated_by: &quot;v0.15: Use BasePreset with plot_registry&quot;</span>
 <span class="sd">     - implements: &quot;preset: &#39;FeatureImportancePreset&#39;&quot;</span>
-<span class="sd">     - uses: [&quot;block: &#39;TypedChartBlock&#39;&quot;]</span>
+<span class="sd">     - uses: [&quot;class: &#39;BasePreset&#39;&quot;]</span>
 
 <span class="sd">    :contract:</span>
 <span class="sd">     - pre: &quot;Datasource returns df with feature_col and importance_col&quot;</span>
@@ -421,24 +698,155 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">datasource</span><span class="p">:</span> <span class="n">BaseDataSource</span><span class="p">,</span>
+        <span class="n">datasource</span><span class="p">:</span> <span class="n">DataSource</span><span class="p">,</span>
         <span class="n">feature_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">importance_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Feature Importance&quot;</span><span class="p">,</span>
         <span class="n">subscribes_to</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">controls</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize feature importance preset.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            block_id: Unique identifier</span>
+<span class="sd">            datasource: Data source instance</span>
+<span class="sd">            feature_col: Column name for feature names</span>
+<span class="sd">            importance_col: Column name for importance values</span>
+<span class="sd">            title: Chart title</span>
+<span class="sd">            subscribes_to: State ID(s) to subscribe to</span>
+<span class="sd">            controls: Control configuration (False=no controls, True=default controls)</span>
+<span class="sd">            **kwargs: Additional styling parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Store parameters for use in properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_feature_col</span> <span class="o">=</span> <span class="n">feature_col</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_importance_col</span> <span class="o">=</span> <span class="n">importance_col</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_datasource</span> <span class="o">=</span> <span class="n">datasource</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_block_id</span> <span class="o">=</span> <span class="n">block_id</span>
+
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">block_id</span><span class="o">=</span><span class="n">block_id</span><span class="p">,</span>
             <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
-            <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;feature_importance_horizontal&quot;</span><span class="p">,</span>
-            <span class="n">plot_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">importance_col</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="n">feature_col</span><span class="p">},</span>
-            <span class="n">plot_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">title</span><span class="p">},</span>
-            <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
             <span class="n">subscribes_to</span><span class="o">=</span><span class="n">subscribes_to</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+            <span class="n">controls</span><span class="o">=</span><span class="n">controls</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span></div>
-</div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">default_controls</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Default control definitions for feature importance preset.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary mapping control names to Control objects</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get columns from datasource for control options</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
+        <span class="n">categorical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span>
+            <span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;object&quot;</span><span class="p">,</span> <span class="s2">&quot;category&quot;</span><span class="p">]</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">numerical_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;feature_col&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span>
+                <span class="n">component</span><span class="o">=</span><span class="n">dcc</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">,</span>
+                <span class="n">props</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="n">categorical_cols</span><span class="p">,</span>
+                    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_feature_col</span><span class="p">,</span>
+                    <span class="s2">&quot;clearable&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="s2">&quot;150px&quot;</span><span class="p">},</span>
+                <span class="p">},</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;importance_col&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span>
+                <span class="n">component</span><span class="o">=</span><span class="n">dcc</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">,</span>
+                <span class="n">props</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="n">numerical_cols</span><span class="p">,</span>
+                    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_importance_col</span><span class="p">,</span>
+                    <span class="s2">&quot;clearable&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="s2">&quot;150px&quot;</span><span class="p">},</span>
+                <span class="p">},</span>
+            <span class="p">),</span>
+        <span class="p">}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot type identifier for feature importance.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;feature_importance_horizontal&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_datasource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datasource</span><span class="p">:</span> <span class="n">DataSource</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validate datasource requirements for feature importance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            datasource: DataSource instance to validate</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If datasource doesn&#39;t have required columns</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_feature_col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Column &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_feature_col</span><span class="si">}</span><span class="s2">&#39; not found in datasource&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_importance_col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Column &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_importance_col</span><span class="si">}</span><span class="s2">&#39; not found in datasource&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_plot_params</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">final_controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build plot_params for feature importance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            final_controls: Final control configuration</span>
+<span class="sd">            kwargs: Additional parameters and fallback values</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary of plot parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">plot_params</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="s2">&quot;importance_col&quot;</span> <span class="ow">in</span> <span class="n">final_controls</span><span class="p">:</span>
+            <span class="n">plot_params</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;{{importance_col}}&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plot_params</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;importance_col&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_importance_col</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;feature_col&quot;</span> <span class="ow">in</span> <span class="n">final_controls</span><span class="p">:</span>
+            <span class="n">plot_params</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;{{feature_col}}&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plot_params</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;feature_col&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_feature_col</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">plot_params</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_plot_kwargs</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">final_controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build plot_kwargs for feature importance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            final_controls: Final control configuration</span>
+<span class="sd">            kwargs: Additional parameters and fallback values</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary of plot kwargs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="s2">&quot;Feature Importance&quot;</span><span class="p">)}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_plot_title</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">final_controls</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get dynamic plot title for feature importance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            final_controls: Final control configuration</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dynamic title string with placeholders or None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;feature_col&quot;</span> <span class="ow">in</span> <span class="n">final_controls</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;Feature Importance: {{feature_col}}&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
 
 </pre></div>
 

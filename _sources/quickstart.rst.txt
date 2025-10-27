@@ -16,7 +16,7 @@ v0.15+ uses composition instead of inheritance. Create a :class:`DataBuilder`:
 .. code-block:: python
 
    import pandas as pd
-   from dashboard_lego.core import DataBuilder, BaseDataSource
+   from dashboard_lego.core import DataBuilder, DataSource
 
    class SalesDataBuilder(DataBuilder):
        def __init__(self, file_path):
@@ -30,7 +30,7 @@ v0.15+ uses composition instead of inheritance. Create a :class:`DataBuilder`:
            return df
 
    # Create datasource using composition (no inheritance!)
-   datasource = BaseDataSource(
+   datasource = DataSource(
        data_builder=SalesDataBuilder("sample_data.csv")
    )
 
@@ -72,8 +72,8 @@ Create blocks using v0.15+ API:
        datasource=datasource,
        plot_type="bar",  # Built-in plot type
        plot_params={"x": "Fruit", "y": "Sales"},
-       plot_kwargs={"title": "Sales by Fruit"},
-       title="Fruit Sales",
+       title="Fruit Sales",                    # Static card title
+       plot_title="Sales by Fruit",            # Dynamic plot title
        subscribes_to="dummy_state",
        # Optional: transform data at block level (v0.15+)
        transform_fn=lambda df: df.groupby("Fruit")["Sales"].sum().reset_index()
@@ -83,6 +83,31 @@ Create blocks using v0.15+ API:
    v0.15 introduces ``MetricsBlock`` and ``TypedChartBlock`` which replace
    the legacy ``get_kpis()`` method and ``StaticChartBlock``.
    See :doc:`concepts` for more on block-level transformations.
+
+Interactive Charts with Placeholders
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For interactive charts with dynamic titles and parameters, use placeholders:
+
+.. code-block:: python
+
+   # Interactive chart with placeholders
+   interactive_chart = TypedChartBlock(
+       block_id="interactive_sales",
+       datasource=datasource,
+       plot_type="scatter",
+       plot_params={
+           "x": "Date",
+           "y": "Sales",
+           "color": "{{metric_selector}}",  # Placeholder for dynamic color
+           "size": "{{size_selector}}"      # Placeholder for dynamic size
+       },
+       title="Sales Analysis",                           # Static card title
+       plot_title="Sales by {{metric_selector}}",      # Dynamic plot title with placeholder
+       subscribes_to=["metric_selector", "size_selector"]
+   )
+
+See :doc:`placeholders` for complete placeholder documentation.
 
 Step 3: Create Dashboard Page
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
