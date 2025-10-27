@@ -42,15 +42,37 @@ Unified chart block using a plot registry with optional embedded controls.
    def __init__(
        self,
        block_id: str,
-       datasource: BaseDataSource,
+       datasource: DataSource,
        plot_type: str,              # Name of the plot function from the registry
        plot_params: Dict[str, Any] = None,  # Params with {{placeholders}} for controls
        plot_kwargs: Dict[str, Any] = None,  # Static kwargs for the plot function
-       title: str = "",
+       title: Optional[str] = None,         # Static card title (no placeholders)
+       plot_title: Optional[str] = None,   # Dynamic plot title (supports {{placeholders}})
        controls: Optional[Dict[str, Control]] = None,  # Optional embedded controls
        subscribes_to: Union[str, List[str], None] = None,
        transform_fn: Optional[Callable[[pd.DataFrame], pd.DataFrame]] = None,  # NEW in v0.15
        **kwargs
+   )
+
+**Title vs Plot Title (v0.15+):**
+
+Dashboard Lego separates static card titles from dynamic plot titles:
+
+- **``title``**: Static card header (no placeholder support)
+- **``plot_title``**: Dynamic plot title (supports ``{{placeholders}}``)
+
+**Example:**
+
+.. code-block:: python
+
+   chart = TypedChartBlock(
+       block_id="sales_chart",
+       datasource=datasource,
+       plot_type="scatter",
+       plot_params={"x": "date", "y": "sales", "color": "{{metric_selector}}"},
+       title="Sales Analysis",                    # Static card title
+       plot_title="Sales by {{metric_selector}}", # Dynamic plot title with placeholder
+       subscribes_to=["metric_selector"]
    )
 
 **Block-Level Data Transformations (v0.15):**
@@ -99,7 +121,7 @@ Factory function to create individual metric blocks for flexible layout.
 
    def get_metric_row(
        metrics_spec: Dict[str, Dict[str, Any]],
-       datasource: BaseDataSource,
+       datasource: DataSource,
        subscribes_to: Optional[Union[str, List[str]]] = None,
        row_options: Optional[Dict[str, Any]] = None,
        block_id_prefix: str = "metric",
@@ -195,6 +217,18 @@ ControlPanelBlock
 **Location:** ``dashboard_lego.blocks.control_panel``
 
 Standalone control panel for global filters/settings.
+
+**Control Defaults:**
+- Sliders: Full width (``{"xs": 12, "md": 12}``) with ``modern-slider`` CSS class
+- Dropdowns: Narrow width (``{"xs": 12, "md": 4}``) with ``compact-dropdown`` CSS class
+- Other controls: Auto width (``{"xs": 12, "md": "auto"}``)
+
+**Available CSS Classes:**
+- ``modern-slider``: Modern styling for sliders with proper width and colors (uses CSS, not inline styles)
+- ``compact-dropdown``: Compact styling for dropdowns to save space
+
+Override defaults by specifying ``col_props`` and ``className`` in your control specifications.
+Note: ``dcc.Slider`` doesn't support ``style`` prop - use ``className`` for styling.
 
 See :ref:`api-blocks` for detailed documentation.
 

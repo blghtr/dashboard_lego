@@ -3,6 +3,25 @@ Presets Module
 
 The presets module contains pre-built blocks for common data analysis and visualization tasks.
 
+Base Preset
+-----------
+
+Abstract base class for all TypedChartBlock presets with standardized control configuration.
+
+.. automodule:: dashboard_lego.presets.base_preset
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Base Preset Class
+^^^^^^^^^^^^^^^^^
+
+.. autoclass:: dashboard_lego.presets.base_preset.BasePreset
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :noindex:
+
 EDA Presets
 -----------
 
@@ -49,6 +68,15 @@ Box Plot Preset
    :show-inheritance:
    :noindex:
 
+Knee Plot Preset
+^^^^^^^^^^^^^^^^
+
+.. autoclass:: dashboard_lego.presets.eda_presets.KneePlotPreset
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :noindex:
+
 ML Presets
 ----------
 
@@ -58,15 +86,6 @@ Machine Learning visualization presets for common ML workflows.
    :members:
    :undoc-members:
    :show-inheritance:
-
-Metric Card Block
-^^^^^^^^^^^^^^^^^
-
-.. autoclass:: dashboard_lego.presets.ml_presets.MetricCardBlock
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :noindex:
 
 Confusion Matrix Preset
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -86,11 +105,14 @@ Feature Importance Preset
    :show-inheritance:
    :noindex:
 
-ROC Curve Preset
-^^^^^^^^^^^^^^^^
+ROC AUC Curve Preset
+^^^^^^^^^^^^^^^^^^^^
 
-..
-.. Note: ROC_CurvePreset is not present in the codebase.
+.. autoclass:: dashboard_lego.presets.ml_presets.RocAucCurvePreset
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :noindex:
 
 Layout Presets
 --------------

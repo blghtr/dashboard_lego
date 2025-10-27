@@ -74,7 +74,7 @@ Block Lifecycle
 **Pre-conditions:**
 
 - ``block_id`` is unique across dashboard
-- ``datasource`` is valid ``BaseDataSource`` instance
+- ``datasource`` is valid ``DataSource`` instance
 - State IDs referenced in subscriptions exist
 
 **Post-conditions:**

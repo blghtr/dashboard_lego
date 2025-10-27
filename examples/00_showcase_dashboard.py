@@ -34,9 +34,9 @@ from dashboard_lego.blocks import get_metric_row
 from dashboard_lego.blocks.control_panel import ControlPanelBlock
 from dashboard_lego.blocks.typed_chart import Control, TypedChartBlock
 from dashboard_lego.core import (
-    BaseDataSource,
     DashboardPage,
     DataBuilder,
+    DataSource,
     DataTransformer,
     NavigationConfig,
     NavigationSection,
@@ -47,6 +47,7 @@ from dashboard_lego.presets.eda_presets import (
     BoxPlotPreset,
     CorrelationHeatmapPreset,
     GroupedHistogramPreset,
+    KneePlotPreset,
     MissingValuesPreset,
 )
 from dashboard_lego.presets.layouts import kpi_row_top
@@ -153,7 +154,7 @@ class SalesDataBuilder(DataBuilder):
         super().__init__(**kwargs)
         self.file_path = file_path
 
-    def build(self, params):
+    def build(self, **params):
         """Load CSV and add Revenue, Profit, date fields."""
         df = pd.read_csv(self.file_path)
 
@@ -176,7 +177,7 @@ class SalesDataBuilder(DataBuilder):
 class SalesDataTransformer(DataTransformer):
     """Transform sales data by filtering category and price range."""
 
-    def transform(self, data, params):
+    def transform(self, data, **params):
         df = data.copy()
 
         # Category filter
@@ -322,7 +323,26 @@ def create_eda_section():
         title="Distribution Comparison",
     )
 
-    return [[corr_heatmap, histogram], [missing_vals, boxplot]]
+    # Create sample data for knee plot (k-means inertia)
+    knee_data = pd.DataFrame(
+        {"k": range(1, 11), "inertia": [100, 80, 60, 45, 35, 30, 28, 27, 26.5, 26]}
+    )
+
+    from dashboard_lego.core.data_transformer import DataTransformer
+    from dashboard_lego.utils.quick_dashboard import InMemoryDataBuilder
+
+    knee_datasource = DataSource(InMemoryDataBuilder(knee_data), DataTransformer())
+
+    knee_plot = KneePlotPreset(
+        block_id="knee_plot",
+        datasource=knee_datasource,
+        title="K-Means Elbow Analysis",
+        controls=True,  # Show controls for demonstration
+        x_col="k",  # Explicitly specify x column
+        y_col="inertia",  # Explicitly specify y column
+    )
+
+    return [[corr_heatmap, histogram], [missing_vals, boxplot], [knee_plot]]
 
 
 def create_analysis_section():
@@ -390,7 +410,7 @@ def main():
 
     # Initialize datasource with v0.15 pattern (composition)
     global datasource
-    datasource = BaseDataSource(
+    datasource = DataSource(
         data_builder=SalesDataBuilder(data_file),
         data_transformer=SalesDataTransformer(),  # v0.15+ API (was: data_filter)
         param_classifier=param_classifier,
@@ -487,7 +507,7 @@ def main():
     print("  ✓ NEW v0.15: Cross-section State() (all charts use sidebar)")
     print("  ✓ NEW v0.15: Block-level transforms (transform_fn)")
     print("  ✓ MetricsBlock with dynamic sizing (auto-scales)")
-    print("  ✓ EDA presets (Correlation, Histogram, Missing Values, BoxPlot)")
+    print("  ✓ EDA presets (Correlation, Histogram, Missing Values, BoxPlot, KneePlot)")
     print("  ✓ Interactive and static charts")
     print("  ✓ Control panels with state management")
     print("  ✓ Various layout presets (kpi_row_top, two_column_8_4)")

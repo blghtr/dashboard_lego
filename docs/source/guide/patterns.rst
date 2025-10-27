@@ -206,7 +206,7 @@ Staged data processing with DataBuilder + DataTransformer for optimal caching.
 
 .. code-block:: text
 
-   Control Panel → Params → BaseDataSource → Build → Transform → Blocks
+   Control Panel → Params → DataSource → Build → Transform → Blocks
                                 ↓              ↓         ↓
                             Classifier      Cache     Cache
 
@@ -214,7 +214,7 @@ Staged data processing with DataBuilder + DataTransformer for optimal caching.
 
 .. code-block:: python
 
-   from dashboard_lego.core import BaseDataSource, DataBuilder, DataTransformer
+   from dashboard_lego.core import DataSource, DataBuilder, DataTransformer
 
    # Step 1: Define DataBuilder
    class SalesDataBuilder(DataBuilder):
@@ -243,7 +243,7 @@ Staged data processing with DataBuilder + DataTransformer for optimal caching.
        return 'transform' if key.startswith('filters-') else 'build'
 
    # Step 4: Create datasource
-   datasource = BaseDataSource(
+   datasource = DataSource(
        data_builder=SalesDataBuilder("sales.csv"),
        data_transformer=SalesTransformer(),
        param_classifier=classify_params,
@@ -270,10 +270,10 @@ Example:
 
 .. code-block:: python
 
-   from dashboard_lego.core import BaseDataSource, DataBuilder
+   from dashboard_lego.core import DataSource, DataBuilder
 
    # Create main datasource
-   main_ds = BaseDataSource(
+   main_ds = DataSource(
        data_builder=MyDataBuilder(),
        cache_dir=None  # In-memory cache
    )
@@ -294,8 +294,8 @@ Example:
 
 **When cache sharing happens:**
 
-1. **Explicit matching**: ``BaseDataSource(..., cache_dir="/path")`` → all instances with same path share cache
-2. **In-memory default**: ``BaseDataSource(..., cache_dir=None)`` → all in-memory instances share cache
+1. **Explicit matching**: ``DataSource(..., cache_dir="/path")`` → all instances with same path share cache
+2. **In-memory default**: ``DataSource(..., cache_dir=None)`` → all in-memory instances share cache
 3. **Derived datasources**: ``ds.with_transform_fn(...)`` → automatically inherits parent's cache
 
 Quick Dashboard Pattern
@@ -381,7 +381,7 @@ For full control with pre-built blocks:
 .. code-block:: python
 
    from dashboard_lego.blocks import SingleMetricBlock, TypedChartBlock
-   from dashboard_lego.core import BaseDataSource, DataBuilder
+   from dashboard_lego.core import DataSource, DataBuilder
    from dashboard_lego.utils import quick_dashboard
 
    # Create custom datasource
@@ -390,7 +390,7 @@ For full control with pre-built blocks:
            # Your custom data loading logic
            return pd.read_csv("data.csv")
 
-   datasource = BaseDataSource(data_builder=MyDataBuilder())
+   datasource = DataSource(data_builder=MyDataBuilder())
 
    # Create custom blocks with full configuration
    blocks = [
@@ -540,3 +540,124 @@ Magic command (1 line):
 - Interactive data analysis sessions
 - Minimal typing for ephemeral dashboards
 - Teaching and demonstrations
+
+Placeholders Guide
+------------------
+
+Dashboard Lego supports ``{{placeholders}}`` in specific contexts for dynamic content. This guide explains where placeholders work and where they don't.
+
+**Supported Contexts:**
+
+1. **Plot Parameters (``plot_params``)**: Dynamic column selection and visual encoding
+2. **Plot Title (``plot_title``)**: Dynamic chart title inside the plot
+3. **Control Properties**: Dynamic control options and values
+
+**Unsupported Contexts:**
+
+1. **Card Title (``title``)**: Static card header (no placeholders)
+2. **Text Content**: Static markdown content
+
+**Best Practices:**
+
+1. **Use ``plot_title`` for Dynamic Chart Titles**:
+
+   .. code-block:: yaml
+
+      # ✅ Good: Dynamic chart title
+      - type: chart
+        title: "Session Analysis"           # Static card header
+        plot_title: "Analysis @ step={{window_step_selector}}"  # Dynamic chart title
+
+      # ❌ Avoid: Placeholders in card title
+      - type: chart
+        title: "Analysis @ step={{window_step_selector}}"  # Won't work
+
+2. **Use ``plot_params`` for Dynamic Visual Encoding**:
+
+   .. code-block:: yaml
+
+      # ✅ Good: Dynamic visual properties
+      - type: chart
+        plot_type: scatter
+        x: session_length
+        y: max_idle
+        color: "{{metric_selector}}"       # Dynamic color
+        size: "{{size_selector}}"          # Dynamic size
+
+3. **Use Variable Interpolation for Control Options**:
+
+   .. code-block:: yaml
+
+      # ✅ Good: Dynamic control options
+      environment:
+        - metric_options
+      cards:
+        - type: control_panel
+          controls:
+            - name: metric_selector
+              type: dropdown
+              options: $metric_options      # Variable interpolation
+              value: "{{default_metric}}"  # Placeholder for default
+
+**Common Patterns:**
+
+**Pattern 1: Interactive Scatter Plot**
+
+.. code-block:: yaml
+
+   cards:
+     - type: control_panel
+       title: "Select Metrics"
+       controls:
+         - name: color_metric
+           type: dropdown
+           options: $metric_options
+           value: "n_sessions"
+         - name: size_metric
+           type: dropdown
+           options: $metric_options
+           value: "median_session_length"
+
+     - type: chart
+       title: "Session Analysis"                    # Static card title
+       plot_type: scatter
+       x: session_length
+       y: max_idle
+       color: "{{color_metric}}"                    # Dynamic color
+       size: "{{size_metric}}"                      # Dynamic size
+       plot_title: "Sessions vs Idle @ {{color_metric}}"  # Dynamic plot title
+
+**Pattern 2: Parameterized Analysis**
+
+.. code-block:: yaml
+
+   cards:
+     - type: control_panel
+       title: "Analysis Parameters"
+       controls:
+         - name: window_step
+           type: slider
+           min: 1
+           max: 10
+           value: 1
+
+     - type: chart
+       title: "Parameter Analysis"                  # Static card title
+       plot_type: scatter
+       x: session_length
+       y: max_idle
+       plot_title: "Analysis @ step={{window_step}}"  # Dynamic plot title
+
+**Troubleshooting:**
+
+**Problem: Placeholder not resolving**
+- **Symptoms**: ``{{placeholder}}`` appears literally in output
+- **Solutions**: Check placeholder name matches control name exactly, ensure control is subscribed to the chart, verify placeholder is in supported context
+
+**Problem: Card title not updating**
+- **Symptoms**: Card title stays static when controls change
+- **Solutions**: Use ``plot_title`` instead of ``title`` for dynamic content, keep ``title`` static for card header
+
+**Problem: Control not affecting chart**
+- **Symptoms**: Changing controls doesn't update chart
+- **Solutions**: Check ``subscribes_to`` includes correct state IDs, verify control names match placeholder names, ensure control publishes state changes
