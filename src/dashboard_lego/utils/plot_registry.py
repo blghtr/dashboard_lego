@@ -24,6 +24,7 @@ from dashboard_lego.utils.comparison_plots import (
     plot_overlay_histogram,
     plot_side_by_side_bar,
 )
+from dashboard_lego.utils.knee_plots import plot_knee
 from dashboard_lego.utils.plot_functions import (
     plot_area,
     plot_bar,
@@ -46,6 +47,8 @@ PLOT_REGISTRY: Dict[str, Callable] = {
     "heatmap": plot_heatmap,
     "violin": plot_violin,
     "area": plot_area,
+    # Analysis plots
+    "knee_plot": plot_knee,
     # Comparison plots
     "overlay_histogram": plot_overlay_histogram,
     "side_by_side_bar": plot_side_by_side_bar,

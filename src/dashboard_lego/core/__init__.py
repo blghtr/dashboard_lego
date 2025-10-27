@@ -6,7 +6,7 @@ Exports:
     - NavigationConfig: Configuration for navigation panels
     - NavigationSection: Individual navigation section definition
     - StateManager: Global state management
-    - BaseDataSource: Base data source with 2-stage pipeline
+    - DataSource: Base data source with 2-stage pipeline
     - DataBuilder: Data building handler (load + process)
     - DataTransformer: Data transformation handler (filter/aggregate/reshape)
     - DataProcessingContext: Pipeline parameter context
@@ -19,7 +19,7 @@ Exports:
 
 from dashboard_lego.core.data_builder import DataBuilder
 from dashboard_lego.core.data_transformer import DataTransformer
-from dashboard_lego.core.datasource import BaseDataSource
+from dashboard_lego.core.datasource import DataSource
 from dashboard_lego.core.page import DashboardPage, NavigationConfig, NavigationSection
 from dashboard_lego.core.processing_context import DataProcessingContext
 from dashboard_lego.core.state import StateManager
@@ -30,7 +30,7 @@ __all__ = [
     "NavigationConfig",
     "NavigationSection",
     "StateManager",
-    "BaseDataSource",
+    "DataSource",
     "DataBuilder",
     "DataTransformer",
     "DataProcessingContext",

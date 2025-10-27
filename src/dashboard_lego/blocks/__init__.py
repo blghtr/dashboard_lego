@@ -12,6 +12,7 @@ v0.15.0: Added SingleMetricBlock and get_metric_row() factory.
 
 from dashboard_lego.blocks.control_panel import Control, ControlPanelBlock
 from dashboard_lego.blocks.metrics_factory import get_metric_row
+from dashboard_lego.blocks.minimal_chart import MinimalChartBlock
 from dashboard_lego.blocks.single_metric import SingleMetricBlock
 from dashboard_lego.blocks.text import TextBlock
 from dashboard_lego.blocks.typed_chart import TypedChartBlock
@@ -20,6 +21,7 @@ __all__ = [
     "TypedChartBlock",  # v0.15.0
     "ControlPanelBlock",
     "Control",
+    "MinimalChartBlock",  # NEW in v0.15.2
     "SingleMetricBlock",  # NEW in v0.15.1
     "get_metric_row",  # NEW in v0.15.1 (factory function)
     "TextBlock",
