@@ -47,6 +47,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 
 import pandas as pd
 from diskcache import Cache
+from pandas.util import hash_pandas_object
 
 from dashboard_lego.utils.exceptions import CacheError, DataLoadError
 from dashboard_lego.utils.formatting import NumpyEncoder
@@ -382,8 +383,58 @@ class DataSource:
         # Build cache key
         if not params:
             return f"{stage}_default{handler_suffix}"
-        params_json = json.dumps(params, sort_keys=True, cls=NumpyEncoder)
+        # Normalize params to ensure pandas objects are hashed and complex types are serializable
+        normalized_params = self._normalize_params_for_cache(params)
+        params_json = json.dumps(normalized_params, sort_keys=True, cls=NumpyEncoder)
         return f"{stage}_{params_json}{handler_suffix}"
+
+    def _normalize_params_for_cache(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Prepare params for cache key generation by:
+        - Recursively traversing dict/list/tuple/set structures
+        - Replacing pandas objects (DataFrame/Series/Index) with stable content hashes
+        - Leaving other values as-is for JSON serialization via NumpyEncoder
+
+        Returns a JSON-serializable structure representing the params and any pandas content.
+        """
+
+        def to_serializable(value: Any) -> Any:
+            if (
+                isinstance(value, pd.DataFrame)
+                or isinstance(value, pd.Series)
+                or isinstance(value, pd.Index)
+            ):
+                try:
+                    series_hash = hash_pandas_object(value, index=True)
+                    # Combine into a single deterministic integer
+                    combined = int(series_hash.sum())
+                except Exception:
+                    # Fallback: for DataFrame, hash per-column series and combine
+                    if isinstance(value, pd.DataFrame):
+                        try:
+                            col_hashes = []
+                            for col in value.columns:
+                                s_hash = hash_pandas_object(value[col], index=True)
+                                col_hashes.append(int(s_hash.sum()))
+                            combined = hash(tuple(col_hashes))
+                        except Exception:
+                            combined = hash(value.shape)
+                    else:
+                        combined = hash(len(value))
+                return {"__pandas_hash__": combined}
+
+            # Collections
+            if isinstance(value, dict):
+                return {k: to_serializable(v) for k, v in value.items()}
+            if isinstance(value, (list, tuple)):
+                return [to_serializable(v) for v in value]
+            if isinstance(value, set):
+                return sorted([to_serializable(v) for v in value])
+
+            # Default: leave as-is (NumpyEncoder will handle numpy types)
+            return value
+
+        return to_serializable(params)
 
     def _get_or_build(self, params: Dict[str, Any]) -> pd.DataFrame:
         """
@@ -440,7 +491,7 @@ class DataSource:
         :contract:
          - pre: "built_data is DataFrame, params is dict"
          - post: "Returns filtered DataFrame"
-         - cache_key: "Based on filter params only"
+         - cache_key: "Based on filter params + built_data content hash"
 
         :complexity: 2
 
@@ -456,7 +507,10 @@ class DataSource:
                 f"[Stage2|Transform] No built_data | built_data={built_data}"
             )
             return built_data
-        key = self._get_cache_key("filtered", params)
+        # Include built_data in cache key via hashed representation without mutating original params
+        params_for_key = dict(params)
+        params_for_key["__built_data__"] = built_data
+        key = self._get_cache_key("filtered", params_for_key)
 
         if key in self.cache:
             self.logger.debug("[Stage2|Filter] Cache HIT")
