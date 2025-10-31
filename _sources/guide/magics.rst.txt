@@ -32,34 +32,39 @@ Create dashboards from DataFrame variables with minimal code:
    %dashboard df
      title: "Sales Dashboard"
      theme: lux
-     metrics:
-       - column: Sales
-         agg: sum
-         title: "Total Sales"
-         color: success
-       - column: Profit
-         agg: sum
-         title: "Total Profit"
-         color: info
-     charts:
-       - plot_type: bar
-         x: Product
-         y: Sales
+     cards:
+       - type: metric
+         metric_spec:
+           column: Sales
+           agg: sum
+           title: "Total Sales"
+           color: success
+       - type: metric
+         metric_spec:
+           column: Profit
+           agg: sum
+           title: "Total Profit"
+           color: info
+       - type: chart
+         plot_type: bar
+         plot_params: {x: Product, y: Sales}
          title: "Sales by Product"
-       - plot_type: line
-         x: Date
-         y: Sales
+       - type: chart
+         plot_type: line
+         plot_params: {x: Date, y: Sales}
          title: "Sales Trend"
-     text:
-       - "## Summary"
-       - "Key insights from the data"
+       - type: text
+         content_generator: |
+           ## Summary
+
+           Key insights from the data
 
    # Simple single chart dashboard
    %dashboard df
-     charts:
-       - plot_type: scatter
-         x: Price
-         y: Sales
+     cards:
+       - type: chart
+         plot_type: scatter
+         plot_params: {x: Price, y: Sales}
          title: "Price vs Sales"
 
 **Configuration Keys:**
@@ -71,12 +76,17 @@ Create dashboards from DataFrame variables with minimal code:
 - ``environment``: List of variable names to import from IPython namespace
 - ``cards``: List of card specifications with optional controls
 
-**Card Types:**
-- **Metric:** ``column``, ``agg``, ``title``, ``color`` (optional)
-- **Chart:** ``plot_type``, ``x``, ``y``, ``title``, ``controls`` (optional)
-- **Minimal Chart:** ``x``, ``y``, ``title``, ``plot_type`` (optional, defaults to scatter), ``controls`` (optional)
-- **Text:** ``content``
-- **Control Panel:** ``title``, ``controls``
+**Card Types (YAML = kwargs + type):**
+- **Metric:** ``type: metric``, ``metric_spec: {column, agg, title, [color], [dtype]}``
+- **Chart:** ``type: chart``, ``plot_type: str``, ``plot_params: {x, y, [color], [size]}``, ``title: str``, optional ``controls``
+- **Minimal Chart:** ``type: minimal_chart``, ``plot_params: {x, y, ...}``, optional ``plot_type`` (defaults to ``scatter``), optional ``controls``
+- **Text:** ``type: text``, ``content_generator: callable`` (returns str or Component)
+- **Control Panel:** ``type: control_panel``, ``title: str``, ``controls: [...]``
+
+.. note::
+   YAML for magics MUST match block constructor kwargs (plus ``type``). No legacy
+   top-level ``x/y`` or ``column/agg/title``. Use ``metric_spec``, ``plot_params``,
+   and ``content_generator`` exactly as in the Python API.
 
 **Control Types:**
 - **Dropdown:** ``name``, ``type: dropdown``, ``options``, ``value``, ``col_props``
@@ -105,14 +115,14 @@ Create dashboards using YAML configuration in notebook cells with support for co
      - color_palette
    cards:
      - type: metric
-       column: Sales
-       agg: sum
-       title: "Total Sales"
-       color: success
+       metric_spec:
+         column: Sales
+         agg: sum
+         title: "Total Sales"
+         color: success
      - type: chart
        plot_type: scatter
-       x: Product
-       y: Sales
+       plot_params: {x: Product, y: Sales}
        title: "Sales Analysis"
        controls:
          - name: metric_selector
@@ -129,7 +139,7 @@ Create dashboards using YAML configuration in notebook cells with support for co
            marks: {2020: "2020", 2024: "2024"}
            col_props: {xs: 12, md: 6}
      - type: text
-       content: |
+       content_generator: |
          ## Summary
 
          Key insights from the data:
@@ -214,8 +224,7 @@ Here's a complete example showing how controls bind to charts:
      # STEP 2: Chart subscribes to control panel states
      - type: chart
        plot_type: scatter
-       x: Product
-       y: Sales
+       plot_params: {x: Product, y: Sales}
        title: "Sales by Category"
        # Subscribe to BOTH controls
        subscribes_to:
@@ -250,15 +259,13 @@ Multiple Charts from One Control Panel
      # Chart 1 subscribes
      - type: chart
        plot_type: bar
-       x: Product
-       y: Revenue
+       plot_params: {x: Product, y: Revenue}
        subscribes_to: "control_panel-region"
 
      # Chart 2 subscribes to SAME control
      - type: chart
        plot_type: line
-       x: Month
-       y: Profit
+       plot_params: {x: Month, y: Profit}
        subscribes_to: "control_panel-region"
 
 Result: Changing region filter updates **both** charts
@@ -272,7 +279,7 @@ Charts can have their own internal controls that don't affect other blocks:
 
    - type: chart
      plot_type: histogram
-     x: Price
+     plot_params: {x: Price}
      title: "Price Distribution"
      # These are chart-local controls (don't publish state)
      controls:
@@ -296,9 +303,7 @@ For scatter plots with variable marker sizes, you can configure consistent pixel
 
    - type: chart
      plot_type: scatter_minimal
-     x: session_length
-     y: max_idle
-     size: "{{metric_selector_2}}"
+     plot_params: {x: session_length, y: max_idle, size: "{{metric_selector_2}}"}
      plot_kwargs:
        marker_size_max_px: 42
        marker_size_min_px: 8
@@ -351,7 +356,7 @@ To explicitly control the parameter name sent to the datasource, use ``dep_param
 
      # Chart with explicit dep_param_name
      - type: chart
-       plot_type: scatter
+       plot_type: scatter  # YAML x/y are adapted to plot_params internally
        x: session_length
        y: max_idle
        title: "Session Analysis"
@@ -413,8 +418,7 @@ Practical Workflow
 
    - type: chart
      plot_type: bar
-     x: Product
-     y: Sales
+     plot_params: {x: Product, y: Sales}
      subscribes_to: "filters-category"  # Now this chart listens to control changes
 
 **Result:** User changes dropdown → chart updates automatically
@@ -549,14 +553,14 @@ Complete Workflow Example with Controls:
      - color_palette
    cards:
      - type: metric
-       column: Sales
-       agg: sum
-       title: "Total Sales"
-       color: success
+       metric_spec:
+         column: Sales
+         agg: sum
+         title: "Total Sales"
+         color: success
      - type: chart
        plot_type: scatter
-       x: Product
-       y: Sales
+       plot_params: {x: Product, y: Sales}
        title: "Sales Analysis"
        controls:
          - name: metric_selector
@@ -599,12 +603,13 @@ Common Patterns
      - metric_options
    cards:
      - type: metric
-       column: col1
-       agg: mean
-       title: "Average"
+       metric_spec:
+         column: col1
+         agg: mean
+         title: "Average"
      - type: chart
        plot_type: histogram
-       x: col1
+       plot_params: {x: col1}
        title: "Distribution"
        controls:
          - name: metric_selector
@@ -632,8 +637,7 @@ Common Patterns
    cards:
      - type: chart
        plot_type: scatter
-       x: session_length
-       y: max_idle
+       plot_params: {x: session_length, y: max_idle}
        title: "Session Length vs Max Idle"
        controls:
          - name: metric_selector

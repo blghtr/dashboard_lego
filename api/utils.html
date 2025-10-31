@@ -69,6 +69,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#dashboard_lego.utils.logger.HierarchyLoggerAdapter"><code class="docutils literal notranslate"><span class="pre">HierarchyLoggerAdapter</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dashboard_lego.utils.logger.get_logger"><code class="docutils literal notranslate"><span class="pre">get_logger()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dashboard_lego.utils.logger.setup_logging"><code class="docutils literal notranslate"><span class="pre">setup_logging()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dashboard_lego.utils.logger.update_log_level"><code class="docutils literal notranslate"><span class="pre">update_log_level()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#module-dashboard_lego.utils.exceptions">Data Utilities</a><ul>
@@ -370,6 +371,28 @@ CRITICAL). Defaults to environment variable or INFO.</p></li>
 </ul>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dashboard_lego.utils.logger.update_log_level">
+<span class="sig-prename descclassname"><span class="pre">dashboard_lego.utils.logger.</span></span><span class="sig-name descname"><span class="pre">update_log_level</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/utils/logger.html#update_log_level"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.utils.logger.update_log_level" title="Link to this definition"></a></dt>
+<dd><p>Update log level for existing loggers and handlers.</p>
+<p>Useful when environment variable is changed after module import.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>level</strong> – Log level as string (DEBUG, INFO, WARNING, ERROR, CRITICAL).
+If None, reads from DASHBOARD_LEGO_LOG_LEVEL environment variable.</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;DASHBOARD_LEGO_LOG_LEVEL&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;DEBUG&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">update_log_level</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">update_log_level</span><span class="p">()</span>  <span class="c1"># Reads from env var</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Or explicitly:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">update_log_level</span><span class="p">(</span><span class="s1">&#39;DEBUG&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 </section>

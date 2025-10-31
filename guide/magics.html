@@ -140,34 +140,39 @@
 <span class="o">%</span><span class="n">dashboard</span> <span class="n">df</span>
   <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Sales Dashboard&quot;</span>
   <span class="n">theme</span><span class="p">:</span> <span class="n">lux</span>
-  <span class="n">metrics</span><span class="p">:</span>
-    <span class="o">-</span> <span class="n">column</span><span class="p">:</span> <span class="n">Sales</span>
-      <span class="n">agg</span><span class="p">:</span> <span class="nb">sum</span>
-      <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Total Sales&quot;</span>
-      <span class="n">color</span><span class="p">:</span> <span class="n">success</span>
-    <span class="o">-</span> <span class="n">column</span><span class="p">:</span> <span class="n">Profit</span>
-      <span class="n">agg</span><span class="p">:</span> <span class="nb">sum</span>
-      <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Total Profit&quot;</span>
-      <span class="n">color</span><span class="p">:</span> <span class="n">info</span>
-  <span class="n">charts</span><span class="p">:</span>
-    <span class="o">-</span> <span class="n">plot_type</span><span class="p">:</span> <span class="n">bar</span>
-      <span class="n">x</span><span class="p">:</span> <span class="n">Product</span>
-      <span class="n">y</span><span class="p">:</span> <span class="n">Sales</span>
+  <span class="n">cards</span><span class="p">:</span>
+    <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">metric</span>
+      <span class="n">metric_spec</span><span class="p">:</span>
+        <span class="n">column</span><span class="p">:</span> <span class="n">Sales</span>
+        <span class="n">agg</span><span class="p">:</span> <span class="nb">sum</span>
+        <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Total Sales&quot;</span>
+        <span class="n">color</span><span class="p">:</span> <span class="n">success</span>
+    <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">metric</span>
+      <span class="n">metric_spec</span><span class="p">:</span>
+        <span class="n">column</span><span class="p">:</span> <span class="n">Profit</span>
+        <span class="n">agg</span><span class="p">:</span> <span class="nb">sum</span>
+        <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Total Profit&quot;</span>
+        <span class="n">color</span><span class="p">:</span> <span class="n">info</span>
+    <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">chart</span>
+      <span class="n">plot_type</span><span class="p">:</span> <span class="n">bar</span>
+      <span class="n">plot_params</span><span class="p">:</span> <span class="p">{</span><span class="n">x</span><span class="p">:</span> <span class="n">Product</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">Sales</span><span class="p">}</span>
       <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Sales by Product&quot;</span>
-    <span class="o">-</span> <span class="n">plot_type</span><span class="p">:</span> <span class="n">line</span>
-      <span class="n">x</span><span class="p">:</span> <span class="n">Date</span>
-      <span class="n">y</span><span class="p">:</span> <span class="n">Sales</span>
+    <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">chart</span>
+      <span class="n">plot_type</span><span class="p">:</span> <span class="n">line</span>
+      <span class="n">plot_params</span><span class="p">:</span> <span class="p">{</span><span class="n">x</span><span class="p">:</span> <span class="n">Date</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">Sales</span><span class="p">}</span>
       <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Sales Trend&quot;</span>
-  <span class="n">text</span><span class="p">:</span>
-    <span class="o">-</span> <span class="s2">&quot;## Summary&quot;</span>
-    <span class="o">-</span> <span class="s2">&quot;Key insights from the data&quot;</span>
+    <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">text</span>
+      <span class="n">content_generator</span><span class="p">:</span> <span class="o">|</span>
+        <span class="c1">## Summary</span>
+
+        <span class="n">Key</span> <span class="n">insights</span> <span class="kn">from</span><span class="w"> </span><span class="nn">the</span> <span class="n">data</span>
 
 <span class="c1"># Simple single chart dashboard</span>
 <span class="o">%</span><span class="n">dashboard</span> <span class="n">df</span>
-  <span class="n">charts</span><span class="p">:</span>
-    <span class="o">-</span> <span class="n">plot_type</span><span class="p">:</span> <span class="n">scatter</span>
-      <span class="n">x</span><span class="p">:</span> <span class="n">Price</span>
-      <span class="n">y</span><span class="p">:</span> <span class="n">Sales</span>
+  <span class="n">cards</span><span class="p">:</span>
+    <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">chart</span>
+      <span class="n">plot_type</span><span class="p">:</span> <span class="n">scatter</span>
+      <span class="n">plot_params</span><span class="p">:</span> <span class="p">{</span><span class="n">x</span><span class="p">:</span> <span class="n">Price</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">Sales</span><span class="p">}</span>
       <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Price vs Sales&quot;</span>
 </pre></div>
 </div>
@@ -180,12 +185,18 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">environment</span></code>: List of variable names to import from IPython namespace</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">cards</span></code>: List of card specifications with optional controls</p></li>
 </ul>
-<p><strong>Card Types:</strong>
-- <strong>Metric:</strong> <code class="docutils literal notranslate"><span class="pre">column</span></code>, <code class="docutils literal notranslate"><span class="pre">agg</span></code>, <code class="docutils literal notranslate"><span class="pre">title</span></code>, <code class="docutils literal notranslate"><span class="pre">color</span></code> (optional)
-- <strong>Chart:</strong> <code class="docutils literal notranslate"><span class="pre">plot_type</span></code>, <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code>, <code class="docutils literal notranslate"><span class="pre">title</span></code>, <code class="docutils literal notranslate"><span class="pre">controls</span></code> (optional)
-- <strong>Minimal Chart:</strong> <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code>, <code class="docutils literal notranslate"><span class="pre">title</span></code>, <code class="docutils literal notranslate"><span class="pre">plot_type</span></code> (optional, defaults to scatter), <code class="docutils literal notranslate"><span class="pre">controls</span></code> (optional)
-- <strong>Text:</strong> <code class="docutils literal notranslate"><span class="pre">content</span></code>
-- <strong>Control Panel:</strong> <code class="docutils literal notranslate"><span class="pre">title</span></code>, <code class="docutils literal notranslate"><span class="pre">controls</span></code></p>
+<p><strong>Card Types (YAML = kwargs + type):</strong>
+- <strong>Metric:</strong> <code class="docutils literal notranslate"><span class="pre">type:</span> <span class="pre">metric</span></code>, <code class="docutils literal notranslate"><span class="pre">metric_spec:</span> <span class="pre">{column,</span> <span class="pre">agg,</span> <span class="pre">title,</span> <span class="pre">[color],</span> <span class="pre">[dtype]}</span></code>
+- <strong>Chart:</strong> <code class="docutils literal notranslate"><span class="pre">type:</span> <span class="pre">chart</span></code>, <code class="docutils literal notranslate"><span class="pre">plot_type:</span> <span class="pre">str</span></code>, <code class="docutils literal notranslate"><span class="pre">plot_params:</span> <span class="pre">{x,</span> <span class="pre">y,</span> <span class="pre">[color],</span> <span class="pre">[size]}</span></code>, <code class="docutils literal notranslate"><span class="pre">title:</span> <span class="pre">str</span></code>, optional <code class="docutils literal notranslate"><span class="pre">controls</span></code>
+- <strong>Minimal Chart:</strong> <code class="docutils literal notranslate"><span class="pre">type:</span> <span class="pre">minimal_chart</span></code>, <code class="docutils literal notranslate"><span class="pre">plot_params:</span> <span class="pre">{x,</span> <span class="pre">y,</span> <span class="pre">...}</span></code>, optional <code class="docutils literal notranslate"><span class="pre">plot_type</span></code> (defaults to <code class="docutils literal notranslate"><span class="pre">scatter</span></code>), optional <code class="docutils literal notranslate"><span class="pre">controls</span></code>
+- <strong>Text:</strong> <code class="docutils literal notranslate"><span class="pre">type:</span> <span class="pre">text</span></code>, <code class="docutils literal notranslate"><span class="pre">content_generator:</span> <span class="pre">callable</span></code> (returns str or Component)
+- <strong>Control Panel:</strong> <code class="docutils literal notranslate"><span class="pre">type:</span> <span class="pre">control_panel</span></code>, <code class="docutils literal notranslate"><span class="pre">title:</span> <span class="pre">str</span></code>, <code class="docutils literal notranslate"><span class="pre">controls:</span> <span class="pre">[...]</span></code></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>YAML for magics MUST match block constructor kwargs (plus <code class="docutils literal notranslate"><span class="pre">type</span></code>). No legacy
+top-level <code class="docutils literal notranslate"><span class="pre">x/y</span></code> or <code class="docutils literal notranslate"><span class="pre">column/agg/title</span></code>. Use <code class="docutils literal notranslate"><span class="pre">metric_spec</span></code>, <code class="docutils literal notranslate"><span class="pre">plot_params</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">content_generator</span></code> exactly as in the Python API.</p>
+</div>
 <p><strong>Control Types:</strong>
 - <strong>Dropdown:</strong> <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">type:</span> <span class="pre">dropdown</span></code>, <code class="docutils literal notranslate"><span class="pre">options</span></code>, <code class="docutils literal notranslate"><span class="pre">value</span></code>, <code class="docutils literal notranslate"><span class="pre">col_props</span></code>
 - <strong>Slider:</strong> <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">type:</span> <span class="pre">slider</span></code>, <code class="docutils literal notranslate"><span class="pre">min</span></code>, <code class="docutils literal notranslate"><span class="pre">max</span></code>, <code class="docutils literal notranslate"><span class="pre">step</span></code>, <code class="docutils literal notranslate"><span class="pre">value</span></code>, <code class="docutils literal notranslate"><span class="pre">marks</span></code>
@@ -207,14 +218,14 @@
   <span class="o">-</span> <span class="n">color_palette</span>
 <span class="n">cards</span><span class="p">:</span>
   <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">metric</span>
-    <span class="n">column</span><span class="p">:</span> <span class="n">Sales</span>
-    <span class="n">agg</span><span class="p">:</span> <span class="nb">sum</span>
-    <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Total Sales&quot;</span>
-    <span class="n">color</span><span class="p">:</span> <span class="n">success</span>
+    <span class="n">metric_spec</span><span class="p">:</span>
+      <span class="n">column</span><span class="p">:</span> <span class="n">Sales</span>
+      <span class="n">agg</span><span class="p">:</span> <span class="nb">sum</span>
+      <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Total Sales&quot;</span>
+      <span class="n">color</span><span class="p">:</span> <span class="n">success</span>
   <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">chart</span>
     <span class="n">plot_type</span><span class="p">:</span> <span class="n">scatter</span>
-    <span class="n">x</span><span class="p">:</span> <span class="n">Product</span>
-    <span class="n">y</span><span class="p">:</span> <span class="n">Sales</span>
+    <span class="n">plot_params</span><span class="p">:</span> <span class="p">{</span><span class="n">x</span><span class="p">:</span> <span class="n">Product</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">Sales</span><span class="p">}</span>
     <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Sales Analysis&quot;</span>
     <span class="n">controls</span><span class="p">:</span>
       <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="n">metric_selector</span>
@@ -231,7 +242,7 @@
         <span class="n">marks</span><span class="p">:</span> <span class="p">{</span><span class="mi">2020</span><span class="p">:</span> <span class="s2">&quot;2020&quot;</span><span class="p">,</span> <span class="mi">2024</span><span class="p">:</span> <span class="s2">&quot;2024&quot;</span><span class="p">}</span>
         <span class="n">col_props</span><span class="p">:</span> <span class="p">{</span><span class="n">xs</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span> <span class="n">md</span><span class="p">:</span> <span class="mi">6</span><span class="p">}</span>
   <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">text</span>
-    <span class="n">content</span><span class="p">:</span> <span class="o">|</span>
+    <span class="n">content_generator</span><span class="p">:</span> <span class="o">|</span>
       <span class="c1">## Summary</span>
 
       <span class="n">Key</span> <span class="n">insights</span> <span class="kn">from</span><span class="w"> </span><span class="nn">the</span> <span class="n">data</span><span class="p">:</span>
@@ -303,8 +314,7 @@
 <span class="w">  </span><span class="c1"># STEP 2: Chart subscribes to control panel states</span>
 <span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">chart</span>
 <span class="w">    </span><span class="nt">plot_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">scatter</span>
-<span class="w">    </span><span class="nt">x</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Product</span>
-<span class="w">    </span><span class="nt">y</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Sales</span>
+<span class="w">    </span><span class="nt">plot_params</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">x</span><span class="p">:</span><span class="w"> </span><span class="nv">Product</span><span class="p p-Indicator">,</span><span class="nt"> y</span><span class="p">:</span><span class="w"> </span><span class="nv">Sales</span><span class="p p-Indicator">}</span>
 <span class="w">    </span><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Sales</span><span class="nv"> </span><span class="s">by</span><span class="nv"> </span><span class="s">Category&quot;</span>
 <span class="w">    </span><span class="c1"># Subscribe to BOTH controls</span>
 <span class="w">    </span><span class="nt">subscribes_to</span><span class="p">:</span>
@@ -338,15 +348,13 @@
 <span class="w">  </span><span class="c1"># Chart 1 subscribes</span>
 <span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">chart</span>
 <span class="w">    </span><span class="nt">plot_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bar</span>
-<span class="w">    </span><span class="nt">x</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Product</span>
-<span class="w">    </span><span class="nt">y</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Revenue</span>
+<span class="w">    </span><span class="nt">plot_params</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">x</span><span class="p">:</span><span class="w"> </span><span class="nv">Product</span><span class="p p-Indicator">,</span><span class="nt"> y</span><span class="p">:</span><span class="w"> </span><span class="nv">Revenue</span><span class="p p-Indicator">}</span>
 <span class="w">    </span><span class="nt">subscribes_to</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;control_panel-region&quot;</span>
 
 <span class="w">  </span><span class="c1"># Chart 2 subscribes to SAME control</span>
 <span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">chart</span>
 <span class="w">    </span><span class="nt">plot_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">line</span>
-<span class="w">    </span><span class="nt">x</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Month</span>
-<span class="w">    </span><span class="nt">y</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Profit</span>
+<span class="w">    </span><span class="nt">plot_params</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">x</span><span class="p">:</span><span class="w"> </span><span class="nv">Month</span><span class="p p-Indicator">,</span><span class="nt"> y</span><span class="p">:</span><span class="w"> </span><span class="nv">Profit</span><span class="p p-Indicator">}</span>
 <span class="w">    </span><span class="nt">subscribes_to</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;control_panel-region&quot;</span>
 </pre></div>
 </div>
@@ -357,7 +365,7 @@
 <p>Charts can have their own internal controls that don’t affect other blocks:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">chart</span>
 <span class="w">  </span><span class="nt">plot_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">histogram</span>
-<span class="w">  </span><span class="nt">x</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Price</span>
+<span class="w">  </span><span class="nt">plot_params</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">x</span><span class="p">:</span><span class="w"> </span><span class="nv">Price</span><span class="p p-Indicator">}</span>
 <span class="w">  </span><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Price</span><span class="nv"> </span><span class="s">Distribution&quot;</span>
 <span class="w">  </span><span class="c1"># These are chart-local controls (don&#39;t publish state)</span>
 <span class="w">  </span><span class="nt">controls</span><span class="p">:</span>
@@ -378,9 +386,7 @@
 <p>For scatter plots with variable marker sizes, you can configure consistent pixel-based sizing that adapts to your data range:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">chart</span>
 <span class="w">  </span><span class="nt">plot_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">scatter_minimal</span>
-<span class="w">  </span><span class="nt">x</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">session_length</span>
-<span class="w">  </span><span class="nt">y</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">max_idle</span>
-<span class="w">  </span><span class="nt">size</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{{metric_selector_2}}&quot;</span>
+<span class="w">  </span><span class="nt">plot_params</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">x</span><span class="p">:</span><span class="w"> </span><span class="nv">session_length</span><span class="p p-Indicator">,</span><span class="nt"> y</span><span class="p">:</span><span class="w"> </span><span class="nv">max_idle</span><span class="p p-Indicator">,</span><span class="nt"> size</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{{metric_selector_2}}&quot;</span><span class="p p-Indicator">}</span>
 <span class="w">  </span><span class="nt">plot_kwargs</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">marker_size_max_px</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">42</span>
 <span class="w">    </span><span class="nt">marker_size_min_px</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
@@ -426,7 +432,7 @@ Result: Block listens to that control panel&#39;s category control
 
 <span class="w">  </span><span class="c1"># Chart with explicit dep_param_name</span>
 <span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">chart</span>
-<span class="w">    </span><span class="nt">plot_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">scatter</span>
+<span class="w">    </span><span class="nt">plot_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">scatter</span><span class="w">  </span><span class="c1"># YAML x/y are adapted to plot_params internally</span>
 <span class="w">    </span><span class="nt">x</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">session_length</span>
 <span class="w">    </span><span class="nt">y</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">max_idle</span>
 <span class="w">    </span><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Session</span><span class="nv"> </span><span class="s">Analysis&quot;</span>
@@ -480,8 +486,7 @@ Result: Block listens to that control panel&#39;s category control
 <p><strong>Step 3: Charts subscribe</strong></p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">chart</span>
 <span class="w">  </span><span class="nt">plot_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bar</span>
-<span class="w">  </span><span class="nt">x</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Product</span>
-<span class="w">  </span><span class="nt">y</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Sales</span>
+<span class="w">  </span><span class="nt">plot_params</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">x</span><span class="p">:</span><span class="w"> </span><span class="nv">Product</span><span class="p p-Indicator">,</span><span class="nt"> y</span><span class="p">:</span><span class="w"> </span><span class="nv">Sales</span><span class="p p-Indicator">}</span>
 <span class="w">  </span><span class="nt">subscribes_to</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;filters-category&quot;</span><span class="w">  </span><span class="c1"># Now this chart listens to control changes</span>
 </pre></div>
 </div>
@@ -606,14 +611,14 @@ Result: Block listens to that control panel&#39;s category control
   <span class="o">-</span> <span class="n">color_palette</span>
 <span class="n">cards</span><span class="p">:</span>
   <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">metric</span>
-    <span class="n">column</span><span class="p">:</span> <span class="n">Sales</span>
-    <span class="n">agg</span><span class="p">:</span> <span class="nb">sum</span>
-    <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Total Sales&quot;</span>
-    <span class="n">color</span><span class="p">:</span> <span class="n">success</span>
+    <span class="n">metric_spec</span><span class="p">:</span>
+      <span class="n">column</span><span class="p">:</span> <span class="n">Sales</span>
+      <span class="n">agg</span><span class="p">:</span> <span class="nb">sum</span>
+      <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Total Sales&quot;</span>
+      <span class="n">color</span><span class="p">:</span> <span class="n">success</span>
   <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">chart</span>
     <span class="n">plot_type</span><span class="p">:</span> <span class="n">scatter</span>
-    <span class="n">x</span><span class="p">:</span> <span class="n">Product</span>
-    <span class="n">y</span><span class="p">:</span> <span class="n">Sales</span>
+    <span class="n">plot_params</span><span class="p">:</span> <span class="p">{</span><span class="n">x</span><span class="p">:</span> <span class="n">Product</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">Sales</span><span class="p">}</span>
     <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Sales Analysis&quot;</span>
     <span class="n">controls</span><span class="p">:</span>
       <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="n">metric_selector</span>
@@ -654,12 +659,13 @@ Result: Block listens to that control panel&#39;s category control
   <span class="o">-</span> <span class="n">metric_options</span>
 <span class="n">cards</span><span class="p">:</span>
   <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">metric</span>
-    <span class="n">column</span><span class="p">:</span> <span class="n">col1</span>
-    <span class="n">agg</span><span class="p">:</span> <span class="n">mean</span>
-    <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Average&quot;</span>
+    <span class="n">metric_spec</span><span class="p">:</span>
+      <span class="n">column</span><span class="p">:</span> <span class="n">col1</span>
+      <span class="n">agg</span><span class="p">:</span> <span class="n">mean</span>
+      <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Average&quot;</span>
   <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">chart</span>
     <span class="n">plot_type</span><span class="p">:</span> <span class="n">histogram</span>
-    <span class="n">x</span><span class="p">:</span> <span class="n">col1</span>
+    <span class="n">plot_params</span><span class="p">:</span> <span class="p">{</span><span class="n">x</span><span class="p">:</span> <span class="n">col1</span><span class="p">}</span>
     <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Distribution&quot;</span>
     <span class="n">controls</span><span class="p">:</span>
       <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="n">metric_selector</span>
@@ -685,8 +691,7 @@ Result: Block listens to that control panel&#39;s category control
 <span class="n">cards</span><span class="p">:</span>
   <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">chart</span>
     <span class="n">plot_type</span><span class="p">:</span> <span class="n">scatter</span>
-    <span class="n">x</span><span class="p">:</span> <span class="n">session_length</span>
-    <span class="n">y</span><span class="p">:</span> <span class="n">max_idle</span>
+    <span class="n">plot_params</span><span class="p">:</span> <span class="p">{</span><span class="n">x</span><span class="p">:</span> <span class="n">session_length</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">max_idle</span><span class="p">}</span>
     <span class="n">title</span><span class="p">:</span> <span class="s2">&quot;Session Length vs Max Idle&quot;</span>
     <span class="n">controls</span><span class="p">:</span>
       <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="n">metric_selector</span>

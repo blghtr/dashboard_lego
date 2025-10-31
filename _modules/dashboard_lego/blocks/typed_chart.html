@@ -136,9 +136,13 @@
 <span class="sd">    Attributes:</span>
 <span class="sd">        component: Dash component class (dcc.Dropdown, dcc.Slider, etc.)</span>
 <span class="sd">        props: Props dictionary for the component</span>
-<span class="sd">        col_props: Bootstrap column sizing (default: {&quot;xs&quot;: 12, &quot;md&quot;: &quot;auto&quot;})</span>
+<span class="sd">        col_props: Bootstrap column sizing (default: {&quot;xs&quot;: 12, &quot;md&quot;: &quot;auto&quot;}).</span>
+<span class="sd">                   Can be explicitly set for custom layout (e.g., {&quot;xs&quot;: 12, &quot;md&quot;: 12} for full width).</span>
+<span class="sd">                   Explicit values take precedence over auto-sizing defaults.</span>
 <span class="sd">        dep_param_name: Optional parameter name override for datasource (default: None)</span>
-<span class="sd">        auto_size: Enable content-based sizing instead of full width (default: True)</span>
+<span class="sd">        auto_size: Enable content-based sizing instead of full width (default: True).</span>
+<span class="sd">                  When True, uses md=&quot;auto&quot; if not explicitly set in col_props.</span>
+<span class="sd">                  Explicit col_props values are always respected regardless of auto_size.</span>
 <span class="sd">        max_ch: Maximum width in characters for auto-sized controls (default: 40)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -613,6 +617,13 @@
 
         <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">placeholder_pattern</span><span class="p">,</span> <span class="n">replace_placeholder</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_normalize_param_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Normalize state_id to datasource parameter name: check dep_param_name or strip block_id prefix.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dep_param_names</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dep_param_names</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="c1"># Strip block_id prefix (everything before first &quot;-&quot;) before passing to datasource</span>
+        <span class="k">return</span> <span class="n">key</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;-&quot;</span> <span class="ow">in</span> <span class="n">key</span> <span class="k">else</span> <span class="n">key</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">_extract_datasource_params</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">control_values</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
@@ -669,7 +680,14 @@
         <span class="n">datasource_params</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">control_values</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="c1"># Rule 1: External subscribed states → datasource (UNLESS plot-params-only)</span>
+            <span class="c1"># Skip embedded controls and system keys</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">controls</span> <span class="ow">or</span> <span class="p">{})</span> <span class="ow">or</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;section&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Datasource] </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> (embedded control/system key) → skipped&quot;</span>
+                <span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Rule 1: External subscribed states → datasource (UNLESS plot-params-only OR value is None)</span>
             <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span> <span class="ow">or</span> <span class="p">{}):</span>
                 <span class="k">if</span> <span class="n">is_plot_params_only</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
@@ -678,39 +696,26 @@
                     <span class="p">)</span>
                     <span class="k">continue</span>
 
-                <span class="c1"># Keys are already normalized by _normalize_control_keys</span>
-                <span class="c1"># Check if explicit dep_param_name was provided</span>
-                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dep_param_names</span><span class="p">:</span>
-                    <span class="n">param_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dep_param_names</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
                         <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Datasource] </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> (external state) &quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;→ datasource param &#39;</span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s2">&#39; (from dep_param_name)&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;→ SKIPPED (value is None, no filter)&quot;</span>
                     <span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="c1"># Use key as-is (already normalized)</span>
-                    <span class="n">param_name</span> <span class="o">=</span> <span class="n">key</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Datasource] </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> (external state) &quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;→ datasource param &#39;</span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s2">&#39; (normalized key)&quot;</span>
-                    <span class="p">)</span>
+                    <span class="k">continue</span>
 
+                <span class="n">param_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_param_name</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Datasource] </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> (external state) &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;→ datasource param &#39;</span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+                <span class="p">)</span>
                 <span class="n">datasource_params</span><span class="p">[</span><span class="n">param_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="k">continue</span>
 
-            <span class="c1"># Rule 2: NOT embedded control AND NOT known system key → maybe datasource</span>
-            <span class="k">elif</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">controls</span> <span class="ow">or</span> <span class="p">{})</span> <span class="ow">and</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;section&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">]:</span>
-                <span class="c1"># This is legacy support or external param</span>
-                <span class="n">datasource_params</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Datasource] </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> (unknown) &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;→ datasource param &#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39; (passthrough)&quot;</span>
-                <span class="p">)</span>
-
-            <span class="c1"># Embedded controls: skip (not for datasource)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Datasource] </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> (embedded control) &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;→ skipped&quot;</span>
-                <span class="p">)</span>
+            <span class="c1"># Rule 2: Unknown keys → passthrough (legacy support or external params)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|Datasource] </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> (unknown) → datasource param &#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39; (passthrough)&quot;</span>
+            <span class="p">)</span>
+            <span class="n">datasource_params</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
         <span class="k">return</span> <span class="n">datasource_params</span>
 
@@ -975,16 +980,20 @@
                     <span class="n">comp_props</span> <span class="o">=</span> <span class="n">control</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
                     <span class="n">col_props</span> <span class="o">=</span> <span class="p">(</span><span class="n">control</span><span class="o">.</span><span class="n">col_props</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
-                    <span class="c1"># Ensure column uses md=&quot;auto&quot; if not explicitly set</span>
+                    <span class="c1"># Contract: Auto-sizing by default, but explicit col_props takes precedence</span>
+                    <span class="c1"># Set md=&quot;auto&quot; only if not explicitly provided in col_props</span>
+                    <span class="c1"># This allows fine-grained control via col_props while providing sensible defaults</span>
                     <span class="k">if</span> <span class="s2">&quot;md&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">col_props</span><span class="p">:</span>
                         <span class="n">col_props</span><span class="p">[</span><span class="s2">&quot;md&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span>
 
                     <span class="c1"># Apply auto-size styling based on component type</span>
                     <span class="k">if</span> <span class="n">control</span><span class="o">.</span><span class="n">component</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;Dropdown&quot;</span><span class="p">:</span>  <span class="c1"># dcc.Dropdown</span>
-                        <span class="c1"># Compute longest label for min-width</span>
-                        <span class="n">longest_label_ch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_longest_label_ch</span><span class="p">(</span>
+                        <span class="c1"># Compute longest label for min-width (including placeholder)</span>
+                        <span class="n">longest_option_ch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_longest_label_ch</span><span class="p">(</span>
                             <span class="n">comp_props</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;options&quot;</span><span class="p">,</span> <span class="p">[])</span>
                         <span class="p">)</span>
+                        <span class="n">placeholder_ch</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">comp_props</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;placeholder&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+                        <span class="n">longest_label_ch</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">longest_option_ch</span><span class="p">,</span> <span class="n">placeholder_ch</span><span class="p">)</span>
                         <span class="n">cap</span> <span class="o">=</span> <span class="n">control</span><span class="o">.</span><span class="n">max_ch</span> <span class="ow">or</span> <span class="mi">40</span>
                         <span class="n">min_width_ch</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">longest_label_ch</span> <span class="o">+</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">cap</span><span class="p">)</span>
 
@@ -1004,7 +1013,8 @@
 
                         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
                             <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|AutoSize] Applied dcc.Dropdown auto-size | &quot;</span>
-                            <span class="sa">f</span><span class="s2">&quot;longest_label=</span><span class="si">{</span><span class="n">longest_label_ch</span><span class="si">}</span><span class="s2">ch | min_width=</span><span class="si">{</span><span class="n">min_width_ch</span><span class="si">}</span><span class="s2">ch | max_width=</span><span class="si">{</span><span class="n">cap</span><span class="si">}</span><span class="s2">ch&quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;longest_option=</span><span class="si">{</span><span class="n">longest_option_ch</span><span class="si">}</span><span class="s2">ch | placeholder=</span><span class="si">{</span><span class="n">placeholder_ch</span><span class="si">}</span><span class="s2">ch | &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;effective_longest=</span><span class="si">{</span><span class="n">longest_label_ch</span><span class="si">}</span><span class="s2">ch | min_width=</span><span class="si">{</span><span class="n">min_width_ch</span><span class="si">}</span><span class="s2">ch | max_width=</span><span class="si">{</span><span class="n">cap</span><span class="si">}</span><span class="s2">ch&quot;</span>
                         <span class="p">)</span>
 
                     <span class="k">elif</span> <span class="n">control</span><span class="o">.</span><span class="n">component</span><span class="o">.</span><span class="vm">__name__</span> <span class="ow">in</span> <span class="p">[</span>
@@ -1017,9 +1027,19 @@
                         <span class="k">if</span> <span class="s2">&quot;w-auto&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">existing_class</span><span class="p">:</span>
                             <span class="n">comp_props</span><span class="p">[</span><span class="s2">&quot;className&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">existing_class</span><span class="si">}</span><span class="s2"> w-auto&quot;</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
-                        <span class="c1"># Add character-based width constraints</span>
+                        <span class="c1"># Add character-based width constraints (including placeholder for Select)</span>
                         <span class="n">cap</span> <span class="o">=</span> <span class="n">control</span><span class="o">.</span><span class="n">max_ch</span> <span class="ow">or</span> <span class="mi">40</span>
-                        <span class="n">auto_style</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="s2">&quot;10ch&quot;</span><span class="p">,</span> <span class="s2">&quot;maxWidth&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cap</span><span class="si">}</span><span class="s2">ch&quot;</span><span class="p">}</span>
+                        <span class="k">if</span> <span class="n">control</span><span class="o">.</span><span class="n">component</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;Select&quot;</span><span class="p">:</span>
+                            <span class="c1"># For Select, consider placeholder length for minWidth</span>
+                            <span class="n">placeholder_ch</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">comp_props</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;placeholder&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+                            <span class="n">min_width_ch</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">placeholder_ch</span> <span class="o">+</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">cap</span><span class="p">)</span>
+                            <span class="n">auto_style</span> <span class="o">=</span> <span class="p">{</span>
+                                <span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">min_width_ch</span><span class="si">}</span><span class="s2">ch&quot;</span><span class="p">,</span>
+                                <span class="s2">&quot;maxWidth&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cap</span><span class="si">}</span><span class="s2">ch&quot;</span><span class="p">,</span>
+                            <span class="p">}</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="c1"># For Input/Switch, use standard minWidth</span>
+                            <span class="n">auto_style</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="s2">&quot;10ch&quot;</span><span class="p">,</span> <span class="s2">&quot;maxWidth&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cap</span><span class="si">}</span><span class="s2">ch&quot;</span><span class="p">}</span>
 
                         <span class="c1"># Merge with existing style</span>
                         <span class="n">existing_style</span> <span class="o">=</span> <span class="n">comp_props</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;style&quot;</span><span class="p">,</span> <span class="p">{})</span>
@@ -1027,10 +1047,16 @@
                             <span class="n">auto_style</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">existing_style</span><span class="p">)</span>
                         <span class="n">comp_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">auto_style</span>
 
-                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|AutoSize] Applied dbc.</span><span class="si">{</span><span class="n">control</span><span class="o">.</span><span class="n">component</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> auto-size | &quot;</span>
-                            <span class="sa">f</span><span class="s2">&quot;max_width=</span><span class="si">{</span><span class="n">cap</span><span class="si">}</span><span class="s2">ch&quot;</span>
-                        <span class="p">)</span>
+                        <span class="k">if</span> <span class="n">control</span><span class="o">.</span><span class="n">component</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;Select&quot;</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                                <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|AutoSize] Applied dbc.Select auto-size | &quot;</span>
+                                <span class="sa">f</span><span class="s2">&quot;placeholder=</span><span class="si">{</span><span class="n">placeholder_ch</span><span class="si">}</span><span class="s2">ch | min_width=</span><span class="si">{</span><span class="n">min_width_ch</span><span class="si">}</span><span class="s2">ch | max_width=</span><span class="si">{</span><span class="n">cap</span><span class="si">}</span><span class="s2">ch&quot;</span>
+                            <span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                                <span class="sa">f</span><span class="s2">&quot;[TypedChartBlock|AutoSize] Applied dbc.</span><span class="si">{</span><span class="n">control</span><span class="o">.</span><span class="n">component</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> auto-size | &quot;</span>
+                                <span class="sa">f</span><span class="s2">&quot;max_width=</span><span class="si">{</span><span class="n">cap</span><span class="si">}</span><span class="s2">ch&quot;</span>
+                            <span class="p">)</span>
 
                     <span class="n">comp</span> <span class="o">=</span> <span class="n">control</span><span class="o">.</span><span class="n">component</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">comp_id</span><span class="p">,</span> <span class="o">**</span><span class="n">comp_props</span><span class="p">)</span>
                     <span class="n">col</span> <span class="o">=</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Col</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="o">**</span><span class="n">col_props</span><span class="p">)</span>

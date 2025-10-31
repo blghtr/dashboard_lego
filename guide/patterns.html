@@ -412,56 +412,70 @@ Python scripts, and anywhere Dash runs, with minimal code. Supports simple mode
 </ul>
 <p><strong>Simple Mode:</strong></p>
 <p>For quick exploration with 1-4 cards:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.quick_dashboard</span><span class="w"> </span><span class="kn">import</span> <span class="n">quick_dashboard</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span> <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.quick_dashboard</span><span class="w"> </span><span class="kn">import</span> <span class="n">quick_dashboard</span>
+ <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
-<span class="c1"># Load data</span>
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
-    <span class="s1">&#39;Product&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Widget&#39;</span><span class="p">,</span> <span class="s1">&#39;Gadget&#39;</span><span class="p">,</span> <span class="s1">&#39;Tool&#39;</span><span class="p">,</span> <span class="s1">&#39;Device&#39;</span><span class="p">],</span>
-    <span class="s1">&#39;Sales&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">150</span><span class="p">,</span> <span class="mi">180</span><span class="p">],</span>
-    <span class="s1">&#39;Revenue&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">2000</span><span class="p">,</span> <span class="mi">1500</span><span class="p">,</span> <span class="mi">1800</span><span class="p">]</span>
-<span class="p">})</span>
+ <span class="c1"># Load data</span>
+ <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+     <span class="s1">&#39;Product&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Widget&#39;</span><span class="p">,</span> <span class="s1">&#39;Gadget&#39;</span><span class="p">,</span> <span class="s1">&#39;Tool&#39;</span><span class="p">,</span> <span class="s1">&#39;Device&#39;</span><span class="p">],</span>
+     <span class="s1">&#39;Sales&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">150</span><span class="p">,</span> <span class="mi">180</span><span class="p">],</span>
+     <span class="s1">&#39;Revenue&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">2000</span><span class="p">,</span> <span class="mi">1500</span><span class="p">,</span> <span class="mi">1800</span><span class="p">]</span>
+ <span class="p">})</span>
 
-<span class="c1"># Create dashboard with card specs</span>
+ <span class="c1"># Create dashboard with card specs</span>
 <span class="n">app</span> <span class="o">=</span> <span class="n">quick_dashboard</span><span class="p">(</span>
-    <span class="n">df</span><span class="o">=</span><span class="n">df</span><span class="p">,</span>
-    <span class="n">cards</span><span class="o">=</span><span class="p">[</span>
-        <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;metric&quot;</span><span class="p">,</span> <span class="s2">&quot;column&quot;</span><span class="p">:</span> <span class="s2">&quot;Revenue&quot;</span><span class="p">,</span> <span class="s2">&quot;agg&quot;</span><span class="p">:</span> <span class="s2">&quot;sum&quot;</span><span class="p">,</span>
-         <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Total Revenue&quot;</span><span class="p">,</span> <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">},</span>
-        <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;chart&quot;</span><span class="p">,</span> <span class="s2">&quot;plot_type&quot;</span><span class="p">:</span> <span class="s2">&quot;bar&quot;</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="s2">&quot;Product&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="s2">&quot;Sales&quot;</span><span class="p">,</span>
-         <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Sales by Product&quot;</span><span class="p">},</span>
-        <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;## Sales Dashboard</span><span class="se">\n</span><span class="s2">Quick analysis&quot;</span><span class="p">}</span>
-    <span class="p">],</span>
-    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Sales Dashboard&quot;</span><span class="p">,</span>
-    <span class="n">theme</span><span class="o">=</span><span class="s2">&quot;lux&quot;</span>
-<span class="p">)</span>
+     <span class="n">df</span><span class="o">=</span><span class="n">df</span><span class="p">,</span>
+     <span class="n">cards</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">{</span>
+          <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;metric&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;metric_spec&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;column&quot;</span><span class="p">:</span> <span class="s2">&quot;Revenue&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;agg&quot;</span><span class="p">:</span> <span class="s2">&quot;sum&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Total Revenue&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span>
+          <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+          <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;chart&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;plot_type&quot;</span><span class="p">:</span> <span class="s2">&quot;bar&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;plot_params&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="s2">&quot;Product&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="s2">&quot;Sales&quot;</span><span class="p">},</span>
+          <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Sales by Product&quot;</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+          <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;content_generator&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="s2">&quot;## Sales Dashboard</span><span class="se">\n</span><span class="s2">Quick analysis&quot;</span>
+        <span class="p">}</span>
+     <span class="p">],</span>
+     <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Sales Dashboard&quot;</span><span class="p">,</span>
+     <span class="n">theme</span><span class="o">=</span><span class="s2">&quot;lux&quot;</span>
+ <span class="p">)</span>
 
-<span class="c1"># Run inline (requires jupyter-dash)</span>
-<span class="n">app</span><span class="o">.</span><span class="n">run_server</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;inline&#39;</span><span class="p">)</span>
+ <span class="c1"># Run inline (requires jupyter-dash)</span>
+ <span class="n">app</span><span class="o">.</span><span class="n">run_server</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;inline&#39;</span><span class="p">)</span>
 
-<span class="c1"># Or open in new browser tab</span>
-<span class="n">app</span><span class="o">.</span><span class="n">run_server</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+ <span class="c1"># Or open in new browser tab</span>
+ <span class="n">app</span><span class="o">.</span><span class="n">run_server</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><strong>Card Specification Reference:</strong></p>
 <dl class="simple">
 <dt>Metric Card:</dt><dd><ul class="simple">
-<li><p><strong>Required</strong>: <code class="docutils literal notranslate"><span class="pre">type=&quot;metric&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">column</span></code>, <code class="docutils literal notranslate"><span class="pre">agg</span></code>, <code class="docutils literal notranslate"><span class="pre">title</span></code></p></li>
-<li><p><strong>Optional</strong>: <code class="docutils literal notranslate"><span class="pre">color</span></code> (success, info, primary, danger, warning, secondary)</p></li>
-<li><p><strong>Example</strong>: <code class="docutils literal notranslate"><span class="pre">{&quot;type&quot;:</span> <span class="pre">&quot;metric&quot;,</span> <span class="pre">&quot;column&quot;:</span> <span class="pre">&quot;Sales&quot;,</span> <span class="pre">&quot;agg&quot;:</span> <span class="pre">&quot;sum&quot;,</span> <span class="pre">&quot;title&quot;:</span> <span class="pre">&quot;Total</span> <span class="pre">Sales&quot;,</span> <span class="pre">&quot;color&quot;:</span> <span class="pre">&quot;success&quot;}</span></code></p></li>
+<li><p><strong>Required</strong>: <code class="docutils literal notranslate"><span class="pre">type=&quot;metric&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">metric_spec</span></code> (dict with <code class="docutils literal notranslate"><span class="pre">column</span></code>, <code class="docutils literal notranslate"><span class="pre">agg</span></code>, <code class="docutils literal notranslate"><span class="pre">title</span></code>)</p></li>
+<li><p><strong>Optional in metric_spec</strong>: <code class="docutils literal notranslate"><span class="pre">color</span></code> (success, info, primary, danger, warning, secondary), <code class="docutils literal notranslate"><span class="pre">dtype</span></code></p></li>
+<li><p><strong>Example</strong>: <code class="docutils literal notranslate"><span class="pre">{&quot;type&quot;:</span> <span class="pre">&quot;metric&quot;,</span> <span class="pre">&quot;metric_spec&quot;:</span> <span class="pre">{&quot;column&quot;:</span> <span class="pre">&quot;Sales&quot;,</span> <span class="pre">&quot;agg&quot;:</span> <span class="pre">&quot;sum&quot;,</span> <span class="pre">&quot;title&quot;:</span> <span class="pre">&quot;Total</span> <span class="pre">Sales&quot;,</span> <span class="pre">&quot;color&quot;:</span> <span class="pre">&quot;success&quot;}}</span></code></p></li>
 </ul>
 </dd>
 <dt>Chart Card:</dt><dd><ul class="simple">
-<li><p><strong>Required</strong>: <code class="docutils literal notranslate"><span class="pre">type=&quot;chart&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">plot_type</span></code>, <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code>, <code class="docutils literal notranslate"><span class="pre">title</span></code></p></li>
-<li><p><strong>Optional</strong>: <code class="docutils literal notranslate"><span class="pre">color</span></code> (for color mapping), <code class="docutils literal notranslate"><span class="pre">size</span></code> (for scatter plots)</p></li>
-<li><p><strong>Example</strong>: <code class="docutils literal notranslate"><span class="pre">{&quot;type&quot;:</span> <span class="pre">&quot;chart&quot;,</span> <span class="pre">&quot;plot_type&quot;:</span> <span class="pre">&quot;bar&quot;,</span> <span class="pre">&quot;x&quot;:</span> <span class="pre">&quot;Product&quot;,</span> <span class="pre">&quot;y&quot;:</span> <span class="pre">&quot;Sales&quot;,</span> <span class="pre">&quot;title&quot;:</span> <span class="pre">&quot;Sales</span> <span class="pre">Chart&quot;}</span></code></p></li>
+<li><p><strong>Required</strong>: <code class="docutils literal notranslate"><span class="pre">type=&quot;chart&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">plot_type</span></code>, <code class="docutils literal notranslate"><span class="pre">plot_params</span></code> (dict with <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code>), <code class="docutils literal notranslate"><span class="pre">title</span></code></p></li>
+<li><p><strong>Optional in plot_params</strong>: <code class="docutils literal notranslate"><span class="pre">color</span></code>, <code class="docutils literal notranslate"><span class="pre">size</span></code></p></li>
+<li><p><strong>Example</strong>: <code class="docutils literal notranslate"><span class="pre">{&quot;type&quot;:</span> <span class="pre">&quot;chart&quot;,</span> <span class="pre">&quot;plot_type&quot;:</span> <span class="pre">&quot;bar&quot;,</span> <span class="pre">&quot;plot_params&quot;:</span> <span class="pre">{&quot;x&quot;:</span> <span class="pre">&quot;Product&quot;,</span> <span class="pre">&quot;y&quot;:</span> <span class="pre">&quot;Sales&quot;},</span> <span class="pre">&quot;title&quot;:</span> <span class="pre">&quot;Sales</span> <span class="pre">Chart&quot;}</span></code></p></li>
 <li><p><strong>Plot types</strong>: bar, line, scatter, histogram, box, violin, pie, etc.</p></li>
 </ul>
 </dd>
 <dt>Text Card:</dt><dd><ul class="simple">
-<li><p><strong>Required</strong>: <code class="docutils literal notranslate"><span class="pre">type=&quot;text&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">content</span></code></p></li>
-<li><p><strong>Supports</strong>: Markdown formatting</p></li>
-<li><p><strong>Example</strong>: <code class="docutils literal notranslate"><span class="pre">{&quot;type&quot;:</span> <span class="pre">&quot;text&quot;,</span> <span class="pre">&quot;content&quot;:</span> <span class="pre">&quot;##</span> <span class="pre">Analysis\n\nKey</span> <span class="pre">insights...&quot;}</span></code></p></li>
+<li><p><strong>Required</strong>: <code class="docutils literal notranslate"><span class="pre">type=&quot;text&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">content_generator</span></code> (callable: <code class="docutils literal notranslate"><span class="pre">df</span> <span class="pre">-&gt;</span> <span class="pre">Component</span> <span class="pre">|</span> <span class="pre">str</span></code>)</p></li>
+<li><p><strong>Supports</strong>: Markdown formatting (return string to render as Markdown)</p></li>
+<li><p><strong>Example</strong>: <code class="docutils literal notranslate"><span class="pre">{&quot;type&quot;:</span> <span class="pre">&quot;text&quot;,</span> <span class="pre">&quot;content_generator&quot;:</span> <span class="pre">lambda</span> <span class="pre">df:</span> <span class="pre">&quot;##</span> <span class="pre">Analysis\n\nKey</span> <span class="pre">insights...&quot;}</span></code></p></li>
 </ul>
 </dd>
 </dl>

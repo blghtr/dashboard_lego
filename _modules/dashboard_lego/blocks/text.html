@@ -121,7 +121,7 @@
 <span class="sd">         fine-grained control over text block appearance while maintaining</span>
 <span class="sd">         backward compatibility. subscribes_to is now optional.&quot;</span>
 <span class="sd">        :contract:</span>
-<span class="sd">          - pre: &quot;A `content_generator` function must be provided.</span>
+<span class="sd">          - pre: &quot;A `content_generator` function or string must be provided.</span>
 <span class="sd">            `subscribes_to` is optional.&quot;</span>
 <span class="sd">          - post: &quot;The block renders a card with content that updates on state</span>
 <span class="sd">            change (if subscribed) or displays static content with customizable</span>
@@ -135,7 +135,7 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">datasource</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-        <span class="n">content_generator</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span> <span class="n">Component</span> <span class="o">|</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">content_generator</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span> <span class="n">Component</span> <span class="o">|</span> <span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">],</span>
         <span class="n">subscribes_to</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="c1"># Style customization parameters</span>
@@ -155,7 +155,7 @@
 <span class="sd">            datasource: An instance of a class that implements the</span>
 <span class="sd">                DataSource interface.</span>
 <span class="sd">            content_generator: A function that takes a DataFrame and returns a</span>
-<span class="sd">                Dash Component or a Markdown string.</span>
+<span class="sd">                Dash Component or a Markdown string, or a static string for fixed content.</span>
 <span class="sd">            subscribes_to: Optional state ID(s) to which this block subscribes</span>
 <span class="sd">                to receive updates. Can be a single state ID string, a list of</span>
 <span class="sd">                state IDs, or None for static content. Defaults to None.</span>
@@ -171,7 +171,14 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">title</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">content_generator</span> <span class="o">=</span> <span class="n">content_generator</span>
+
+        <span class="c1"># Handle both callable and static string content</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">content_generator</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="c1"># Static content: create a lambda that returns the string</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">content_generator</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">content_generator</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Callable content generator</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">content_generator</span> <span class="o">=</span> <span class="n">content_generator</span>
 
         <span class="c1"># Store style customization parameters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">card_style</span> <span class="o">=</span> <span class="n">card_style</span>
