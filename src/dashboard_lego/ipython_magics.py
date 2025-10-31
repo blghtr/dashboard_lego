@@ -288,7 +288,7 @@ class DashboardMagics(Magics):
         # Get DataSource
         datasource_name = config.get("datasource", None)
         datasource = self.shell.user_ns.get(str(datasource_name), None)
-        if not datasource and not df:
+        if datasource is not None and df is not None:
             print("❌ Error: 'dataframe:' or 'datasource:' not specified in cell")
             return
         # Get configuration
@@ -757,12 +757,13 @@ class DashboardMagics(Magics):
         block_id: str,
     ) -> Any:
         """
-        Create block from YAML card specification (supports controls).
+        Create block from YAML card specification (YAML = kwargs + type).
 
-        Supports: metric, chart, text, control_panel
+        YAML must match block constructor kwargs exactly (plus 'type' field).
+        Supports: metric, chart, minimal_chart, text, control_panel
 
         Args:
-            card_spec: Card specification dict from YAML
+            card_spec: Card specification dict from YAML matching block constructor
             datasource: DataSource instance
             block_id: Unique block identifier
 
@@ -773,106 +774,64 @@ class DashboardMagics(Magics):
             ValueError: If required fields missing
         """
         card_type = card_spec.get("type")
+        if not card_type:
+            raise ValueError("Card spec missing required field: 'type'")
+
+        # Prepare kwargs by copying card_spec (excluding 'type')
+        kwargs = card_spec.copy()
+        kwargs.pop("type", None)
+        kwargs["block_id"] = block_id
+        kwargs["datasource"] = datasource
 
         if card_type == "metric":
-            required = {"column", "agg", "title"}
-            missing = required - set(card_spec.keys())
-            if missing:
-                raise ValueError(f"Metric card missing required: {missing}")
-
-            return SingleMetricBlock(
-                block_id=block_id,
-                datasource=datasource,
-                metric_spec={
-                    "column": card_spec["column"],
-                    "agg": card_spec["agg"],
-                    "title": card_spec["title"],
-                    "color": card_spec.get("color", "primary"),
-                    "dtype": card_spec.get("dtype"),
-                },
-            )
+            # Require metric_spec dict
+            if "metric_spec" not in kwargs:
+                raise ValueError("Metric card missing required: metric_spec")
+            return SingleMetricBlock(**kwargs)
 
         elif card_type in ["chart", "minimal_chart"]:
-            if card_type == "chart":
-                required = {"plot_type", "title"}
-            else:  # minimal_chart
-                required = {"title"}
-            missing = required - set(card_spec.keys())
-            if missing:
-                raise ValueError(f"{card_type} card missing required: {missing}")
+            # Require plot_params dict
+            if "plot_params" not in kwargs:
+                raise ValueError(f"{card_type} card missing required: plot_params")
 
             # Handle controls if present
-            controls = self._build_controls_from_spec(card_spec.get("controls", []))
+            if "controls" in kwargs:
+                kwargs["controls"] = self._build_controls_from_spec(kwargs["controls"])
 
-            # Build plot_params
-            plot_params = {}
-            for key in ["x", "y", "color", "size", "hover_name", "hover_data"]:
-                if key in card_spec:
-                    plot_params[key] = card_spec[key]
-
-            # Parse subscribes_to: can be string, list of strings, or list of dicts with dep_param_name
-            subscribes_to = card_spec.get("subscribes_to")
-            if subscribes_to is not None:
-                # If it's a list, check if any items have dep_param_name
-                if isinstance(subscribes_to, list):
-                    # Check if list contains dicts with dep_param_name
-                    has_dep_param = any(
-                        isinstance(item, dict) and "dep_param_name" in item
-                        for item in subscribes_to
-                    )
-                    if not has_dep_param:
-                        # Legacy format: list of strings, no processing needed
-                        pass
-                    # else: list of dicts, will be processed by the appropriate block class
-
-            # Determine plot type and block class
+            # Determine block class
             if card_type == "chart":
-                plot_type = card_spec["plot_type"]
+                if "plot_type" not in kwargs:
+                    raise ValueError("Chart card missing required: plot_type")
                 block_class = TypedChartBlock
             else:  # minimal_chart
-                plot_type = card_spec.get("plot_type", "scatter")  # Default to scatter
                 block_class = MinimalChartBlock
 
-            return block_class(
-                block_id=block_id,
-                datasource=datasource,
-                plot_type=plot_type,
-                plot_params=plot_params,
-                plot_kwargs={},  # No title in plot_kwargs, use plot_title instead
-                title=card_spec.get("title"),  # Static card title
-                plot_title=card_spec.get(
-                    "plot_title"
-                ),  # Dynamic plot title with placeholders
-                controls=controls,
-                subscribes_to=subscribes_to,  # Pass through, block class will handle parsing
-            )
+            return block_class(**kwargs)
 
         elif card_type == "text":
-            if "content" not in card_spec:
-                raise ValueError("Text card missing required: content")
+            # Require content_generator (can be string, will be wrapped)
+            if "content_generator" not in kwargs:
+                raise ValueError("Text card missing required: content_generator")
 
-            return TextBlock(
-                block_id=block_id,
-                datasource=datasource,
-                subscribes_to=[],
-                content_generator=lambda df: card_spec["content"],
-            )
+            # If content_generator is a string, wrap it in a lambda
+            content_gen = kwargs["content_generator"]
+            if isinstance(content_gen, str):
+                kwargs["content_generator"] = lambda df: content_gen
+
+            return TextBlock(**kwargs)
 
         elif card_type == "control_panel":
-            if "title" not in card_spec:
+            # Require title
+            if "title" not in kwargs:
                 raise ValueError("Control panel missing required: title")
 
-            controls = self._build_controls_from_spec(card_spec.get("controls", []))
-
-            return ControlPanelBlock(
-                block_id=block_id,
-                datasource=datasource,
-                title=card_spec.get("title"),
-                controls=controls,
-            )
+            # Controls can be list of specs - ControlPanelBlock will convert it
+            return ControlPanelBlock(**kwargs)
 
         else:
-            raise ValueError(f"Unknown card type: '{card_type}'")
+            raise ValueError(
+                f"Unknown card type: '{card_type}'. Supported: metric, chart, minimal_chart, text, control_panel"
+            )
 
     def _generate_process_id(self) -> str:
         """Generate unique process ID."""
@@ -1111,7 +1070,7 @@ class DashboardMagics(Magics):
 
         Format:
             exports:
-              - block: block_name
+            - block: block_name
                 format: html|png|svg|json
                 output: file_path
                 title: "Figure Title" (optional)

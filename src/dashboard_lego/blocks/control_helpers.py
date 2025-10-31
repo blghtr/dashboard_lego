@@ -23,6 +23,8 @@ across different contexts (magics, quick dashboard, etc.).
 
 from typing import Any, Dict, List, Optional
 
+import dash.dcc as dcc
+
 from dashboard_lego.blocks.typed_chart import Control
 from dashboard_lego.utils.logger import get_logger
 
@@ -56,8 +58,6 @@ def build_controls_from_spec(
         >>> controls["metric"].props["options"]
         [{"label": "A", "value": "A"}, {"label": "B", "value": "B"}]
     """
-    from dash import dcc
-
     if not controls_spec:
         return {}
 

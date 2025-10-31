@@ -303,36 +303,16 @@ class DataSource:
             f"[DataSource|Prewarm] Starting cache prewarm with {len(prewarm_list)} parameter sets"
         )
 
-        from dashboard_lego.core.processing_context import DataProcessingContext
-
         for idx, raw_params in enumerate(prewarm_list):
             try:
-                # Split parameters into preprocessing and filtering
-                context = DataProcessingContext.from_params(
-                    raw_params, self._param_classifier
-                )
-
-                # Always run Stage 1: Build
+                _ = self.get_processed_data(raw_params)
                 self.logger.debug(
-                    f"[DataSource|Prewarm] Item #{idx}: Building with params {context.preprocessing_params}"
+                    f"[DataSource|Prewarm] Prewarmed item #{idx}: {raw_params}"
                 )
-                built_data = self._get_or_build(context.preprocessing_params)
-
-                # Run Stage 2: Transform only if filtering params are present and non-empty
-                if context.filtering_params:
-                    self.logger.debug(
-                        f"[DataSource|Prewarm] Item #{idx}: Transforming with params {context.filtering_params}"
-                    )
-                    _ = self._get_or_transform(built_data, context.filtering_params)
-                else:
-                    self.logger.debug(
-                        f"[DataSource|Prewarm] Item #{idx}: Skipping transform stage (no filtering params)"
-                    )
 
             except Exception as e:
                 self.logger.warning(f"[DataSource|Prewarm] Skipped item #{idx}: {e}")
                 continue
-
         self.logger.info("[DataSource|Prewarm] Cache prewarm completed")
 
     def _get_cache_key(self, stage: str, params: Dict[str, Any]) -> str:

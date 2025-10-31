@@ -100,10 +100,12 @@ class TestCreateBlockFromSpec:
         """Test creating metric block from spec."""
         card_spec = {
             "type": "metric",
-            "column": "Sales",
-            "agg": "sum",
-            "title": "Total Sales",
-            "color": "success",
+            "metric_spec": {
+                "column": "Sales",
+                "agg": "sum",
+                "title": "Total Sales",
+                "color": "success",
+            },
         }
 
         block = _create_block_from_spec(card_spec, datasource, "test_metric")
@@ -116,8 +118,7 @@ class TestCreateBlockFromSpec:
         card_spec = {
             "type": "chart",
             "plot_type": "bar",
-            "x": "Product",
-            "y": "Sales",
+            "plot_params": {"x": "Product", "y": "Sales"},
             "title": "Sales Chart",
         }
 
@@ -128,7 +129,7 @@ class TestCreateBlockFromSpec:
 
     def test_create_text_block(self, datasource):
         """Test creating text block from spec."""
-        card_spec = {"type": "text", "content": "## Test Content"}
+        card_spec = {"type": "text", "content_generator": lambda df: "## Test Content"}
 
         block = _create_block_from_spec(card_spec, datasource, "test_text")
 
@@ -137,7 +138,10 @@ class TestCreateBlockFromSpec:
 
     def test_metric_missing_required_fields(self, datasource):
         """Test that metric card without required fields raises."""
-        card_spec = {"type": "metric", "column": "Sales"}  # Missing agg, title
+        card_spec = {
+            "type": "metric",
+            "metric_spec": {"column": "Sales"},
+        }  # Missing agg, title
 
         with pytest.raises(ValueError, match="missing required fields"):
             _create_block_from_spec(card_spec, datasource, "test")
@@ -147,7 +151,7 @@ class TestCreateBlockFromSpec:
         card_spec = {
             "type": "chart",
             "plot_type": "bar",
-            "x": "Product",
+            "plot_params": {"x": "Product"},
         }  # Missing y, title
 
         with pytest.raises(ValueError, match="missing required fields"):
@@ -155,10 +159,10 @@ class TestCreateBlockFromSpec:
 
     def test_text_missing_content(self, datasource):
         """Test that text card without content raises."""
-        card_spec = {"type": "text"}  # Missing content
+        card_spec = {"type": "text"}  # Missing content_generator
 
         with pytest.raises(
-            ValueError, match="Text card missing required field: 'content'"
+            ValueError, match="Text card missing required field: 'content_generator'"
         ):
             _create_block_from_spec(card_spec, datasource, "test")
 
@@ -182,12 +186,21 @@ class TestSmartLayout:
     def test_pure_metrics(self, datasource):
         """Test layout with only metrics (all in one row)."""
         card_specs = [
-            {"type": "metric", "column": "Sales", "agg": "sum", "title": "Total Sales"},
             {
                 "type": "metric",
-                "column": "Revenue",
-                "agg": "sum",
-                "title": "Total Revenue",
+                "metric_spec": {
+                    "column": "Sales",
+                    "agg": "sum",
+                    "title": "Total Sales",
+                },
+            },
+            {
+                "type": "metric",
+                "metric_spec": {
+                    "column": "Revenue",
+                    "agg": "sum",
+                    "title": "Total Revenue",
+                },
             },
         ]
 
@@ -202,8 +215,7 @@ class TestSmartLayout:
             {
                 "type": "chart",
                 "plot_type": "bar",
-                "x": "Sales",
-                "y": "Revenue",
+                "plot_params": {"x": "Sales", "y": "Revenue"},
                 "title": "Chart",
             }
         ]
@@ -219,15 +231,13 @@ class TestSmartLayout:
             {
                 "type": "chart",
                 "plot_type": "bar",
-                "x": "Sales",
-                "y": "Revenue",
+                "plot_params": {"x": "Sales", "y": "Revenue"},
                 "title": "Chart1",
             },
             {
                 "type": "chart",
                 "plot_type": "line",
-                "x": "Sales",
-                "y": "Revenue",
+                "plot_params": {"x": "Sales", "y": "Revenue"},
                 "title": "Chart2",
             },
         ]
@@ -243,22 +253,19 @@ class TestSmartLayout:
             {
                 "type": "chart",
                 "plot_type": "bar",
-                "x": "Sales",
-                "y": "Revenue",
+                "plot_params": {"x": "Sales", "y": "Revenue"},
                 "title": "C1",
             },
             {
                 "type": "chart",
                 "plot_type": "line",
-                "x": "Sales",
-                "y": "Revenue",
+                "plot_params": {"x": "Sales", "y": "Revenue"},
                 "title": "C2",
             },
             {
                 "type": "chart",
                 "plot_type": "scatter",
-                "x": "Sales",
-                "y": "Revenue",
+                "plot_params": {"x": "Sales", "y": "Revenue"},
                 "title": "C3",
             },
         ]
@@ -271,12 +278,14 @@ class TestSmartLayout:
     def test_mixed_one_metric_one_chart(self, datasource):
         """Test layout with 1M + 1C (metrics row + chart full)."""
         card_specs = [
-            {"type": "metric", "column": "Sales", "agg": "sum", "title": "Total"},
+            {
+                "type": "metric",
+                "metric_spec": {"column": "Sales", "agg": "sum", "title": "Total"},
+            },
             {
                 "type": "chart",
                 "plot_type": "bar",
-                "x": "Sales",
-                "y": "Revenue",
+                "plot_params": {"x": "Sales", "y": "Revenue"},
                 "title": "Chart",
             },
         ]
@@ -289,25 +298,32 @@ class TestSmartLayout:
     def test_mixed_two_metrics_two_charts(self, datasource):
         """Test layout with 2M + 2C (metrics row + charts 50/50)."""
         card_specs = [
-            {"type": "metric", "column": "Sales", "agg": "sum", "title": "Total Sales"},
             {
                 "type": "metric",
-                "column": "Revenue",
-                "agg": "sum",
-                "title": "Total Revenue",
+                "metric_spec": {
+                    "column": "Sales",
+                    "agg": "sum",
+                    "title": "Total Sales",
+                },
+            },
+            {
+                "type": "metric",
+                "metric_spec": {
+                    "column": "Revenue",
+                    "agg": "sum",
+                    "title": "Total Revenue",
+                },
             },
             {
                 "type": "chart",
                 "plot_type": "bar",
-                "x": "Sales",
-                "y": "Revenue",
+                "plot_params": {"x": "Sales", "y": "Revenue"},
                 "title": "C1",
             },
             {
                 "type": "chart",
                 "plot_type": "line",
-                "x": "Sales",
-                "y": "Revenue",
+                "plot_params": {"x": "Sales", "y": "Revenue"},
                 "title": "C2",
             },
         ]
@@ -320,7 +336,10 @@ class TestSmartLayout:
     def test_too_many_cards_raises(self, datasource):
         """Test that more than 4 cards raises."""
         card_specs = [
-            {"type": "metric", "column": "Sales", "agg": "sum", "title": f"M{i}"}
+            {
+                "type": "metric",
+                "metric_spec": {"column": "Sales", "agg": "sum", "title": f"M{i}"},
+            }
             for i in range(5)
         ]
 
@@ -349,9 +368,11 @@ class TestQuickDashboardSimpleMode:
             cards=[
                 {
                     "type": "metric",
-                    "column": "Sales",
-                    "agg": "sum",
-                    "title": "Total Sales",
+                    "metric_spec": {
+                        "column": "Sales",
+                        "agg": "sum",
+                        "title": "Total Sales",
+                    },
                 }
             ],
         )
@@ -366,15 +387,16 @@ class TestQuickDashboardSimpleMode:
             cards=[
                 {
                     "type": "metric",
-                    "column": "Sales",
-                    "agg": "sum",
-                    "title": "Total Sales",
+                    "metric_spec": {
+                        "column": "Sales",
+                        "agg": "sum",
+                        "title": "Total Sales",
+                    },
                 },
                 {
                     "type": "chart",
                     "plot_type": "bar",
-                    "x": "Product",
-                    "y": "Sales",
+                    "plot_params": {"x": "Product", "y": "Sales"},
                     "title": "Sales Chart",
                 },
             ],
@@ -389,18 +411,19 @@ class TestQuickDashboardSimpleMode:
             cards=[
                 {
                     "type": "metric",
-                    "column": "Sales",
-                    "agg": "sum",
-                    "title": "Total Sales",
+                    "metric_spec": {
+                        "column": "Sales",
+                        "agg": "sum",
+                        "title": "Total Sales",
+                    },
                 },
                 {
                     "type": "chart",
                     "plot_type": "bar",
-                    "x": "Product",
-                    "y": "Sales",
+                    "plot_params": {"x": "Product", "y": "Sales"},
                     "title": "Sales Chart",
                 },
-                {"type": "text", "content": "## Analysis Summary"},
+                {"type": "text", "content_generator": lambda df: "## Analysis Summary"},
             ],
         )
 
@@ -413,28 +436,30 @@ class TestQuickDashboardSimpleMode:
             cards=[
                 {
                     "type": "metric",
-                    "column": "Sales",
-                    "agg": "sum",
-                    "title": "Total Sales",
+                    "metric_spec": {
+                        "column": "Sales",
+                        "agg": "sum",
+                        "title": "Total Sales",
+                    },
                 },
                 {
                     "type": "metric",
-                    "column": "Revenue",
-                    "agg": "sum",
-                    "title": "Total Revenue",
+                    "metric_spec": {
+                        "column": "Revenue",
+                        "agg": "sum",
+                        "title": "Total Revenue",
+                    },
                 },
                 {
                     "type": "chart",
                     "plot_type": "bar",
-                    "x": "Product",
-                    "y": "Sales",
+                    "plot_params": {"x": "Product", "y": "Sales"},
                     "title": "Sales",
                 },
                 {
                     "type": "chart",
                     "plot_type": "bar",
-                    "x": "Product",
-                    "y": "Revenue",
+                    "plot_params": {"x": "Product", "y": "Revenue"},
                     "title": "Revenue",
                 },
             ],
@@ -449,9 +474,11 @@ class TestQuickDashboardSimpleMode:
             cards=[
                 {
                     "type": "metric",
-                    "column": "Sales",
-                    "agg": "sum",
-                    "title": "Total Sales",
+                    "metric_spec": {
+                        "column": "Sales",
+                        "agg": "sum",
+                        "title": "Total Sales",
+                    },
                 }
             ],
             theme="dark",
@@ -466,9 +493,11 @@ class TestQuickDashboardSimpleMode:
             cards=[
                 {
                     "type": "metric",
-                    "column": "Sales",
-                    "agg": "sum",
-                    "title": "Total Sales",
+                    "metric_spec": {
+                        "column": "Sales",
+                        "agg": "sum",
+                        "title": "Total Sales",
+                    },
                 }
             ],
             title="Custom Dashboard",
@@ -598,9 +627,11 @@ class TestQuickDashboardContractValidation:
                 cards=[
                     {
                         "type": "metric",
-                        "column": "Sales",
-                        "agg": "sum",
-                        "title": "Total",
+                        "metric_spec": {
+                            "column": "Sales",
+                            "agg": "sum",
+                            "title": "Total",
+                        },
                     }
                 ],
             )
@@ -624,9 +655,11 @@ class TestQuickDashboardAppType:
             cards=[
                 {
                     "type": "metric",
-                    "column": "Sales",
-                    "agg": "sum",
-                    "title": "Total",
+                    "metric_spec": {
+                        "column": "Sales",
+                        "agg": "sum",
+                        "title": "Total",
+                    },
                 }
             ],
         )

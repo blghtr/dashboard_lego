@@ -47,9 +47,9 @@ class TestDatasourceParameterExtraction:
         # Extract datasource parameters
         datasource_params = chart._extract_datasource_params(control_values)
 
-        # External state should become datasource param
-        assert "price-filter" in datasource_params
-        assert datasource_params["price-filter"] == 100
+        # External state should become datasource param (normalized)
+        assert "filter" in datasource_params
+        assert datasource_params["filter"] == 100
 
         # Embedded control should NOT be in datasource params
         assert "x_col" not in datasource_params
@@ -117,11 +117,9 @@ class TestDatasourceParameterExtraction:
         # Extract datasource parameters
         datasource_params = chart._extract_datasource_params(control_values)
 
-        # Only external states should be in datasource params
-        assert "price-filter" in datasource_params
-        assert datasource_params["price-filter"] == 100
-        assert "category-filter" in datasource_params
-        assert datasource_params["category-filter"] == "electronics"
+        # Only external states should be in datasource params (normalized)
+        assert "filter" in datasource_params
+        assert datasource_params["filter"] == "electronics"  # Last value wins
 
         # Embedded controls should be skipped
         assert "x_col" not in datasource_params

@@ -135,9 +135,9 @@ class TestMultiFilterFlow:
         # Test datasource parameter extraction
         datasource_params = chart._extract_datasource_params(control_values)
 
-        # Only external state should go to datasource
-        assert "global-filter" in datasource_params
-        assert datasource_params["global-filter"] == "electronics"
+        # Only external state should go to datasource (normalized)
+        assert "filter" in datasource_params
+        assert datasource_params["filter"] == "electronics"
         assert "x_col" not in datasource_params
         assert "y_col" not in datasource_params
 

@@ -27,6 +27,7 @@ advanced (pre-built blocks).
                   for notebook-friendly vertical scrolling"
 """
 
+from functools import reduce
 from typing import Any, Dict, List, Optional, Union
 
 import dash
@@ -34,12 +35,14 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 
 from dashboard_lego.blocks.base import BaseBlock
+from dashboard_lego.blocks.control_panel import ControlPanelBlock
 from dashboard_lego.blocks.metrics_factory import get_metric_row
 from dashboard_lego.blocks.minimal_chart import MinimalChartBlock
 from dashboard_lego.blocks.single_metric import SingleMetricBlock
 from dashboard_lego.blocks.text import TextBlock
 from dashboard_lego.blocks.typed_chart import TypedChartBlock
 from dashboard_lego.core.data_builder import DataBuilder
+from dashboard_lego.core.data_transformer import DataTransformer
 from dashboard_lego.core.datasource import DataSource
 from dashboard_lego.core.page import DashboardPage
 from dashboard_lego.core.theme import ThemeConfig
@@ -102,18 +105,45 @@ class InMemoryDataBuilder(DataBuilder):
             f"rows={len(df)} | cols={len(df.columns)}"
         )
 
-    def build(self, params: Dict[str, Any] = None) -> pd.DataFrame:
+    def build(self, params: Dict[str, Any] = None, **kwargs: Any) -> pd.DataFrame:
         """
         Return the wrapped DataFrame.
 
         Args:
-            params: Ignored (no build-time parameters needed)
+            params: Ignored (no build-time parameters needed for in-memory data)
+            **kwargs: Ignored (parameters passed as kwargs are also ignored)
 
         Returns:
             The wrapped DataFrame
         """
+        # Accept both params dict and kwargs for compatibility with datasource calling pattern
+        # InMemoryDataBuilder ignores all parameters since data is already in memory
         logger.debug("[Utils|JupyterFactory|InMemoryDataBuilder] Returning DataFrame")
         return self._df
+
+
+class DataFilter(DataTransformer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def transform(self, df, **kwargs):
+        filtered = df.copy()
+        filters = []
+        for key, value in kwargs.items():
+            if key in df.columns:
+                if value is None:
+                    self.logger.debug(
+                        f"DataFilter: skipping {key} because value is None"
+                    )
+                else:
+                    filters.append(df[key] == value)
+        if not filters:
+            return df
+        cond_union = reduce(lambda x, y: x & y, filters)
+        filtered = filtered[cond_union]
+        if filtered.empty:
+            self.logger.warning(f"DataFilter returned empty dataset, kwargs={kwargs}")
+        return filtered
 
 
 # LLM:METADATA
@@ -194,14 +224,14 @@ def _get_theme_url_and_config(theme_name: str) -> tuple:
 # :hierarchy: [Utils | JupyterFactory | _create_block_from_spec]
 # :relates-to:
 #  - motivated_by: "Simple mode card specs need conversion to BaseBlock instances for DashboardPage layout API, factory pattern eliminates boilerplate [card-factory]"
-#  - implements: "Factory function that creates SingleMetricBlock, TypedChartBlock, or TextBlock from dict spec [_create_block_from_spec]"
-#  - uses: ["SingleMetricBlock, TypedChartBlock, TextBlock: block constructors", "DataSource: data pipeline"]
+#  - implements: "Factory function that creates SingleMetricBlock, TypedChartBlock, or TextBlock from dict spec using type mapping and direct constructor call [_create_block_from_spec]"
+#  - uses: ["SingleMetricBlock, TypedChartBlock, TextBlock: block constructors", "DataSource: data pipeline", "BLOCK_TYPE_MAP: type-to-class mapping"]
 # :contract:
-#  - pre: "card_spec is dict with 'type' key and type-specific required fields (column/agg/title for metric, plot_type/x/y/title for chart, content for text)"
-#  - post: "returns BaseBlock instance configured from spec"
-#  - invariant: "deterministic (same spec + datasource → same block configuration)"
-# :complexity: 3
-# :decision_cache: "Type-based dispatch over subclass registry: simple, explicit, only 3 types needed [decision-card-factory-001]"
+#  - pre: "card_spec is dict with 'type' key and fields matching block constructor signature exactly (metric_spec for metric, plot_params for chart, content_generator for text, controls for control_panel)"
+#  - post: "returns BaseBlock instance configured from spec via direct constructor call"
+#  - invariant: "deterministic (same spec + datasource → same block configuration), spec passed directly to constructor with block_id and datasource added, 'type' field removed"
+# :complexity: 2
+# :decision_cache: "Direct constructor call over adapters: user provides correct spec structure matching constructor signature, code simply validates and passes spec through with block_id/datasource, no transformation logic needed [decision-card-factory-003]"
 # LLM:END
 
 
@@ -223,42 +253,81 @@ def _validate_card_spec(card_spec: Dict[str, Any]) -> None:
         raise ValueError("Card spec missing required field: 'type'")
 
     if card_type == "metric":
-        required = {"column", "agg", "title"}
+        required = {"metric_spec"}
         missing = required - set(card_spec.keys())
         if missing:
             raise ValueError(f"Metric card missing required fields: {missing}")
+        if not isinstance(card_spec.get("metric_spec"), dict):
+            raise ValueError("Metric card 'metric_spec' must be a dictionary")
+        metric_spec = card_spec["metric_spec"]
+        metric_required = {"column", "agg", "title"}
+        metric_missing = metric_required - set(metric_spec.keys())
+        if metric_missing:
+            raise ValueError(
+                f"Metric card 'metric_spec' missing required fields: {metric_missing}"
+            )
 
     elif card_type in ["chart", "minimal_chart"]:
         if card_type == "chart":
-            required = {"plot_type", "x", "y", "title"}
+            required = {"plot_type", "plot_params", "title"}
         else:  # minimal_chart
-            required = {"x", "y", "title"}
+            required = {"plot_params", "title"}
         missing = required - set(card_spec.keys())
         if missing:
             raise ValueError(f"{card_type} card missing required fields: {missing}")
+        # Validate plot_params structure
+        plot_params = card_spec.get("plot_params")
+        if not isinstance(plot_params, dict):
+            raise ValueError(f"{card_type} card 'plot_params' must be a dictionary")
+        if "x" not in plot_params or "y" not in plot_params:
+            raise ValueError(
+                f"{card_type} card 'plot_params' must contain 'x' and 'y' keys"
+            )
 
     elif card_type == "text":
-        if "content" not in card_spec:
-            raise ValueError("Text card missing required field: 'content'")
+        if "content_generator" not in card_spec:
+            raise ValueError("Text card missing required field: 'content_generator'")
+        content_gen = card_spec.get("content_generator")
+        if not callable(content_gen) and not isinstance(content_gen, str):
+            raise ValueError(
+                "Text card 'content_generator' must be a callable or string"
+            )
 
     elif card_type == "control_panel":
-        if "title" not in card_spec:
-            raise ValueError("Control panel missing required field: 'title'")
-        controls = card_spec.get("controls", [])
-        if not isinstance(controls, list):
-            raise ValueError("Control panel 'controls' must be a list")
-        for i, ctrl in enumerate(controls):
-            if not isinstance(ctrl, dict):
-                raise ValueError(f"Control {i} must be a dictionary")
-            if "name" not in ctrl:
-                raise ValueError(f"Control {i} missing required field: 'name'")
-            if "type" not in ctrl:
-                raise ValueError(f"Control {i} missing required field: 'type'")
+        required = {"title", "controls"}
+        missing = required - set(card_spec.keys())
+        if missing:
+            raise ValueError(f"Control panel missing required fields: {missing}")
+        if not isinstance(card_spec.get("controls"), (dict, list)):
+            raise ValueError(
+                "Control panel 'controls' must be a dictionary or list of control specifications"
+            )
 
     else:
         raise ValueError(
             f"Unknown card type: '{card_type}'. Supported: metric, chart, minimal_chart, text, control_panel"
         )
+
+
+# LLM:METADATA
+# :hierarchy: [Utils | JupyterFactory | BlockTypeMapping]
+# :relates-to:
+#  - motivated_by: "Type-to-class mapping eliminates manual if/elif branches, single source of truth for supported card types [type-mapping]"
+#  - implements: "Mapping dictionary card_type -> BlockClass"
+# :contract:
+#  - pre: "card_type is valid string from supported types"
+#  - post: "returns BlockClass for given card_type"
+# :complexity: 1
+# LLM:END
+
+# Type-to-class mapping for block creation
+BLOCK_TYPE_MAP: Dict[str, type] = {
+    "metric": SingleMetricBlock,
+    "chart": TypedChartBlock,
+    "minimal_chart": MinimalChartBlock,
+    "text": TextBlock,
+    "control_panel": ControlPanelBlock,  # Control panel block for interactive controls
+}
 
 
 def _create_block_from_spec(
@@ -267,10 +336,13 @@ def _create_block_from_spec(
     block_id: str,
 ) -> BaseBlock:
     """
-    Create block from card specification.
+    Create block from card specification using type mapping.
+
+    Card spec must match block constructor signature exactly (except 'type' field).
+    After validation, spec is passed directly to constructor via **card_spec.
 
     Args:
-        card_spec: Card specification dict
+        card_spec: Card specification dict matching block constructor signature
         datasource: DataSource instance
         block_id: Unique block identifier
 
@@ -283,129 +355,28 @@ def _create_block_from_spec(
     # Validate card spec first
     _validate_card_spec(card_spec)
 
-    card_type = card_spec.get("type")
+    card_type = card_spec.pop("type")
 
-    if card_type == "metric":
-
-        # Build metric spec
-        metric_spec = {
-            "column": card_spec["column"],
-            "agg": card_spec["agg"],
-            "title": card_spec["title"],
-            "color": card_spec.get("color", "primary"),
-            "dtype": card_spec.get("dtype"),
-        }
-
-        logger.debug(
-            f"[Utils|JupyterFactory] Creating metric block | spec={metric_spec}"
+    # Get block class from mapping
+    if card_type not in BLOCK_TYPE_MAP:
+        raise ValueError(
+            f"Unknown card type: '{card_type}'. Supported: {list(BLOCK_TYPE_MAP.keys())}"
         )
 
-        return SingleMetricBlock(
-            block_id=block_id,
-            datasource=datasource,
-            metric_spec=metric_spec,
-        )
+    block_class = BLOCK_TYPE_MAP[card_type]
 
-    elif card_type in ["chart", "minimal_chart"]:
-        # Build plot params
-        plot_params = {"x": card_spec["x"], "y": card_spec["y"]}
-        if "color" in card_spec:
-            plot_params["color"] = card_spec["color"]
-        if "size" in card_spec:
-            plot_params["size"] = card_spec["size"]
+    # Create block by passing card_spec directly (remove 'type', add block_id and datasource)
+    kwargs = card_spec.copy()
+    kwargs["block_id"] = block_id
+    kwargs["datasource"] = datasource
 
-        # Optional subscriptions to external states
-        # Supports: string, list of strings, or list of dicts with dep_param_name
-        subscribes_to = card_spec.get("subscribes_to")
-        if subscribes_to:
-            if isinstance(subscribes_to, str):
-                if "-" not in subscribes_to:
-                    logger.warning(
-                        f"[Utils|JupyterFactory] subscribes_to='{subscribes_to}' may be malformed; "
-                        f"expected 'blockId-controlName'"
-                    )
-            elif isinstance(subscribes_to, list):
-                for sub in subscribes_to:
-                    if isinstance(sub, dict):
-                        # Dict format with optional dep_param_name
-                        if "state_id" not in sub:
-                            logger.warning(
-                                f"[Utils|JupyterFactory] subscribes_to dict item missing 'state_id': {sub}"
-                            )
-                    elif isinstance(sub, str):
-                        # Legacy string format
-                        if "-" not in sub:
-                            logger.warning(
-                                f"[Utils|JupyterFactory] subscribes_to list item '{sub}' may be malformed; "
-                                f"expected 'blockId-controlName'"
-                            )
-                    else:
-                        logger.warning(
-                            f"[Utils|JupyterFactory] subscribes_to list item must be string or dict, got {type(sub)}"
-                        )
-            else:
-                logger.warning(
-                    f"[Utils|JupyterFactory] subscribes_to must be string, list of strings, or list of dicts, got {type(subscribes_to)}"
-                )
+    # Create block instance
+    logger.debug(
+        f"[Utils|JupyterFactory] Creating {card_type} block | "
+        f"block_id={block_id} | type={block_class.__name__}"
+    )
 
-        # Determine plot type and block class
-        if card_type == "chart":
-            plot_type = card_spec["plot_type"]
-            block_class = TypedChartBlock
-            logger.debug(
-                f"[Utils|JupyterFactory] Creating chart block | "
-                f"plot_type={plot_type} | params={plot_params}"
-            )
-        else:  # minimal_chart
-            plot_type = card_spec.get("plot_type", "scatter")  # Default to scatter
-            block_class = MinimalChartBlock
-            logger.debug(
-                f"[Utils|JupyterFactory] Creating minimal chart block | "
-                f"plot_type={plot_type} | params={plot_params}"
-            )
-
-        return block_class(
-            block_id=block_id,
-            datasource=datasource,
-            plot_type=plot_type,
-            plot_params=plot_params,
-            plot_kwargs={},  # No title in plot_kwargs, use plot_title instead
-            title=card_spec.get("title"),  # Static card title
-            plot_title=card_spec.get(
-                "plot_title"
-            ),  # Dynamic plot title with placeholders
-            subscribes_to=subscribes_to,
-        )
-
-    elif card_type == "text":
-
-        logger.debug("[Utils|JupyterFactory] Creating text block")
-
-        # TextBlock requires content_generator function, not direct content
-        content_text = card_spec["content"]
-        return TextBlock(
-            block_id=block_id,
-            datasource=datasource,
-            subscribes_to=[],  # No subscriptions for static text
-            content_generator=lambda df: content_text,
-        )
-
-    elif card_type == "control_panel":
-        logger.debug("[Utils|JupyterFactory] Creating control panel block")
-
-        # Import ControlPanelBlock and Control
-        # Build controls from spec using shared helper
-        from dashboard_lego.blocks.control_helpers import build_controls_from_spec
-        from dashboard_lego.blocks.control_panel import ControlPanelBlock
-
-        controls = build_controls_from_spec(card_spec.get("controls", []))
-
-        return ControlPanelBlock(
-            block_id=block_id,
-            datasource=datasource,
-            title=card_spec["title"],
-            controls=controls,
-        )
+    return block_class(**kwargs)
 
 
 # LLM:METADATA
@@ -471,23 +442,30 @@ def _smart_layout(card_specs: List[Dict[str, Any]], datasource: DataSource) -> L
 
     # Create metrics row if any (using get_metric_row factory)
     if metric_specs:
-        # Validate metric specs
+        # Validate metric specs (new schema expects nested metric_spec)
         for idx, spec in metric_specs:
+            metric_spec = spec.get("metric_spec", {})
             required = {"column", "agg", "title"}
-            if not required.issubset(spec.keys()):
-                missing = required - spec.keys()
+            if not isinstance(metric_spec, dict) or not required.issubset(
+                metric_spec.keys()
+            ):
+                missing = (
+                    required - set(metric_spec.keys())
+                    if isinstance(metric_spec, dict)
+                    else required
+                )
                 raise ValueError(
-                    f"Invalid card spec at index {idx}: Metric card missing "
+                    f"Invalid card spec at index {idx}: Metric card 'metric_spec' missing "
                     f"required fields: {missing}. Required: column, agg, title"
                 )
 
         metrics_spec_dict = {
             f"metric_{idx}": {
-                "column": spec["column"],
-                "agg": spec["agg"],
-                "title": spec["title"],
-                "color": spec.get("color", "primary"),
-                "dtype": spec.get("dtype"),
+                "column": spec["metric_spec"]["column"],
+                "agg": spec["metric_spec"]["agg"],
+                "title": spec["metric_spec"]["title"],
+                "color": spec["metric_spec"].get("color", "primary"),
+                "dtype": spec["metric_spec"].get("dtype"),
             }
             for idx, spec in metric_specs
         }
@@ -554,7 +532,7 @@ def _smart_layout(card_specs: List[Dict[str, Any]], datasource: DataSource) -> L
 #      "dash.Dash or jupyter_dash.JupyterDash: app classes (optional dependency graceful fallback)"
 #  ]
 # :contract:
-#  - pre: "df is valid non-empty DataFrame OR blocks is list of 1-4 BaseBlock instances (mutually exclusive, exactly one must be provided), valid card spec dicts with required fields (type='metric' requires column/agg/title, type='chart' requires plot_type/x/y/title, type='text' requires content), theme name valid (any Bootstrap theme name or lux/dark/light/cyborg), title is non-empty string"
+#  - pre: "df is valid non-empty DataFrame OR blocks is list of 1-4 BaseBlock instances (mutually exclusive, exactly one must be provided), valid card spec dicts with required fields (type='metric' requires column/agg/title, type='chart' requires plot_type/plot_params/title where plot_params contains x/y, type='minimal_chart' requires plot_params/title, type='text' requires content), theme name valid (any Bootstrap theme name or lux/dark/light/cyborg), title is non-empty string"
 #  - post: "returns Dash or JupyterDash app object with layout built, callbacks registered, theme applied, ready for .run_server() call (JupyterDash supports mode='inline' or mode='external', standard Dash opens new browser tab), no disk state created (cache_ttl=0, no temp files)"
 #  - invariant: "no disk writes (no temp files, no cache files via cache_ttl=0), no external state mutations, deterministic layout from input specs (same df/cards/blocks/theme → same layout structure), pure function (no side effects except logger calls)"
 # :complexity: 6
@@ -591,8 +569,9 @@ def quick_dashboard(
         ...     cards=[
         ...         {"type": "metric", "column": "Revenue", "agg": "sum",
         ...          "title": "Total Revenue", "color": "success"},
-        ...         {"type": "chart", "plot_type": "bar", "x": "Product",
-        ...          "y": "Sales", "title": "Sales by Product"}
+        ...         {"type": "chart", "plot_type": "bar",
+        ...          "plot_params": {"x": "Product", "y": "Sales"},
+        ...          "title": "Sales by Product"}
         ...     ],
         ...     title="Sales Dashboard"
         ... )
@@ -621,9 +600,14 @@ def quick_dashboard(
             Each card is a dict with:
             - Metric card: {"type": "metric", "column": str, "agg": str,
               "title": str, "color": str (optional)}
-            - Chart card: {"type": "chart", "plot_type": str, "x": str,
-              "y": str, "title": str, "color": str (optional), "size": str (optional)}
+            - Chart card: {"type": "chart", "plot_type": str,
+              "plot_params": {"x": str, "y": str, ...}, "title": str}
+            - Minimal chart card: {"type": "minimal_chart",
+              "plot_params": {"x": str, "y": str, ...}, "title": str,
+              "plot_type": str (optional, defaults to "scatter")}
             - Text card: {"type": "text", "content": str}
+            - Control panel card: {"type": "control_panel", "title": str,
+              "controls": [...]}
             (mutually exclusive with blocks)
         blocks: List of BaseBlock instances (1-4 blocks, advanced mode only).
             Mutually exclusive with cards.
@@ -687,6 +671,7 @@ def quick_dashboard(
         # Create in-memory datasource (cache_ttl=0 for no disk writes)
         datasource = DataSource(
             data_builder=InMemoryDataBuilder(df),
+            data_transformer=DataFilter(),
             cache_ttl=0,  # No disk caching
         )
 

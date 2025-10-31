@@ -33,7 +33,7 @@ class TextBlock(BaseBlock):
          fine-grained control over text block appearance while maintaining
          backward compatibility. subscribes_to is now optional."
         :contract:
-          - pre: "A `content_generator` function must be provided.
+          - pre: "A `content_generator` function or string must be provided.
             `subscribes_to` is optional."
           - post: "The block renders a card with content that updates on state
             change (if subscribed) or displays static content with customizable
@@ -45,7 +45,7 @@ class TextBlock(BaseBlock):
         self,
         block_id: str,
         datasource: Any,
-        content_generator: Callable[[pd.DataFrame], Component | str],
+        content_generator: Union[Callable[[pd.DataFrame], Component | str], str],
         subscribes_to: Union[str, List[str], None] = None,
         title: Optional[str] = None,
         # Style customization parameters
@@ -65,7 +65,7 @@ class TextBlock(BaseBlock):
             datasource: An instance of a class that implements the
                 DataSource interface.
             content_generator: A function that takes a DataFrame and returns a
-                Dash Component or a Markdown string.
+                Dash Component or a Markdown string, or a static string for fixed content.
             subscribes_to: Optional state ID(s) to which this block subscribes
                 to receive updates. Can be a single state ID string, a list of
                 state IDs, or None for static content. Defaults to None.
@@ -81,7 +81,14 @@ class TextBlock(BaseBlock):
 
         """
         self.title = title
-        self.content_generator = content_generator
+
+        # Handle both callable and static string content
+        if isinstance(content_generator, str):
+            # Static content: create a lambda that returns the string
+            self.content_generator = lambda df: content_generator
+        else:
+            # Callable content generator
+            self.content_generator = content_generator
 
         # Store style customization parameters
         self.card_style = card_style

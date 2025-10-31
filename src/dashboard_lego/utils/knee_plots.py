@@ -42,6 +42,7 @@ def plot_knee(
     knee_S: float = 1.0,
     annotate_knee: bool = True,
     sort_by_x: bool = True,
+    sort_by_y: bool = False,
     marker_kwargs: Optional[dict] = None,
     line_kwargs: Optional[dict] = None,
     **kwargs,
@@ -78,6 +79,7 @@ def plot_knee(
         knee_S: Sensitivity parameter for knee detection (higher = less sensitive)
         annotate_knee: Add annotation and marker for detected knee point
         sort_by_x: Sort data by x values before knee detection (recommended for KneeLocator)
+        sort_by_y: Sort data by y values before knee detection (recommended for KneeLocator)
         marker_kwargs: Additional kwargs for knee marker (overrides defaults)
         line_kwargs: Additional kwargs for line plot (overrides px.line defaults)
         **kwargs: Additional arguments for fig.update_layout()
@@ -152,13 +154,16 @@ def plot_knee(
             y=0.5,
         )
 
+    df_sorted = df_clean.copy()
     try:
+        if sort_by_y:
+            df_sorted = df_sorted.sort_values(y)
+            logger.debug("[plot_knee] Data sorted by y values for knee detection")
+
         # Sort by x if requested (recommended for KneeLocator)
-        if sort_by_x:
+        elif sort_by_x:
             df_sorted = df_clean.sort_values(x).copy()
             logger.debug("[plot_knee] Data sorted by x values for knee detection")
-        else:
-            df_sorted = df_clean.copy()
 
         # Create base line plot
         fig = px.line(

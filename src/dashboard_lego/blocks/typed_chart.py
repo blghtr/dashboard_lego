@@ -50,9 +50,13 @@ class Control:
     Attributes:
         component: Dash component class (dcc.Dropdown, dcc.Slider, etc.)
         props: Props dictionary for the component
-        col_props: Bootstrap column sizing (default: {"xs": 12, "md": "auto"})
+        col_props: Bootstrap column sizing (default: {"xs": 12, "md": "auto"}).
+                   Can be explicitly set for custom layout (e.g., {"xs": 12, "md": 12} for full width).
+                   Explicit values take precedence over auto-sizing defaults.
         dep_param_name: Optional parameter name override for datasource (default: None)
-        auto_size: Enable content-based sizing instead of full width (default: True)
+        auto_size: Enable content-based sizing instead of full width (default: True).
+                  When True, uses md="auto" if not explicitly set in col_props.
+                  Explicit col_props values are always respected regardless of auto_size.
         max_ch: Maximum width in characters for auto-sized controls (default: 40)
     """
 
@@ -510,6 +514,13 @@ class TypedChartBlock(BaseBlock):
 
         return re.sub(placeholder_pattern, replace_placeholder, value)
 
+    def _normalize_param_name(self, key: str) -> str:
+        """Normalize state_id to datasource parameter name: check dep_param_name or strip block_id prefix."""
+        if key in self._dep_param_names:
+            return self._dep_param_names[key]
+        # Strip block_id prefix (everything before first "-") before passing to datasource
+        return key.split("-", 1)[1] if "-" in key else key
+
     def _extract_datasource_params(
         self, control_values: Dict[str, Any]
     ) -> Dict[str, Any]:
@@ -566,7 +577,14 @@ class TypedChartBlock(BaseBlock):
         datasource_params = {}
 
         for key, value in control_values.items():
-            # Rule 1: External subscribed states → datasource (UNLESS plot-params-only)
+            # Skip embedded controls and system keys
+            if key in (self.controls or {}) or key in ["section", "type"]:
+                self.logger.debug(
+                    f"[TypedChartBlock|Datasource] {key} (embedded control/system key) → skipped"
+                )
+                continue
+
+            # Rule 1: External subscribed states → datasource (UNLESS plot-params-only OR value is None)
             if key in (self.subscribes or {}):
                 if is_plot_params_only(key):
                     self.logger.debug(
@@ -575,39 +593,26 @@ class TypedChartBlock(BaseBlock):
                     )
                     continue
 
-                # Keys are already normalized by _normalize_control_keys
-                # Check if explicit dep_param_name was provided
-                if key in self._dep_param_names:
-                    param_name = self._dep_param_names[key]
+                if value is None:
                     self.logger.debug(
                         f"[TypedChartBlock|Datasource] {key} (external state) "
-                        f"→ datasource param '{param_name}' (from dep_param_name)"
+                        f"→ SKIPPED (value is None, no filter)"
                     )
-                else:
-                    # Use key as-is (already normalized)
-                    param_name = key
-                    self.logger.debug(
-                        f"[TypedChartBlock|Datasource] {key} (external state) "
-                        f"→ datasource param '{param_name}' (normalized key)"
-                    )
+                    continue
 
+                param_name = self._normalize_param_name(key)
+                self.logger.debug(
+                    f"[TypedChartBlock|Datasource] {key} (external state) "
+                    f"→ datasource param '{param_name}'"
+                )
                 datasource_params[param_name] = value
+                continue
 
-            # Rule 2: NOT embedded control AND NOT known system key → maybe datasource
-            elif key not in (self.controls or {}) and key not in ["section", "type"]:
-                # This is legacy support or external param
-                datasource_params[key] = value
-                self.logger.debug(
-                    f"[TypedChartBlock|Datasource] {key} (unknown) "
-                    f"→ datasource param '{key}' (passthrough)"
-                )
-
-            # Embedded controls: skip (not for datasource)
-            else:
-                self.logger.debug(
-                    f"[TypedChartBlock|Datasource] {key} (embedded control) "
-                    f"→ skipped"
-                )
+            # Rule 2: Unknown keys → passthrough (legacy support or external params)
+            self.logger.debug(
+                f"[TypedChartBlock|Datasource] {key} (unknown) → datasource param '{key}' (passthrough)"
+            )
+            datasource_params[key] = value
 
         return datasource_params
 
@@ -870,16 +875,20 @@ class TypedChartBlock(BaseBlock):
                     comp_props = control.props.copy()
                     col_props = (control.col_props or {}).copy()
 
-                    # Ensure column uses md="auto" if not explicitly set
+                    # Contract: Auto-sizing by default, but explicit col_props takes precedence
+                    # Set md="auto" only if not explicitly provided in col_props
+                    # This allows fine-grained control via col_props while providing sensible defaults
                     if "md" not in col_props:
                         col_props["md"] = "auto"
 
                     # Apply auto-size styling based on component type
                     if control.component.__name__ == "Dropdown":  # dcc.Dropdown
-                        # Compute longest label for min-width
-                        longest_label_ch = self._compute_longest_label_ch(
+                        # Compute longest label for min-width (including placeholder)
+                        longest_option_ch = self._compute_longest_label_ch(
                             comp_props.get("options", [])
                         )
+                        placeholder_ch = len(comp_props.get("placeholder", ""))
+                        longest_label_ch = max(longest_option_ch, placeholder_ch)
                         cap = control.max_ch or 40
                         min_width_ch = min(max(longest_label_ch + 3, 10), cap)
 
@@ -899,7 +908,8 @@ class TypedChartBlock(BaseBlock):
 
                         self.logger.debug(
                             f"[TypedChartBlock|AutoSize] Applied dcc.Dropdown auto-size | "
-                            f"longest_label={longest_label_ch}ch | min_width={min_width_ch}ch | max_width={cap}ch"
+                            f"longest_option={longest_option_ch}ch | placeholder={placeholder_ch}ch | "
+                            f"effective_longest={longest_label_ch}ch | min_width={min_width_ch}ch | max_width={cap}ch"
                         )
 
                     elif control.component.__name__ in [
@@ -912,9 +922,19 @@ class TypedChartBlock(BaseBlock):
                         if "w-auto" not in existing_class:
                             comp_props["className"] = f"{existing_class} w-auto".strip()
 
-                        # Add character-based width constraints
+                        # Add character-based width constraints (including placeholder for Select)
                         cap = control.max_ch or 40
-                        auto_style = {"minWidth": "10ch", "maxWidth": f"{cap}ch"}
+                        if control.component.__name__ == "Select":
+                            # For Select, consider placeholder length for minWidth
+                            placeholder_ch = len(comp_props.get("placeholder", ""))
+                            min_width_ch = min(max(placeholder_ch + 3, 10), cap)
+                            auto_style = {
+                                "minWidth": f"{min_width_ch}ch",
+                                "maxWidth": f"{cap}ch",
+                            }
+                        else:
+                            # For Input/Switch, use standard minWidth
+                            auto_style = {"minWidth": "10ch", "maxWidth": f"{cap}ch"}
 
                         # Merge with existing style
                         existing_style = comp_props.get("style", {})
@@ -922,10 +942,16 @@ class TypedChartBlock(BaseBlock):
                             auto_style.update(existing_style)
                         comp_props["style"] = auto_style
 
-                        self.logger.debug(
-                            f"[TypedChartBlock|AutoSize] Applied dbc.{control.component.__name__} auto-size | "
-                            f"max_width={cap}ch"
-                        )
+                        if control.component.__name__ == "Select":
+                            self.logger.debug(
+                                f"[TypedChartBlock|AutoSize] Applied dbc.Select auto-size | "
+                                f"placeholder={placeholder_ch}ch | min_width={min_width_ch}ch | max_width={cap}ch"
+                            )
+                        else:
+                            self.logger.debug(
+                                f"[TypedChartBlock|AutoSize] Applied dbc.{control.component.__name__} auto-size | "
+                                f"max_width={cap}ch"
+                            )
 
                     comp = control.component(id=comp_id, **comp_props)
                     col = dbc.Col(comp, **col_props)

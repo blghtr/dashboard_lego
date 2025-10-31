@@ -193,14 +193,23 @@ def setup_logging(level: Optional[str] = None, log_dir: Optional[str] = None) ->
 
     # Get root logger for dashboard_lego
     root_logger = logging.getLogger("dashboard_lego")
-    root_logger.setLevel(getattr(logging, level, logging.INFO))
+    log_level_attr = getattr(logging, level, logging.INFO)
+    root_logger.setLevel(log_level_attr)
 
     # Also set the root logger to ensure proper propagation
-    logging.getLogger().setLevel(getattr(logging, level, logging.INFO))
+    logging.getLogger().setLevel(log_level_attr)
 
     # Check if logging is already configured to prevent double initialization
     if root_logger.handlers:
-        root_logger.debug("Logging already configured, skipping re-initialization")
+        # Update levels even if handlers exist (allows dynamic level changes)
+        for handler in root_logger.handlers:
+            if isinstance(handler, logging.StreamHandler) and not isinstance(
+                handler, RotatingFileHandler
+            ):
+                # Update console handler level
+                handler.setLevel(log_level_attr)
+            # File handler stays at DEBUG level (don't change it)
+        root_logger.debug(f"Logging already configured, updated level to {level}")
         return
 
     # Mark as configured
@@ -276,6 +285,44 @@ def setup_logging(level: Optional[str] = None, log_dir: Optional[str] = None) ->
 # Auto-setup on import (can be disabled by setting env var)
 # Only auto-setup if not already configured
 _logging_configured = False
+
+
+def update_log_level(level: Optional[str] = None) -> None:
+    """
+    Update log level for existing loggers and handlers.
+
+    Useful when environment variable is changed after module import.
+
+    Args:
+        level: Log level as string (DEBUG, INFO, WARNING, ERROR, CRITICAL).
+               If None, reads from DASHBOARD_LEGO_LOG_LEVEL environment variable.
+
+    Example:
+        >>> import os
+        >>> os.environ['DASHBOARD_LEGO_LOG_LEVEL'] = 'DEBUG'
+        >>> from dashboard_lego.utils.logger import update_log_level
+        >>> update_log_level()  # Reads from env var
+        >>> # Or explicitly:
+        >>> update_log_level('DEBUG')
+    """
+    level = level or _get_log_level()
+    log_level_attr = getattr(logging, level, logging.INFO)
+
+    # Update root logger
+    root_logger = logging.getLogger("dashboard_lego")
+    root_logger.setLevel(log_level_attr)
+    logging.getLogger().setLevel(log_level_attr)
+
+    # Update all handlers
+    for handler in root_logger.handlers:
+        if isinstance(handler, logging.StreamHandler) and not isinstance(
+            handler, RotatingFileHandler
+        ):
+            # Update console handler level
+            handler.setLevel(log_level_attr)
+        # File handler stays at DEBUG level (don't change it)
+
+    root_logger.info(f"Log level updated to {level}")
 
 
 def _auto_setup_logging():

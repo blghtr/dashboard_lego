@@ -337,14 +337,28 @@ For quick exploration with 1-4 cards:
    })
 
    # Create dashboard with card specs
-   app = quick_dashboard(
+  app = quick_dashboard(
        df=df,
        cards=[
-           {"type": "metric", "column": "Revenue", "agg": "sum",
-            "title": "Total Revenue", "color": "success"},
-           {"type": "chart", "plot_type": "bar", "x": "Product", "y": "Sales",
-            "title": "Sales by Product"},
-           {"type": "text", "content": "## Sales Dashboard\nQuick analysis"}
+          {
+            "type": "metric",
+            "metric_spec": {
+              "column": "Revenue",
+              "agg": "sum",
+              "title": "Total Revenue",
+              "color": "success"
+            }
+          },
+          {
+            "type": "chart",
+            "plot_type": "bar",
+            "plot_params": {"x": "Product", "y": "Sales"},
+            "title": "Sales by Product"
+          },
+          {
+            "type": "text",
+            "content_generator": lambda df: "## Sales Dashboard\nQuick analysis"
+          }
        ],
        title="Sales Dashboard",
        theme="lux"
@@ -359,20 +373,20 @@ For quick exploration with 1-4 cards:
 **Card Specification Reference:**
 
 Metric Card:
-  - **Required**: ``type="metric"``, ``column``, ``agg``, ``title``
-  - **Optional**: ``color`` (success, info, primary, danger, warning, secondary)
-  - **Example**: ``{"type": "metric", "column": "Sales", "agg": "sum", "title": "Total Sales", "color": "success"}``
+  - **Required**: ``type="metric"``, ``metric_spec`` (dict with ``column``, ``agg``, ``title``)
+  - **Optional in metric_spec**: ``color`` (success, info, primary, danger, warning, secondary), ``dtype``
+  - **Example**: ``{"type": "metric", "metric_spec": {"column": "Sales", "agg": "sum", "title": "Total Sales", "color": "success"}}``
 
 Chart Card:
-  - **Required**: ``type="chart"``, ``plot_type``, ``x``, ``y``, ``title``
-  - **Optional**: ``color`` (for color mapping), ``size`` (for scatter plots)
-  - **Example**: ``{"type": "chart", "plot_type": "bar", "x": "Product", "y": "Sales", "title": "Sales Chart"}``
+  - **Required**: ``type="chart"``, ``plot_type``, ``plot_params`` (dict with ``x``, ``y``), ``title``
+  - **Optional in plot_params**: ``color``, ``size``
+  - **Example**: ``{"type": "chart", "plot_type": "bar", "plot_params": {"x": "Product", "y": "Sales"}, "title": "Sales Chart"}``
   - **Plot types**: bar, line, scatter, histogram, box, violin, pie, etc.
 
 Text Card:
-  - **Required**: ``type="text"``, ``content``
-  - **Supports**: Markdown formatting
-  - **Example**: ``{"type": "text", "content": "## Analysis\n\nKey insights..."}``
+  - **Required**: ``type="text"``, ``content_generator`` (callable: ``df -> Component | str``)
+  - **Supports**: Markdown formatting (return string to render as Markdown)
+  - **Example**: ``{"type": "text", "content_generator": lambda df: "## Analysis\n\nKey insights..."}``
 
 **Advanced Mode:**
 

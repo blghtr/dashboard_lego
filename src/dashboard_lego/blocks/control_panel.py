@@ -24,6 +24,7 @@ from dash import html
 from dash.development.base_component import Component
 
 from dashboard_lego.blocks.base import BaseBlock
+from dashboard_lego.blocks.control_helpers import build_controls_from_spec
 from dashboard_lego.core.datasource import DataSource
 from dashboard_lego.core.state import StateManager
 
@@ -47,9 +48,13 @@ class Control:
     Attributes:
         component: Dash component class (dcc.Dropdown, dcc.Slider, etc.)
         props: Props dictionary for the component
-        col_props: Bootstrap column sizing (default: {"xs": 12, "md": "auto"})
+        col_props: Bootstrap column sizing (default: {"xs": 12, "md": "auto"}).
+                   Can be explicitly set for custom layout (e.g., {"xs": 12, "md": 12} for full width).
+                   Explicit values take precedence over auto-sizing defaults.
         dep_param_name: Optional parameter name override for datasource (default: None)
-        auto_size: Enable content-based sizing instead of full width (default: True)
+        auto_size: Enable content-based sizing instead of full width (default: True).
+                  When True, uses md="auto" if not explicitly set in col_props.
+                  Explicit col_props values are always respected regardless of auto_size.
         max_ch: Maximum width in characters for auto-sized controls (default: 40)
     """
 
@@ -88,7 +93,7 @@ class ControlPanelBlock(BaseBlock):
         block_id: str,
         datasource: DataSource,
         title: str,
-        controls: Dict[str, Control],
+        controls: Union[Dict[str, Control], List[Dict[str, Any]]],
         subscribes_to: Union[str, List[str], None] = None,
         value_initializer: Optional[Callable] = None,
         # Style customization
@@ -106,18 +111,24 @@ class ControlPanelBlock(BaseBlock):
 
         :hierarchy: [Blocks | Controls | ControlPanelBlock | Init]
         :contract:
-         - pre: "controls dict provided"
+         - pre: "controls dict or list of specs provided"
          - post: "Block ready to render and publish values"
 
         Args:
             block_id: Unique identifier
             datasource: DataSource instance
             title: Panel title
-            controls: Dict of control_name → Control
+            controls: Dict of control_name → Control, or list of control specs (will be converted)
             value_initializer: Optional function (df) → {control_name: value}
         """
         self.title = title
-        self.controls = controls
+
+        # Convert list of specs to Dict[str, Control] if needed
+        if isinstance(controls, list):
+            self.controls = build_controls_from_spec(controls)
+        else:
+            self.controls = controls
+
         self.value_initializer = value_initializer
         self._external_subscribes_to = subscribes_to
 
@@ -134,7 +145,7 @@ class ControlPanelBlock(BaseBlock):
         super().__init__(block_id, datasource)
 
         self.logger.info(
-            f"[ControlPanelBlock|Init] {block_id} | controls={list(controls.keys())}"
+            f"[ControlPanelBlock|Init] {block_id} | controls={list(self.controls.keys())}"
         )
 
         # Initialize control values
@@ -255,16 +266,20 @@ class ControlPanelBlock(BaseBlock):
             if control.auto_size:
                 col_props = (control.col_props or {}).copy()
 
-                # Ensure column uses md="auto" if not explicitly set
+                # Contract: Auto-sizing by default, but explicit col_props takes precedence
+                # Set md="auto" only if not explicitly provided in col_props
+                # This allows fine-grained control via col_props while providing sensible defaults
                 if "md" not in col_props:
                     col_props["md"] = "auto"
 
                 # Apply auto-size styling based on component type
                 if control.component.__name__ == "Dropdown":  # dcc.Dropdown
-                    # Compute longest label for min-width
-                    longest_label_ch = self._compute_longest_label_ch(
+                    # Compute longest label for min-width (including placeholder)
+                    longest_option_ch = self._compute_longest_label_ch(
                         control_props.get("options", [])
                     )
+                    placeholder_ch = len(control_props.get("placeholder", ""))
+                    longest_label_ch = max(longest_option_ch, placeholder_ch)
                     cap = control.max_ch or 40
                     min_width_ch = min(max(longest_label_ch + 3, 10), cap)
 
@@ -284,7 +299,8 @@ class ControlPanelBlock(BaseBlock):
 
                     self.logger.debug(
                         f"[ControlPanelBlock|AutoSize] Applied dcc.Dropdown auto-size | "
-                        f"longest_label={longest_label_ch}ch | min_width={min_width_ch}ch | max_width={cap}ch"
+                        f"longest_option={longest_option_ch}ch | placeholder={placeholder_ch}ch | "
+                        f"effective_longest={longest_label_ch}ch | min_width={min_width_ch}ch | max_width={cap}ch"
                     )
 
                 elif control.component.__name__ in [
@@ -297,9 +313,19 @@ class ControlPanelBlock(BaseBlock):
                     if "w-auto" not in existing_class:
                         control_props["className"] = f"{existing_class} w-auto".strip()
 
-                    # Add character-based width constraints
+                    # Add character-based width constraints (including placeholder for Select)
                     cap = control.max_ch or 40
-                    auto_style = {"minWidth": "10ch", "maxWidth": f"{cap}ch"}
+                    if control.component.__name__ == "Select":
+                        # For Select, consider placeholder length for minWidth
+                        placeholder_ch = len(control_props.get("placeholder", ""))
+                        min_width_ch = min(max(placeholder_ch + 3, 10), cap)
+                        auto_style = {
+                            "minWidth": f"{min_width_ch}ch",
+                            "maxWidth": f"{cap}ch",
+                        }
+                    else:
+                        # For Input/Switch, use standard minWidth
+                        auto_style = {"minWidth": "10ch", "maxWidth": f"{cap}ch"}
 
                     # Merge with existing style
                     existing_style = control_props.get("style", {})
@@ -307,10 +333,16 @@ class ControlPanelBlock(BaseBlock):
                         auto_style.update(existing_style)
                     control_props["style"] = auto_style
 
-                    self.logger.debug(
-                        f"[ControlPanelBlock|AutoSize] Applied dbc.{control.component.__name__} auto-size | "
-                        f"max_width={cap}ch"
-                    )
+                    if control.component.__name__ == "Select":
+                        self.logger.debug(
+                            f"[ControlPanelBlock|AutoSize] Applied dbc.Select auto-size | "
+                            f"placeholder={placeholder_ch}ch | min_width={min_width_ch}ch | max_width={cap}ch"
+                        )
+                    else:
+                        self.logger.debug(
+                            f"[ControlPanelBlock|AutoSize] Applied dbc.{control.component.__name__} auto-size | "
+                            f"max_width={cap}ch"
+                        )
 
                 # For sliders, ensure modern-slider class is applied for width styling
                 elif (
