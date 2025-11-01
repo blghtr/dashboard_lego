@@ -63,42 +63,15 @@ See :doc:`../concepts` for detailed information on block-level transformations.
 Chart Blocks
 ------------
 
-.. automodule:: dashboard_lego.blocks.chart
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Static Chart Block
-^^^^^^^^^^^^^^^^^^
-
-.. autoclass:: dashboard_lego.blocks.chart.StaticChartBlock
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :noindex:
-
-Interactive Chart Block
-^^^^^^^^^^^^^^^^^^^^^^^
-
-.. autoclass:: dashboard_lego.blocks.chart.InteractiveChartBlock
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :noindex:
-
-Control Class
-^^^^^^^^^^^^^
-
-.. autoclass:: dashboard_lego.blocks.chart.Control
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :noindex:
-
 Typed Chart Block (v0.15.0+)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-High-level chart block with built-in plot types and automatic chart generation.
+Unified chart block for both static and interactive charts.
+
+.. automodule:: dashboard_lego.blocks.typed_chart
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 .. autoclass:: dashboard_lego.blocks.typed_chart.TypedChartBlock
    :members:
@@ -108,15 +81,57 @@ High-level chart block with built-in plot types and automatic chart generation.
 
 .. automethod:: dashboard_lego.blocks.typed_chart.TypedChartBlock.get_figure
 
-KPI Block
----------
+Minimal Chart Block (v0.15.2+)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: dashboard_lego.blocks.kpi
+Minimalist chart block for clean visualizations.
+
+.. automodule:: dashboard_lego.blocks.minimal_chart
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: dashboard_lego.blocks.kpi.KPIBlock
+.. autoclass:: dashboard_lego.blocks.minimal_chart.MinimalChartBlock
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :noindex:
+
+Control Class
+^^^^^^^^^^^^^
+
+Control definition for embedded chart controls.
+
+.. automodule:: dashboard_lego.blocks.control_helpers
+   :members:
+   :undoc-members:
+
+.. automodule:: dashboard_lego.blocks.control_panel
+   :members:
+   :undoc-members:
+
+Metrics Factory (v0.15+)
+--------------------------
+
+Factory function to create metric blocks for KPIs.
+
+.. automodule:: dashboard_lego.blocks.metrics_factory
+   :members:
+   :undoc-members:
+
+.. autofunction:: dashboard_lego.blocks.metrics_factory.get_metric_row
+
+Single Metric Block (v0.15+)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Individual metric display block.
+
+.. automodule:: dashboard_lego.blocks.single_metric
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. autoclass:: dashboard_lego.blocks.single_metric.SingleMetricBlock
    :members:
    :undoc-members:
    :show-inheritance:

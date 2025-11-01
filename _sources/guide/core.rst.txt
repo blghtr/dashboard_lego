@@ -64,6 +64,9 @@ Constructor
        param_classifier: Optional[Callable[[str], str]] = None,
        cache_dir: Optional[str] = None,
        cache_ttl: int = 300,
+       build_fn: Optional[Callable[[Dict[str, Any]], pd.DataFrame]] = None,
+       transform_fn: Optional[Callable[[pd.DataFrame], pd.DataFrame]] = None,
+       cache_prewarm_params: Optional[List[Dict[str, Any]]] = None,
        **kwargs
    )
 
@@ -72,6 +75,31 @@ Constructor
 - ``data_builder``: A ``DataBuilder`` instance for Stage 1 (loading and initial processing).
 - ``data_transformer``: A ``DataTransformer`` instance for Stage 2 (filtering, aggregation, reshaping).
 - ``param_classifier``: A function that routes parameters from controls to the correct pipeline stage. It must return either ``'build'`` or ``'transform'``.
+- ``build_fn``: Optional lambda function for simple data building. Signature: ``lambda params: DataFrame``. If provided, automatically creates a ``LambdaBuilder``.
+- ``transform_fn``: Optional lambda function for simple data transformation. Signature: ``lambda df: DataFrame``. If provided, automatically creates a ``LambdaTransformer``.
+- ``cache_prewarm_params``: Optional list of parameter dictionaries to prewarm cache during initialization.
+
+**Simple Lambda Function Usage:**
+
+For simple use cases, you can use lambda functions instead of creating full ``DataBuilder`` and ``DataTransformer`` classes:
+
+.. code-block:: python
+
+   # Simple datasource with lambda functions
+   datasource = DataSource(
+       build_fn=lambda params: pd.read_csv(params.get('file', 'default.csv')),
+       transform_fn=lambda df: df.groupby('category').sum().reset_index()
+   )
+
+   # With cache prewarming
+   datasource = DataSource(
+       build_fn=lambda params: pd.read_csv(params.get('file', 'default.csv')),
+       transform_fn=lambda df: df.groupby('category').sum().reset_index(),
+       cache_prewarm_params=[
+           {'file': 'sales.csv', 'category': 'Electronics'},
+           {'file': 'sales.csv', 'category': 'Home'}
+       ]
+   )
 
 **Param Classifier Example:**
 
@@ -124,7 +152,7 @@ Implementation Example (v0.15 Pattern)
 .. code-block:: python
 
    from dashboard_lego.core import DataSource, DataBuilder, DataTransformer
-   from dashboard_lego.blocks import MetricsBlock
+   from dashboard_lego.blocks import get_metric_row
    import pandas as pd
 
    # Step 1: Define a DataBuilder (combines loading and initial processing)
@@ -163,15 +191,24 @@ Implementation Example (v0.15 Pattern)
        cache_ttl=600
    )
 
-   # Step 5: Use blocks like MetricsBlock to consume the data.
+   # Step 5: Use get_metric_row() factory to create metric blocks (v0.15+)
    # The get_kpis() method is removed from the datasource.
-   metrics = MetricsBlock(
-       block_id="sales_metrics",
-       datasource=datasource,
+   metrics, row_opts = get_metric_row(
        metrics_spec={
-           'total_revenue': {'column': 'Revenue', 'agg': 'sum', 'title': 'Total Revenue'},
-           'avg_price': {'column': 'Price', 'agg': 'mean', 'title': 'Avg Price'}
+           'total_revenue': {
+               'column': 'Revenue',
+               'agg': 'sum',
+               'title': 'Total Revenue',
+               'color': 'success'
+           },
+           'avg_price': {
+               'column': 'Price',
+               'agg': 'mean',
+               'title': 'Avg Price',
+               'color': 'info'
+           }
        },
+       datasource=datasource,
        subscribes_to=['filters-category']
    )
 

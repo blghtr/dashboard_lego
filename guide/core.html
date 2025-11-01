@@ -182,6 +182,9 @@
     <span class="n">param_classifier</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">cache_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">cache_ttl</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">300</span><span class="p">,</span>
+    <span class="n">build_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">transform_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">cache_prewarm_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span>
 <span class="p">)</span>
 </pre></div>
@@ -191,7 +194,29 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">data_builder</span></code>: A <code class="docutils literal notranslate"><span class="pre">DataBuilder</span></code> instance for Stage 1 (loading and initial processing).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">data_transformer</span></code>: A <code class="docutils literal notranslate"><span class="pre">DataTransformer</span></code> instance for Stage 2 (filtering, aggregation, reshaping).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">param_classifier</span></code>: A function that routes parameters from controls to the correct pipeline stage. It must return either <code class="docutils literal notranslate"><span class="pre">'build'</span></code> or <code class="docutils literal notranslate"><span class="pre">'transform'</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">build_fn</span></code>: Optional lambda function for simple data building. Signature: <code class="docutils literal notranslate"><span class="pre">lambda</span> <span class="pre">params:</span> <span class="pre">DataFrame</span></code>. If provided, automatically creates a <code class="docutils literal notranslate"><span class="pre">LambdaBuilder</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">transform_fn</span></code>: Optional lambda function for simple data transformation. Signature: <code class="docutils literal notranslate"><span class="pre">lambda</span> <span class="pre">df:</span> <span class="pre">DataFrame</span></code>. If provided, automatically creates a <code class="docutils literal notranslate"><span class="pre">LambdaTransformer</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cache_prewarm_params</span></code>: Optional list of parameter dictionaries to prewarm cache during initialization.</p></li>
 </ul>
+<p><strong>Simple Lambda Function Usage:</strong></p>
+<p>For simple use cases, you can use lambda functions instead of creating full <code class="docutils literal notranslate"><span class="pre">DataBuilder</span></code> and <code class="docutils literal notranslate"><span class="pre">DataTransformer</span></code> classes:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Simple datasource with lambda functions</span>
+<span class="n">datasource</span> <span class="o">=</span> <span class="n">DataSource</span><span class="p">(</span>
+    <span class="n">build_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">params</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;file&#39;</span><span class="p">,</span> <span class="s1">&#39;default.csv&#39;</span><span class="p">)),</span>
+    <span class="n">transform_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;category&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+<span class="p">)</span>
+
+<span class="c1"># With cache prewarming</span>
+<span class="n">datasource</span> <span class="o">=</span> <span class="n">DataSource</span><span class="p">(</span>
+    <span class="n">build_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">params</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;file&#39;</span><span class="p">,</span> <span class="s1">&#39;default.csv&#39;</span><span class="p">)),</span>
+    <span class="n">transform_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;category&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(),</span>
+    <span class="n">cache_prewarm_params</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">{</span><span class="s1">&#39;file&#39;</span><span class="p">:</span> <span class="s1">&#39;sales.csv&#39;</span><span class="p">,</span> <span class="s1">&#39;category&#39;</span><span class="p">:</span> <span class="s1">&#39;Electronics&#39;</span><span class="p">},</span>
+        <span class="p">{</span><span class="s1">&#39;file&#39;</span><span class="p">:</span> <span class="s1">&#39;sales.csv&#39;</span><span class="p">,</span> <span class="s1">&#39;category&#39;</span><span class="p">:</span> <span class="s1">&#39;Home&#39;</span><span class="p">}</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+</pre></div>
+</div>
 <p><strong>Param Classifier Example:</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">classify_params</span><span class="p">(</span><span class="n">param_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Route params to the correct pipeline stage.&quot;&quot;&quot;</span>
@@ -238,7 +263,7 @@
 <section id="implementation-example-v0-15-pattern">
 <h3><a class="toc-backref" href="#id8" role="doc-backlink">Implementation Example (v0.15 Pattern)</a><a class="headerlink" href="#implementation-example-v0-15-pattern" title="Link to this heading"></a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataSource</span><span class="p">,</span> <span class="n">DataBuilder</span><span class="p">,</span> <span class="n">DataTransformer</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks</span><span class="w"> </span><span class="kn">import</span> <span class="n">MetricsBlock</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_metric_row</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 <span class="c1"># Step 1: Define a DataBuilder (combines loading and initial processing)</span>
@@ -277,15 +302,24 @@
     <span class="n">cache_ttl</span><span class="o">=</span><span class="mi">600</span>
 <span class="p">)</span>
 
-<span class="c1"># Step 5: Use blocks like MetricsBlock to consume the data.</span>
+<span class="c1"># Step 5: Use get_metric_row() factory to create metric blocks (v0.15+)</span>
 <span class="c1"># The get_kpis() method is removed from the datasource.</span>
-<span class="n">metrics</span> <span class="o">=</span> <span class="n">MetricsBlock</span><span class="p">(</span>
-    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;sales_metrics&quot;</span><span class="p">,</span>
-    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+<span class="n">metrics</span><span class="p">,</span> <span class="n">row_opts</span> <span class="o">=</span> <span class="n">get_metric_row</span><span class="p">(</span>
     <span class="n">metrics_spec</span><span class="o">=</span><span class="p">{</span>
-        <span class="s1">&#39;total_revenue&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;column&#39;</span><span class="p">:</span> <span class="s1">&#39;Revenue&#39;</span><span class="p">,</span> <span class="s1">&#39;agg&#39;</span><span class="p">:</span> <span class="s1">&#39;sum&#39;</span><span class="p">,</span> <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;Total Revenue&#39;</span><span class="p">},</span>
-        <span class="s1">&#39;avg_price&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;column&#39;</span><span class="p">:</span> <span class="s1">&#39;Price&#39;</span><span class="p">,</span> <span class="s1">&#39;agg&#39;</span><span class="p">:</span> <span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;Avg Price&#39;</span><span class="p">}</span>
+        <span class="s1">&#39;total_revenue&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;column&#39;</span><span class="p">:</span> <span class="s1">&#39;Revenue&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;agg&#39;</span><span class="p">:</span> <span class="s1">&#39;sum&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;Total Revenue&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;success&#39;</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;avg_price&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;column&#39;</span><span class="p">:</span> <span class="s1">&#39;Price&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;agg&#39;</span><span class="p">:</span> <span class="s1">&#39;mean&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;Avg Price&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;info&#39;</span>
+        <span class="p">}</span>
     <span class="p">},</span>
+    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
     <span class="n">subscribes_to</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;filters-category&#39;</span><span class="p">]</span>
 <span class="p">)</span>
 </pre></div>

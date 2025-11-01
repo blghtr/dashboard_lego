@@ -122,7 +122,8 @@
 ├── blocks/               # Visual components
 │   ├── base.py          # BaseBlock: abstract block interface
 │   ├── typed_chart.py   # TypedChartBlock: unified chart block (v0.15)
-│   ├── metrics.py       # MetricsBlock: declarative metrics (v0.15)
+│   ├── metrics_factory.py # get_metric_row: factory for metrics (v0.15+)
+│   ├── single_metric.py  # SingleMetricBlock: individual metric (v0.15+)
 │   └── text.py          # TextBlock: markdown/HTML rendering
 ├── presets/             # Pre-built blocks and layouts
 │   ├── eda_presets.py   # EDA visualization blocks
@@ -149,7 +150,8 @@
 BaseBlock (abstract)
     ├─&gt; TypedChartBlock (replaces Static/Interactive)
     ├─&gt; ControlPanelBlock
-    ├─&gt; MetricsBlock (replaces KPIBlock pattern)
+    ├─&gt; get_metric_row() (factory, replaces MetricsBlock/KPIBlock)
+    └─&gt; SingleMetricBlock (individual metric block)
     └─&gt; TextBlock
 
 DataSource (concrete, uses composition)

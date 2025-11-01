@@ -42,13 +42,10 @@ Create blocks using v0.15+ API:
 .. code-block:: python
 
    import plotly.express as px
-   from dashboard_lego.blocks.metrics import MetricsBlock
-   from dashboard_lego.blocks.typed_chart import TypedChartBlock
+   from dashboard_lego.blocks import get_metric_row, TypedChartBlock
 
-   # MetricsBlock replaces get_kpis() pattern (v0.15+)
-   metrics_block = MetricsBlock(
-       block_id="sales_metrics",
-       datasource=datasource,
+   # get_metric_row() factory creates metric blocks (v0.15+)
+   metrics, row_opts = get_metric_row(
        metrics_spec={
            "total_sales": {
                "column": "Sales",
@@ -63,6 +60,7 @@ Create blocks using v0.15+ API:
                "color": "info"
            }
        },
+       datasource=datasource,
        subscribes_to="dummy_state"
    )
 
@@ -80,7 +78,7 @@ Create blocks using v0.15+ API:
    )
 
 .. note::
-   v0.15 introduces ``MetricsBlock`` and ``TypedChartBlock`` which replace
+   v0.15+ uses ``get_metric_row()`` factory function and ``TypedChartBlock`` which replace
    the legacy ``get_kpis()`` method and ``StaticChartBlock``.
    See :doc:`concepts` for more on block-level transformations.
 
@@ -123,7 +121,10 @@ Assemble your blocks into a dashboard page:
    # Create dashboard page using layout presets
    dashboard_page = DashboardPage(
        title="Simple Sales Dashboard",
-       blocks=one_column([metrics_block, chart_block]),  # Stack blocks vertically
+       blocks=[
+           (metrics, row_opts),  # Metrics row with proper layout
+           [chart_block]          # Chart block
+       ],
        theme=dbc.themes.LUX
    )
 

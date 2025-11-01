@@ -1,0 +1,273 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dashboard_lego.blocks.metrics_factory &mdash; Dashboard Lego 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Dashboard Lego
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../concepts.html">Core Concepts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Comprehensive Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Comprehensive API Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/magics.html">IPython Magic Commands</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">API Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing to Dashboard Lego</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Dashboard Lego</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">dashboard_lego.blocks.metrics_factory</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for dashboard_lego.blocks.metrics_factory</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Metrics Factory - Factory function for creating metric block rows.</span>
+
+<span class="sd">This module provides the get_metric_row() factory function that creates</span>
+<span class="sd">individual SingleMetricBlock instances and returns them with row options</span>
+<span class="sd">for proper DashboardPage integration.</span>
+
+<span class="sd">:hierarchy: [Blocks | Metrics | Factory]</span>
+<span class="sd">:relates-to:</span>
+<span class="sd"> - motivated_by: &quot;SPEC: Separate metric calculation from layout management&quot;</span>
+<span class="sd"> - implements: &quot;function: &#39;get_metric_row&#39;&quot;</span>
+<span class="sd"> - uses: [&quot;class: &#39;SingleMetricBlock&#39;&quot;]</span>
+
+<span class="sd">:contract:</span>
+<span class="sd"> - pre: &quot;metrics_spec dict with valid metric definitions&quot;</span>
+<span class="sd"> - post: &quot;Returns (List[SingleMetricBlock], row_options_dict)&quot;</span>
+<span class="sd"> - invariant: &quot;Each metric is independent block&quot;</span>
+<span class="sd"> - layout_compliance: &quot;Compatible with DashboardPage row format&quot;</span>
+
+<span class="sd">:complexity: 3</span>
+<span class="sd">:decision_cache: &quot;factory_pattern: Separates metric creation from layout logic&quot;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.single_metric</span><span class="w"> </span><span class="kn">import</span> <span class="n">SingleMetricBlock</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.datasource</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataSource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="s2">&quot;MetricsFactory&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="get_metric_row">
+<a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.metrics_factory.get_metric_row">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_metric_row</span><span class="p">(</span>
+    <span class="n">metrics_spec</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
+    <span class="n">datasource</span><span class="p">:</span> <span class="n">DataSource</span><span class="p">,</span>
+    <span class="n">subscribes_to</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">row_options</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">block_id_prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;metric&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">SingleMetricBlock</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Factory function to create a row of individual metric blocks.</span>
+
+<span class="sd">    :hierarchy: [Blocks | Metrics | Factory | GetMetricRow]</span>
+<span class="sd">    :relates-to:</span>
+<span class="sd">     - motivated_by: &quot;SPEC: Factory pattern for flexible metric layout&quot;</span>
+<span class="sd">     - implements: &quot;function: &#39;get_metric_row&#39;&quot;</span>
+<span class="sd">     - uses: [&quot;class: &#39;SingleMetricBlock&#39;&quot;]</span>
+
+<span class="sd">    :contract:</span>
+<span class="sd">     - pre: &quot;metrics_spec contains valid metric definitions&quot;</span>
+<span class="sd">     - post: &quot;Returns (list_of_blocks, row_options_dict)&quot;</span>
+<span class="sd">     - invariant: &quot;Each metric is independent SingleMetricBlock&quot;</span>
+<span class="sd">     - layout_compliance: &quot;Compatible with DashboardPage&quot;</span>
+
+<span class="sd">    :complexity: 3</span>
+<span class="sd">    :decision_cache: &quot;metric_factory: Atomic blocks for flexibility&quot;</span>
+
+<span class="sd">    This function separates metric calculation logic from layout management,</span>
+<span class="sd">    allowing metrics to be composed naturally with other blocks in rows.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        metrics_spec: Dictionary of metric definitions, where each key is</span>
+<span class="sd">            a metric_id and value is a dict with:</span>
+<span class="sd">            - column (str): Column name to aggregate</span>
+<span class="sd">            - agg (str|Callable): Aggregation function</span>
+<span class="sd">            - title (str): Display title</span>
+<span class="sd">            - color (str): Bootstrap theme color (optional, default: &#39;primary&#39;)</span>
+<span class="sd">            - dtype (str): Type conversion (optional)</span>
+<span class="sd">            - color_rules (dict): Conditional coloring (optional)</span>
+<span class="sd">        datasource: DataSource instance for metric calculation</span>
+<span class="sd">        subscribes_to: Optional state IDs to subscribe all metrics to</span>
+<span class="sd">        row_options: Optional Bootstrap row styling options</span>
+<span class="sd">        block_id_prefix: Prefix for generating block IDs (default: &quot;metric&quot;)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of (list of SingleMetricBlock instances, row options dict)</span>
+<span class="sd">        Ready for use with DashboardPage:</span>
+<span class="sd">            page = DashboardPage(..., blocks=[(metrics, opts), ...])</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        metrics, row_opts = get_metric_row(</span>
+<span class="sd">            metrics_spec={</span>
+<span class="sd">                &#39;revenue&#39;: {</span>
+<span class="sd">                    &#39;column&#39;: &#39;Revenue&#39;,</span>
+<span class="sd">                    &#39;agg&#39;: &#39;sum&#39;,</span>
+<span class="sd">                    &#39;title&#39;: &#39;Total Revenue&#39;,</span>
+<span class="sd">                    &#39;color&#39;: &#39;success&#39;</span>
+<span class="sd">                },</span>
+<span class="sd">                &#39;avg_price&#39;: {</span>
+<span class="sd">                    &#39;column&#39;: &#39;Price&#39;,</span>
+<span class="sd">                    &#39;agg&#39;: &#39;mean&#39;,</span>
+<span class="sd">                    &#39;title&#39;: &#39;Average Price&#39;,</span>
+<span class="sd">                    &#39;color&#39;: &#39;info&#39;</span>
+<span class="sd">                }</span>
+<span class="sd">            },</span>
+<span class="sd">            datasource=datasource,</span>
+<span class="sd">            subscribes_to=[&#39;filters-category&#39;]</span>
+<span class="sd">        )</span>
+
+<span class="sd">        page = DashboardPage(..., blocks=[</span>
+<span class="sd">            (metrics, row_opts),  # Metrics row</span>
+<span class="sd">            [chart1, chart2]  # Charts row</span>
+<span class="sd">        ])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;[Blocks|Metrics|Factory] Creating metric row | &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;metrics_count=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">metrics_spec</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># &lt;semantic_block: block_creation&gt;</span>
+    <span class="n">metric_blocks</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">metric_id</span><span class="p">,</span> <span class="n">metric_spec</span> <span class="ow">in</span> <span class="n">metrics_spec</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># Generate unique block ID</span>
+        <span class="n">block_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">block_id_prefix</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">metric_id</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="c1"># Create SingleMetricBlock</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">metric_block</span> <span class="o">=</span> <span class="n">SingleMetricBlock</span><span class="p">(</span>
+                <span class="n">block_id</span><span class="o">=</span><span class="n">block_id</span><span class="p">,</span>
+                <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+                <span class="n">metric_spec</span><span class="o">=</span><span class="n">metric_spec</span><span class="p">,</span>
+                <span class="n">subscribes_to</span><span class="o">=</span><span class="n">subscribes_to</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">metric_blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">metric_block</span><span class="p">)</span>
+
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[Blocks|Metrics|Factory] Created block | &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;block_id=</span><span class="si">{</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> | title=</span><span class="si">{</span><span class="n">metric_spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[Blocks|Metrics|Factory] Failed to create block | &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;metric_id=</span><span class="si">{</span><span class="n">metric_id</span><span class="si">}</span><span class="s2"> | error=</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span>
+
+    <span class="c1"># &lt;/semantic_block: block_creation&gt;</span>
+
+    <span class="c1"># &lt;semantic_block: row_options&gt;</span>
+    <span class="c1"># Default row options: mb-4 spacing, no special alignment</span>
+    <span class="n">default_row_options</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="s2">&quot;mb-4&quot;</span><span class="p">}</span>
+
+    <span class="c1"># Merge with user-provided options</span>
+    <span class="n">final_row_options</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">default_row_options</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">row_options</span> <span class="ow">or</span> <span class="p">{})}</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;[Blocks|Metrics|Factory] Metric row created | &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;blocks=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">metric_blocks</span><span class="p">)</span><span class="si">}</span><span class="s2"> | row_opts=</span><span class="si">{</span><span class="n">final_row_options</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+    <span class="c1"># &lt;/semantic_block: row_options&gt;</span>
+
+    <span class="k">return</span> <span class="n">metric_blocks</span><span class="p">,</span> <span class="n">final_row_options</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Dashboard Lego Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

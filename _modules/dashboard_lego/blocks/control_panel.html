@@ -1,0 +1,614 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dashboard_lego.blocks.control_panel &mdash; Dashboard Lego 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Dashboard Lego
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../concepts.html">Core Concepts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Comprehensive Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Comprehensive API Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/magics.html">IPython Magic Commands</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">API Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing to Dashboard Lego</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Dashboard Lego</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">dashboard_lego.blocks.control_panel</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for dashboard_lego.blocks.control_panel</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module defines ControlPanelBlock for standalone control panels.</span>
+
+<span class="sd">StaticChartBlock and InteractiveChartBlock removed in v0.15.0.</span>
+<span class="sd">Use TypedChartBlock instead.</span>
+
+<span class="sd">:hierarchy: [Blocks | Controls | ControlPanelBlock]</span>
+<span class="sd">:relates-to:</span>
+<span class="sd"> - motivated_by: &quot;v0.15.0: Simplified architecture with TypedChartBlock&quot;</span>
+<span class="sd"> - implements: &quot;block: &#39;ControlPanelBlock&#39;&quot;</span>
+
+<span class="sd">:contract:</span>
+<span class="sd"> - pre: &quot;controls dict provided&quot;</span>
+<span class="sd"> - post: &quot;Block publishes control values to state&quot;</span>
+
+<span class="sd">:complexity: 4</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">dash_bootstrap_components</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dbc</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dash</span><span class="w"> </span><span class="kn">import</span> <span class="n">html</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dash.development.base_component</span><span class="w"> </span><span class="kn">import</span> <span class="n">Component</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseBlock</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.control_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_controls_from_spec</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.datasource</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataSource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.state</span><span class="w"> </span><span class="kn">import</span> <span class="n">StateManager</span>
+
+
+<div class="viewcode-block" id="Control">
+<a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.control_panel.Control">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Control</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    UI control definition for ControlPanelBlock or TypedChartBlock.</span>
+
+<span class="sd">    :hierarchy: [Blocks | Controls | Control]</span>
+<span class="sd">    :relates-to:</span>
+<span class="sd">     - motivated_by: &quot;Need responsive control layouts with content-based sizing&quot;</span>
+<span class="sd">     - implements: &quot;dataclass: &#39;Control&#39; with col_props and auto-size support&quot;</span>
+<span class="sd">     - uses: [&quot;component: &#39;Dash Component&#39;&quot;]</span>
+
+<span class="sd">    :rationale: &quot;col_props enables responsive Bootstrap column sizing for controls, auto_size enables content-based width.&quot;</span>
+<span class="sd">    :contract:</span>
+<span class="sd">     - pre: &quot;component is valid Dash component type&quot;</span>
+<span class="sd">     - post: &quot;Control can be rendered with responsive layout and optional auto-sizing&quot;</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        component: Dash component class (dcc.Dropdown, dcc.Slider, etc.)</span>
+<span class="sd">        props: Props dictionary for the component</span>
+<span class="sd">        col_props: Bootstrap column sizing (default: {&quot;xs&quot;: 12, &quot;md&quot;: &quot;auto&quot;}).</span>
+<span class="sd">                   Can be explicitly set for custom layout (e.g., {&quot;xs&quot;: 12, &quot;md&quot;: 12} for full width).</span>
+<span class="sd">                   Explicit values take precedence over auto-sizing defaults.</span>
+<span class="sd">        dep_param_name: Optional parameter name override for datasource (default: None)</span>
+<span class="sd">        auto_size: Enable content-based sizing instead of full width (default: True).</span>
+<span class="sd">                  When True, uses md=&quot;auto&quot; if not explicitly set in col_props.</span>
+<span class="sd">                  Explicit col_props values are always respected regardless of auto_size.</span>
+<span class="sd">        max_ch: Maximum width in characters for auto-sized controls (default: 40)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">component</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Component</span><span class="p">]</span>
+    <span class="n">props</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">col_props</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;xs&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span> <span class="s2">&quot;md&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">}</span>
+    <span class="p">)</span>
+    <span class="n">dep_param_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">auto_size</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">max_ch</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">40</span></div>
+
+
+
+<div class="viewcode-block" id="ControlPanelBlock">
+<a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.control_panel.ControlPanelBlock">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ControlPanelBlock</span><span class="p">(</span><span class="n">BaseBlock</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Standalone control panel block (no chart visualization).</span>
+
+<span class="sd">    This block publishes control values to state that other blocks can subscribe to.</span>
+
+<span class="sd">    :hierarchy: [Blocks | Controls | ControlPanelBlock]</span>
+<span class="sd">    :relates-to:</span>
+<span class="sd">     - motivated_by: &quot;Need standalone control panels for dashboard settings&quot;</span>
+<span class="sd">     - implements: &quot;block: &#39;ControlPanelBlock&#39;&quot;</span>
+<span class="sd">     - uses: [&quot;interface: &#39;BaseBlock&#39;&quot;, &quot;dataclass: &#39;Control&#39;&quot;]</span>
+
+<span class="sd">    :rationale: &quot;Separated control functionality from chart blocks for SRP&quot;</span>
+<span class="sd">    :contract:</span>
+<span class="sd">     - pre: &quot;controls dict provided&quot;</span>
+<span class="sd">     - post: &quot;Block renders controls that publish values to state&quot;</span>
+
+<span class="sd">    :complexity: 4</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ControlPanelBlock.__init__">
+<a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.control_panel.ControlPanelBlock.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">datasource</span><span class="p">:</span> <span class="n">DataSource</span><span class="p">,</span>
+        <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">controls</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Control</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]],</span>
+        <span class="n">subscribes_to</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">value_initializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="c1"># Style customization</span>
+        <span class="n">card_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">card_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">title_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">title_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">controls_row_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">controls_row_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">container_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">container_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize ControlPanelBlock.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Controls | ControlPanelBlock | Init]</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;controls dict or list of specs provided&quot;</span>
+<span class="sd">         - post: &quot;Block ready to render and publish values&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            block_id: Unique identifier</span>
+<span class="sd">            datasource: DataSource instance</span>
+<span class="sd">            title: Panel title</span>
+<span class="sd">            controls: Dict of control_name → Control, or list of control specs (will be converted)</span>
+<span class="sd">            value_initializer: Optional function (df) → {control_name: value}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">title</span>
+
+        <span class="c1"># Convert list of specs to Dict[str, Control] if needed</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">controls</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controls</span> <span class="o">=</span> <span class="n">build_controls_from_spec</span><span class="p">(</span><span class="n">controls</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controls</span> <span class="o">=</span> <span class="n">controls</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">value_initializer</span> <span class="o">=</span> <span class="n">value_initializer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_external_subscribes_to</span> <span class="o">=</span> <span class="n">subscribes_to</span>
+
+        <span class="c1"># Store styling</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">card_style</span> <span class="o">=</span> <span class="n">card_style</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">card_className</span> <span class="o">=</span> <span class="n">card_className</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title_style</span> <span class="o">=</span> <span class="n">title_style</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title_className</span> <span class="o">=</span> <span class="n">title_className</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controls_row_style</span> <span class="o">=</span> <span class="n">controls_row_style</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controls_row_className</span> <span class="o">=</span> <span class="n">controls_row_className</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">container_style</span> <span class="o">=</span> <span class="n">container_style</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">container_className</span> <span class="o">=</span> <span class="n">container_className</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">block_id</span><span class="p">,</span> <span class="n">datasource</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;[ControlPanelBlock|Init] </span><span class="si">{</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> | controls=</span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Initialize control values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initial_control_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_control_values</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_register_state_interactions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_manager</span><span class="p">:</span> <span class="n">StateManager</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Register state interactions for control panel.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Controls | ControlPanelBlock | StateRegistration]</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;state_manager valid&quot;</span>
+<span class="sd">         - post: &quot;Control publishes registered&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            state_manager: StateManager instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Publish each control value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">publishes</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;state_id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;component_prop&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;dep_param_name&quot;</span><span class="p">:</span> <span class="n">control</span><span class="o">.</span><span class="n">dep_param_name</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">control</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">]</span>
+
+        <span class="c1"># Subscribe to external states if provided</span>
+        <span class="n">subscribes_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_external_subscribes_to</span><span class="p">:</span>
+            <span class="n">external_subs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_subscribes_to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_external_subscribes_to</span><span class="p">)</span>
+            <span class="n">subscribes_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">state</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_controls</span> <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">external_subs</span><span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span> <span class="o">=</span> <span class="n">subscribes_dict</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_register_state_interactions</span><span class="p">(</span><span class="n">state_manager</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_initialize_control_values</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize control values from datasource.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Controls | ControlPanelBlock | Initialization]</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;Datasource available, value_initializer optional&quot;</span>
+<span class="sd">         - post: &quot;Returns dict of control_name → value or empty dict&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary mapping control names to initial values</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">value_initializer</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{}</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Get data without filtering</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">({})</span>
+            <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Empty data for control panel </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="p">{}</span>
+
+            <span class="n">initialized_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">value_initializer</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[ControlPanelBlock|Init] Initialized values: </span><span class="si">{</span><span class="n">initialized_values</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">initialized_values</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Error initializing control values for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="p">{}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_update_controls</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update control panel in response to external state changes.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Controls | ControlPanelBlock | Update]</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;Block initialized&quot;</span>
+<span class="sd">         - post: &quot;Returns updated control panel layout&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Updated Dash component</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Updating control panel for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Re-initialize if needed</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_initial_control_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_control_values</span><span class="p">()</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_control_elements</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Error updating ControlPanelBlock [</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">]: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">Div</span><span class="p">(</span><span class="s2">&quot;Error updating controls&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_control_elements</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build control elements row with responsive sizing.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Controls | ControlPanelBlock | LayoutHelper]</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;Controls defined, block_id set&quot;</span>
+<span class="sd">         - post: &quot;Returns Row component with controls&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dbc.Row with all controls</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">control_elements</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">control</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># Merge initial values with control props</span>
+            <span class="n">control_props</span> <span class="o">=</span> <span class="n">control</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_control_values</span><span class="p">:</span>
+                <span class="n">control_props</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_control_values</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+            <span class="c1"># Apply auto-size logic if enabled</span>
+            <span class="k">if</span> <span class="n">control</span><span class="o">.</span><span class="n">auto_size</span><span class="p">:</span>
+                <span class="n">col_props</span> <span class="o">=</span> <span class="p">(</span><span class="n">control</span><span class="o">.</span><span class="n">col_props</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+                <span class="c1"># Contract: Auto-sizing by default, but explicit col_props takes precedence</span>
+                <span class="c1"># Set md=&quot;auto&quot; only if not explicitly provided in col_props</span>
+                <span class="c1"># This allows fine-grained control via col_props while providing sensible defaults</span>
+                <span class="k">if</span> <span class="s2">&quot;md&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">col_props</span><span class="p">:</span>
+                    <span class="n">col_props</span><span class="p">[</span><span class="s2">&quot;md&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span>
+
+                <span class="c1"># Apply auto-size styling based on component type</span>
+                <span class="k">if</span> <span class="n">control</span><span class="o">.</span><span class="n">component</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;Dropdown&quot;</span><span class="p">:</span>  <span class="c1"># dcc.Dropdown</span>
+                    <span class="c1"># Compute longest label for min-width (including placeholder)</span>
+                    <span class="n">longest_option_ch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_longest_label_ch</span><span class="p">(</span>
+                        <span class="n">control_props</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;options&quot;</span><span class="p">,</span> <span class="p">[])</span>
+                    <span class="p">)</span>
+                    <span class="n">placeholder_ch</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">control_props</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;placeholder&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+                    <span class="n">longest_label_ch</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">longest_option_ch</span><span class="p">,</span> <span class="n">placeholder_ch</span><span class="p">)</span>
+                    <span class="n">cap</span> <span class="o">=</span> <span class="n">control</span><span class="o">.</span><span class="n">max_ch</span> <span class="ow">or</span> <span class="mi">40</span>
+                    <span class="n">min_width_ch</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">longest_label_ch</span> <span class="o">+</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">cap</span><span class="p">)</span>
+
+                    <span class="c1"># Build auto-size style</span>
+                    <span class="n">auto_style</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;display&quot;</span><span class="p">:</span> <span class="s2">&quot;inline-block&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="s2">&quot;fit-content&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;maxWidth&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cap</span><span class="si">}</span><span class="s2">ch&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">min_width_ch</span><span class="si">}</span><span class="s2">ch&quot;</span><span class="p">,</span>
+                    <span class="p">}</span>
+
+                    <span class="c1"># Merge with existing style</span>
+                    <span class="n">existing_style</span> <span class="o">=</span> <span class="n">control_props</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;style&quot;</span><span class="p">,</span> <span class="p">{})</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">existing_style</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                        <span class="n">auto_style</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">existing_style</span><span class="p">)</span>
+                    <span class="n">control_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">auto_style</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;[ControlPanelBlock|AutoSize] Applied dcc.Dropdown auto-size | &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;longest_option=</span><span class="si">{</span><span class="n">longest_option_ch</span><span class="si">}</span><span class="s2">ch | placeholder=</span><span class="si">{</span><span class="n">placeholder_ch</span><span class="si">}</span><span class="s2">ch | &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;effective_longest=</span><span class="si">{</span><span class="n">longest_label_ch</span><span class="si">}</span><span class="s2">ch | min_width=</span><span class="si">{</span><span class="n">min_width_ch</span><span class="si">}</span><span class="s2">ch | max_width=</span><span class="si">{</span><span class="n">cap</span><span class="si">}</span><span class="s2">ch&quot;</span>
+                    <span class="p">)</span>
+
+                <span class="k">elif</span> <span class="n">control</span><span class="o">.</span><span class="n">component</span><span class="o">.</span><span class="vm">__name__</span> <span class="ow">in</span> <span class="p">[</span>
+                    <span class="s2">&quot;Select&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Input&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Switch&quot;</span><span class="p">,</span>
+                <span class="p">]:</span>  <span class="c1"># dbc components</span>
+                    <span class="c1"># Add Bootstrap w-auto class</span>
+                    <span class="n">existing_class</span> <span class="o">=</span> <span class="n">control_props</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;className&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="s2">&quot;w-auto&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">existing_class</span><span class="p">:</span>
+                        <span class="n">control_props</span><span class="p">[</span><span class="s2">&quot;className&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">existing_class</span><span class="si">}</span><span class="s2"> w-auto&quot;</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+                    <span class="c1"># Add character-based width constraints (including placeholder for Select)</span>
+                    <span class="n">cap</span> <span class="o">=</span> <span class="n">control</span><span class="o">.</span><span class="n">max_ch</span> <span class="ow">or</span> <span class="mi">40</span>
+                    <span class="k">if</span> <span class="n">control</span><span class="o">.</span><span class="n">component</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;Select&quot;</span><span class="p">:</span>
+                        <span class="c1"># For Select, consider placeholder length for minWidth</span>
+                        <span class="n">placeholder_ch</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">control_props</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;placeholder&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+                        <span class="n">min_width_ch</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">placeholder_ch</span> <span class="o">+</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">cap</span><span class="p">)</span>
+                        <span class="n">auto_style</span> <span class="o">=</span> <span class="p">{</span>
+                            <span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">min_width_ch</span><span class="si">}</span><span class="s2">ch&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;maxWidth&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cap</span><span class="si">}</span><span class="s2">ch&quot;</span><span class="p">,</span>
+                        <span class="p">}</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># For Input/Switch, use standard minWidth</span>
+                        <span class="n">auto_style</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;minWidth&quot;</span><span class="p">:</span> <span class="s2">&quot;10ch&quot;</span><span class="p">,</span> <span class="s2">&quot;maxWidth&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cap</span><span class="si">}</span><span class="s2">ch&quot;</span><span class="p">}</span>
+
+                    <span class="c1"># Merge with existing style</span>
+                    <span class="n">existing_style</span> <span class="o">=</span> <span class="n">control_props</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;style&quot;</span><span class="p">,</span> <span class="p">{})</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">existing_style</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                        <span class="n">auto_style</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">existing_style</span><span class="p">)</span>
+                    <span class="n">control_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">auto_style</span>
+
+                    <span class="k">if</span> <span class="n">control</span><span class="o">.</span><span class="n">component</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;Select&quot;</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;[ControlPanelBlock|AutoSize] Applied dbc.Select auto-size | &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;placeholder=</span><span class="si">{</span><span class="n">placeholder_ch</span><span class="si">}</span><span class="s2">ch | min_width=</span><span class="si">{</span><span class="n">min_width_ch</span><span class="si">}</span><span class="s2">ch | max_width=</span><span class="si">{</span><span class="n">cap</span><span class="si">}</span><span class="s2">ch&quot;</span>
+                        <span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;[ControlPanelBlock|AutoSize] Applied dbc.</span><span class="si">{</span><span class="n">control</span><span class="o">.</span><span class="n">component</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> auto-size | &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;max_width=</span><span class="si">{</span><span class="n">cap</span><span class="si">}</span><span class="s2">ch&quot;</span>
+                        <span class="p">)</span>
+
+                <span class="c1"># For sliders, ensure modern-slider class is applied for width styling</span>
+                <span class="k">elif</span> <span class="p">(</span>
+                    <span class="n">control</span><span class="o">.</span><span class="n">component</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;Slider&quot;</span>
+                    <span class="ow">and</span> <span class="s2">&quot;className&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">control_props</span>
+                <span class="p">):</span>
+                    <span class="n">control_props</span><span class="p">[</span><span class="s2">&quot;className&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;modern-slider&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Standard rendering without auto-size</span>
+                <span class="n">col_props</span> <span class="o">=</span> <span class="n">control</span><span class="o">.</span><span class="n">col_props</span> <span class="ow">or</span> <span class="p">{</span><span class="s2">&quot;xs&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span> <span class="s2">&quot;md&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">}</span>
+
+                <span class="c1"># For sliders, ensure modern-slider class is applied for width styling</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="n">control</span><span class="o">.</span><span class="n">component</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;Slider&quot;</span>
+                    <span class="ow">and</span> <span class="s2">&quot;className&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">control_props</span>
+                <span class="p">):</span>
+                    <span class="n">control_props</span><span class="p">[</span><span class="s2">&quot;className&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;modern-slider&quot;</span>
+
+            <span class="n">control_elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">dbc</span><span class="o">.</span><span class="n">Col</span><span class="p">(</span>
+                    <span class="n">control</span><span class="o">.</span><span class="n">component</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_generate_id</span><span class="p">(</span><span class="n">key</span><span class="p">),</span> <span class="o">**</span><span class="n">control_props</span><span class="p">),</span>
+                    <span class="o">**</span><span class="n">col_props</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Build controls row</span>
+        <span class="n">controls_row_props</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls_row_className</span> <span class="ow">or</span> <span class="s2">&quot;mb-3 align-items-center&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls_row_style</span><span class="p">:</span>
+            <span class="n">controls_row_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">controls_row_style</span>
+
+        <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span><span class="n">control_elements</span><span class="p">,</span> <span class="o">**</span><span class="n">controls_row_props</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ControlPanelBlock.list_control_inputs">
+<a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.control_panel.ControlPanelBlock.list_control_inputs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">list_control_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns empty list - ControlPanelBlock only publishes, no callbacks needed.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Controls | ControlPanelBlock | NoCallbacks]</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;Block initialized&quot;</span>
+<span class="sd">         - post: &quot;Returns empty list&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Empty list (no block-centric callbacks)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="ControlPanelBlock.layout">
+<a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.control_panel.ControlPanelBlock.layout">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">layout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Render control panel layout with theme-aware styling.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Controls | ControlPanelBlock | Layout]</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;Block initialized, theme may be available&quot;</span>
+<span class="sd">         - post: &quot;Returns themed Card with controls&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dash Card component</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Apply theme-aware styling</span>
+        <span class="n">themed_card_style</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_themed_style</span><span class="p">(</span>
+            <span class="s2">&quot;card&quot;</span><span class="p">,</span> <span class="s2">&quot;background&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_style</span>
+        <span class="p">)</span>
+        <span class="c1"># h-100 ensures equal height when multiple blocks in same row</span>
+        <span class="c1"># Note: mb-4 removed, handled by Row.mb-4</span>
+        <span class="n">base_classes</span> <span class="o">=</span> <span class="s2">&quot;h-100&quot;</span>
+        <span class="n">card_props</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base_classes</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">card_className</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_className</span>
+                <span class="k">else</span> <span class="n">base_classes</span>
+            <span class="p">)</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">themed_card_style</span><span class="p">:</span>
+            <span class="n">card_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">themed_card_style</span>
+
+        <span class="n">themed_title_style</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_themed_style</span><span class="p">(</span><span class="s2">&quot;card&quot;</span><span class="p">,</span> <span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_style</span><span class="p">)</span>
+        <span class="n">title_props</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">title_className</span> <span class="ow">or</span> <span class="s2">&quot;card-title&quot;</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">themed_title_style</span><span class="p">:</span>
+            <span class="n">title_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">themed_title_style</span>
+
+        <span class="c1"># Build container</span>
+        <span class="n">container_props</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_id</span><span class="p">(</span><span class="s2">&quot;container&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;children&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_control_elements</span><span class="p">(),</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">container_style</span><span class="p">:</span>
+            <span class="n">container_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">container_style</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">container_className</span><span class="p">:</span>
+            <span class="n">container_props</span><span class="p">[</span><span class="s2">&quot;className&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">container_className</span>
+
+        <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Card</span><span class="p">(</span>
+            <span class="n">dbc</span><span class="o">.</span><span class="n">CardBody</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="n">html</span><span class="o">.</span><span class="n">H4</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="o">**</span><span class="n">title_props</span><span class="p">),</span>
+                    <span class="n">html</span><span class="o">.</span><span class="n">Div</span><span class="p">(</span><span class="o">**</span><span class="n">container_props</span><span class="p">),</span>
+                <span class="p">]</span>
+            <span class="p">),</span>
+            <span class="o">**</span><span class="n">card_props</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_longest_label_ch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the longest label length in characters from dropdown options.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Controls | ControlPanelBlock | AutoSize]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Auto-size controls need to know content width for min-width calculation&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_compute_longest_label_ch&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;options is list of strings or dicts with label/value&quot;</span>
+<span class="sd">         - post: &quot;Returns integer character count of longest label&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            options: List of option strings or dicts with &#39;label&#39; or &#39;value&#39; keys</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Character count of longest label (minimum 1)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">options</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+
+        <span class="n">max_length</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">option</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">option</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">option</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">option</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="c1"># Try &#39;label&#39; first, then &#39;value&#39; as fallback</span>
+                <span class="n">text</span> <span class="o">=</span> <span class="n">option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;label&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">text</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">option</span><span class="p">))</span>
+
+            <span class="n">max_length</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">max_length</span><span class="p">,</span> <span class="n">length</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">max_length</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># Minimum 1 character</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Dashboard Lego Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

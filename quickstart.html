@@ -134,13 +134,10 @@
 <h3>Step 2: Create Dashboard Blocks<a class="headerlink" href="#step-2-create-dashboard-blocks" title="Link to this heading"></a></h3>
 <p>Create blocks using v0.15+ API:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">plotly.express</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">px</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">MetricsBlock</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.typed_chart</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedChartBlock</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_metric_row</span><span class="p">,</span> <span class="n">TypedChartBlock</span>
 
-<span class="c1"># MetricsBlock replaces get_kpis() pattern (v0.15+)</span>
-<span class="n">metrics_block</span> <span class="o">=</span> <span class="n">MetricsBlock</span><span class="p">(</span>
-    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;sales_metrics&quot;</span><span class="p">,</span>
-    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+<span class="c1"># get_metric_row() factory creates metric blocks (v0.15+)</span>
+<span class="n">metrics</span><span class="p">,</span> <span class="n">row_opts</span> <span class="o">=</span> <span class="n">get_metric_row</span><span class="p">(</span>
     <span class="n">metrics_spec</span><span class="o">=</span><span class="p">{</span>
         <span class="s2">&quot;total_sales&quot;</span><span class="p">:</span> <span class="p">{</span>
             <span class="s2">&quot;column&quot;</span><span class="p">:</span> <span class="s2">&quot;Sales&quot;</span><span class="p">,</span>
@@ -155,6 +152,7 @@
             <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;info&quot;</span>
         <span class="p">}</span>
     <span class="p">},</span>
+    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
     <span class="n">subscribes_to</span><span class="o">=</span><span class="s2">&quot;dummy_state&quot;</span>
 <span class="p">)</span>
 
@@ -174,7 +172,7 @@
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>v0.15 introduces <code class="docutils literal notranslate"><span class="pre">MetricsBlock</span></code> and <code class="docutils literal notranslate"><span class="pre">TypedChartBlock</span></code> which replace
+<p>v0.15+ uses <code class="docutils literal notranslate"><span class="pre">get_metric_row()</span></code> factory function and <code class="docutils literal notranslate"><span class="pre">TypedChartBlock</span></code> which replace
 the legacy <code class="docutils literal notranslate"><span class="pre">get_kpis()</span></code> method and <code class="docutils literal notranslate"><span class="pre">StaticChartBlock</span></code>.
 See <a class="reference internal" href="concepts.html"><span class="doc">Core Concepts</span></a> for more on block-level transformations.</p>
 </div>
@@ -211,7 +209,10 @@ See <a class="reference internal" href="concepts.html"><span class="doc">Core Co
 <span class="c1"># Create dashboard page using layout presets</span>
 <span class="n">dashboard_page</span> <span class="o">=</span> <span class="n">DashboardPage</span><span class="p">(</span>
     <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Simple Sales Dashboard&quot;</span><span class="p">,</span>
-    <span class="n">blocks</span><span class="o">=</span><span class="n">one_column</span><span class="p">([</span><span class="n">metrics_block</span><span class="p">,</span> <span class="n">chart_block</span><span class="p">]),</span>  <span class="c1"># Stack blocks vertically</span>
+    <span class="n">blocks</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="n">row_opts</span><span class="p">),</span>  <span class="c1"># Metrics row with proper layout</span>
+        <span class="p">[</span><span class="n">chart_block</span><span class="p">]</span>          <span class="c1"># Chart block</span>
+    <span class="p">],</span>
     <span class="n">theme</span><span class="o">=</span><span class="n">dbc</span><span class="o">.</span><span class="n">themes</span><span class="o">.</span><span class="n">LUX</span>
 <span class="p">)</span>
 </pre></div>

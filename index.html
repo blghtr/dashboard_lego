@@ -104,7 +104,7 @@
 <li><p><strong>Reactive State Management</strong>: Built-in state manager for easy interactivity between blocks</p></li>
 <li><p><strong>Flexible Grid System</strong>: Position blocks in any configuration using Bootstrap grid system</p></li>
 <li><p><strong>Data Caching</strong>: Built-in caching at the data source level for improved performance</p></li>
-<li><p><strong>Easy Extension</strong>: Easily create custom blocks and data sources by inheriting from base classes</p></li>
+<li><p><strong>Easy Extension</strong>: Easily create custom blocks and data sources using composition pattern</p></li>
 <li><p><strong>Presets &amp; Layouts</strong>: Pre-built EDA and ML visualization blocks, plus layout presets</p></li>
 <li><p><strong>Comprehensive Testing</strong>: Full test coverage with unit, integration, and performance tests</p></li>
 </ul>
@@ -119,9 +119,8 @@
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">dash</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">dash_bootstrap_components</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dbc</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego</span><span class="w"> </span><span class="kn">import</span> <span class="n">DashboardPage</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataSource</span><span class="p">,</span> <span class="n">DataBuilder</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">MetricsBlock</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">DashboardPage</span><span class="p">,</span> <span class="n">DataSource</span><span class="p">,</span> <span class="n">DataBuilder</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_metric_row</span>
 
 <span class="c1"># Define DataBuilder (v0.15+ pattern)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">MyDataBuilder</span><span class="p">(</span><span class="n">DataBuilder</span><span class="p">):</span>
@@ -137,24 +136,26 @@
     <span class="n">data_builder</span><span class="o">=</span><span class="n">MyDataBuilder</span><span class="p">(</span><span class="s2">&quot;your_data.csv&quot;</span><span class="p">)</span>
 <span class="p">)</span>
 
-<span class="c1"># Create blocks using v0.15+ API</span>
-<span class="n">metrics_block</span> <span class="o">=</span> <span class="n">MetricsBlock</span><span class="p">(</span>
-    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;my_metrics&quot;</span><span class="p">,</span>
-    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+<span class="c1"># Create blocks using v0.15+ API with factory pattern</span>
+<span class="n">metrics</span><span class="p">,</span> <span class="n">row_opts</span> <span class="o">=</span> <span class="n">get_metric_row</span><span class="p">(</span>
     <span class="n">metrics_spec</span><span class="o">=</span><span class="p">{</span>
         <span class="s2">&quot;total&quot;</span><span class="p">:</span> <span class="p">{</span>
             <span class="s2">&quot;column&quot;</span><span class="p">:</span> <span class="s2">&quot;id&quot;</span><span class="p">,</span>  <span class="c1"># Count rows</span>
             <span class="s2">&quot;agg&quot;</span><span class="p">:</span> <span class="s2">&quot;count&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Total Records&quot;</span>
+            <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Total Records&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;primary&quot;</span>
         <span class="p">}</span>
     <span class="p">},</span>
+    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
     <span class="n">subscribes_to</span><span class="o">=</span><span class="s2">&quot;dummy_state&quot;</span>
 <span class="p">)</span>
 
 <span class="c1"># Create dashboard</span>
 <span class="n">page</span> <span class="o">=</span> <span class="n">DashboardPage</span><span class="p">(</span>
     <span class="n">title</span><span class="o">=</span><span class="s2">&quot;My Dashboard&quot;</span><span class="p">,</span>
-    <span class="n">blocks</span><span class="o">=</span><span class="p">[[</span><span class="n">metrics_block</span><span class="p">]]</span>
+    <span class="n">blocks</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="n">row_opts</span><span class="p">)</span>
+    <span class="p">]</span>
 <span class="p">)</span>
 
 <span class="c1"># Run the app</span>

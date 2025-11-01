@@ -144,26 +144,29 @@
 <section id="chart-blocks">
 <h3>Chart Blocks<a class="headerlink" href="#chart-blocks" title="Link to this heading"></a></h3>
 <ul class="simple">
-<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">StaticChartBlock</span></code>: Non-interactive charts that display data</p></li>
-<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">InteractiveChartBlock</span></code>: Charts with controls (dropdowns, sliders, etc.)</p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">TypedChartBlock</span></code>: Unified chart block for both static and interactive charts (v0.15+)
+- Use without controls for static charts
+- Use with <code class="docutils literal notranslate"><span class="pre">controls</span></code> parameter for interactive charts</p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">MinimalChartBlock</span></code>: Minimalist chart block for clean visualizations (v0.15.2+)</p></li>
 </ul>
 </section>
 <section id="data-display-blocks">
 <h3>Data Display Blocks<a class="headerlink" href="#data-display-blocks" title="Link to this heading"></a></h3>
 <ul class="simple">
-<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">KPIBlock</span></code>: Key Performance Indicators with metrics</p></li>
+<li><p><code class="xref py py-func docutils literal notranslate"><span class="pre">get_metric_row()</span></code>: Factory function to create metric blocks for KPIs (v0.15+)</p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">SingleMetricBlock</span></code>: Individual metric display block</p></li>
 <li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">TextBlock</span></code>: Text content and markdown</p></li>
 </ul>
 </section>
 </section>
 <section id="data-sources">
 <h2>Data Sources<a class="headerlink" href="#data-sources" title="Link to this heading"></a></h2>
-<p>Data sources abstract data loading and provide a consistent interface for blocks. They handle:</p>
+<p>Data sources abstract data loading and provide a consistent interface for blocks using composition pattern (v0.15+). They handle:</p>
 <ul class="simple">
-<li><p>Data loading from various sources (CSV, Parquet, SQL, etc.)</p></li>
-<li><p>Caching for performance</p></li>
-<li><p>Filtering and aggregation</p></li>
-<li><p>KPI calculations</p></li>
+<li><p>Data loading from various sources (CSV, Parquet, SQL, etc.) via <code class="docutils literal notranslate"><span class="pre">DataBuilder</span></code></p></li>
+<li><p>Data transformation (filtering, aggregation) via <code class="docutils literal notranslate"><span class="pre">DataTransformer</span></code></p></li>
+<li><p>Caching for performance at each pipeline stage</p></li>
+<li><p>Stateless 2-stage pipeline: Build → Transform</p></li>
 </ul>
 </section>
 <section id="state-management">
@@ -175,15 +178,29 @@
 <li><p><strong>StateManager</strong>: Central coordinator that manages state flow</p></li>
 </ul>
 <p>Example of state flow:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Block A publishes filter state</span>
-<span class="n">interactive_chart</span> <span class="o">=</span> <span class="n">InteractiveChartBlock</span><span class="p">(</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedChartBlock</span><span class="p">,</span> <span class="n">get_metric_row</span><span class="p">,</span> <span class="n">Control</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">dash_core_components</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dcc</span>
+
+<span class="c1"># Block A publishes filter state</span>
+<span class="n">interactive_chart</span> <span class="o">=</span> <span class="n">TypedChartBlock</span><span class="p">(</span>
     <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;filter_chart&quot;</span><span class="p">,</span>
-    <span class="n">controls</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span><span class="o">...</span><span class="p">)}</span>
+    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;bar&quot;</span><span class="p">,</span>
+    <span class="n">plot_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="s2">&quot;{{category}}&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="s2">&quot;Sales&quot;</span><span class="p">},</span>
+    <span class="n">controls</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="n">dcc</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">,</span> <span class="n">props</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">...</span><span class="p">]})}</span>
 <span class="p">)</span>
 
 <span class="c1"># Block B subscribes to filter state</span>
-<span class="n">kpi_block</span> <span class="o">=</span> <span class="n">KPIBlock</span><span class="p">(</span>
-    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;filtered_kpis&quot;</span><span class="p">,</span>
+<span class="n">metrics</span><span class="p">,</span> <span class="n">row_opts</span> <span class="o">=</span> <span class="n">get_metric_row</span><span class="p">(</span>
+    <span class="n">metrics_spec</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;total_sales&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;column&quot;</span><span class="p">:</span> <span class="s2">&quot;Sales&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;agg&quot;</span><span class="p">:</span> <span class="s2">&quot;sum&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Total Sales&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
     <span class="n">subscribes_to</span><span class="o">=</span><span class="s2">&quot;filter_chart-category&quot;</span>  <span class="c1"># Subscribes to category filter</span>
 <span class="p">)</span>
 </pre></div>
@@ -200,8 +217,9 @@
 </ul>
 <p>Example layout:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Two-column layout: 8 columns + 4 columns</span>
+<span class="n">metrics</span><span class="p">,</span> <span class="n">row_opts</span> <span class="o">=</span> <span class="n">get_metric_row</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
 <span class="n">layout</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="p">[(</span><span class="n">chart_block</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;md&#39;</span><span class="p">:</span> <span class="mi">8</span><span class="p">}),</span> <span class="p">(</span><span class="n">kpi_block</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;md&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">})]</span>
+    <span class="p">[(</span><span class="n">chart_block</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;md&#39;</span><span class="p">:</span> <span class="mi">8</span><span class="p">}),</span> <span class="p">(</span><span class="n">metrics</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">{</span><span class="s1">&#39;md&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">})]</span>
 <span class="p">]</span>
 </pre></div>
 </div>

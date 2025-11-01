@@ -275,10 +275,12 @@ uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </sp
 </section>
 <section id="ml-presets">
 <h3>ML Presets<a class="headerlink" href="#ml-presets" title="Link to this heading"></a></h3>
-<p>Create presets for machine learning visualizations using MetricsBlock:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">MetricsBlock</span>
+<p>Create presets for machine learning visualizations using TypedChartBlock or BasePreset:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.typed_chart</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedChartBlock</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.presets.base_preset</span><span class="w"> </span><span class="kn">import</span> <span class="n">BasePreset</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">MyMLPreset</span><span class="p">(</span><span class="n">MetricsBlock</span><span class="p">):</span>
+<span class="c1"># Option 1: Extend TypedChartBlock directly</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MyMLPreset</span><span class="p">(</span><span class="n">TypedChartBlock</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    ML-specific preset for [specific ML metrics].</span>
 
@@ -286,8 +288,37 @@ uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </sp
 <span class="sd">    :relates-to:</span>
 <span class="sd">     - motivated_by: &quot;ML workflow requires [specific metrics]&quot;</span>
 <span class="sd">     - implements: &quot;preset: &#39;MyMLPreset&#39;&quot;</span>
-<span class="sd">     - uses: [&quot;block: &#39;MetricsBlock&#39;&quot;]</span>
+<span class="sd">     - uses: [&quot;block: &#39;TypedChartBlock&#39;&quot;]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_id</span><span class="p">,</span> <span class="n">datasource</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">block_id</span><span class="o">=</span><span class="n">block_id</span><span class="p">,</span>
+            <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+            <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;scatter&#39;</span><span class="p">,</span>  <span class="c1"># or other plot type</span>
+            <span class="n">plot_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;feature1&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="s1">&#39;target&#39;</span><span class="p">},</span>
+            <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
+
+<span class="c1"># Option 2: Use BasePreset for flexible control configuration</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MyMLPresetWithControls</span><span class="p">(</span><span class="n">BasePreset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    ML preset with controls.</span>
+
+<span class="sd">    :hierarchy: [Presets | ML | MyMLPresetWithControls]</span>
+<span class="sd">    :relates-to:</span>
+<span class="sd">     - motivated_by: &quot;ML workflow requires interactive controls&quot;</span>
+<span class="sd">     - implements: &quot;preset: &#39;MyMLPresetWithControls&#39;&quot;</span>
+<span class="sd">     - uses: [&quot;block: &#39;BasePreset&#39;&quot;]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">default_controls</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="n">dcc</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">,</span> <span class="n">props</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">...</span><span class="p">]})</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_plot_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">final_controls</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="s2">&quot;{{metric}}&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="s2">&quot;target&quot;</span><span class="p">}</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_id</span><span class="p">,</span> <span class="n">datasource</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">block_id</span><span class="o">=</span><span class="n">block_id</span><span class="p">,</span>

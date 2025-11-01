@@ -1,0 +1,530 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dashboard_lego.blocks.single_metric &mdash; Dashboard Lego 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Dashboard Lego
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../concepts.html">Core Concepts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Comprehensive Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Comprehensive API Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/magics.html">IPython Magic Commands</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">API Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing to Dashboard Lego</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Dashboard Lego</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">dashboard_lego.blocks.single_metric</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for dashboard_lego.blocks.single_metric</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">SingleMetricBlock - Atomic block for displaying a single metric value.</span>
+
+<span class="sd">This module implements the factory pattern component for metrics display.</span>
+<span class="sd">Each instance calculates and renders ONE metric value in a compact card.</span>
+
+<span class="sd">:hierarchy: [Blocks | Metrics | SingleMetricBlock]</span>
+<span class="sd">:relates-to:</span>
+<span class="sd"> - motivated_by: &quot;SPEC: Metrics factory for layout integration&quot;</span>
+<span class="sd"> - implements: &quot;class: &#39;SingleMetricBlock&#39;&quot;</span>
+<span class="sd"> - uses: [&quot;class: &#39;BaseBlock&#39;&quot;, &quot;class: &#39;ThemeConfig&#39;&quot;]</span>
+
+<span class="sd">:contract:</span>
+<span class="sd"> - pre: &quot;One metric_spec dict, datasource, optional subscribes_to&quot;</span>
+<span class="sd"> - post: &quot;layout() returns dbc.Card with metric value&quot;</span>
+<span class="sd"> - invariant: &quot;Card is compact (height determined by content only)&quot;</span>
+<span class="sd"> - theme_compliance: &quot;color Bootstrap theme, via ThemeConfig&quot;</span>
+
+<span class="sd">:complexity: 4</span>
+<span class="sd">:decision_cache: &quot;atomic_metrics: Independent blocks for flexibility&quot;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">dash_bootstrap_components</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dbc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dash</span><span class="w"> </span><span class="kn">import</span> <span class="n">html</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dash.development.base_component</span><span class="w"> </span><span class="kn">import</span> <span class="n">Component</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseBlock</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.datasource</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataSource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.formatting</span><span class="w"> </span><span class="kn">import</span> <span class="n">format_number</span>
+
+
+<div class="viewcode-block" id="SingleMetricBlock">
+<a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.single_metric.SingleMetricBlock">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SingleMetricBlock</span><span class="p">(</span><span class="n">BaseBlock</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Display a single aggregated metric value in a compact card.</span>
+
+<span class="sd">    :hierarchy: [Blocks | Metrics | SingleMetricBlock]</span>
+<span class="sd">    :relates-to:</span>
+<span class="sd">     - motivated_by: &quot;Factory pattern: atomic metric blocks&quot;</span>
+<span class="sd">     - implements: &quot;class: &#39;SingleMetricBlock&#39;&quot;</span>
+
+<span class="sd">    :contract:</span>
+<span class="sd">     - pre: &quot;metric_spec contains column, agg, title, optional color&quot;</span>
+<span class="sd">     - post: &quot;Renders compact card with metric value&quot;</span>
+<span class="sd">     - invariant: &quot;Card height adapts to content (no fixed height)&quot;</span>
+<span class="sd">     - theme_compliance: &quot;Uses ThemeConfig for colors&quot;</span>
+
+<span class="sd">    :complexity: 4</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        metric = SingleMetricBlock(</span>
+<span class="sd">            block_id=&quot;revenue_metric&quot;,</span>
+<span class="sd">            datasource=datasource,</span>
+<span class="sd">            metric_spec={</span>
+<span class="sd">                &#39;column&#39;: &#39;Revenue&#39;,</span>
+<span class="sd">                &#39;agg&#39;: &#39;sum&#39;,</span>
+<span class="sd">                &#39;title&#39;: &#39;Total Revenue&#39;,</span>
+<span class="sd">                &#39;color&#39;: &#39;success&#39;,  # Bootstrap theme color</span>
+<span class="sd">                &#39;dtype&#39;: &#39;float64&#39;</span>
+<span class="sd">            },</span>
+<span class="sd">            subscribes_to=[&#39;control-category&#39;]</span>
+<span class="sd">        )</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SingleMetricBlock.__init__">
+<a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.single_metric.SingleMetricBlock.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">datasource</span><span class="p">:</span> <span class="n">DataSource</span><span class="p">,</span>
+        <span class="n">metric_spec</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">subscribes_to</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize SingleMetricBlock.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Metrics | SingleMetricBlock | Init]</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;metric_spec has required keys: column, agg, title&quot;</span>
+<span class="sd">         - post: &quot;Block registered with state manager&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            block_id: Unique block identifier</span>
+<span class="sd">            datasource: DataSource instance</span>
+<span class="sd">            metric_spec: Metric definition with keys:</span>
+<span class="sd">                - column (str): Column name to aggregate</span>
+<span class="sd">                - agg (str|Callable): Aggregation func</span>
+<span class="sd">                - title (str): Display title</span>
+<span class="sd">                - color (str): Bootstrap color (optional)</span>
+<span class="sd">                - dtype (str): Type conversion (optional)</span>
+<span class="sd">                - color_rules (dict): Conditional coloring (optional)</span>
+<span class="sd">            subscribes_to: State IDs to subscribe to</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metric_spec</span> <span class="o">=</span> <span class="n">metric_spec</span>
+
+        <span class="c1"># Validate required keys</span>
+        <span class="n">required_keys</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;column&quot;</span><span class="p">,</span> <span class="s2">&quot;agg&quot;</span><span class="p">,</span> <span class="s2">&quot;title&quot;</span><span class="p">}</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">required_keys</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">metric_spec</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">missing</span> <span class="o">=</span> <span class="n">required_keys</span> <span class="o">-</span> <span class="n">metric_spec</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;metric_spec missing required keys: </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Build subscribes dict</span>
+        <span class="n">state_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_subscribes_to</span><span class="p">(</span><span class="n">subscribes_to</span><span class="p">)</span>
+        <span class="n">subscribes_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">state</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_metric</span> <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">state_ids</span><span class="p">}</span>
+
+        <span class="c1"># Pass to parent</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">block_id</span><span class="p">,</span> <span class="n">datasource</span><span class="p">,</span> <span class="n">subscribes</span><span class="o">=</span><span class="n">subscribes_dict</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;[Blocks|Metrics|SingleMetricBlock] Initialized | &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;block_id=</span><span class="si">{</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> | metric=</span><span class="si">{</span><span class="n">metric_spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_calculate_metric</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculate metric value from DataFrame.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Metrics | SingleMetricBlock | Calculate]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Metric calculation logic reused from MetricsBlock&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_calculate_metric&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;df is filtered DataFrame&quot;</span>
+<span class="sd">         - post: &quot;Returns numeric metric value&quot;</span>
+<span class="sd">         - agg_types: &quot;Supports str (&#39;sum&#39;, &#39;mean&#39;, etc.) or callable&quot;</span>
+
+<span class="sd">        :complexity: 3</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            df: Filtered DataFrame</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Calculated metric value (float)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">column</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_spec</span><span class="p">[</span><span class="s2">&quot;column&quot;</span><span class="p">]</span>
+        <span class="n">agg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_spec</span><span class="p">[</span><span class="s2">&quot;agg&quot;</span><span class="p">]</span>
+        <span class="n">dtype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dtype&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">empty</span> <span class="ow">or</span> <span class="n">column</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[Blocks|Metrics|SingleMetricBlock] Empty data or &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;missing column: </span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="mf">0.0</span>
+
+        <span class="c1"># Get column data</span>
+        <span class="n">series</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">column</span><span class="p">]</span>
+
+        <span class="c1"># Apply dtype conversion if specified</span>
+        <span class="k">if</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">series</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;[Blocks|Metrics|SingleMetricBlock] dtype conversion &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+        <span class="c1"># Calculate metric</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">agg</span><span class="p">):</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">agg</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">agg</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">agg</span> <span class="o">==</span> <span class="s2">&quot;sum&quot;</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                <span class="k">elif</span> <span class="n">agg</span> <span class="o">==</span> <span class="s2">&quot;mean&quot;</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+                <span class="k">elif</span> <span class="n">agg</span> <span class="o">==</span> <span class="s2">&quot;count&quot;</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">agg</span> <span class="o">==</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+                <span class="k">elif</span> <span class="n">agg</span> <span class="o">==</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown agg string: </span><span class="si">{</span><span class="n">agg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid agg type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">agg</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[Blocks|Metrics|SingleMetricBlock] Calculated | &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;column=</span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s2"> | agg=</span><span class="si">{</span><span class="n">agg</span><span class="si">}</span><span class="s2"> | value=</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">value</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[Blocks|Metrics|SingleMetricBlock] Calculation error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="mf">0.0</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_determine_color</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">color_spec</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Determine Bootstrap theme color for metric value.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Metrics | SingleMetricBlock | ColorResolution]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;SPEC: Theme-aware conditional coloring&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_determine_color&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;color_spec is str or dict with thresholds&quot;</span>
+<span class="sd">         - post: &quot;Returns Bootstrap theme color name&quot;</span>
+<span class="sd">         - theme_compliance: &quot;Returns only valid Bootstrap colors&quot;</span>
+
+<span class="sd">        :complexity: 2</span>
+<span class="sd">        :decision_cache: &quot;conditional_coloring: Threshold rules&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            value: Calculated metric value</span>
+<span class="sd">            color_spec: Either:</span>
+<span class="sd">                - str: Bootstrap color name (&#39;primary&#39;, &#39;success&#39;, etc.)</span>
+<span class="sd">                - dict: {&#39;thresholds&#39;: [...], &#39;colors&#39;: [...]}</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Bootstrap theme color name</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">color_spec</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">color_spec</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">color_spec</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;thresholds&quot;</span> <span class="ow">in</span> <span class="n">color_spec</span><span class="p">:</span>
+            <span class="n">thresholds</span> <span class="o">=</span> <span class="n">color_spec</span><span class="p">[</span><span class="s2">&quot;thresholds&quot;</span><span class="p">]</span>
+            <span class="n">colors</span> <span class="o">=</span> <span class="n">color_spec</span><span class="p">[</span><span class="s2">&quot;colors&quot;</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">threshold</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">thresholds</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">colors</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+            <span class="c1"># Value exceeds all thresholds</span>
+            <span class="k">return</span> <span class="n">colors</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># Fallback</span>
+        <span class="k">return</span> <span class="s2">&quot;primary&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_render_card</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">color</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Render metric card with theme-aware styling.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Metrics | SingleMetricBlock | Render]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Layout contract: Card h-100 for flexbox&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_render_card&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;value is calculated, color is Bootstrap theme name&quot;</span>
+<span class="sd">         - post: &quot;Returns dbc.Card with h-100 class&quot;</span>
+<span class="sd">         - invariant: &quot;No fixed height, uses ThemeConfig for styling&quot;</span>
+
+<span class="sd">        :complexity: 3</span>
+<span class="sd">        :decision_cache: &quot;compact_cards: No fixed height&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            value: Metric value</span>
+<span class="sd">            color: Bootstrap theme color name</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dbc.Card component</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_spec</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Get theme-aware styles</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="p">:</span>
+            <span class="c1"># Card background using theme color</span>
+            <span class="n">color_map</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;primary&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">primary</span><span class="p">,</span>
+                <span class="s2">&quot;secondary&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">secondary</span><span class="p">,</span>
+                <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">success</span><span class="p">,</span>
+                <span class="s2">&quot;danger&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">danger</span><span class="p">,</span>
+                <span class="s2">&quot;warning&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">warning</span><span class="p">,</span>
+                <span class="s2">&quot;info&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">info</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="n">bg_color</span> <span class="o">=</span> <span class="n">color_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">color</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">primary</span><span class="p">)</span>
+
+            <span class="n">card_style</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;backgroundColor&quot;</span><span class="p">:</span> <span class="n">bg_color</span><span class="p">,</span>
+                <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">white</span><span class="p">,</span>
+                <span class="s2">&quot;borderRadius&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">spacing</span><span class="o">.</span><span class="n">border_radius</span><span class="p">,</span>
+                <span class="s2">&quot;padding&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">spacing</span><span class="o">.</span><span class="n">card_padding</span><span class="p">,</span>
+            <span class="p">}</span>
+
+            <span class="n">value_style</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;fontSize&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">typography</span><span class="o">.</span><span class="n">font_size_h2</span><span class="p">,</span>
+                <span class="s2">&quot;fontWeight&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">typography</span><span class="o">.</span><span class="n">font_weight_bold</span><span class="p">,</span>
+            <span class="p">}</span>
+
+            <span class="n">title_style</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;fontSize&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">typography</span><span class="o">.</span><span class="n">font_size_sm</span><span class="p">,</span>
+                <span class="s2">&quot;opacity&quot;</span><span class="p">:</span> <span class="s2">&quot;0.9&quot;</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Fallback to Bootstrap classes</span>
+            <span class="n">card_style</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">value_style</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">title_style</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Build card with h-100 for flexbox</span>
+        <span class="n">card_body</span> <span class="o">=</span> <span class="n">dbc</span><span class="o">.</span><span class="n">CardBody</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">html</span><span class="o">.</span><span class="n">H6</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">className</span><span class="o">=</span><span class="s2">&quot;mb-2&quot;</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="n">title_style</span><span class="p">),</span>
+                <span class="n">html</span><span class="o">.</span><span class="n">H3</span><span class="p">(</span><span class="n">format_number</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">className</span><span class="o">=</span><span class="s2">&quot;mb-0&quot;</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="n">value_style</span><span class="p">),</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="n">card_className</span> <span class="o">=</span> <span class="s2">&quot;text-center h-100&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="p">:</span>
+            <span class="n">card_className</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; text-white bg-</span><span class="si">{</span><span class="n">color</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Card</span><span class="p">(</span>
+            <span class="n">card_body</span><span class="p">,</span>
+            <span class="n">className</span><span class="o">=</span><span class="n">card_className</span><span class="p">,</span>
+            <span class="n">style</span><span class="o">=</span><span class="n">card_style</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_update_metric</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update metric display (callback handler).</span>
+
+<span class="sd">        :hierarchy: [Blocks | Metrics | SingleMetricBlock | Update]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;BaseBlock callback mechanism&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_update_metric&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;Subscribed state values in *args&quot;</span>
+<span class="sd">         - post: &quot;Returns updated card component&quot;</span>
+
+<span class="sd">        :complexity: 2</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            *args: State values from subscribed controls</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Updated dbc.Card component</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Build params dict from args</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">args</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;subscribes&quot;</span><span class="p">):</span>
+            <span class="n">state_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">state_ids</span><span class="p">):</span>
+                    <span class="n">params</span><span class="p">[</span><span class="n">state_ids</span><span class="p">[</span><span class="n">idx</span><span class="p">]]</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;[Blocks|Metrics|SingleMetricBlock] Update triggered | &quot;</span> <span class="sa">f</span><span class="s2">&quot;params=</span><span class="si">{</span><span class="n">params</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Get filtered data</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+        <span class="c1"># Calculate metric</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calculate_metric</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+        <span class="c1"># Determine color (support conditional coloring)</span>
+        <span class="n">color_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;color&quot;</span><span class="p">,</span> <span class="s2">&quot;primary&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">color_spec</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_determine_color</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">color_spec</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="n">color_spec</span>
+
+        <span class="c1"># Render card</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_render_card</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">color</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SingleMetricBlock.layout">
+<a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.single_metric.SingleMetricBlock.layout">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">layout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Render initial layout with callback-compatible container.</span>
+
+<span class="sd">        CRITICAL: Must wrap metric card in Div with id=block_id-container</span>
+<span class="sd">        to match BaseBlock.output_target() contract for callbacks.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Metrics | SingleMetricBlock | Layout]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;BaseBlock lifecycle contract requires container ID&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;layout&#39;&quot;</span>
+<span class="sd">         - uses: [&quot;method: &#39;_generate_id&#39;&quot;, &quot;method: &#39;_update_metric&#39;&quot;]</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;Block initialized with navigation_mode and section_index&quot;</span>
+<span class="sd">         - post: &quot;Returns Div(id=block_id-container) wrapping metric card&quot;</span>
+<span class="sd">         - invariant: &quot;Container ID matches output_target() for callbacks&quot;</span>
+<span class="sd">         - spec_compliance: &quot;Dash callback Output target must exist in DOM&quot;</span>
+
+<span class="sd">        :complexity: 2</span>
+<span class="sd">        :decision_cache: &quot;Wrap in container Div to enable state-centric callbacks&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            html.Div wrapping dbc.Card (not Card directly!)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;[Blocks|Metrics|SingleMetricBlock] Rendering layout | &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;block_id=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+        <span class="c1"># CRITICAL: Wrap card in Div with id matching output_target()</span>
+        <span class="c1"># This enables Dash callbacks to find the component</span>
+        <span class="c1"># h-100 ensures equal height when multiple metrics in same row</span>
+        <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">Div</span><span class="p">(</span>
+            <span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_generate_id</span><span class="p">(</span><span class="s2">&quot;container&quot;</span><span class="p">),</span>
+            <span class="n">children</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_update_metric</span><span class="p">(),</span>
+            <span class="n">className</span><span class="o">=</span><span class="s2">&quot;h-100&quot;</span><span class="p">,</span>
+        <span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Dashboard Lego Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

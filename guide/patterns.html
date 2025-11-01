@@ -132,11 +132,13 @@
 <p>Blocks publish state changes and other blocks subscribe to react.</p>
 <p><strong>Flow:</strong></p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>ControlPanelBlock → publishes → StateManager → notifies → TypedChartBlock
-                                                        → notifies → MetricsBlock
+                                                        → notifies → get_metric_row()
 </pre></div>
 </div>
 <p><strong>Example:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Publisher: Control Panel</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_metric_row</span><span class="p">,</span> <span class="n">TypedChartBlock</span><span class="p">,</span> <span class="n">ControlPanelBlock</span><span class="p">,</span> <span class="n">Control</span>
+
+<span class="c1"># Publisher: Control Panel</span>
 <span class="n">control_panel</span> <span class="o">=</span> <span class="n">ControlPanelBlock</span><span class="p">(</span>
     <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;filters&quot;</span><span class="p">,</span>
     <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
@@ -154,10 +156,16 @@
     <span class="n">subscribes_to</span><span class="o">=</span><span class="s2">&quot;filters-category&quot;</span>
 <span class="p">)</span>
 
-<span class="n">metrics</span> <span class="o">=</span> <span class="n">MetricsBlock</span><span class="p">(</span>
-    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;metrics&quot;</span><span class="p">,</span>
+<span class="n">metrics</span><span class="p">,</span> <span class="n">row_opts</span> <span class="o">=</span> <span class="n">get_metric_row</span><span class="p">(</span>
+    <span class="n">metrics_spec</span><span class="o">=</span><span class="p">{</span>
+        <span class="s1">&#39;total_sales&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;column&#39;</span><span class="p">:</span> <span class="s1">&#39;Sales&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;agg&#39;</span><span class="p">:</span> <span class="s1">&#39;sum&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;Total Sales&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;success&#39;</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
     <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
-    <span class="n">metrics_spec</span><span class="o">=</span><span class="p">{</span><span class="o">...</span><span class="p">},</span>
     <span class="n">subscribes_to</span><span class="o">=</span><span class="s2">&quot;filters-category&quot;</span>
 <span class="p">)</span>
 </pre></div>

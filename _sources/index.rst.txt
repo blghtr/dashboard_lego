@@ -28,7 +28,7 @@ Key Features
 * **Reactive State Management**: Built-in state manager for easy interactivity between blocks
 * **Flexible Grid System**: Position blocks in any configuration using Bootstrap grid system
 * **Data Caching**: Built-in caching at the data source level for improved performance
-* **Easy Extension**: Easily create custom blocks and data sources by inheriting from base classes
+* **Easy Extension**: Easily create custom blocks and data sources using composition pattern
 * **Presets & Layouts**: Pre-built EDA and ML visualization blocks, plus layout presets
 * **Comprehensive Testing**: Full test coverage with unit, integration, and performance tests
 
@@ -48,9 +48,8 @@ Create a simple dashboard:
    import dash
    import dash_bootstrap_components as dbc
    import pandas as pd
-   from dashboard_lego import DashboardPage
-   from dashboard_lego.core import DataSource, DataBuilder
-   from dashboard_lego.blocks.metrics import MetricsBlock
+   from dashboard_lego.core import DashboardPage, DataSource, DataBuilder
+   from dashboard_lego.blocks import get_metric_row
 
    # Define DataBuilder (v0.15+ pattern)
    class MyDataBuilder(DataBuilder):
@@ -66,24 +65,26 @@ Create a simple dashboard:
        data_builder=MyDataBuilder("your_data.csv")
    )
 
-   # Create blocks using v0.15+ API
-   metrics_block = MetricsBlock(
-       block_id="my_metrics",
-       datasource=datasource,
+   # Create blocks using v0.15+ API with factory pattern
+   metrics, row_opts = get_metric_row(
        metrics_spec={
            "total": {
                "column": "id",  # Count rows
                "agg": "count",
-               "title": "Total Records"
+               "title": "Total Records",
+               "color": "primary"
            }
        },
+       datasource=datasource,
        subscribes_to="dummy_state"
    )
 
    # Create dashboard
    page = DashboardPage(
        title="My Dashboard",
-       blocks=[[metrics_block]]
+       blocks=[
+           (metrics, row_opts)
+       ]
    )
 
    # Run the app
