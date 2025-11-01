@@ -178,13 +178,15 @@ Create presets for common exploratory data analysis tasks using v0.15+ API:
 ML Presets
 ~~~~~~~~~~
 
-Create presets for machine learning visualizations using MetricsBlock:
+Create presets for machine learning visualizations using TypedChartBlock or BasePreset:
 
 .. code-block:: python
 
-   from dashboard_lego.blocks.metrics import MetricsBlock
+   from dashboard_lego.blocks.typed_chart import TypedChartBlock
+   from dashboard_lego.presets.base_preset import BasePreset
 
-   class MyMLPreset(MetricsBlock):
+   # Option 1: Extend TypedChartBlock directly
+   class MyMLPreset(TypedChartBlock):
        """
        ML-specific preset for [specific ML metrics].
 
@@ -192,8 +194,37 @@ Create presets for machine learning visualizations using MetricsBlock:
        :relates-to:
         - motivated_by: "ML workflow requires [specific metrics]"
         - implements: "preset: 'MyMLPreset'"
-        - uses: ["block: 'MetricsBlock'"]
+        - uses: ["block: 'TypedChartBlock'"]
        """
+       def __init__(self, block_id, datasource, **kwargs):
+           super().__init__(
+               block_id=block_id,
+               datasource=datasource,
+               plot_type='scatter',  # or other plot type
+               plot_params={'x': 'feature1', 'y': 'target'},
+               **kwargs
+           )
+
+   # Option 2: Use BasePreset for flexible control configuration
+   class MyMLPresetWithControls(BasePreset):
+       """
+       ML preset with controls.
+
+       :hierarchy: [Presets | ML | MyMLPresetWithControls]
+       :relates-to:
+        - motivated_by: "ML workflow requires interactive controls"
+        - implements: "preset: 'MyMLPresetWithControls'"
+        - uses: ["block: 'BasePreset'"]
+       """
+       @property
+       def default_controls(self):
+           return {
+               "metric": Control(component=dcc.Dropdown, props={"options": [...]})
+           }
+
+       def _build_plot_params(self, final_controls, kwargs):
+           return {"x": "{{metric}}", "y": "target"}
+
        def __init__(self, block_id, datasource, **kwargs):
            super().__init__(
                block_id=block_id,

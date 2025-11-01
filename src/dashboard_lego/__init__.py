@@ -11,4 +11,4 @@ from . import blocks, core, presets, utils
 __all__ = ["blocks", "core", "presets", "utils"]
 
 # version
-__version__ = "0.15.2"
+__version__ = "0.16"

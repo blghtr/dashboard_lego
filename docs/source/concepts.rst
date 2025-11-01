@@ -29,24 +29,27 @@ All blocks inherit from :class:`BaseBlock`, which provides:
 Chart Blocks
 ~~~~~~~~~~~~
 
-* :class:`StaticChartBlock`: Non-interactive charts that display data
-* :class:`InteractiveChartBlock`: Charts with controls (dropdowns, sliders, etc.)
+* :class:`TypedChartBlock`: Unified chart block for both static and interactive charts (v0.15+)
+  - Use without controls for static charts
+  - Use with ``controls`` parameter for interactive charts
+* :class:`MinimalChartBlock`: Minimalist chart block for clean visualizations (v0.15.2+)
 
 Data Display Blocks
 ~~~~~~~~~~~~~~~~~~~
 
-* :class:`KPIBlock`: Key Performance Indicators with metrics
+* :func:`get_metric_row`: Factory function to create metric blocks for KPIs (v0.15+)
+* :class:`SingleMetricBlock`: Individual metric display block
 * :class:`TextBlock`: Text content and markdown
 
 Data Sources
 ------------
 
-Data sources abstract data loading and provide a consistent interface for blocks. They handle:
+Data sources abstract data loading and provide a consistent interface for blocks using composition pattern (v0.15+). They handle:
 
-* Data loading from various sources (CSV, Parquet, SQL, etc.)
-* Caching for performance
-* Filtering and aggregation
-* KPI calculations
+* Data loading from various sources (CSV, Parquet, SQL, etc.) via ``DataBuilder``
+* Data transformation (filtering, aggregation) via ``DataTransformer``
+* Caching for performance at each pipeline stage
+* Stateless 2-stage pipeline: Build → Transform
 
 State Management
 ----------------
@@ -61,15 +64,29 @@ Example of state flow:
 
 .. code-block:: python
 
+   from dashboard_lego.blocks import TypedChartBlock, get_metric_row, Control
+   import dash_core_components as dcc
+
    # Block A publishes filter state
-   interactive_chart = InteractiveChartBlock(
+   interactive_chart = TypedChartBlock(
        block_id="filter_chart",
-       controls={"category": Control(...)}
+       datasource=datasource,
+       plot_type="bar",
+       plot_params={"x": "{{category}}", "y": "Sales"},
+       controls={"category": Control(component=dcc.Dropdown, props={"options": [...]})}
    )
 
    # Block B subscribes to filter state
-   kpi_block = KPIBlock(
-       block_id="filtered_kpis",
+   metrics, row_opts = get_metric_row(
+       metrics_spec={
+           "total_sales": {
+               "column": "Sales",
+               "agg": "sum",
+               "title": "Total Sales",
+               "color": "success"
+           }
+       },
+       datasource=datasource,
        subscribes_to="filter_chart-category"  # Subscribes to category filter
    )
 
@@ -88,8 +105,9 @@ Example layout:
 .. code-block:: python
 
    # Two-column layout: 8 columns + 4 columns
+   metrics, row_opts = get_metric_row(...)
    layout = [
-       [(chart_block, {'md': 8}), (kpi_block, {'md': 4})]
+       [(chart_block, {'md': 8}), (metrics[0], {'md': 4})]
    ]
 
 Presets

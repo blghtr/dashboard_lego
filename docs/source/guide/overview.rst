@@ -23,7 +23,8 @@ Architecture Hierarchy
    ├── blocks/               # Visual components
    │   ├── base.py          # BaseBlock: abstract block interface
    │   ├── typed_chart.py   # TypedChartBlock: unified chart block (v0.15)
-   │   ├── metrics.py       # MetricsBlock: declarative metrics (v0.15)
+   │   ├── metrics_factory.py # get_metric_row: factory for metrics (v0.15+)
+   │   ├── single_metric.py  # SingleMetricBlock: individual metric (v0.15+)
    │   └── text.py          # TextBlock: markdown/HTML rendering
    ├── presets/             # Pre-built blocks and layouts
    │   ├── eda_presets.py   # EDA visualization blocks
@@ -51,7 +52,8 @@ Module Dependency Graph
    BaseBlock (abstract)
        ├─> TypedChartBlock (replaces Static/Interactive)
        ├─> ControlPanelBlock
-       ├─> MetricsBlock (replaces KPIBlock pattern)
+       ├─> get_metric_row() (factory, replaces MetricsBlock/KPIBlock)
+       └─> SingleMetricBlock (individual metric block)
        └─> TextBlock
 
    DataSource (concrete, uses composition)

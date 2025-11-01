@@ -8,7 +8,11 @@ Install from PyPI
 
 .. code-block:: bash
 
+   # Using pip
    pip install dashboard-lego
+
+   # Or using uv (recommended, faster)
+   uv pip install dashboard-lego
 
 
 Install from source
@@ -62,6 +66,6 @@ Test your installation:
    print(f"Dashboard Lego version: {dashboard_lego.__version__}")
 
    # Test basic functionality
-   from dashboard_lego.core.page import DashboardPage
-   from dashboard_lego.blocks.kpi import KPIBlock
+   from dashboard_lego.core import DashboardPage
+   from dashboard_lego.blocks import get_metric_row
    print("Installation successful!")

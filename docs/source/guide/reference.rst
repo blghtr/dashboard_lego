@@ -36,7 +36,7 @@ Blocks
 ^^^^^^
 
 - **BaseBlock**: Abstract block → ``layout()``, ``output_target()``
-- **MetricsBlock**: Metrics from data → ``__init__(metrics_spec)``
+- **get_metric_row()**: Factory function for metrics → ``get_metric_row(metrics_spec)``
 - **TypedChartBlock**: Chart with plot registry → ``__init__(plot_type, plot_params)``
 - **ControlPanelBlock**: Control panel only → ``__init__(controls)``
 - **TextBlock**: Text/markdown → ``__init__(content_generator)``
@@ -101,9 +101,9 @@ Minimal Dashboard
 
    import dash
    import dash_bootstrap_components as dbc
-   from dashboard_lego import DashboardPage
-   from dashboard_lego.core import DataSource, DataBuilder
-   from dashboard_lego.blocks import MetricsBlock
+   import pandas as pd
+   from dashboard_lego.core import DashboardPage, DataSource, DataBuilder
+   from dashboard_lego.blocks import get_metric_row
 
    class MyDataBuilder(DataBuilder):
        def build(self, params):
@@ -111,16 +111,20 @@ Minimal Dashboard
 
    datasource = DataSource(data_builder=MyDataBuilder())
 
-   metrics = MetricsBlock(
-       block_id="metrics",
-       datasource=datasource,
+   metrics, row_opts = get_metric_row(
        metrics_spec={
-           "total": {"column": "id", "agg": "count", "title": "Total"}
+           "total": {
+               "column": "id",
+               "agg": "count",
+               "title": "Total",
+               "color": "primary"
+           }
        },
+       datasource=datasource,
        subscribes_to="dummy_state"
    )
 
-   page = DashboardPage(title="Dashboard", blocks=[[metrics]])
+   page = DashboardPage(title="Dashboard", blocks=[(metrics, row_opts)])
 
    app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
    app.layout = page.build_layout()

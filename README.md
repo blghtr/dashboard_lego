@@ -19,7 +19,7 @@ Dashboard Lego allows you to build complex dashboards from independent, reusable
 - **Flexible Grid System**: Position blocks in any configuration using a grid system based on `dash-bootstrap-components`
 - **Theme System**: Comprehensive theming with pre-built themes (light, dark, and 10+ Bootstrap themes) and custom theme support
 - **Data Caching**: 2-stage pipeline with independent caching (Build → Filter) for optimal performance
-- **No Subclassing Required**: Use composition pattern with `DataBuilder` + `DataFilter` instead of inheriting from `BaseDataSource`
+- **No Subclassing Required**: Use composition pattern with `DataBuilder` + `DataTransformer` instead of inheriting from `DataSource`
 - **TypedChartBlock System**: Plot registry pattern for reusable chart components with embedded controls
 - **Presets & Layouts**: Pre-built EDA and ML visualization blocks, plus layout presets for common dashboard patterns
 - **Comprehensive Testing**: Full test coverage with unit, integration, and performance tests
@@ -55,10 +55,8 @@ import dash_bootstrap_components as dbc
 import plotly.express as px
 import pandas as pd
 
-from dashboard_lego.core import BaseDataSource, DataBuilder, DashboardPage
-from dashboard_lego.blocks.metrics import MetricsBlock
-from dashboard_lego.blocks.typed_chart import TypedChartBlock
-from dashboard_lego.presets.layouts import one_column
+from dashboard_lego.core import DataSource, DataBuilder, DashboardPage
+from dashboard_lego.blocks import get_metric_row, TypedChartBlock
 
 # 1. Define a DataBuilder (v0.15+ pattern)
 class SalesDataBuilder(DataBuilder):
@@ -73,15 +71,13 @@ class SalesDataBuilder(DataBuilder):
         return df
 
 # 2. Create datasource using composition (no inheritance!)
-datasource = BaseDataSource(
+datasource = DataSource(
     data_builder=SalesDataBuilder("examples/sample_data.csv")
 )
 
-# 3. Create blocks using v0.15 API
-# MetricsBlock replaces get_kpis() pattern
-metrics_block = MetricsBlock(
-    block_id="sales_metrics",
-    datasource=datasource,
+# 3. Create blocks using v0.15+ API
+# get_metric_row() factory creates metric blocks
+metrics, row_opts = get_metric_row(
     metrics_spec={
         "total_sales": {
             "column": "Sales",
@@ -96,6 +92,7 @@ metrics_block = MetricsBlock(
             "color": "info"
         }
     },
+    datasource=datasource,
     subscribes_to="dummy_state"
 )
 
@@ -115,7 +112,10 @@ chart_block = TypedChartBlock(
 # 4. Assemble the dashboard page
 dashboard_page = DashboardPage(
     title="Simple Sales Dashboard",
-    blocks=one_column([metrics_block, chart_block]),
+    blocks=[
+        (metrics, row_opts),  # Metrics row with proper layout
+        [chart_block]          # Chart block
+    ],
     theme=dbc.themes.LUX
 )
 
@@ -133,7 +133,7 @@ To run this example:
 python examples/01_simple_dashboard.py
 ```
 
-For a comprehensive API reference with detailed contracts, hierarchies, and advanced patterns, see **[DASHBOARD_LEGO_GUIDE.md](DASHBOARD_LEGO_GUIDE.md)**.
+For comprehensive API reference with detailed contracts, hierarchies, and advanced patterns, see the [online documentation](https://blghtr.github.io/dashboard_lego/).
 
 ## 🎯 Quick Dashboard
 
@@ -258,7 +258,7 @@ Dashboard Lego supports multiple data source types:
 - **CSV Source**: Load data from CSV files with automatic caching
 - **Parquet Source**: High-performance columnar data loading
 - **SQL Source**: Connect to databases via SQLAlchemy
-- **Custom Sources**: Inherit from `BaseDataSource` to create your own data providers
+- **Custom Sources**: Use composition with custom `DataBuilder` and `DataTransformer` to create your own data providers
 
 ## 🧪 Testing
 
@@ -279,8 +279,8 @@ uv run pytest --cov=dashboard_lego --cov-report=html
 
 ### API Reference Guide
 
-For AI agents, LLMs, and developers, we provide a comprehensive API reference:
-- **[Dashboard Lego API Guide](DASHBOARD_LEGO_GUIDE.md)**: Complete, machine-parseable API documentation with contracts, hierarchies, and examples for all modules
+For AI agents, LLMs, and developers, we provide comprehensive API reference:
+- **[Online Documentation](https://blghtr.github.io/dashboard_lego/)**: Complete API documentation with contracts, hierarchies, and examples for all modules
 
 ### Building Documentation Locally
 
@@ -302,7 +302,7 @@ make check
 
 ### Documentation Structure
 
-- **API Reference**: `DASHBOARD_LEGO_GUIDE.md` - Comprehensive API documentation
+- **API Reference**: Available online at https://blghtr.github.io/dashboard_lego/ - Comprehensive API documentation
 - **API Documentation**: Automatically generated from docstrings
 - **User Guides**: Installation, quick start, and concepts
 - **Examples**: Check the `examples/` directory for various use cases

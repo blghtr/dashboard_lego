@@ -19,11 +19,13 @@ Blocks publish state changes and other blocks subscribe to react.
 .. code-block:: text
 
    ControlPanelBlock → publishes → StateManager → notifies → TypedChartBlock
-                                                           → notifies → MetricsBlock
+                                                           → notifies → get_metric_row()
 
 **Example:**
 
 .. code-block:: python
+
+   from dashboard_lego.blocks import get_metric_row, TypedChartBlock, ControlPanelBlock, Control
 
    # Publisher: Control Panel
    control_panel = ControlPanelBlock(
@@ -43,10 +45,16 @@ Blocks publish state changes and other blocks subscribe to react.
        subscribes_to="filters-category"
    )
 
-   metrics = MetricsBlock(
-       block_id="metrics",
+   metrics, row_opts = get_metric_row(
+       metrics_spec={
+           'total_sales': {
+               'column': 'Sales',
+               'agg': 'sum',
+               'title': 'Total Sales',
+               'color': 'success'
+           }
+       },
        datasource=datasource,
-       metrics_spec={...},
        subscribes_to="filters-category"
    )
 
