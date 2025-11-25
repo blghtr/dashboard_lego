@@ -21,8 +21,8 @@ from dash import html
 
 from dashboard_lego.blocks.base import BaseBlock
 from dashboard_lego.core.datasource import DataSource
+from dashboard_lego.core.exceptions import ConfigurationError
 from dashboard_lego.core.state import StateManager
-from dashboard_lego.utils.exceptions import ConfigurationError
 
 
 # A concrete implementation of BaseBlock for testing purposes

@@ -11,8 +11,8 @@ from dash.development.base_component import Component
 
 # Use forward references for type hints to avoid circular imports
 from dashboard_lego.core.datasource import DataSource
+from dashboard_lego.core.exceptions import BlockError, ConfigurationError
 from dashboard_lego.core.state import StateManager
-from dashboard_lego.utils.exceptions import BlockError, ConfigurationError
 from dashboard_lego.utils.logger import get_logger
 
 if TYPE_CHECKING:

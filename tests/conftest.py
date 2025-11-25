@@ -3,7 +3,12 @@ This file contains shared fixtures for the test suite.
 
 """
 
+import os
+import sys
 from unittest.mock import MagicMock
+
+# Add src to path to allow imports without installation
+sys.path.append(os.path.abspath("src"))
 
 import pandas as pd
 import pytest

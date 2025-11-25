@@ -11,7 +11,7 @@ import pandas as pd
 import pytest
 
 from dashboard_lego.core.datasources.sql_source import SqlDataSource
-from dashboard_lego.utils.exceptions import DataLoadError
+from dashboard_lego.core.exceptions import DataLoadError
 
 
 def test_sql_source_executes_query():
@@ -39,19 +39,33 @@ def test_sql_source_executes_query():
 
 
 def test_sql_source_invalid_connection_string():
-    """Test that SqlDataSource handles invalid connection gracefully.
+    """Test that SqlDataSource raises DataLoadError on invalid connection.
 
-    In v0.15.0, errors are caught and empty DataFrame is returned.
+    In v0.16.0+, errors are raised as DataLoadError.
     """
     source = SqlDataSource(connection_uri="invalid://connection", query="SELECT 1")
 
-    result = source.get_processed_data()
-    assert isinstance(result, pd.DataFrame)
-    assert result.empty
+    with pytest.raises(DataLoadError, match="Database error"):
+        source.get_processed_data()
 
 
 def test_sql_source_invalid_query():
-    """Test that SqlDataSource handles invalid SQL query gracefully."""
+    """Test that SqlDataSource raises DataLoadError on invalid SQL query.
+
+    Note: Validation happens in constructor, so error is raised during
+    initialization, not during execution.
+    """
+    # Invalid SQL is caught during validation in constructor
+    with pytest.raises(DataLoadError, match="Unknown SQL statement type"):
+        SqlDataSource(connection_uri="sqlite:///:memory:", query="INVALID SQL")
+
+
+def test_sql_source_execution_error():
+    """Test that SqlDataSource raises DataLoadError on SQL execution error.
+
+    This tests errors that occur during query execution (e.g., table doesn't exist),
+    not validation errors.
+    """
     with patch(
         "dashboard_lego.core.datasources.sql_source.create_engine"
     ) as mock_engine:
@@ -59,15 +73,14 @@ def test_sql_source_invalid_query():
         mock_engine.return_value.connect.return_value.__enter__.return_value = mock_conn
 
         with patch("pandas.read_sql") as mock_read_sql:
-            mock_read_sql.side_effect = Exception("SQL error")
+            mock_read_sql.side_effect = Exception("Table 'nonexistent' doesn't exist")
 
             source = SqlDataSource(
-                connection_uri="sqlite:///:memory:", query="INVALID SQL"
+                connection_uri="sqlite:///:memory:", query="SELECT * FROM nonexistent"
             )
 
-            result = source.get_processed_data()
-            assert isinstance(result, pd.DataFrame)
-            assert result.empty
+            with pytest.raises(DataLoadError, match="Failed to execute SQL query"):
+                source.get_processed_data()
 
 
 def test_sql_source_with_parameters():

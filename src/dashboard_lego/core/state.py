@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 
 from dash.dependencies import MATCH, Input, Output
 
-from dashboard_lego.utils.exceptions import StateError
+from dashboard_lego.core.exceptions import StateError
 from dashboard_lego.utils.logger import get_logger
 
 

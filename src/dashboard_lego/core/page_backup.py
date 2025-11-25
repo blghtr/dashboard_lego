@@ -14,9 +14,9 @@ from dash import dcc, html
 from dash.dependencies import Input, Output
 from dash.development.base_component import Component
 
+from dashboard_lego.core.exceptions import ConfigurationError
 from dashboard_lego.core.state import StateManager
 from dashboard_lego.core.theme import ThemeConfig
-from dashboard_lego.utils.exceptions import ConfigurationError
 from dashboard_lego.utils.logger import get_logger
 
 # Lazy import for SidebarConfig to avoid circular dependency

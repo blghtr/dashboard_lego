@@ -5,7 +5,7 @@ Demonstrates:
 - Navigation with multiple sections
 - Theme selection via CLI (--theme light|dark|lux|cyborg)
 - v0.15 composition pattern (DataBuilder + DataTransformer)
-- **NEW v0.15: Collapsible Sidebar with global filters**
+- **NEW v0.15: Collapsible Sidebar with global transforms**
 - **NEW v0.15: Adaptive layout - sidebar pushes content (desktop/mobile)**
 - **NEW v0.15: Block-level data transformations (transform_fn)**
 - **NEW v0.15: MetricsBlock with dynamic responsive sizing**
@@ -178,17 +178,23 @@ class SalesDataTransformer(DataTransformer):
     """Transform sales data by filtering category and price range."""
 
     def transform(self, data, **params):
+        """
+        Transform data by applying filters.
+
+        Note: Parameters are already stripped of transform__ prefix by classifier.
+        Use simple names: category, min_price (not transform__category, transform__min_price).
+        """
         df = data.copy()
 
-        # Category filter
-        if "filters-category" in params:
-            cat = params["filters-category"]
+        # Category filter (parameter name is already stripped by classifier)
+        if "category" in params:
+            cat = params["category"]
             if cat and cat != "All":
                 df = df[df["Category"] == cat]
 
-        # Price filter
-        if "filters-min_price" in params:
-            min_p = params["filters-min_price"]
+        # Price filter (parameter name is already stripped by classifier)
+        if "min_price" in params:
+            min_p = params["min_price"]
             # Convert to float (dcc.Input returns string)
             try:
                 min_p = float(min_p) if min_p not in (None, "", " ") else None
@@ -199,11 +205,6 @@ class SalesDataTransformer(DataTransformer):
                 df = df[df["Price"] >= min_p]
 
         return df
-
-
-def param_classifier(key):
-    """Route control panel params to transform stage (v0.15+ API)."""
-    return "transform" if key.startswith("filters-") else "build"
 
 
 # ============================================================================
@@ -238,7 +239,10 @@ def create_overview_section():
             },
         },
         datasource=datasource,
-        subscribes_to=["filters-category", "filters-min_price"],
+        subscribes_to=[
+            "transforms-transform__category",
+            "transforms-transform__min_price",
+        ],
         block_id_prefix="overview_metric",
     )
 
@@ -250,7 +254,10 @@ def create_overview_section():
         plot_params={"x": "Date", "y": "Revenue"},
         plot_kwargs={"title": "Revenue Trend Over Time"},
         title="Revenue Over Time",
-        subscribes_to=["filters-category", "filters-min_price"],
+        subscribes_to=[
+            "transforms-transform__category",
+            "transforms-transform__min_price",
+        ],
     )
 
     # Category breakdown chart (using custom grouped plot)
@@ -261,7 +268,10 @@ def create_overview_section():
         plot_params={"x": "Category", "y": "Revenue"},
         plot_kwargs={"title": "Revenue by Category"},
         title="Category Breakdown",
-        subscribes_to=["filters-category", "filters-min_price"],
+        subscribes_to=[
+            "transforms-transform__category",
+            "transforms-transform__min_price",
+        ],
     )
 
     # NEW v0.15: Block-specific transformation demo
@@ -273,7 +283,10 @@ def create_overview_section():
         plot_params={"x": "Product", "y": "total_revenue"},
         plot_kwargs={"title": "Top Products (Aggregated)"},
         title="Top Products (Transform Demo)",
-        subscribes_to=["filters-category", "filters-min_price"],
+        subscribes_to=[
+            "transforms-transform__category",
+            "transforms-transform__min_price",
+        ],
         # NEW: Block-level aggregation via transform_fn
         transform_fn=lambda df: df.groupby("Product")["Revenue"]
         .sum()
@@ -298,28 +311,40 @@ def create_eda_section():
     corr_heatmap = CorrelationHeatmapPreset(
         block_id="correlation",
         datasource=datasource,
-        subscribes_to=["filters-category", "filters-min_price"],
+        subscribes_to=[
+            "transforms-transform__category",
+            "transforms-transform__min_price",
+        ],
         title="Feature Correlations",
     )
 
     histogram = GroupedHistogramPreset(
         block_id="distribution",
         datasource=datasource,
-        subscribes_to=["filters-category", "filters-min_price"],
+        subscribes_to=[
+            "transforms-transform__category",
+            "transforms-transform__min_price",
+        ],
         title="Distribution Analysis",
     )
 
     missing_vals = MissingValuesPreset(
         block_id="missing",
         datasource=datasource,
-        subscribes_to=["filters-category", "filters-min_price"],
+        subscribes_to=[
+            "transforms-transform__category",
+            "transforms-transform__min_price",
+        ],
         title="Data Quality Check",
     )
 
     boxplot = BoxPlotPreset(
         block_id="boxplot",
         datasource=datasource,
-        subscribes_to=["filters-category", "filters-min_price"],
+        subscribes_to=[
+            "transforms-transform__category",
+            "transforms-transform__min_price",
+        ],
         title="Distribution Comparison",
     )
 
@@ -346,9 +371,9 @@ def create_eda_section():
 
 
 def create_analysis_section():
-    """Analysis page with detailed views subscribing to sidebar filters."""
+    """Analysis page with detailed views subscribing to sidebar transforms."""
 
-    # Charts subscribe to sidebar filters (using TypedChartBlock)
+    # Charts subscribe to sidebar transforms (using TypedChartBlock)
     scatter = TypedChartBlock(
         block_id="scatter",
         datasource=datasource,
@@ -361,7 +386,10 @@ def create_analysis_section():
         },
         plot_kwargs={"title": "Price vs Quantity Analysis", "hover_data": ["Product"]},
         title="Scatter Analysis",
-        subscribes_to=["filters-category", "filters-min_price"],  # Subscribe to sidebar
+        subscribes_to=[
+            "transforms-transform__category",
+            "transforms-transform__min_price",
+        ],  # Subscribe to sidebar transforms
     )
 
     top_products = TypedChartBlock(
@@ -371,7 +399,10 @@ def create_analysis_section():
         plot_params={"x": "Product", "y": "Revenue"},
         plot_kwargs={"title": "Top Products by Revenue"},
         title="Top Products",
-        subscribes_to=["filters-category", "filters-min_price"],  # Subscribe to sidebar
+        subscribes_to=[
+            "transforms-transform__category",
+            "transforms-transform__min_price",
+        ],  # Subscribe to sidebar transforms
     )
 
     # Return layout without control panel (now in sidebar)
@@ -409,11 +440,11 @@ def main():
     data_file = ensure_sample_data()
 
     # Initialize datasource with v0.15 pattern (composition)
+    # Uses default param_classifier which routes params with transform__ prefix to transform stage
     global datasource
     datasource = DataSource(
         data_builder=SalesDataBuilder(data_file),
         data_transformer=SalesDataTransformer(),  # v0.15+ API (was: data_filter)
-        param_classifier=param_classifier,
         cache_ttl=600,
     )
 
@@ -421,12 +452,13 @@ def main():
     theme_url, theme_config = get_theme_config(args.theme)
 
     # Create global control panel for sidebar
+    # Control names use transform__ prefix so default classifier routes them to transform stage
     control_panel = ControlPanelBlock(
-        block_id="filters",
+        block_id="transforms",
         datasource=datasource,
-        title="Global Filters",
+        title="Global Transforms",
         controls={
-            "category": Control(
+            "transform__category": Control(
                 component=dbc.Select,
                 props={
                     "options": [
@@ -438,7 +470,7 @@ def main():
                     "value": "All",
                 },
             ),
-            "min_price": Control(
+            "transform__min_price": Control(
                 component=dbc.Input,
                 props={
                     "type": "number",
@@ -457,7 +489,7 @@ def main():
         blocks=[control_panel],
         collapsible=True,
         width="320px",
-        title="Global Filters",
+        title="Global Transforms",
         position="start",
         default_collapsed=False,
         push_content=True,  # NEW: Adaptive layout (push vs overlay)
@@ -480,20 +512,16 @@ def main():
     # Create page with sidebar (NEW in v0.15+)
     page = DashboardPage(
         title=f"v0.15 Showcase Dashboard ({args.theme.capitalize()} Theme)",
-        sidebar=sidebar,  # NEW: Collapsible sidebar with global filters
+        sidebar=sidebar,  # NEW: Collapsible sidebar with global transforms
         navigation=navigation,
         theme=theme_url,
         theme_config=theme_config,
     )
 
-    # Create app
-    app = dash.Dash(
-        __name__,
-        external_stylesheets=[theme_url],
+    # Create app with theme automatically applied
+    app = page.create_app(
         suppress_callback_exceptions=True,  # Required for pre-registered callbacks
     )
-    app.layout = page.build_layout()
-    page.register_callbacks(app)
 
     print("=" * 70)
     print(f"v0.15 Showcase Dashboard - {args.theme.capitalize()} Theme")
@@ -502,7 +530,7 @@ def main():
     print("  ✓ Navigation with 3 sections (Overview, EDA, Analysis)")
     print("  ✓ Theme selection via CLI (--theme)")
     print("  ✓ v0.15 composition pattern (DataBuilder + DataTransformer)")
-    print("  ✓ NEW v0.15: Collapsible Sidebar with global filters (☰ button)")
+    print("  ✓ NEW v0.15: Collapsible Sidebar with global transforms (☰ button)")
     print("  ✓ NEW v0.15: Adaptive layout (content pushes aside on desktop)")
     print("  ✓ NEW v0.15: Cross-section State() (all charts use sidebar)")
     print("  ✓ NEW v0.15: Block-level transforms (transform_fn)")
@@ -514,8 +542,8 @@ def main():
     print("\nInteraction Guide:")
     print("  1. Click ☰ button (top-left) to toggle sidebar")
     print("  2. Watch content slide aside (desktop) or overlay (mobile)")
-    print("  3. Change filters in sidebar → all sections update")
-    print("  4. Navigate between sections → filters persist")
+    print("  3. Change transforms in sidebar → all sections update")
+    print("  4. Navigate between sections → transforms persist")
     print("\nStarting server at http://127.0.0.1:8050/")
     print("Press Ctrl+C to stop")
     print("=" * 70)

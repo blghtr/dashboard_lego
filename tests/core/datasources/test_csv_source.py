@@ -15,7 +15,7 @@ import pandas as pd
 import pytest
 
 from dashboard_lego.core.datasources.csv_source import CsvDataSource
-from dashboard_lego.utils.exceptions import DataLoadError
+from dashboard_lego.core.exceptions import DataLoadError
 
 
 @pytest.fixture
@@ -44,17 +44,15 @@ def test_csv_source_loads_file(sample_csv_path):
 
 
 def test_csv_source_invalid_path():
-    """Test that CsvDataSource handles non-existent file gracefully.
+    """Test that CsvDataSource raises DataLoadError on non-existent file.
 
-    In v0.15.0, DataSource catches errors and returns empty DataFrame
-    to maintain dashboard stability.
+    In v0.16.0+, DataLoadError is raised.
     """
     source = CsvDataSource(file_path="nonexistent_file_that_does_not_exist.csv")
 
-    # Should return empty DataFrame, not raise
-    result = source.get_processed_data()
-    assert isinstance(result, pd.DataFrame)
-    assert result.empty
+    # Should raise DataLoadError
+    with pytest.raises(DataLoadError, match="CSV file not found"):
+        source.get_processed_data()
 
 
 def test_csv_source_with_filters(sample_csv_path):

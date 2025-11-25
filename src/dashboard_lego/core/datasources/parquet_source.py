@@ -13,7 +13,7 @@ import pandas as pd
 
 from dashboard_lego.core.data_builder import DataBuilder
 from dashboard_lego.core.datasource import DataSource
-from dashboard_lego.utils.exceptions import DataLoadError
+from dashboard_lego.core.exceptions import DataLoadError
 
 
 class ParquetDataBuilder(DataBuilder):
@@ -30,12 +30,12 @@ class ParquetDataBuilder(DataBuilder):
         super().__init__(**kwargs)
         self.file_path = file_path
 
-    def build(self, **params) -> pd.DataFrame:
+    def _build(self, **kwargs) -> pd.DataFrame:
         """Load Parquet file."""
         self.logger.info(f"[ParquetDataBuilder] Loading {self.file_path}")
         try:
             # Support column selection for performance
-            columns = params.get("columns")
+            columns = kwargs.get("columns")
             df = pd.read_parquet(self.file_path, columns=columns)
             self.logger.info(f"[ParquetDataBuilder] Loaded {len(df)} rows")
             return df

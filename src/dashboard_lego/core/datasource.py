@@ -42,15 +42,22 @@ Example usage with lambda functions:
     >>> # Cache is now prewarmed for these parameter combinations
 """
 
+import asyncio
+import inspect
 import json
 from typing import Any, Callable, Dict, List, Optional, Union
 
 import pandas as pd
-from diskcache import Cache
 from pandas.util import hash_pandas_object
 
-from dashboard_lego.utils.exceptions import CacheError, DataLoadError
+from dashboard_lego.core.exceptions import (
+    AsyncSyncMismatchError,
+    CacheError,
+    DataLoadError,
+)
+from dashboard_lego.core.lambda_handlers import LambdaBuilder, LambdaTransformer
 from dashboard_lego.utils.formatting import NumpyEncoder
+from dashboard_lego.utils.hashing import get_stable_handler_id
 from dashboard_lego.utils.logger import get_logger
 
 
@@ -85,13 +92,13 @@ class DataSource:
     # :hierarchy: [Core | DataSources | DataSource | CacheRegistry]
     # :relates-to:
     #  - motivated_by: "Cache sharing prevents duplicate Stage1 builds when same builder reused across datasources created via with_transform_fn() [Contract-Fix-CacheSharing]"
-    #  - implements: "Class-level cache registry for transparent cache reuse based on cache_dir matching"
+    #  - implements: "Class-level cache registry for transparent cache reuse based on backend config matching"
     # :contract:
-    #  - invariant: "Same cache_dir → same Cache instance; All cache_dir=None → single shared in-memory cache"
+    #  - invariant: "Same backend config → same backend instance; All cache_backend=None → single shared disk cache"
     # :complexity: 2
     # :decision_cache: "Class-level dict registry over singleton pattern: simpler, transparent, no global state pollution [decision-cache-registry-001]"
     # LLM:END
-    _cache_registry: Dict[str, Cache] = {}
+    _cache_registry: Dict[str, Any] = {}
 
     def __init__(
         self,
@@ -100,6 +107,7 @@ class DataSource:
         param_classifier: Optional[Callable[[str], str]] = None,
         cache_dir: Optional[str] = None,
         cache_ttl: int = 300,
+        cache_backend: Optional[Union[str, Any]] = None,
         build_fn: Optional[Callable[[Dict[str, Any]], pd.DataFrame]] = None,
         transform_fn: Optional[Callable[[pd.DataFrame], pd.DataFrame]] = None,
         cache_prewarm_params: Optional[List[Dict[str, Any]]] = None,
@@ -122,8 +130,13 @@ class DataSource:
             data_builder: DataBuilder for stage 1 (load + process). If None and build_fn provided, creates LambdaBuilder.
             data_transformer: DataTransformer for stage 2 (filtering/aggregation). If None and transform_fn provided, creates LambdaTransformer.
             param_classifier: Routes params: 'build' or 'transform'. Default: 'build__' → 'build', 'transform__' → 'transform'.
-            cache_dir: Directory for disk cache. If None, uses in-memory cache.
+            cache_dir: Directory for disk cache. If None, uses in-memory cache. Ignored if cache_backend is provided.
             cache_ttl: Time-to-live for cache entries in seconds.
+            cache_backend: Cache backend to use. Can be:
+                          - 'disk' or None: DiskCacheBackend (default, uses cache_dir)
+                          - 'redis': RedisCacheBackend (localhost:6379)
+                          - 'memory': InMemoryCacheBackend
+                          - CacheBackend instance: Custom backend
             build_fn: Optional lambda function for simple data building: Dict[str, Any] → DataFrame.
                      If provided, creates LambdaBuilder automatically. Signature: lambda params: df
             transform_fn: Optional lambda function for simple data transformation: DataFrame → DataFrame.
@@ -145,37 +158,89 @@ class DataSource:
         # LLM:METADATA
         # :hierarchy: [Core | DataSources | DataSource | CacheInitialization]
         # :relates-to:
-        #  - motivated_by: "Cache sharing prevents duplicate Stage1 builds by reusing Cache objects for matching cache_dir [Contract-Fix-CacheSharing]"
-        #  - implements: "Cache registry lookup and reuse logic in __init__"
+        #  - motivated_by: "Contract 2: Support multiple cache backends (disk/Redis/memory)"
+        #  - implements: "Cache backend initialization with pluggable backends"
         # :contract:
-        #  - pre: "cache_dir is str or None, cache_ttl is int"
-        #  - post: "self.cache is set to shared or new Cache instance"
-        #  - invariant: "Same cache_dir → reuses existing Cache from registry; Different cache_dir → creates new Cache"
-        # :complexity: 3
+        #  - pre: "cache_backend is str or CacheBackend instance or None"
+        #  - post: "self.cache is set to appropriate backend instance"
+        #  - invariant: "Same backend config → reuses existing backend from registry"
+        # :complexity: 5
         # LLM:END
 
-        # Initialize cache with transparent sharing
-        cache_key = cache_dir if cache_dir else "__in_memory__"
-
+        # Initialize cache backend
         try:
-            if cache_key in DataSource._cache_registry:
-                # Reuse existing cache for same cache_dir
-                self.cache = DataSource._cache_registry[cache_key]
-                self.logger.debug(f"[DataSource|Init] Reused cache | key={cache_key}")
+            from dashboard_lego.core.cache import (
+                DiskCacheBackend,
+                InMemoryCacheBackend,
+                RedisCacheBackend,
+            )
+        except ImportError as e:
+            self.logger.error(f"[DataSource|Init] Cache backend module not found: {e}")
+            raise CacheError(f"Cache backend module not found: {e}") from e
+
+        # Determine backend type and create instance
+        if cache_backend is None or cache_backend == "disk":
+            # Default: disk cache
+            backend_key = f"disk:{cache_dir if cache_dir else '__in_memory__'}"
+            if backend_key in DataSource._cache_registry:
+                self.cache = DataSource._cache_registry[backend_key]
+                self.logger.debug(f"[DataSource|Init] Reused cache | key={backend_key}")
             else:
-                # Create new cache and register it
-                self.cache = Cache(directory=cache_dir, expire=cache_ttl)
-                DataSource._cache_registry[cache_key] = self.cache
+                self.cache = DiskCacheBackend(directory=cache_dir, expire=cache_ttl)
+                DataSource._cache_registry[backend_key] = self.cache
                 self.logger.debug(
-                    f"[DataSource|Init] Created new cache | key={cache_key}"
+                    f"[DataSource|Init] Created DiskCacheBackend | key={backend_key}"
                 )
-        except Exception as e:
-            self.logger.error(f"[DataSource|Init] Cache failed: {e}")
-            raise CacheError(f"Cache initialization failed: {e}") from e
+        elif cache_backend == "redis":
+            # Redis cache (default localhost)
+            backend_key = "redis:localhost:6379:0"
+            if backend_key in DataSource._cache_registry:
+                self.cache = DataSource._cache_registry[backend_key]
+                self.logger.debug(f"[DataSource|Init] Reused cache | key={backend_key}")
+            else:
+                try:
+                    self.cache = RedisCacheBackend(expire=cache_ttl)
+                    # Ping to validate connection
+                    if hasattr(self.cache, "_redis"):
+                        self.cache._redis.ping()
+                    DataSource._cache_registry[backend_key] = self.cache
+                    self.logger.debug(
+                        f"[DataSource|Init] Created RedisCacheBackend | key={backend_key}"
+                    )
+                except Exception as e:
+                    self.logger.error(
+                        f"[DataSource|Init] Redis backend initialization failed: {e}"
+                    )
+                    raise CacheError(f"Redis connection failed: {e}") from e
+        elif cache_backend == "memory":
+            # In-memory cache
+            backend_key = "memory:__shared__"
+            if backend_key in DataSource._cache_registry:
+                self.cache = DataSource._cache_registry[backend_key]
+                self.logger.debug(f"[DataSource|Init] Reused cache | key={backend_key}")
+            else:
+                self.cache = InMemoryCacheBackend(expire=cache_ttl)
+                DataSource._cache_registry[backend_key] = self.cache
+                self.logger.debug(
+                    f"[DataSource|Init] Created InMemoryCacheBackend | key={backend_key}"
+                )
+        else:
+            # Custom backend instance
+            self.cache = cache_backend
+            backend_key = f"custom:{id(cache_backend)}"
+            DataSource._cache_registry[backend_key] = self.cache
+            self.logger.debug(
+                f"[DataSource|Init] Using custom backend | key={backend_key}"
+            )
+
+        # Store backend config for cloning
+        self.cache_backend = cache_backend
+        self.cache_dir = cache_dir
+        self.cache_ttl = cache_ttl
 
         # Import here to avoid circular imports
         from dashboard_lego.core.data_builder import DataBuilder
-        from dashboard_lego.core.data_transformer import DataTransformer
+        from dashboard_lego.core.data_transformer import DataFilter
 
         # LLM:METADATA
         # :hierarchy: [Core | DataSources | DataSource | HandlerCreation]
@@ -192,64 +257,12 @@ class DataSource:
         final_data_transformer = data_transformer
 
         if build_fn is not None:
-            # Create LambdaBuilder from build_fn
-            class LambdaBuilder(DataBuilder):
-                """
-                Wraps a simple lambda function as a DataBuilder.
-
-                :hierarchy: [Core | DataSources | LambdaBuilder]
-                :relates-to:
-                 - motivated_by: "Wrap user lambda in DataBuilder interface"
-                 - implements: "class: 'LambdaBuilder'"
-
-                :contract:
-                 - pre: "Receives lambda: params → df"
-                 - post: "Conforms to DataBuilder interface"
-                """
-
-                def __init__(
-                    self, func: Callable[[Dict[str, Any]], pd.DataFrame], **kwargs
-                ):
-                    super().__init__(**kwargs)
-                    self.func = func
-
-                def build(self, params: Dict[str, Any]) -> pd.DataFrame:
-                    """Apply the wrapped lambda function."""
-                    return self.func(params)
-
+            # Create LambdaBuilder from build_fn (imported from lambda_handlers)
             final_data_builder = LambdaBuilder(build_fn, logger=self.logger)
             self.logger.debug("[DataSource|Init] Created LambdaBuilder from build_fn")
 
         if transform_fn is not None:
-            # Create LambdaTransformer from transform_fn
-            class LambdaTransformer(DataTransformer):
-                """
-                Wraps a simple lambda function as a DataTransformer.
-
-                :hierarchy: [Core | DataSources | LambdaTransformer]
-                :relates-to:
-                 - motivated_by: "Wrap user lambda in DataTransformer interface"
-                 - implements: "class: 'LambdaTransformer'"
-
-                :contract:
-                 - pre: "Receives simple lambda: df → df"
-                 - post: "Conforms to DataTransformer interface"
-                 - invariant: "Ignores params (block transforms don't need them)"
-                """
-
-                def __init__(
-                    self, func: Callable[[pd.DataFrame], pd.DataFrame], **kwargs
-                ):
-                    super().__init__(**kwargs)
-                    self.func = func
-
-                def transform(
-                    self, data: pd.DataFrame, params: Dict[str, Any]
-                ) -> pd.DataFrame:
-                    """Apply the wrapped lambda function."""
-                    # Block-specific transforms don't use params
-                    return self.func(data)
-
+            # Create LambdaTransformer from transform_fn (imported from lambda_handlers)
             final_data_transformer = LambdaTransformer(transform_fn, logger=self.logger)
             self.logger.debug(
                 "[DataSource|Init] Created LambdaTransformer from transform_fn"
@@ -257,9 +270,8 @@ class DataSource:
 
         # Initialize 2-stage pipeline
         self.data_builder = final_data_builder or DataBuilder(logger=self.logger)
-        self.data_transformer = final_data_transformer or DataTransformer(
-            logger=self.logger
-        )
+        # Default to DataFilter instead of DataTransformer
+        self.data_transformer = final_data_transformer or DataFilter(logger=self.logger)
 
         if param_classifier is None:
             param_classifier = _default_param_classifier
@@ -315,58 +327,57 @@ class DataSource:
                 continue
         self.logger.info("[DataSource|Prewarm] Cache prewarm completed")
 
-    def _get_cache_key(self, stage: str, params: Dict[str, Any]) -> str:
+    def _get_cache_key(
+        self, stage: str, params: Dict[str, Any], handler: Optional[Any] = None
+    ) -> str:
         """
         Create cache key for specific pipeline stage.
 
         :hierarchy: [Core | DataSources | DataSource | Caching]
         :relates-to:
-         - motivated_by: "Stage-specific cache keys INCLUDING handler instance"
+         - motivated_by: "Stage-specific cache keys INCLUDING handler instance for proper cache isolation"
          - implements: "method: '_get_cache_key'"
 
         :contract:
          - pre: "stage is valid string, params is dict"
          - post: "Returns stable cache key unique to stage + params + handler"
-         - invariant: "Different builders/transformers get different cache keys; Same cache_dir → shared Cache object"
+         - invariant: "Different builders/transformers get different cache keys; Same handler + params → same cache key"
 
-        :decision_cache: "Use hash(type(handler)) for classes, id() for lambdas"
+        :decision_cache: "Use get_stable_handler_id for stable handler identification (Contract 3)"
 
         Args:
-            stage: Pipeline stage ('built', 'filtered')
+            stage: Pipeline stage ('build', 'transform')
             params: Parameters relevant to this stage
+            handler: Optional handler (DataBuilder or DataTransformer) for handler-specific suffix
 
         Returns:
             Stable cache key string including handler identity
         """
-        # Get handler-specific suffix
-        if stage == "built":
-            handler = self.data_builder
-        elif stage == "filtered":
-            handler = self.data_transformer
-        else:
-            handler = None
+        # Get handler-specific suffix if not provided
+        if handler is None:
+            if stage == "build":
+                handler = self.data_builder
+            elif stage == "transform":
+                handler = self.data_transformer
 
-        # Hash handler type (stable for classes, unique for lambda instances)
+        # Get stable handler ID using hashing utility (Contract 3)
         handler_suffix = ""
         if handler:
-            # For ChainedTransformer or LambdaTransformer: use id() since each instance is unique
-            # For regular classes: use hash(type) for stability
-            handler_type_name = type(handler).__name__
-            if handler_type_name in ("LambdaTransformer", "ChainedTransformer"):
-                handler_suffix = f"_{id(handler)}"
-            else:
-                try:
-                    handler_suffix = f"_{hash(type(handler))}"
-                except Exception:
-                    handler_suffix = f"_{id(handler)}"
+            handler_suffix = f"_{get_stable_handler_id(handler)}"
 
         # Build cache key
+        # For in-memory cache (cache_dir is None), omit instance_id to allow sharing across instances
         if not params:
             return f"{stage}_default{handler_suffix}"
         # Normalize params to ensure pandas objects are hashed and complex types are serializable
         normalized_params = self._normalize_params_for_cache(params)
         params_json = json.dumps(normalized_params, sort_keys=True, cls=NumpyEncoder)
-        return f"{stage}_{params_json}{handler_suffix}"
+        # Include instance_id only when using a persistent cache (disk) to avoid collisions
+        if self.cache_dir:
+            instance_id = id(self)
+            return f"{stage}_{params_json}_{instance_id}{handler_suffix}"
+        else:
+            return f"{stage}_{params_json}{handler_suffix}"
 
     def _normalize_params_for_cache(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -439,7 +450,7 @@ class DataSource:
         if not params:
             self.logger.warning(f"[Stage1|Build] No params | params={params}")
 
-        key = self._get_cache_key("built", params)
+        key = self._get_cache_key("build", params, self.data_builder)
 
         if key in self.cache:
             self.logger.debug("[Stage1|Build] Cache HIT")
@@ -490,7 +501,7 @@ class DataSource:
         # Include built_data in cache key via hashed representation without mutating original params
         params_for_key = dict(params)
         params_for_key["__built_data__"] = built_data
-        key = self._get_cache_key("filtered", params_for_key)
+        key = self._get_cache_key("transform", params_for_key, self.data_transformer)
 
         if key in self.cache:
             self.logger.debug("[Stage2|Filter] Cache HIT")
@@ -531,8 +542,9 @@ class DataSource:
             data_builder=builder,
             data_transformer=self.data_transformer,
             param_classifier=self._param_classifier,
-            cache_dir=self.cache_dir,  # Use original cache_dir for cache sharing
+            cache_dir=self.cache_dir,
             cache_ttl=self.cache_ttl,
+            cache_backend=self.cache_backend,  # Propagate backend for cache sharing
         )
 
     def with_builder_fn(
@@ -581,37 +593,11 @@ class DataSource:
             ...     lambda params: pd.read_csv(params.get('file', 'default.csv'))
             ... )
         """
-        from dashboard_lego.core.data_builder import DataBuilder
-
         self.logger.debug(
             "[DataSource|WithBuilderFn] Creating datasource with lambda builder"
         )
 
-        # Wrap lambda in DataBuilder
-        class LambdaBuilder(DataBuilder):
-            """
-            Wraps a simple lambda function as a DataBuilder.
-
-            :hierarchy: [Core | DataSources | LambdaBuilder]
-            :relates-to:
-             - motivated_by: "Wrap user lambda in DataBuilder interface"
-             - implements: "class: 'LambdaBuilder'"
-
-            :contract:
-             - pre: "Receives lambda: params → df"
-             - post: "Conforms to DataBuilder interface"
-            """
-
-            def __init__(
-                self, func: Callable[[Dict[str, Any]], pd.DataFrame], **kwargs
-            ):
-                super().__init__(**kwargs)
-                self.func = func
-
-            def build(self, params: Dict[str, Any]) -> pd.DataFrame:
-                """Apply the wrapped lambda function."""
-                return self.func(params)
-
+        # Create LambdaBuilder from build_fn (imported from lambda_handlers)
         lambda_builder = LambdaBuilder(build_fn, logger=self.logger)
 
         self.logger.info("[DataSource|WithBuilderFn] Created lambda builder")
@@ -620,8 +606,9 @@ class DataSource:
             data_builder=lambda_builder,
             data_transformer=self.data_transformer,
             param_classifier=self._param_classifier,
-            cache_dir=self.cache_dir,  # Use original cache_dir for cache sharing
+            cache_dir=self.cache_dir,
             cache_ttl=self.cache_ttl,
+            cache_backend=self.cache_backend,  # Propagate backend for cache sharing
             # Explicitly pass None for lambda functions since we're setting data_builder
             build_fn=None,
             transform_fn=None,
@@ -650,8 +637,9 @@ class DataSource:
             data_builder=self.data_builder,
             data_transformer=transformer,
             param_classifier=self._param_classifier,
-            cache_dir=self.cache_dir,  # Use original cache_dir for cache sharing
+            cache_dir=self.cache_dir,
             cache_ttl=self.cache_ttl,
+            cache_backend=self.cache_backend,  # Propagate backend for cache sharing
             # Explicitly pass None for lambda functions since we're setting data_transformer
             build_fn=None,
             transform_fn=None,
@@ -712,40 +700,13 @@ class DataSource:
             >>> data = agg_ds.get_processed_data({'category': 'Electronics'})
             >>> # Flow: Build → CategoryFilter(category='Electronics') → GroupBy Aggregation
         """
-        from dashboard_lego.core.data_transformer import (
-            ChainedTransformer,
-            DataTransformer,
-        )
+        from dashboard_lego.core.data_transformer import ChainedTransformer
 
         self.logger.debug(
             "[DataSource|WithTransform] Creating specialized datasource clone"
         )
 
-        # 1. Create a new transformer from the provided function
-        class LambdaTransformer(DataTransformer):
-            """
-            Wraps a simple lambda function as a DataTransformer.
-
-            :hierarchy: [Core | DataSources | LambdaTransformer]
-            :relates-to:
-             - motivated_by: "Wrap user lambda in DataTransformer interface"
-             - implements: "class: 'LambdaTransformer'"
-
-            :contract:
-             - pre: "Receives simple lambda: df → df"
-             - post: "Conforms to DataTransformer interface"
-             - invariant: "Ignores params (block transforms don't need them)"
-            """
-
-            def __init__(self, func: Callable[[pd.DataFrame], pd.DataFrame], **kwargs):
-                super().__init__(**kwargs)
-                self.func = func
-
-            def transform(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-                """Apply the wrapped lambda function."""
-                # Block-specific transforms don't use params
-                return self.func(data)
-
+        # 1. Create a new transformer from the provided function (imported from lambda_handlers)
         block_specific_transformer = LambdaTransformer(transform_fn, logger=self.logger)
 
         # 2. Chain it with the existing global transformer
@@ -766,8 +727,9 @@ class DataSource:
             data_builder=self.data_builder,
             data_transformer=chained_transformer,
             param_classifier=self._param_classifier,
-            cache_dir=self.cache_dir,  # Use original cache_dir for cache sharing
+            cache_dir=self.cache_dir,
             cache_ttl=self.cache_ttl,
+            cache_backend=self.cache_backend,  # Propagate backend for cache sharing
             # Explicitly pass None for lambda functions since we're setting data_transformer
             build_fn=None,
             transform_fn=None,
@@ -792,9 +754,28 @@ class DataSource:
 
         Returns:
             Filtered DataFrame from 2-stage pipeline
+
+        Raises:
+            DataLoadError: If data loading/building fails
+            CacheError: If cache operations fail (warning only, retries without cache)
+            AsyncSyncMismatchError: If async build_fn used with sync method
         """
         params = params or {}
         self._current_params = params
+
+        # Check for async/sync mismatch
+        # For LambdaBuilder, check the underlying func attribute
+        is_async_build = False
+        if hasattr(self.data_builder, "func"):
+            is_async_build = inspect.iscoroutinefunction(self.data_builder.func)
+        else:
+            is_async_build = inspect.iscoroutinefunction(self.data_builder.build)
+
+        if is_async_build:
+            raise AsyncSyncMismatchError(
+                "Cannot call get_processed_data() with async build_fn. "
+                "Use await get_processed_data_async() instead."
+            )
 
         self.logger.info(f"[get_processed_data] Called | params={list(params.keys())}")
 
@@ -815,6 +796,202 @@ class DataSource:
             )
             return filtered_data
 
+        except CacheError as e:
+            self.logger.warning(f"[get_processed_data] Cache error: {e}")
+            # Retry without cache
+            self.logger.info("[get_processed_data] Retrying without cache")
+            built_data = self.data_builder.build(**context.preprocessing_params)
+            filtered_data = self.data_transformer.transform(
+                built_data, **context.filtering_params
+            )
+            return filtered_data
+
+        except DataLoadError:
+            # Re-raise with context
+            raise
+
         except Exception as e:
-            self.logger.error(f"[get_processed_data] Error: {e}", exc_info=True)
-            return pd.DataFrame()
+            # Wrap unexpected errors
+            self.logger.error(
+                f"[get_processed_data] Unexpected error: {e}", exc_info=True
+            )
+            raise DataLoadError(f"Data processing failed: {e}") from e
+
+    async def get_processed_data_async(
+        self, params: Optional[Dict[str, Any]] = None
+    ) -> pd.DataFrame:
+        """
+        Async version of get_processed_data for use with async frameworks.
+
+        Supports both async and sync build_fn:
+        - If build_fn is async (coroutine), awaits it directly
+        - If build_fn is sync, runs it in executor to avoid blocking event loop
+
+        :contract:
+         - pre: "params is dict or None"
+         - post: "Returns filtered DataFrame (async)"
+         - stages: "Build (async-aware) → Filter (sync for now)"
+         - invariant: "Stateless (no stored data)"
+
+        :complexity: 7
+
+        Args:
+            params: Parameters for build + filter
+
+        Returns:
+            Filtered DataFrame from 2-stage pipeline
+
+        Raises:
+            DataLoadError: If data loading/building fails
+            CacheError: If cache operations fail (warning only, retries without cache)
+
+        Example:
+            >>> async def fetch_api_data(params):
+            ...     async with httpx.AsyncClient() as client:
+            ...         response = await client.get('/api/data')
+            ...     return pd.DataFrame(response.json())
+            >>>
+            >>> ds = DataSource(build_fn=fetch_api_data)
+            >>> df = await ds.get_processed_data_async({'limit': 100})
+        """
+        params = params or {}
+        self._current_params = params
+
+        self.logger.info(
+            f"[get_processed_data_async] Called | params={list(params.keys())}"
+        )
+
+        try:
+            # Classify params
+            from dashboard_lego.core.processing_context import DataProcessingContext
+
+            context = DataProcessingContext.from_params(params, self._param_classifier)
+
+            # Stage 1: Build (async-aware)
+            built_data = await self._get_or_build_async(context.preprocessing_params)
+
+            # Stage 2: Filter (sync for now, per implementation plan)
+            filtered_data = self._get_or_transform(built_data, context.filtering_params)
+
+            self.logger.info(
+                f"[get_processed_data_async] Pipeline complete | rows={len(filtered_data)}"
+            )
+            return filtered_data
+
+        except CacheError as e:
+            self.logger.warning(f"[get_processed_data_async] Cache error: {e}")
+            # Retry without cache
+            self.logger.info("[get_processed_data_async] Retrying without cache")
+
+            # Detect if build function is async
+            is_async_build = False
+            if hasattr(self.data_builder, "func"):
+                is_async_build = inspect.iscoroutinefunction(self.data_builder.func)
+            else:
+                is_async_build = inspect.iscoroutinefunction(self.data_builder.build)
+
+            # Check if build is async
+            if is_async_build:
+                if hasattr(self.data_builder, "func"):
+                    # LambdaBuilder: call func directly
+                    built_data = await self.data_builder.func(
+                        context.preprocessing_params
+                    )
+                else:
+                    # Regular async DataBuilder
+                    built_data = await self.data_builder.build(
+                        **context.preprocessing_params
+                    )
+            else:
+                # Run sync build in executor
+                loop = asyncio.get_event_loop()
+
+                def _sync_build_wrapper():
+                    return self.data_builder.build(**context.preprocessing_params)
+
+                built_data = await loop.run_in_executor(None, _sync_build_wrapper)
+
+            filtered_data = self.data_transformer.transform(
+                built_data, **context.filtering_params
+            )
+            return filtered_data
+
+        except DataLoadError:
+            # Re-raise with context
+            raise
+
+        except Exception as e:
+            # Wrap unexpected errors
+            self.logger.error(
+                f"[get_processed_data_async] Unexpected error: {e}", exc_info=True
+            )
+            raise DataLoadError(f"Async data processing failed: {e}") from e
+
+    async def _get_or_build_async(
+        self, params: Optional[Dict[str, Any]] = None
+    ) -> pd.DataFrame:
+        """
+        Async version of _get_or_build.
+
+        Checks cache first, then builds data using async-aware logic:
+        - If build_fn is async coroutine, awaits it
+        - If build_fn is sync, runs in executor to avoid blocking
+
+        Args:
+            params: Build parameters
+
+        Returns:
+            Built DataFrame (from cache or fresh build)
+        """
+        params = params or {}
+        cache_key = self._get_cache_key("build", params, self.data_builder)
+
+        # Try cache first
+        if cache_key in self.cache:
+            self.logger.info(f"[_get_or_build_async] Cache HIT | key={cache_key[:50]}")
+            return self.cache[cache_key]
+
+        self.logger.info(f"[_get_or_build_async] Cache MISS | key={cache_key[:50]}")
+
+        # Detect if build function is async
+        # For LambdaBuilder, check the underlying func attribute
+        is_async_build = False
+        if hasattr(self.data_builder, "func"):
+            # LambdaBuilder case - check the wrapped function
+            is_async_build = inspect.iscoroutinefunction(self.data_builder.func)
+        else:
+            # Regular DataBuilder case - check the build method
+            is_async_build = inspect.iscoroutinefunction(self.data_builder.build)
+
+        # Build data (async-aware)
+        if is_async_build:
+            # Async build_fn - call directly and await
+            self.logger.debug("[_get_or_build_async] Using async build_fn")
+            if hasattr(self.data_builder, "func"):
+                # LambdaBuilder: call func directly
+                data = await self.data_builder.func(params)
+            else:
+                # Regular async DataBuilder
+                data = await self.data_builder.build(**params)
+        else:
+            # Sync build_fn - run in executor
+            # Need to wrap the call to unpack params as kwargs
+            self.logger.debug("[_get_or_build_async] Using sync build_fn in executor")
+            loop = asyncio.get_event_loop()
+
+            def _sync_build_wrapper():
+                return self.data_builder.build(**params)
+
+            data = await loop.run_in_executor(None, _sync_build_wrapper)
+
+        # Cache result
+        try:
+            self.cache.set(cache_key, data, expire=self.cache_ttl)
+            self.logger.info(
+                f"[_get_or_build_async] Cached | key={cache_key[:50]} | rows={len(data)}"
+            )
+        except Exception as e:
+            self.logger.warning(f"[_get_or_build_async] Cache write failed: {e}")
+            # Continue without caching
+
+        return data

@@ -13,7 +13,7 @@ import pytest
 from pandas.testing import assert_frame_equal
 
 from dashboard_lego.core import DataBuilder, DataSource, DataTransformer
-from dashboard_lego.utils.exceptions import DataLoadError
+from dashboard_lego.core.exceptions import DataLoadError
 
 
 @pytest.fixture(autouse=True)
@@ -135,20 +135,19 @@ def test_datasource_cache_ttl_configuration(tmp_path):
 def test_datasource_load_error_handling():
     """Test error handling when data building fails.
 
-    In v0.15.0, DataSource catches exceptions and returns empty DataFrame
-    instead of propagating them to maintain dashboard stability.
+    In v0.16.0+, DataSource raises DataLoadError instead of silently
+    returning empty DataFrame, providing better error visibility.
     """
 
     class ErrorBuilder(DataBuilder):
-        def build(self, params):
+        def build(self, **kwargs):
             raise ValueError("Build error")
 
     datasource = DataSource(data_builder=ErrorBuilder())
 
-    # Should return empty DataFrame, not raise
-    result = datasource.get_processed_data()
-    assert isinstance(result, pd.DataFrame)
-    assert result.empty
+    # Should raise DataLoadError, not return empty DataFrame
+    with pytest.raises(DataLoadError):
+        datasource.get_processed_data()
 
 
 def test_datasource_numpy_serialization(tmp_path):

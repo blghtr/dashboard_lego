@@ -375,7 +375,7 @@ class ThemeConfig:
                     "padding": self.spacing.lg,
                 },
                 "content": {
-                    "backgroundColor": self.colors.background,
+                    "backgroundColor": self.colors.surface,
                     "padding": self.spacing.lg,
                 },
                 "link": {
@@ -428,6 +428,7 @@ class ThemeConfig:
             "--theme-info": self.colors.info,
             "--theme-background": self.colors.background,
             "--theme-surface": self.colors.surface,
+            "--theme-card-background": self.colors.card_background,
             "--theme-text-primary": self.colors.text_primary,
             "--theme-text-secondary": self.colors.text_secondary,
             "--theme-border": self.colors.border,

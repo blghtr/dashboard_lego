@@ -105,18 +105,17 @@ class InMemoryDataBuilder(DataBuilder):
             f"rows={len(df)} | cols={len(df.columns)}"
         )
 
-    def build(self, params: Dict[str, Any] = None, **kwargs: Any) -> pd.DataFrame:
+    def _build(self, **kwargs: Any) -> pd.DataFrame:
         """
         Return the wrapped DataFrame.
 
         Args:
-            params: Ignored (no build-time parameters needed for in-memory data)
             **kwargs: Ignored (parameters passed as kwargs are also ignored)
 
         Returns:
             The wrapped DataFrame
         """
-        # Accept both params dict and kwargs for compatibility with datasource calling pattern
+        # Accept kwargs for compatibility with datasource calling pattern
         # InMemoryDataBuilder ignores all parameters since data is already in memory
         logger.debug("[Utils|JupyterFactory|InMemoryDataBuilder] Returning DataFrame")
         return self._df
@@ -126,19 +125,19 @@ class DataFilter(DataTransformer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def transform(self, df, **kwargs):
-        filtered = df.copy()
+    def _transform(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        filtered = data.copy()
         filters = []
         for key, value in kwargs.items():
-            if key in df.columns:
+            if key in data.columns:
                 if value is None:
                     self.logger.debug(
                         f"DataFilter: skipping {key} because value is None"
                     )
                 else:
-                    filters.append(df[key] == value)
+                    filters.append(data[key] == value)
         if not filters:
-            return df
+            return data
         cond_union = reduce(lambda x, y: x & y, filters)
         filtered = filtered[cond_union]
         if filtered.empty:

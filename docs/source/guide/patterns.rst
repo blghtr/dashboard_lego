@@ -28,13 +28,14 @@ Blocks publish state changes and other blocks subscribe to react.
    from dashboard_lego.blocks import get_metric_row, TypedChartBlock, ControlPanelBlock, Control
 
    # Publisher: Control Panel
+   # Use transform__ prefix for automatic routing to transform stage
    control_panel = ControlPanelBlock(
        block_id="filters",
        datasource=datasource,
        title="Filters",
-       controls={"category": Control(...)}
+       controls={"transform__category": Control(...)}
    )
-   # Publishes: "filters-category"
+   # Publishes: "filters-transform__category"
 
    # Subscribers: Charts and Metrics
    chart = TypedChartBlock(
@@ -42,7 +43,7 @@ Blocks publish state changes and other blocks subscribe to react.
        datasource=datasource,
        plot_type='bar',
        plot_params={'x': 'Product', 'y': 'Sales'},
-       subscribes_to="filters-category"
+       subscribes_to="filters-transform__category"
    )
 
    metrics, row_opts = get_metric_row(
@@ -55,7 +56,7 @@ Blocks publish state changes and other blocks subscribe to react.
            }
        },
        datasource=datasource,
-       subscribes_to="filters-category"
+       subscribes_to="filters-transform__category"
    )
 
 Multi-State Subscriptions
@@ -238,24 +239,49 @@ Staged data processing with DataBuilder + DataTransformer for optimal caching.
 
    # Step 2: Define DataTransformer
    class SalesTransformer(DataTransformer):
-       def transform(self, data, params):
+       def transform(self, data, **params):
            df = data.copy()
-           if 'filters-category' in params:
-               cat = params['filters-category']
+           # Use transform__ prefix in control names for automatic routing
+           if 'transform__category' in params:
+               cat = params['transform__category']
                if cat != 'All':
                    df = df[df['Category'] == cat]
            return df
 
-   # Step 3: Define param classifier
-   def classify_params(key):
-       return 'transform' if key.startswith('filters-') else 'build'
-
-   # Step 4: Create datasource
+   # Step 3: Create datasource (uses default classifier)
+   # Default classifier automatically routes:
+   #   - transform__* params → transform stage
+   #   - build__* params → build stage
+   #   - other params → build stage (default)
    datasource = DataSource(
        data_builder=SalesDataBuilder("sales.csv"),
        data_transformer=SalesTransformer(),
-       param_classifier=classify_params,
        cache_ttl=600
+   )
+
+**Parameter Naming Convention (v0.15+):**
+
+Control names should use explicit prefixes to route parameters to the correct pipeline stage:
+
+- **``transform__<name>``**: Routes to transform stage (filtering/aggregation)
+- **``build__<name>``**: Routes to build stage (data loading/preprocessing)
+- **No prefix**: Defaults to build stage
+
+The default classifier automatically parses these prefixes. No custom classifier needed.
+
+**Example Control Panel:**
+
+.. code-block:: python
+
+   control_panel = ControlPanelBlock(
+       block_id="filters",
+       datasource=datasource,
+       title="Filters",
+       controls={
+           "transform__category": Control(...),  # → transform stage
+           "transform__min_price": Control(...),  # → transform stage
+           "build__window_size": Control(...),  # → build stage
+       }
    )
 
 **Benefits:**
@@ -264,6 +290,7 @@ Staged data processing with DataBuilder + DataTransformer for optimal caching.
 2. **Clarity**: Each component has one responsibility
 3. **Testability**: Test builder and transformer independently
 4. **Reusability**: Same components can be used in multiple dashboards
+5. **Simplicity**: No custom classifier needed - use naming convention
 
 **Cache Sharing (v0.15.2):**
 

@@ -165,6 +165,101 @@ def test_filter_transformer_without_params(sample_data):
 # </semantic_block: test_base_transformer>
 
 
+# <semantic_block: test_data_filter>
+def test_data_filter_matching_columns(sample_data):
+    """
+    Test DataFilter filters by matching column names.
+
+    :hierarchy: [Testing | Unit Tests | DataFilter | Matching]
+    :covers:
+     - target: "DataFilter.transform"
+     - requirement: "Filters data when params match columns"
+
+    :scenario: "Params match columns, data is filtered"
+    :priority: "P0"
+    :complexity: 2
+    """
+    from dashboard_lego.core.data_transformer import DataFilter
+
+    transformer = DataFilter()
+    result = transformer.transform(sample_data, category="A")
+
+    assert len(result) == 2
+    assert all(result["category"] == "A")
+
+
+def test_data_filter_ignores_non_matching(sample_data):
+    """
+    Test DataFilter ignores params that don't match columns.
+
+    :hierarchy: [Testing | Unit Tests | DataFilter | NonMatching]
+    :covers:
+     - target: "DataFilter.transform"
+     - requirement: "Ignores params not in columns"
+
+    :scenario: "Params don't match columns, data unchanged"
+    :priority: "P1"
+    :complexity: 1
+    """
+    from dashboard_lego.core.data_transformer import DataFilter
+
+    transformer = DataFilter()
+    # 'unknown' is not in columns
+    result = transformer.transform(sample_data, unknown="value")
+
+    assert_frame_equal(result, sample_data)
+
+
+def test_data_filter_numeric_conversion(sample_data):
+    """
+    Test DataFilter handles numeric string conversion.
+
+    :hierarchy: [Testing | Unit Tests | DataFilter | Numeric]
+    :covers:
+     - target: "DataFilter.transform"
+     - requirement: "Converts string params to numeric if column is numeric"
+
+    :scenario: "String param '100' matches numeric value 100"
+    :priority: "P1"
+    :complexity: 2
+    """
+    from dashboard_lego.core.data_transformer import DataFilter
+
+    transformer = DataFilter()
+    # 'price' is numeric, param is string "100"
+    result = transformer.transform(sample_data, price="100")
+
+    assert len(result) == 1
+    assert result.iloc[0]["price"] == 100
+
+
+def test_data_filter_skip_all_or_none(sample_data):
+    """
+    Test DataFilter skips 'all' or None values.
+
+    :hierarchy: [Testing | Unit Tests | DataFilter | Skip]
+    :covers:
+     - target: "DataFilter.transform"
+     - requirement: "Skips filter if value is 'all' or None"
+
+    :scenario: "Param is 'all', no filtering applied"
+    :priority: "P2"
+    :complexity: 1
+    """
+    from dashboard_lego.core.data_transformer import DataFilter
+
+    transformer = DataFilter()
+    result = transformer.transform(sample_data, category="all")
+
+    assert_frame_equal(result, sample_data)
+
+    result_none = transformer.transform(sample_data, category=None)
+    assert_frame_equal(result_none, sample_data)
+
+
+# </semantic_block: test_data_filter>
+
+
 # <semantic_block: test_chained_transformer>
 def test_chained_transformer_applies_sequential(sample_data):
     """

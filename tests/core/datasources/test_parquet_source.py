@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 
 from dashboard_lego.core.datasources.parquet_source import ParquetDataSource
-from dashboard_lego.utils.exceptions import DataLoadError
+from dashboard_lego.core.exceptions import DataLoadError
 
 
 @pytest.fixture
@@ -39,15 +39,15 @@ def test_parquet_source_loads_file(sample_parquet_path):
 
 
 def test_parquet_source_invalid_path():
-    """Test that ParquetDataSource handles non-existent file gracefully.
+    """Test that ParquetDataSource raises DataLoadError on non-existent file.
 
-    In v0.15.0, errors are caught and empty DataFrame is returned.
+    In v0.16.0+, DataLoadError is raised.
     """
     source = ParquetDataSource(file_path="nonexistent_file.parquet")
 
-    result = source.get_processed_data()
-    assert isinstance(result, pd.DataFrame)
-    assert result.empty
+    # Should raise DataLoadError
+    with pytest.raises(DataLoadError, match="Parquet file not found"):
+        source.get_processed_data()
 
 
 def test_parquet_source_with_filters(sample_parquet_path):

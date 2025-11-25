@@ -15,7 +15,7 @@ import pandas as pd
 
 from dashboard_lego.core.data_builder import DataBuilder
 from dashboard_lego.core.datasource import DataSource
-from dashboard_lego.utils.exceptions import DataLoadError
+from dashboard_lego.core.exceptions import DataLoadError
 
 
 class CsvDataBuilder(DataBuilder):
@@ -38,7 +38,7 @@ class CsvDataBuilder(DataBuilder):
         self.file_path = file_path
         self.read_csv_options = read_csv_options or {}
 
-    def build(self, **params) -> pd.DataFrame:
+    def _build(self, **kwargs) -> pd.DataFrame:
         """Load CSV file."""
         self.logger.info(f"[CsvDataBuilder] Loading {self.file_path}")
         try:

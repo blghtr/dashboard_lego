@@ -182,6 +182,74 @@ class DataTransformer:
         return data
 
 
+class DataFilter(DataTransformer):
+    """
+    Transformer that filters DataFrame based on parameters matching column names.
+
+    Renamed from DataFilter in v0.15 for semantic clarity.
+
+    :hierarchy: [Core | DataSources | DataFilter]
+    :relates-to:
+     - motivated_by: "Provide default filtering capability based on params"
+     - implements: "class: 'DataFilter'"
+
+    :contract:
+     - pre: "Receives DataFrame and params"
+     - post: "Returns DataFrame filtered by params that match column names"
+     - invariant: "Ignores params that don't match columns or are None/'all'"
+    """
+
+    def _transform(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        Filter data by matching params to columns.
+
+        Args:
+            data: Input DataFrame
+            **kwargs: Filter parameters
+
+        Returns:
+            Filtered DataFrame
+        """
+        df = data.copy()
+        for key, value in kwargs.items():
+            # Skip special params or those not in columns
+            if key not in df.columns:
+                # Log warning if it looks like a filter param (no double underscore)
+                if "__" not in key:
+                    self.logger.warning(
+                        f"[DataFilter] Param '{key}' not in columns, ignoring"
+                    )
+                continue
+
+            # Skip None or 'all'
+            if value is None or value == "all":
+                continue
+
+            # Apply filter
+            try:
+                # Handle numeric type conversion if needed
+                col_type = df[key].dtype
+                filter_value = value
+
+                if pd.api.types.is_numeric_dtype(col_type) and isinstance(value, str):
+                    try:
+                        if "." in value:
+                            filter_value = float(value)
+                        else:
+                            filter_value = int(value)
+                    except ValueError:
+                        # Keep as string if conversion fails
+                        pass
+
+                df = df[df[key] == filter_value]
+            except Exception as e:
+                self.logger.warning(
+                    f"[DataFilter] Failed to filter by {key}={value}: {e}"
+                )
+
+        return df
+
+
 class ChainedTransformer(DataTransformer):
     """
     A transformer that applies multiple transformers in sequence.

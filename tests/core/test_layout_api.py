@@ -20,8 +20,8 @@ from dash import html
 
 from dashboard_lego.blocks.base import BaseBlock
 from dashboard_lego.core.datasource import DataSource
+from dashboard_lego.core.exceptions import ConfigurationError
 from dashboard_lego.core.page import DashboardPage
-from dashboard_lego.utils.exceptions import ConfigurationError
 
 
 class _DummyBlock(BaseBlock):

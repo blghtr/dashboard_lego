@@ -408,8 +408,12 @@ class ControlPanelBlock(BaseBlock):
             "card", "background", self.card_style
         )
         # h-100 ensures equal height when multiple blocks in same row
+        # BUT: Don't apply h-100 for sidebar blocks (they should fit content naturally)
         # Note: mb-4 removed, handled by Row.mb-4
-        base_classes = "h-100"
+        if self.is_sidebar_block:
+            base_classes = "h-auto"
+        else:
+            base_classes = "h-100"
         card_props = {
             "className": (
                 f"{base_classes} {self.card_className}"

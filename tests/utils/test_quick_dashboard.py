@@ -32,7 +32,7 @@ class TestInMemoryDataBuilder:
         df = pd.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
         builder = InMemoryDataBuilder(df)
 
-        result = builder.build({})
+        result = builder.build()
 
         assert isinstance(result, pd.DataFrame)
         assert len(result) == 3
@@ -47,7 +47,7 @@ class TestInMemoryDataBuilder:
         df["A"] = [10, 20, 30]
 
         # Builder should have original values
-        result = builder.build({})
+        result = builder.build()
         assert list(result["A"]) == [1, 2, 3]
 
     def test_invalid_dataframe_raises(self):
@@ -62,7 +62,7 @@ class TestInMemoryDataBuilder:
         """Test that empty DataFrame logs warning."""
         df = pd.DataFrame()
         builder = InMemoryDataBuilder(df)
-        result = builder.build({})
+        result = builder.build()
         assert result.empty
 
 
