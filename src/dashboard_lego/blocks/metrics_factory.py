@@ -26,6 +26,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from dashboard_lego.blocks.base import BaseBlock
 from dashboard_lego.blocks.single_metric import SingleMetricBlock
 from dashboard_lego.blocks.text import TextBlock
+from dashboard_lego.core.async_api import AsyncDataSource
 from dashboard_lego.core.datasource import DataSource
 from dashboard_lego.utils.logger import get_logger
 
@@ -34,7 +35,7 @@ logger = get_logger(__name__, "MetricsFactory")
 
 def get_metric_row(
     metrics_spec: Dict[str, Dict[str, Any]],
-    datasource: DataSource,
+    datasource: Union[DataSource, AsyncDataSource],
     subscribes_to: Optional[Union[str, List[str]]] = None,
     row_options: Optional[Dict[str, Any]] = None,
     block_id_prefix: str = "metric",
@@ -75,7 +76,7 @@ def get_metric_row(
             - title (str): Display title (optional)
             - color (str|dict): Bootstrap theme color (optional, supports keyword-based conditional coloring)
               If dict: {'keyword1': 'color1', 'keyword2': 'color2', ...} - searches for keywords in content
-        datasource: DataSource instance for block data
+        datasource: DataSource or AsyncDataSource instance for block data
         subscribes_to: Optional state IDs to subscribe all blocks to
         row_options: Optional Bootstrap row styling options
         block_id_prefix: Prefix for generating block IDs (default: "metric")

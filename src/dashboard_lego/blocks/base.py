@@ -45,13 +45,15 @@ class BaseBlock(ABC):
 
     """
 
-    def __init__(self, block_id: str, datasource: DataSource, **kwargs):
+    def __init__(
+        self, block_id: str, datasource: Union[DataSource, AsyncDataSource], **kwargs
+    ):
         """
         Initializes the BaseBlock.
 
         Args:
             block_id: A unique identifier for this block instance.
-            datasource: An instance of a class that implements the
+            datasource: An instance of DataSource or AsyncDataSource that implements the
                        DataSource interface.
             allow_duplicate_output: If True, allows this block to share output targets
                                   with other blocks (useful for overlay scenarios).
@@ -67,8 +69,11 @@ class BaseBlock(ABC):
             error_msg = "block_id must be a non-empty string."
             self.logger.error(error_msg)
             raise ConfigurationError(error_msg)
-        if not isinstance(datasource, DataSource):
-            error_msg = "datasource must be an instance of DataSource."
+        # Accept both DataSource and AsyncDataSource
+        if not isinstance(datasource, (DataSource, AsyncDataSource)):
+            error_msg = (
+                "datasource must be an instance of DataSource or AsyncDataSource."
+            )
             self.logger.error(error_msg)
             raise ConfigurationError(error_msg)
 
