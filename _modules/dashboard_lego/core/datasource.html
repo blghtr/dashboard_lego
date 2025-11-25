@@ -128,15 +128,22 @@
 <span class="sd">    &gt;&gt;&gt; # Cache is now prewarmed for these parameter combinations</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">diskcache</span><span class="w"> </span><span class="kn">import</span> <span class="n">Cache</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pandas.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">hash_pandas_object</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">CacheError</span><span class="p">,</span> <span class="n">DataLoadError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AsyncSyncMismatchError</span><span class="p">,</span>
+    <span class="n">CacheError</span><span class="p">,</span>
+    <span class="n">DataLoadError</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.lambda_handlers</span><span class="w"> </span><span class="kn">import</span> <span class="n">LambdaBuilder</span><span class="p">,</span> <span class="n">LambdaTransformer</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.formatting</span><span class="w"> </span><span class="kn">import</span> <span class="n">NumpyEncoder</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.hashing</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_stable_handler_id</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
 
 
@@ -173,13 +180,13 @@
     <span class="c1"># :hierarchy: [Core | DataSources | DataSource | CacheRegistry]</span>
     <span class="c1"># :relates-to:</span>
     <span class="c1">#  - motivated_by: &quot;Cache sharing prevents duplicate Stage1 builds when same builder reused across datasources created via with_transform_fn() [Contract-Fix-CacheSharing]&quot;</span>
-    <span class="c1">#  - implements: &quot;Class-level cache registry for transparent cache reuse based on cache_dir matching&quot;</span>
+    <span class="c1">#  - implements: &quot;Class-level cache registry for transparent cache reuse based on backend config matching&quot;</span>
     <span class="c1"># :contract:</span>
-    <span class="c1">#  - invariant: &quot;Same cache_dir → same Cache instance; All cache_dir=None → single shared in-memory cache&quot;</span>
+    <span class="c1">#  - invariant: &quot;Same backend config → same backend instance; All cache_backend=None → single shared disk cache&quot;</span>
     <span class="c1"># :complexity: 2</span>
     <span class="c1"># :decision_cache: &quot;Class-level dict registry over singleton pattern: simpler, transparent, no global state pollution [decision-cache-registry-001]&quot;</span>
     <span class="c1"># LLM:END</span>
-    <span class="n">_cache_registry</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Cache</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">_cache_registry</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
 <div class="viewcode-block" id="DataSource.__init__">
 <a class="viewcode-back" href="../../../api/core.html#dashboard_lego.core.datasource.DataSource.__init__">[docs]</a>
@@ -190,6 +197,7 @@
         <span class="n">param_classifier</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">cache_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">cache_ttl</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">300</span><span class="p">,</span>
+        <span class="n">cache_backend</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">build_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">transform_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">cache_prewarm_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -212,8 +220,13 @@
 <span class="sd">            data_builder: DataBuilder for stage 1 (load + process). If None and build_fn provided, creates LambdaBuilder.</span>
 <span class="sd">            data_transformer: DataTransformer for stage 2 (filtering/aggregation). If None and transform_fn provided, creates LambdaTransformer.</span>
 <span class="sd">            param_classifier: Routes params: &#39;build&#39; or &#39;transform&#39;. Default: &#39;build__&#39; → &#39;build&#39;, &#39;transform__&#39; → &#39;transform&#39;.</span>
-<span class="sd">            cache_dir: Directory for disk cache. If None, uses in-memory cache.</span>
+<span class="sd">            cache_dir: Directory for disk cache. If None, uses in-memory cache. Ignored if cache_backend is provided.</span>
 <span class="sd">            cache_ttl: Time-to-live for cache entries in seconds.</span>
+<span class="sd">            cache_backend: Cache backend to use. Can be:</span>
+<span class="sd">                          - &#39;disk&#39; or None: DiskCacheBackend (default, uses cache_dir)</span>
+<span class="sd">                          - &#39;redis&#39;: RedisCacheBackend (localhost:6379)</span>
+<span class="sd">                          - &#39;memory&#39;: InMemoryCacheBackend</span>
+<span class="sd">                          - CacheBackend instance: Custom backend</span>
 <span class="sd">            build_fn: Optional lambda function for simple data building: Dict[str, Any] → DataFrame.</span>
 <span class="sd">                     If provided, creates LambdaBuilder automatically. Signature: lambda params: df</span>
 <span class="sd">            transform_fn: Optional lambda function for simple data transformation: DataFrame → DataFrame.</span>
@@ -235,37 +248,89 @@
         <span class="c1"># LLM:METADATA</span>
         <span class="c1"># :hierarchy: [Core | DataSources | DataSource | CacheInitialization]</span>
         <span class="c1"># :relates-to:</span>
-        <span class="c1">#  - motivated_by: &quot;Cache sharing prevents duplicate Stage1 builds by reusing Cache objects for matching cache_dir [Contract-Fix-CacheSharing]&quot;</span>
-        <span class="c1">#  - implements: &quot;Cache registry lookup and reuse logic in __init__&quot;</span>
+        <span class="c1">#  - motivated_by: &quot;Contract 2: Support multiple cache backends (disk/Redis/memory)&quot;</span>
+        <span class="c1">#  - implements: &quot;Cache backend initialization with pluggable backends&quot;</span>
         <span class="c1"># :contract:</span>
-        <span class="c1">#  - pre: &quot;cache_dir is str or None, cache_ttl is int&quot;</span>
-        <span class="c1">#  - post: &quot;self.cache is set to shared or new Cache instance&quot;</span>
-        <span class="c1">#  - invariant: &quot;Same cache_dir → reuses existing Cache from registry; Different cache_dir → creates new Cache&quot;</span>
-        <span class="c1"># :complexity: 3</span>
+        <span class="c1">#  - pre: &quot;cache_backend is str or CacheBackend instance or None&quot;</span>
+        <span class="c1">#  - post: &quot;self.cache is set to appropriate backend instance&quot;</span>
+        <span class="c1">#  - invariant: &quot;Same backend config → reuses existing backend from registry&quot;</span>
+        <span class="c1"># :complexity: 5</span>
         <span class="c1"># LLM:END</span>
 
-        <span class="c1"># Initialize cache with transparent sharing</span>
-        <span class="n">cache_key</span> <span class="o">=</span> <span class="n">cache_dir</span> <span class="k">if</span> <span class="n">cache_dir</span> <span class="k">else</span> <span class="s2">&quot;__in_memory__&quot;</span>
-
+        <span class="c1"># Initialize cache backend</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">cache_key</span> <span class="ow">in</span> <span class="n">DataSource</span><span class="o">.</span><span class="n">_cache_registry</span><span class="p">:</span>
-                <span class="c1"># Reuse existing cache for same cache_dir</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">DataSource</span><span class="o">.</span><span class="n">_cache_registry</span><span class="p">[</span><span class="n">cache_key</span><span class="p">]</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[DataSource|Init] Reused cache | key=</span><span class="si">{</span><span class="n">cache_key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.cache</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                <span class="n">DiskCacheBackend</span><span class="p">,</span>
+                <span class="n">InMemoryCacheBackend</span><span class="p">,</span>
+                <span class="n">RedisCacheBackend</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[DataSource|Init] Cache backend module not found: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">CacheError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cache backend module not found: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+
+        <span class="c1"># Determine backend type and create instance</span>
+        <span class="k">if</span> <span class="n">cache_backend</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">cache_backend</span> <span class="o">==</span> <span class="s2">&quot;disk&quot;</span><span class="p">:</span>
+            <span class="c1"># Default: disk cache</span>
+            <span class="n">backend_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;disk:</span><span class="si">{</span><span class="n">cache_dir</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">cache_dir</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;__in_memory__&#39;</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">if</span> <span class="n">backend_key</span> <span class="ow">in</span> <span class="n">DataSource</span><span class="o">.</span><span class="n">_cache_registry</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">DataSource</span><span class="o">.</span><span class="n">_cache_registry</span><span class="p">[</span><span class="n">backend_key</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[DataSource|Init] Reused cache | key=</span><span class="si">{</span><span class="n">backend_key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># Create new cache and register it</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">Cache</span><span class="p">(</span><span class="n">directory</span><span class="o">=</span><span class="n">cache_dir</span><span class="p">,</span> <span class="n">expire</span><span class="o">=</span><span class="n">cache_ttl</span><span class="p">)</span>
-                <span class="n">DataSource</span><span class="o">.</span><span class="n">_cache_registry</span><span class="p">[</span><span class="n">cache_key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">DiskCacheBackend</span><span class="p">(</span><span class="n">directory</span><span class="o">=</span><span class="n">cache_dir</span><span class="p">,</span> <span class="n">expire</span><span class="o">=</span><span class="n">cache_ttl</span><span class="p">)</span>
+                <span class="n">DataSource</span><span class="o">.</span><span class="n">_cache_registry</span><span class="p">[</span><span class="n">backend_key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;[DataSource|Init] Created new cache | key=</span><span class="si">{</span><span class="n">cache_key</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;[DataSource|Init] Created DiskCacheBackend | key=</span><span class="si">{</span><span class="n">backend_key</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[DataSource|Init] Cache failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">CacheError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cache initialization failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+        <span class="k">elif</span> <span class="n">cache_backend</span> <span class="o">==</span> <span class="s2">&quot;redis&quot;</span><span class="p">:</span>
+            <span class="c1"># Redis cache (default localhost)</span>
+            <span class="n">backend_key</span> <span class="o">=</span> <span class="s2">&quot;redis:localhost:6379:0&quot;</span>
+            <span class="k">if</span> <span class="n">backend_key</span> <span class="ow">in</span> <span class="n">DataSource</span><span class="o">.</span><span class="n">_cache_registry</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">DataSource</span><span class="o">.</span><span class="n">_cache_registry</span><span class="p">[</span><span class="n">backend_key</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[DataSource|Init] Reused cache | key=</span><span class="si">{</span><span class="n">backend_key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">RedisCacheBackend</span><span class="p">(</span><span class="n">expire</span><span class="o">=</span><span class="n">cache_ttl</span><span class="p">)</span>
+                    <span class="c1"># Ping to validate connection</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">,</span> <span class="s2">&quot;_redis&quot;</span><span class="p">):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">_redis</span><span class="o">.</span><span class="n">ping</span><span class="p">()</span>
+                    <span class="n">DataSource</span><span class="o">.</span><span class="n">_cache_registry</span><span class="p">[</span><span class="n">backend_key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;[DataSource|Init] Created RedisCacheBackend | key=</span><span class="si">{</span><span class="n">backend_key</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;[DataSource|Init] Redis backend initialization failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">CacheError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Redis connection failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+        <span class="k">elif</span> <span class="n">cache_backend</span> <span class="o">==</span> <span class="s2">&quot;memory&quot;</span><span class="p">:</span>
+            <span class="c1"># In-memory cache</span>
+            <span class="n">backend_key</span> <span class="o">=</span> <span class="s2">&quot;memory:__shared__&quot;</span>
+            <span class="k">if</span> <span class="n">backend_key</span> <span class="ow">in</span> <span class="n">DataSource</span><span class="o">.</span><span class="n">_cache_registry</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">DataSource</span><span class="o">.</span><span class="n">_cache_registry</span><span class="p">[</span><span class="n">backend_key</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[DataSource|Init] Reused cache | key=</span><span class="si">{</span><span class="n">backend_key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">InMemoryCacheBackend</span><span class="p">(</span><span class="n">expire</span><span class="o">=</span><span class="n">cache_ttl</span><span class="p">)</span>
+                <span class="n">DataSource</span><span class="o">.</span><span class="n">_cache_registry</span><span class="p">[</span><span class="n">backend_key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;[DataSource|Init] Created InMemoryCacheBackend | key=</span><span class="si">{</span><span class="n">backend_key</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Custom backend instance</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">cache_backend</span>
+            <span class="n">backend_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;custom:</span><span class="si">{</span><span class="nb">id</span><span class="p">(</span><span class="n">cache_backend</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">DataSource</span><span class="o">.</span><span class="n">_cache_registry</span><span class="p">[</span><span class="n">backend_key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[DataSource|Init] Using custom backend | key=</span><span class="si">{</span><span class="n">backend_key</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Store backend config for cloning</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache_backend</span> <span class="o">=</span> <span class="n">cache_backend</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache_dir</span> <span class="o">=</span> <span class="n">cache_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache_ttl</span> <span class="o">=</span> <span class="n">cache_ttl</span>
 
         <span class="c1"># Import here to avoid circular imports</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.data_builder</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataBuilder</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.data_transformer</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataTransformer</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.data_transformer</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataFilter</span>
 
         <span class="c1"># LLM:METADATA</span>
         <span class="c1"># :hierarchy: [Core | DataSources | DataSource | HandlerCreation]</span>
@@ -282,64 +347,12 @@
         <span class="n">final_data_transformer</span> <span class="o">=</span> <span class="n">data_transformer</span>
 
         <span class="k">if</span> <span class="n">build_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="c1"># Create LambdaBuilder from build_fn</span>
-            <span class="k">class</span><span class="w"> </span><span class="nc">LambdaBuilder</span><span class="p">(</span><span class="n">DataBuilder</span><span class="p">):</span>
-<span class="w">                </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">                Wraps a simple lambda function as a DataBuilder.</span>
-
-<span class="sd">                :hierarchy: [Core | DataSources | LambdaBuilder]</span>
-<span class="sd">                :relates-to:</span>
-<span class="sd">                 - motivated_by: &quot;Wrap user lambda in DataBuilder interface&quot;</span>
-<span class="sd">                 - implements: &quot;class: &#39;LambdaBuilder&#39;&quot;</span>
-
-<span class="sd">                :contract:</span>
-<span class="sd">                 - pre: &quot;Receives lambda: params → df&quot;</span>
-<span class="sd">                 - post: &quot;Conforms to DataBuilder interface&quot;</span>
-<span class="sd">                &quot;&quot;&quot;</span>
-
-                <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span>
-                <span class="p">):</span>
-                    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
-
-                <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">                    </span><span class="sd">&quot;&quot;&quot;Apply the wrapped lambda function.&quot;&quot;&quot;</span>
-                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
-
+            <span class="c1"># Create LambdaBuilder from build_fn (imported from lambda_handlers)</span>
             <span class="n">final_data_builder</span> <span class="o">=</span> <span class="n">LambdaBuilder</span><span class="p">(</span><span class="n">build_fn</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;[DataSource|Init] Created LambdaBuilder from build_fn&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">transform_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="c1"># Create LambdaTransformer from transform_fn</span>
-            <span class="k">class</span><span class="w"> </span><span class="nc">LambdaTransformer</span><span class="p">(</span><span class="n">DataTransformer</span><span class="p">):</span>
-<span class="w">                </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">                Wraps a simple lambda function as a DataTransformer.</span>
-
-<span class="sd">                :hierarchy: [Core | DataSources | LambdaTransformer]</span>
-<span class="sd">                :relates-to:</span>
-<span class="sd">                 - motivated_by: &quot;Wrap user lambda in DataTransformer interface&quot;</span>
-<span class="sd">                 - implements: &quot;class: &#39;LambdaTransformer&#39;&quot;</span>
-
-<span class="sd">                :contract:</span>
-<span class="sd">                 - pre: &quot;Receives simple lambda: df → df&quot;</span>
-<span class="sd">                 - post: &quot;Conforms to DataTransformer interface&quot;</span>
-<span class="sd">                 - invariant: &quot;Ignores params (block transforms don&#39;t need them)&quot;</span>
-<span class="sd">                &quot;&quot;&quot;</span>
-
-                <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span>
-                <span class="p">):</span>
-                    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
-
-                <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
-                <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">                    </span><span class="sd">&quot;&quot;&quot;Apply the wrapped lambda function.&quot;&quot;&quot;</span>
-                    <span class="c1"># Block-specific transforms don&#39;t use params</span>
-                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-
+            <span class="c1"># Create LambdaTransformer from transform_fn (imported from lambda_handlers)</span>
             <span class="n">final_data_transformer</span> <span class="o">=</span> <span class="n">LambdaTransformer</span><span class="p">(</span><span class="n">transform_fn</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
                 <span class="s2">&quot;[DataSource|Init] Created LambdaTransformer from transform_fn&quot;</span>
@@ -347,9 +360,8 @@
 
         <span class="c1"># Initialize 2-stage pipeline</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span> <span class="o">=</span> <span class="n">final_data_builder</span> <span class="ow">or</span> <span class="n">DataBuilder</span><span class="p">(</span><span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data_transformer</span> <span class="o">=</span> <span class="n">final_data_transformer</span> <span class="ow">or</span> <span class="n">DataTransformer</span><span class="p">(</span>
-            <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span>
-        <span class="p">)</span>
+        <span class="c1"># Default to DataFilter instead of DataTransformer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_transformer</span> <span class="o">=</span> <span class="n">final_data_transformer</span> <span class="ow">or</span> <span class="n">DataFilter</span><span class="p">(</span><span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">param_classifier</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">param_classifier</span> <span class="o">=</span> <span class="n">_default_param_classifier</span>
@@ -406,58 +418,57 @@
                 <span class="k">continue</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[DataSource|Prewarm] Cache prewarm completed&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_cache_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_cache_key</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">handler</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create cache key for specific pipeline stage.</span>
 
 <span class="sd">        :hierarchy: [Core | DataSources | DataSource | Caching]</span>
 <span class="sd">        :relates-to:</span>
-<span class="sd">         - motivated_by: &quot;Stage-specific cache keys INCLUDING handler instance&quot;</span>
+<span class="sd">         - motivated_by: &quot;Stage-specific cache keys INCLUDING handler instance for proper cache isolation&quot;</span>
 <span class="sd">         - implements: &quot;method: &#39;_get_cache_key&#39;&quot;</span>
 
 <span class="sd">        :contract:</span>
 <span class="sd">         - pre: &quot;stage is valid string, params is dict&quot;</span>
 <span class="sd">         - post: &quot;Returns stable cache key unique to stage + params + handler&quot;</span>
-<span class="sd">         - invariant: &quot;Different builders/transformers get different cache keys; Same cache_dir → shared Cache object&quot;</span>
+<span class="sd">         - invariant: &quot;Different builders/transformers get different cache keys; Same handler + params → same cache key&quot;</span>
 
-<span class="sd">        :decision_cache: &quot;Use hash(type(handler)) for classes, id() for lambdas&quot;</span>
+<span class="sd">        :decision_cache: &quot;Use get_stable_handler_id for stable handler identification (Contract 3)&quot;</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            stage: Pipeline stage (&#39;built&#39;, &#39;filtered&#39;)</span>
+<span class="sd">            stage: Pipeline stage (&#39;build&#39;, &#39;transform&#39;)</span>
 <span class="sd">            params: Parameters relevant to this stage</span>
+<span class="sd">            handler: Optional handler (DataBuilder or DataTransformer) for handler-specific suffix</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Stable cache key string including handler identity</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Get handler-specific suffix</span>
-        <span class="k">if</span> <span class="n">stage</span> <span class="o">==</span> <span class="s2">&quot;built&quot;</span><span class="p">:</span>
-            <span class="n">handler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span>
-        <span class="k">elif</span> <span class="n">stage</span> <span class="o">==</span> <span class="s2">&quot;filtered&quot;</span><span class="p">:</span>
-            <span class="n">handler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_transformer</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">handler</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># Get handler-specific suffix if not provided</span>
+        <span class="k">if</span> <span class="n">handler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">stage</span> <span class="o">==</span> <span class="s2">&quot;build&quot;</span><span class="p">:</span>
+                <span class="n">handler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span>
+            <span class="k">elif</span> <span class="n">stage</span> <span class="o">==</span> <span class="s2">&quot;transform&quot;</span><span class="p">:</span>
+                <span class="n">handler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_transformer</span>
 
-        <span class="c1"># Hash handler type (stable for classes, unique for lambda instances)</span>
+        <span class="c1"># Get stable handler ID using hashing utility (Contract 3)</span>
         <span class="n">handler_suffix</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
         <span class="k">if</span> <span class="n">handler</span><span class="p">:</span>
-            <span class="c1"># For ChainedTransformer or LambdaTransformer: use id() since each instance is unique</span>
-            <span class="c1"># For regular classes: use hash(type) for stability</span>
-            <span class="n">handler_type_name</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
-            <span class="k">if</span> <span class="n">handler_type_name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;LambdaTransformer&quot;</span><span class="p">,</span> <span class="s2">&quot;ChainedTransformer&quot;</span><span class="p">):</span>
-                <span class="n">handler_suffix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="nb">id</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">handler_suffix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="nb">hash</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">handler</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-                    <span class="n">handler_suffix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="nb">id</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">handler_suffix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="n">get_stable_handler_id</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
 
         <span class="c1"># Build cache key</span>
+        <span class="c1"># For in-memory cache (cache_dir is None), omit instance_id to allow sharing across instances</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">params</span><span class="p">:</span>
             <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">stage</span><span class="si">}</span><span class="s2">_default</span><span class="si">{</span><span class="n">handler_suffix</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="c1"># Normalize params to ensure pandas objects are hashed and complex types are serializable</span>
         <span class="n">normalized_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_params_for_cache</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
         <span class="n">params_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">normalized_params</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">NumpyEncoder</span><span class="p">)</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">stage</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">params_json</span><span class="si">}{</span><span class="n">handler_suffix</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="c1"># Include instance_id only when using a persistent cache (disk) to avoid collisions</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache_dir</span><span class="p">:</span>
+            <span class="n">instance_id</span> <span class="o">=</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">stage</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">params_json</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">instance_id</span><span class="si">}{</span><span class="n">handler_suffix</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">stage</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">params_json</span><span class="si">}{</span><span class="n">handler_suffix</span><span class="si">}</span><span class="s2">&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_normalize_params_for_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -530,7 +541,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">params</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[Stage1|Build] No params | params=</span><span class="si">{</span><span class="n">params</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cache_key</span><span class="p">(</span><span class="s2">&quot;built&quot;</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cache_key</span><span class="p">(</span><span class="s2">&quot;build&quot;</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;[Stage1|Build] Cache HIT&quot;</span><span class="p">)</span>
@@ -581,7 +592,7 @@
         <span class="c1"># Include built_data in cache key via hashed representation without mutating original params</span>
         <span class="n">params_for_key</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
         <span class="n">params_for_key</span><span class="p">[</span><span class="s2">&quot;__built_data__&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">built_data</span>
-        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cache_key</span><span class="p">(</span><span class="s2">&quot;filtered&quot;</span><span class="p">,</span> <span class="n">params_for_key</span><span class="p">)</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cache_key</span><span class="p">(</span><span class="s2">&quot;transform&quot;</span><span class="p">,</span> <span class="n">params_for_key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_transformer</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;[Stage2|Filter] Cache HIT&quot;</span><span class="p">)</span>
@@ -624,8 +635,9 @@
             <span class="n">data_builder</span><span class="o">=</span><span class="n">builder</span><span class="p">,</span>
             <span class="n">data_transformer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data_transformer</span><span class="p">,</span>
             <span class="n">param_classifier</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_classifier</span><span class="p">,</span>
-            <span class="n">cache_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_dir</span><span class="p">,</span>  <span class="c1"># Use original cache_dir for cache sharing</span>
+            <span class="n">cache_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_dir</span><span class="p">,</span>
             <span class="n">cache_ttl</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_ttl</span><span class="p">,</span>
+            <span class="n">cache_backend</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_backend</span><span class="p">,</span>  <span class="c1"># Propagate backend for cache sharing</span>
         <span class="p">)</span></div>
 
 
@@ -677,37 +689,11 @@
 <span class="sd">            ...     lambda params: pd.read_csv(params.get(&#39;file&#39;, &#39;default.csv&#39;))</span>
 <span class="sd">            ... )</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.data_builder</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataBuilder</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
             <span class="s2">&quot;[DataSource|WithBuilderFn] Creating datasource with lambda builder&quot;</span>
         <span class="p">)</span>
 
-        <span class="c1"># Wrap lambda in DataBuilder</span>
-        <span class="k">class</span><span class="w"> </span><span class="nc">LambdaBuilder</span><span class="p">(</span><span class="n">DataBuilder</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            Wraps a simple lambda function as a DataBuilder.</span>
-
-<span class="sd">            :hierarchy: [Core | DataSources | LambdaBuilder]</span>
-<span class="sd">            :relates-to:</span>
-<span class="sd">             - motivated_by: &quot;Wrap user lambda in DataBuilder interface&quot;</span>
-<span class="sd">             - implements: &quot;class: &#39;LambdaBuilder&#39;&quot;</span>
-
-<span class="sd">            :contract:</span>
-<span class="sd">             - pre: &quot;Receives lambda: params → df&quot;</span>
-<span class="sd">             - post: &quot;Conforms to DataBuilder interface&quot;</span>
-<span class="sd">            &quot;&quot;&quot;</span>
-
-            <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-                <span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span>
-            <span class="p">):</span>
-                <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
-
-            <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">                </span><span class="sd">&quot;&quot;&quot;Apply the wrapped lambda function.&quot;&quot;&quot;</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
-
+        <span class="c1"># Create LambdaBuilder from build_fn (imported from lambda_handlers)</span>
         <span class="n">lambda_builder</span> <span class="o">=</span> <span class="n">LambdaBuilder</span><span class="p">(</span><span class="n">build_fn</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[DataSource|WithBuilderFn] Created lambda builder&quot;</span><span class="p">)</span>
@@ -716,8 +702,9 @@
             <span class="n">data_builder</span><span class="o">=</span><span class="n">lambda_builder</span><span class="p">,</span>
             <span class="n">data_transformer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data_transformer</span><span class="p">,</span>
             <span class="n">param_classifier</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_classifier</span><span class="p">,</span>
-            <span class="n">cache_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_dir</span><span class="p">,</span>  <span class="c1"># Use original cache_dir for cache sharing</span>
+            <span class="n">cache_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_dir</span><span class="p">,</span>
             <span class="n">cache_ttl</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_ttl</span><span class="p">,</span>
+            <span class="n">cache_backend</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_backend</span><span class="p">,</span>  <span class="c1"># Propagate backend for cache sharing</span>
             <span class="c1"># Explicitly pass None for lambda functions since we&#39;re setting data_builder</span>
             <span class="n">build_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">transform_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -749,8 +736,9 @@
             <span class="n">data_builder</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="p">,</span>
             <span class="n">data_transformer</span><span class="o">=</span><span class="n">transformer</span><span class="p">,</span>
             <span class="n">param_classifier</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_classifier</span><span class="p">,</span>
-            <span class="n">cache_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_dir</span><span class="p">,</span>  <span class="c1"># Use original cache_dir for cache sharing</span>
+            <span class="n">cache_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_dir</span><span class="p">,</span>
             <span class="n">cache_ttl</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_ttl</span><span class="p">,</span>
+            <span class="n">cache_backend</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_backend</span><span class="p">,</span>  <span class="c1"># Propagate backend for cache sharing</span>
             <span class="c1"># Explicitly pass None for lambda functions since we&#39;re setting data_transformer</span>
             <span class="n">build_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">transform_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -814,40 +802,13 @@
 <span class="sd">            &gt;&gt;&gt; data = agg_ds.get_processed_data({&#39;category&#39;: &#39;Electronics&#39;})</span>
 <span class="sd">            &gt;&gt;&gt; # Flow: Build → CategoryFilter(category=&#39;Electronics&#39;) → GroupBy Aggregation</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.data_transformer</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-            <span class="n">ChainedTransformer</span><span class="p">,</span>
-            <span class="n">DataTransformer</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.data_transformer</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChainedTransformer</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
             <span class="s2">&quot;[DataSource|WithTransform] Creating specialized datasource clone&quot;</span>
         <span class="p">)</span>
 
-        <span class="c1"># 1. Create a new transformer from the provided function</span>
-        <span class="k">class</span><span class="w"> </span><span class="nc">LambdaTransformer</span><span class="p">(</span><span class="n">DataTransformer</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            Wraps a simple lambda function as a DataTransformer.</span>
-
-<span class="sd">            :hierarchy: [Core | DataSources | LambdaTransformer]</span>
-<span class="sd">            :relates-to:</span>
-<span class="sd">             - motivated_by: &quot;Wrap user lambda in DataTransformer interface&quot;</span>
-<span class="sd">             - implements: &quot;class: &#39;LambdaTransformer&#39;&quot;</span>
-
-<span class="sd">            :contract:</span>
-<span class="sd">             - pre: &quot;Receives simple lambda: df → df&quot;</span>
-<span class="sd">             - post: &quot;Conforms to DataTransformer interface&quot;</span>
-<span class="sd">             - invariant: &quot;Ignores params (block transforms don&#39;t need them)&quot;</span>
-<span class="sd">            &quot;&quot;&quot;</span>
-
-            <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-                <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
-
-            <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">                </span><span class="sd">&quot;&quot;&quot;Apply the wrapped lambda function.&quot;&quot;&quot;</span>
-                <span class="c1"># Block-specific transforms don&#39;t use params</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-
+        <span class="c1"># 1. Create a new transformer from the provided function (imported from lambda_handlers)</span>
         <span class="n">block_specific_transformer</span> <span class="o">=</span> <span class="n">LambdaTransformer</span><span class="p">(</span><span class="n">transform_fn</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">)</span>
 
         <span class="c1"># 2. Chain it with the existing global transformer</span>
@@ -868,8 +829,9 @@
             <span class="n">data_builder</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="p">,</span>
             <span class="n">data_transformer</span><span class="o">=</span><span class="n">chained_transformer</span><span class="p">,</span>
             <span class="n">param_classifier</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_classifier</span><span class="p">,</span>
-            <span class="n">cache_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_dir</span><span class="p">,</span>  <span class="c1"># Use original cache_dir for cache sharing</span>
+            <span class="n">cache_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_dir</span><span class="p">,</span>
             <span class="n">cache_ttl</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_ttl</span><span class="p">,</span>
+            <span class="n">cache_backend</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_backend</span><span class="p">,</span>  <span class="c1"># Propagate backend for cache sharing</span>
             <span class="c1"># Explicitly pass None for lambda functions since we&#39;re setting data_transformer</span>
             <span class="n">build_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">transform_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -897,9 +859,28 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Filtered DataFrame from 2-stage pipeline</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            DataLoadError: If data loading/building fails</span>
+<span class="sd">            CacheError: If cache operations fail (warning only, retries without cache)</span>
+<span class="sd">            AsyncSyncMismatchError: If async build_fn used with sync method</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">params</span> <span class="o">=</span> <span class="n">params</span> <span class="ow">or</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_current_params</span> <span class="o">=</span> <span class="n">params</span>
+
+        <span class="c1"># Check for async/sync mismatch</span>
+        <span class="c1"># For LambdaBuilder, check the underlying func attribute</span>
+        <span class="n">is_async_build</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="p">,</span> <span class="s2">&quot;func&quot;</span><span class="p">):</span>
+            <span class="n">is_async_build</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">iscoroutinefunction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="o">.</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">is_async_build</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">iscoroutinefunction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="o">.</span><span class="n">build</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">is_async_build</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AsyncSyncMismatchError</span><span class="p">(</span>
+                <span class="s2">&quot;Cannot call get_processed_data() with async build_fn. &quot;</span>
+                <span class="s2">&quot;Use await get_processed_data_async() instead.&quot;</span>
+            <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[get_processed_data] Called | params=</span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
@@ -920,10 +901,209 @@
             <span class="p">)</span>
             <span class="k">return</span> <span class="n">filtered_data</span>
 
+        <span class="k">except</span> <span class="n">CacheError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[get_processed_data] Cache error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="c1"># Retry without cache</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[get_processed_data] Retrying without cache&quot;</span><span class="p">)</span>
+            <span class="n">built_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="o">**</span><span class="n">context</span><span class="o">.</span><span class="n">preprocessing_params</span><span class="p">)</span>
+            <span class="n">filtered_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_transformer</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span>
+                <span class="n">built_data</span><span class="p">,</span> <span class="o">**</span><span class="n">context</span><span class="o">.</span><span class="n">filtering_params</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">filtered_data</span>
+
+        <span class="k">except</span> <span class="n">DataLoadError</span><span class="p">:</span>
+            <span class="c1"># Re-raise with context</span>
+            <span class="k">raise</span>
+
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[get_processed_data] Error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span></div>
-</div>
+            <span class="c1"># Wrap unexpected errors</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[get_processed_data] Unexpected error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="n">DataLoadError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Data processing failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span></div>
+
+
+<div class="viewcode-block" id="DataSource.get_processed_data_async">
+<a class="viewcode-back" href="../../../api/core.html#dashboard_lego.core.datasource.DataSource.get_processed_data_async">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_processed_data_async</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Async version of get_processed_data for use with async frameworks.</span>
+
+<span class="sd">        Supports both async and sync build_fn:</span>
+<span class="sd">        - If build_fn is async (coroutine), awaits it directly</span>
+<span class="sd">        - If build_fn is sync, runs it in executor to avoid blocking event loop</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;params is dict or None&quot;</span>
+<span class="sd">         - post: &quot;Returns filtered DataFrame (async)&quot;</span>
+<span class="sd">         - stages: &quot;Build (async-aware) → Filter (sync for now)&quot;</span>
+<span class="sd">         - invariant: &quot;Stateless (no stored data)&quot;</span>
+
+<span class="sd">        :complexity: 7</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            params: Parameters for build + filter</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Filtered DataFrame from 2-stage pipeline</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            DataLoadError: If data loading/building fails</span>
+<span class="sd">            CacheError: If cache operations fail (warning only, retries without cache)</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; async def fetch_api_data(params):</span>
+<span class="sd">            ...     async with httpx.AsyncClient() as client:</span>
+<span class="sd">            ...         response = await client.get(&#39;/api/data&#39;)</span>
+<span class="sd">            ...     return pd.DataFrame(response.json())</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt; ds = DataSource(build_fn=fetch_api_data)</span>
+<span class="sd">            &gt;&gt;&gt; df = await ds.get_processed_data_async({&#39;limit&#39;: 100})</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">params</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_current_params</span> <span class="o">=</span> <span class="n">params</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;[get_processed_data_async] Called | params=</span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Classify params</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.processing_context</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataProcessingContext</span>
+
+            <span class="n">context</span> <span class="o">=</span> <span class="n">DataProcessingContext</span><span class="o">.</span><span class="n">from_params</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_param_classifier</span><span class="p">)</span>
+
+            <span class="c1"># Stage 1: Build (async-aware)</span>
+            <span class="n">built_data</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_or_build_async</span><span class="p">(</span><span class="n">context</span><span class="o">.</span><span class="n">preprocessing_params</span><span class="p">)</span>
+
+            <span class="c1"># Stage 2: Filter (sync for now, per implementation plan)</span>
+            <span class="n">filtered_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_or_transform</span><span class="p">(</span><span class="n">built_data</span><span class="p">,</span> <span class="n">context</span><span class="o">.</span><span class="n">filtering_params</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[get_processed_data_async] Pipeline complete | rows=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">filtered_data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">filtered_data</span>
+
+        <span class="k">except</span> <span class="n">CacheError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[get_processed_data_async] Cache error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="c1"># Retry without cache</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[get_processed_data_async] Retrying without cache&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Detect if build function is async</span>
+            <span class="n">is_async_build</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="p">,</span> <span class="s2">&quot;func&quot;</span><span class="p">):</span>
+                <span class="n">is_async_build</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">iscoroutinefunction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="o">.</span><span class="n">func</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">is_async_build</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">iscoroutinefunction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="o">.</span><span class="n">build</span><span class="p">)</span>
+
+            <span class="c1"># Check if build is async</span>
+            <span class="k">if</span> <span class="n">is_async_build</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="p">,</span> <span class="s2">&quot;func&quot;</span><span class="p">):</span>
+                    <span class="c1"># LambdaBuilder: call func directly</span>
+                    <span class="n">built_data</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="o">.</span><span class="n">func</span><span class="p">(</span>
+                        <span class="n">context</span><span class="o">.</span><span class="n">preprocessing_params</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Regular async DataBuilder</span>
+                    <span class="n">built_data</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="o">.</span><span class="n">build</span><span class="p">(</span>
+                        <span class="o">**</span><span class="n">context</span><span class="o">.</span><span class="n">preprocessing_params</span>
+                    <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Run sync build in executor</span>
+                <span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
+
+                <span class="k">def</span><span class="w"> </span><span class="nf">_sync_build_wrapper</span><span class="p">():</span>
+                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="o">**</span><span class="n">context</span><span class="o">.</span><span class="n">preprocessing_params</span><span class="p">)</span>
+
+                <span class="n">built_data</span> <span class="o">=</span> <span class="k">await</span> <span class="n">loop</span><span class="o">.</span><span class="n">run_in_executor</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">_sync_build_wrapper</span><span class="p">)</span>
+
+            <span class="n">filtered_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_transformer</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span>
+                <span class="n">built_data</span><span class="p">,</span> <span class="o">**</span><span class="n">context</span><span class="o">.</span><span class="n">filtering_params</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">filtered_data</span>
+
+        <span class="k">except</span> <span class="n">DataLoadError</span><span class="p">:</span>
+            <span class="c1"># Re-raise with context</span>
+            <span class="k">raise</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c1"># Wrap unexpected errors</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[get_processed_data_async] Unexpected error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="n">DataLoadError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Async data processing failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span></div>
+
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_get_or_build_async</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Async version of _get_or_build.</span>
+
+<span class="sd">        Checks cache first, then builds data using async-aware logic:</span>
+<span class="sd">        - If build_fn is async coroutine, awaits it</span>
+<span class="sd">        - If build_fn is sync, runs in executor to avoid blocking</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            params: Build parameters</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Built DataFrame (from cache or fresh build)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">params</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="n">cache_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cache_key</span><span class="p">(</span><span class="s2">&quot;build&quot;</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="p">)</span>
+
+        <span class="c1"># Try cache first</span>
+        <span class="k">if</span> <span class="n">cache_key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[_get_or_build_async] Cache HIT | key=</span><span class="si">{</span><span class="n">cache_key</span><span class="p">[:</span><span class="mi">50</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">cache_key</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[_get_or_build_async] Cache MISS | key=</span><span class="si">{</span><span class="n">cache_key</span><span class="p">[:</span><span class="mi">50</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Detect if build function is async</span>
+        <span class="c1"># For LambdaBuilder, check the underlying func attribute</span>
+        <span class="n">is_async_build</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="p">,</span> <span class="s2">&quot;func&quot;</span><span class="p">):</span>
+            <span class="c1"># LambdaBuilder case - check the wrapped function</span>
+            <span class="n">is_async_build</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">iscoroutinefunction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="o">.</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Regular DataBuilder case - check the build method</span>
+            <span class="n">is_async_build</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">iscoroutinefunction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="o">.</span><span class="n">build</span><span class="p">)</span>
+
+        <span class="c1"># Build data (async-aware)</span>
+        <span class="k">if</span> <span class="n">is_async_build</span><span class="p">:</span>
+            <span class="c1"># Async build_fn - call directly and await</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;[_get_or_build_async] Using async build_fn&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="p">,</span> <span class="s2">&quot;func&quot;</span><span class="p">):</span>
+                <span class="c1"># LambdaBuilder: call func directly</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Regular async DataBuilder</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Sync build_fn - run in executor</span>
+            <span class="c1"># Need to wrap the call to unpack params as kwargs</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;[_get_or_build_async] Using sync build_fn in executor&quot;</span><span class="p">)</span>
+            <span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">_sync_build_wrapper</span><span class="p">():</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+
+            <span class="n">data</span> <span class="o">=</span> <span class="k">await</span> <span class="n">loop</span><span class="o">.</span><span class="n">run_in_executor</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">_sync_build_wrapper</span><span class="p">)</span>
+
+        <span class="c1"># Cache result</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">cache_key</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">expire</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_ttl</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[_get_or_build_async] Cached | key=</span><span class="si">{</span><span class="n">cache_key</span><span class="p">[:</span><span class="mi">50</span><span class="p">]</span><span class="si">}</span><span class="s2"> | rows=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[_get_or_build_async] Cache write failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="c1"># Continue without caching</span>
+
+        <span class="k">return</span> <span class="n">data</span></div>
 
 </pre></div>
 

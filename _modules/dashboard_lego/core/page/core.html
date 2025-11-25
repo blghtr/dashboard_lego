@@ -1,0 +1,706 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dashboard_lego.core.page.core &mdash; Dashboard Lego 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Dashboard Lego
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../concepts.html">Core Concepts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Comprehensive Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guide/index.html">Comprehensive API Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guide/magics.html">IPython Magic Commands</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/modules.html">API Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contributing.html">Contributing to Dashboard Lego</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Dashboard Lego</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">dashboard_lego.core.page.core</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for dashboard_lego.core.page.core</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module defines the DashboardPage class, which orchestrates blocks on a page.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">dash_bootstrap_components</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dbc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.graph_objects</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">go</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dash</span><span class="w"> </span><span class="kn">import</span> <span class="n">html</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dash.development.base_component</span><span class="w"> </span><span class="kn">import</span> <span class="n">Component</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigurationError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.page.callbacks</span><span class="w"> </span><span class="kn">import</span> <span class="n">CallbacksMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.page.layout_builder</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayoutBuilderMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.page.navigation</span><span class="w"> </span><span class="kn">import</span> <span class="n">NavigationMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.page.sidebar_builder</span><span class="w"> </span><span class="kn">import</span> <span class="n">SidebarBuilderMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.page.theme_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThemeManagerMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.state</span><span class="w"> </span><span class="kn">import</span> <span class="n">StateManager</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.theme</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThemeConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
+
+<span class="c1"># Lazy import for SidebarConfig to avoid circular dependency</span>
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.sidebar</span><span class="w"> </span><span class="kn">import</span> <span class="n">SidebarConfig</span>
+
+
+<div class="viewcode-block" id="NavigationSection">
+<a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.page.NavigationSection">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NavigationSection</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Defines a single navigation section with a title and lazy block factory.</span>
+
+<span class="sd">        :hierarchy: [Feature | Navigation System | NavigationSection]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Architectural Conclusion: Lazy loading of dashboard sections improves performance&quot;</span>
+<span class="sd">         - implements: &quot;dataclass: &#39;NavigationSection&#39;&quot;</span>
+<span class="sd">         - uses: [&quot;interface: &#39;BaseBlock&#39;&quot;]</span>
+
+<span class="sd">        :rationale: &quot;Uses factory pattern to defer block creation until section is activated.&quot;</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;title is a non-empty string, block_factory is a callable returning List[List[Any]]&quot;</span>
+<span class="sd">         - post: &quot;Section can be rendered on demand via factory invocation&quot;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">block_factory</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]]</span></div>
+
+
+
+<div class="viewcode-block" id="NavigationConfig">
+<a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.page.NavigationConfig">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NavigationConfig</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Configuration for navigation panel in DashboardPage with customizable styling.</span>
+
+<span class="sd">        :hierarchy: [Feature | Navigation System | NavigationConfig]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;PRD: Simplify creation of dashboards with navigation sidebar and customization&quot;</span>
+<span class="sd">         - implements: &quot;dataclass: &#39;NavigationConfig&#39; with style parameters&quot;</span>
+<span class="sd">         - uses: [&quot;dataclass: &#39;NavigationSection&#39;&quot;]</span>
+
+<span class="sd">        :rationale: &quot;Encapsulates all navigation settings including style customization in a typed, immutable config object.&quot;</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;sections is a non-empty list of NavigationSection instances&quot;</span>
+<span class="sd">         - post: &quot;Config provides all data needed to render navigation UI with custom styling&quot;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">sections</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">NavigationSection</span><span class="p">]</span>
+    <span class="n">position</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;left&quot;</span>  <span class="c1"># &quot;left&quot; or &quot;top&quot;</span>
+    <span class="n">sidebar_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>  <span class="c1"># Bootstrap columns (1-12)</span>
+    <span class="n">default_section</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># Index of initially active section</span>
+
+    <span class="c1"># Style customization parameters</span>
+    <span class="n">sidebar_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">sidebar_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">content_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">content_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">nav_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">nav_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">nav_link_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">nav_link_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">nav_link_active_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">nav_link_active_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="DashboardPage">
+<a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.page.DashboardPage">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DashboardPage</span><span class="p">(</span>
+    <span class="n">LayoutBuilderMixin</span><span class="p">,</span>
+    <span class="n">NavigationMixin</span><span class="p">,</span>
+    <span class="n">SidebarBuilderMixin</span><span class="p">,</span>
+    <span class="n">CallbacksMixin</span><span class="p">,</span>
+    <span class="n">ThemeManagerMixin</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Orchestrates the assembly of a dashboard page from a list of blocks.</span>
+
+<span class="sd">        :hierarchy: [Feature | Layout System | Page Modification]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">          - motivated_by: &quot;Architectural Conclusion: Provide a flexible grid-based layout system&quot;</span>
+<span class="sd">          - implements: &quot;class: &#39;DashboardPage&#39;&quot;</span>
+<span class="sd">          - uses: [&quot;interface: &#39;BaseBlock&#39;&quot;, &quot;class: &#39;StateManager&#39;&quot;]</span>
+
+<span class="sd">        :rationale: &quot;The page now accepts a nested list structure for layout definition and builds a Bootstrap grid, offering a balance of power and simplicity.&quot;</span>
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;`blocks` must be a list of lists, where each inner item is a BaseBlock or a (BaseBlock, dict) tuple.&quot;</span>
+<span class="sd">         - post: &quot;A complete Dash layout with a grid structure can be retrieved.&quot;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="DashboardPage.__init__">
+<a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.page.DashboardPage.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">blocks</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">theme</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">dbc</span><span class="o">.</span><span class="n">themes</span><span class="o">.</span><span class="n">BOOTSTRAP</span><span class="p">,</span>
+        <span class="n">navigation</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">NavigationConfig</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">theme_config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ThemeConfig</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">sidebar</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;SidebarConfig&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the DashboardPage, creates a StateManager, and</span>
+<span class="sd">        registers all blocks.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            title: The main title of the dashboard page.</span>
+<span class="sd">            blocks: A list of lists representing rows. Each item in a row is</span>
+<span class="sd">                either a BaseBlock instance or a tuple of</span>
+<span class="sd">                ``(BaseBlock, dict_of_col_props)``.</span>
+
+<span class="sd">                Example::</span>
+
+<span class="sd">                    [[block1], [(block2, {&#39;width&#39;: 8}), (block3, {&#39;width&#39;: 4})]]</span>
+
+<span class="sd">                If navigation is provided, this parameter is optional.</span>
+<span class="sd">            theme: An optional URL to a dash-bootstrap-components theme</span>
+<span class="sd">                (e.g., ``dbc.themes.CYBORG``).</span>
+<span class="sd">            navigation: Optional NavigationConfig for multi-section dashboard</span>
+<span class="sd">                with lazy-loaded content.</span>
+<span class="sd">            theme_config: Optional ThemeConfig for global styling customization.</span>
+<span class="sd">            sidebar: Optional SidebarConfig for collapsible sidebar with fixed-ID blocks.</span>
+<span class="sd">                Sidebar blocks use non-pattern-matched IDs, enabling cross-section</span>
+<span class="sd">                State() subscriptions in pattern-matching callbacks.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Lazy import to avoid circular dependency</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseBlock</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">DashboardPage</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initializing dashboard page: &#39;</span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">title</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">theme</span> <span class="o">=</span> <span class="n">theme</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">navigation</span> <span class="o">=</span> <span class="n">navigation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span> <span class="o">=</span> <span class="n">sidebar</span>
+
+        <span class="c1"># Auto-derive theme_config from dbc theme if not explicitly provided</span>
+        <span class="k">if</span> <span class="n">theme_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Auto-deriving ThemeConfig from theme: </span><span class="si">{</span><span class="n">theme</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span> <span class="o">=</span> <span class="n">ThemeConfig</span><span class="o">.</span><span class="n">from_dbc_theme</span><span class="p">(</span><span class="n">theme</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span> <span class="o">=</span> <span class="n">theme_config</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using theme: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Sidebar enabled | blocks=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">blocks</span><span class="p">)</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;position=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">position</span><span class="si">}</span><span class="s2"> collapsible=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">collapsible</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout_structure</span> <span class="o">=</span> <span class="n">blocks</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state_manager</span> <span class="o">=</span> <span class="n">StateManager</span><span class="p">()</span>
+
+        <span class="c1"># Validate that either blocks or navigation is provided</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">blocks</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">navigation</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ConfigurationError</span><span class="p">(</span>
+                <span class="s2">&quot;Either &#39;blocks&#39; or &#39;navigation&#39; must be provided to DashboardPage&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Flatten the structure to get all block instances for registration</span>
+        <span class="c1"># (Only for non-navigation mode; navigation uses lazy loading)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">BaseBlock</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="p">:</span>
+            <span class="c1"># Standard mode: register all blocks immediately</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">row_idx</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layout_structure</span><span class="p">):</span>
+                    <span class="c1"># Handle both old format (list of blocks) and new format (tuple of (list, dict))</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                        <span class="c1"># New format: (list_of_blocks, row_options)</span>
+                        <span class="n">blocks_list</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># Old format: list of blocks</span>
+                        <span class="n">blocks_list</span> <span class="o">=</span> <span class="n">row</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Processing row </span><span class="si">{</span><span class="n">row_idx</span><span class="si">}</span><span class="s2"> with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">blocks_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> blocks&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">blocks_list</span><span class="p">:</span>
+                        <span class="n">block</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="k">else</span> <span class="n">item</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="n">BaseBlock</span><span class="p">):</span>
+                            <span class="n">error_msg</span> <span class="o">=</span> <span class="p">(</span>
+                                <span class="sa">f</span><span class="s2">&quot;All layout items must be of type BaseBlock. &quot;</span>
+                                <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">block</span><span class="p">)</span><span class="si">}</span><span class="s2"> in row </span><span class="si">{</span><span class="n">row_idx</span><span class="si">}</span><span class="s2">&quot;</span>
+                            <span class="p">)</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
+                            <span class="k">raise</span> <span class="n">ConfigurationError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Page structure validated: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layout_structure</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows, &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="p">)</span><span class="si">}</span><span class="s2"> blocks total&quot;</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to process page structure: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">raise</span>
+
+            <span class="c1"># Register all blocks with the state manager and inject theme</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Registering blocks with state manager&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Registering </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="p">)</span><span class="si">}</span><span class="s2"> blocks with state manager&quot;</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Registering block: </span><span class="si">{</span><span class="n">block</span><span class="o">.</span><span class="n">block_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="c1"># Inject theme configuration</span>
+                <span class="n">block</span><span class="o">.</span><span class="n">_set_theme_config</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="p">)</span>
+                <span class="c1"># Register state interactions</span>
+                <span class="n">block</span><span class="o">.</span><span class="n">_register_state_interactions</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_manager</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Navigation mode: blocks will be created and registered lazily</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Navigation mode enabled with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="o">.</span><span class="n">sections</span><span class="p">)</span><span class="si">}</span><span class="s2"> sections&quot;</span>
+            <span class="p">)</span>
+            <span class="c1"># Cache for lazily loaded sections: {section_index: List[BaseBlock]}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_section_blocks_cache</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">BaseBlock</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span></div>
+
+
+    <span class="c1"># --- Layout v2: helper constants ---</span>
+    <span class="n">_CELL_ALLOWED_KEYS</span><span class="p">:</span> <span class="nb">set</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;width&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;xs&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;sm&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;md&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;lg&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;xl&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;offset&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;align&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;className&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;style&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;children&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">_ROW_ALLOWED_KEYS</span><span class="p">:</span> <span class="nb">set</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;align&quot;</span><span class="p">,</span> <span class="s2">&quot;justify&quot;</span><span class="p">,</span> <span class="s2">&quot;g&quot;</span><span class="p">,</span> <span class="s2">&quot;className&quot;</span><span class="p">,</span> <span class="s2">&quot;style&quot;</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_sidebar_layout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build layout with dbc.Offcanvas collapsible sidebar.</span>
+
+<span class="sd">        UNIFIED SIDEBAR: Contains navigation links (if navigation enabled) + control blocks.</span>
+
+<span class="sd">        :hierarchy: [Core | Layout | Sidebar | BuildLayout]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Pattern-matching callbacks + unified sidebar UX&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_build_sidebar_layout&#39;&quot;</span>
+<span class="sd">         - uses: [&quot;class: &#39;SidebarConfig&#39;&quot;, &quot;component: &#39;dbc.Offcanvas&#39;&quot;]</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;self.sidebar is not None and validated&quot;</span>
+<span class="sd">         - post: &quot;ONE Offcanvas with navigation (if enabled) + controls&quot;</span>
+<span class="sd">         - invariant: &quot;Sidebar blocks always use fixed string IDs&quot;</span>
+<span class="sd">         - spec_compliance: &quot;Sidebar + Navigation: ONE dbc.Offcanvas component&quot;</span>
+
+<span class="sd">        :complexity: 6</span>
+<span class="sd">        :decision_cache: &quot;Unified sidebar: Navigation links at top, controls below&quot;</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">         - Component: html.Div containing ONE offcanvas, toggle button, and main content</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;[Core|Sidebar|BuildLayout] Building UNIFIED sidebar layout | &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;position=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">position</span><span class="si">}</span><span class="s2"> width=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">width</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;has_navigation=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="w"> </span><span class="ow">is</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="kc">None</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+        <span class="c1"># &lt;semantic_block: sidebar_content_assembly&gt;</span>
+        <span class="n">sidebar_components</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Add navigation links at TOP if navigation enabled</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;[Core|Sidebar|BuildLayout] Adding navigation links to sidebar&quot;</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Title</span>
+            <span class="n">sidebar_components</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">html</span><span class="o">.</span><span class="n">Div</span><span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="n">html</span><span class="o">.</span><span class="n">I</span><span class="p">(</span><span class="n">className</span><span class="o">=</span><span class="s2">&quot;fas fa-tachometer-alt me-2&quot;</span><span class="p">),</span>
+                        <span class="n">html</span><span class="o">.</span><span class="n">H4</span><span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+                            <span class="n">className</span><span class="o">=</span><span class="s2">&quot;mb-0 d-inline&quot;</span><span class="p">,</span>
+                            <span class="n">style</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">nav_text</span><span class="p">},</span>
+                        <span class="p">),</span>
+                    <span class="p">],</span>
+                    <span class="n">className</span><span class="o">=</span><span class="s2">&quot;mb-3&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Navigation section</span>
+            <span class="n">sidebar_components</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">html</span><span class="o">.</span><span class="n">Div</span><span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="n">html</span><span class="o">.</span><span class="n">P</span><span class="p">(</span>
+                            <span class="s2">&quot;Navigate between sections&quot;</span><span class="p">,</span>
+                            <span class="n">className</span><span class="o">=</span><span class="s2">&quot;small mb-2&quot;</span><span class="p">,</span>
+                            <span class="n">style</span><span class="o">=</span><span class="p">{</span>
+                                <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">nav_text</span><span class="p">,</span>
+                                <span class="s2">&quot;opacity&quot;</span><span class="p">:</span> <span class="s2">&quot;0.7&quot;</span><span class="p">,</span>
+                            <span class="p">},</span>
+                        <span class="p">),</span>
+                        <span class="n">dbc</span><span class="o">.</span><span class="n">Nav</span><span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_build_navigation_links</span><span class="p">(),</span>
+                            <span class="n">vertical</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                            <span class="n">pills</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                            <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;nav-list&quot;</span><span class="p">,</span>
+                            <span class="n">className</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="o">.</span><span class="n">nav_className</span>
+                            <span class="ow">or</span> <span class="s2">&quot;nav-pills-custom&quot;</span><span class="p">,</span>
+                            <span class="n">style</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="o">.</span><span class="n">nav_style</span> <span class="ow">or</span> <span class="p">{},</span>
+                        <span class="p">),</span>
+                    <span class="p">],</span>
+                    <span class="n">className</span><span class="o">=</span><span class="s2">&quot;mb-4&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Separator</span>
+            <span class="n">sidebar_components</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">html</span><span class="o">.</span><span class="n">Hr</span><span class="p">(</span>
+                    <span class="n">style</span><span class="o">=</span><span class="p">{</span>
+                        <span class="s2">&quot;borderColor&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">nav_text</span><span class="p">,</span>
+                        <span class="s2">&quot;opacity&quot;</span><span class="p">:</span> <span class="s2">&quot;0.3&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;margin&quot;</span><span class="p">:</span> <span class="s2">&quot;1rem 0&quot;</span><span class="p">,</span>
+                    <span class="p">}</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Add control blocks BELOW navigation</span>
+        <span class="n">control_blocks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_render_sidebar_blocks</span><span class="p">()</span>
+        <span class="n">sidebar_components</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">control_blocks</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;[Core|Sidebar|BuildLayout] Sidebar assembled | &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;components=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sidebar_components</span><span class="p">)</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;(nav=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="w"> </span><span class="ow">is</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="kc">None</span><span class="si">}</span><span class="s2">, controls=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">control_blocks</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="p">)</span>
+        <span class="c1"># &lt;/semantic_block: sidebar_content_assembly&gt;</span>
+
+        <span class="c1"># &lt;semantic_block: offcanvas_configuration&gt;</span>
+        <span class="c1"># Apply theme styles to Offcanvas</span>
+        <span class="c1"># DBC Offcanvas has header + body, style both for theme consistency</span>
+        <span class="n">offcanvas_style</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">width</span><span class="p">,</span>
+            <span class="s2">&quot;--bs-offcanvas-bg&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">nav_background</span><span class="p">,</span>
+            <span class="s2">&quot;--bs-offcanvas-color&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">nav_text</span><span class="p">,</span>
+            <span class="c1"># NOTE(REVIEWER): --bs-btn-close-color is set globally in theme_manager.py</span>
+            <span class="c1"># Bootstrap automatically inverts it for dark themes via data-bs-theme</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Add custom CSS class for additional control styling</span>
+        <span class="n">offcanvas_class</span> <span class="o">=</span> <span class="s2">&quot;themed-offcanvas&quot;</span>
+
+        <span class="n">offcanvas</span> <span class="o">=</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Offcanvas</span><span class="p">(</span>
+            <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;sidebar-offcanvas&quot;</span><span class="p">,</span>
+            <span class="n">children</span><span class="o">=</span><span class="n">sidebar_components</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">title</span> <span class="ow">or</span> <span class="s2">&quot;Dashboard Controls&quot;</span><span class="p">,</span>
+            <span class="n">placement</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">position</span><span class="p">,</span>
+            <span class="n">is_open</span><span class="o">=</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">default_collapsed</span><span class="p">,</span>
+            <span class="n">backdrop</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">backdrop</span><span class="p">,</span>
+            <span class="n">close_button</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># NOTE(REVIEWER): User requirement - remove close button, burger becomes X</span>
+            <span class="n">style</span><span class="o">=</span><span class="n">offcanvas_style</span><span class="p">,</span>
+            <span class="n">className</span><span class="o">=</span><span class="n">offcanvas_class</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;[Core|Sidebar|BuildLayout] Offcanvas configured with theme | &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;bg=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">nav_background</span><span class="si">}</span><span class="s2"> | &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;text=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">nav_text</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="c1"># &lt;/semantic_block: offcanvas_configuration&gt;</span>
+
+        <span class="c1"># &lt;semantic_block: toggle_button&gt;</span>
+        <span class="n">toggle_btn</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">collapsible</span><span class="p">:</span>
+            <span class="n">position_style</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;top&quot;</span><span class="p">:</span> <span class="s2">&quot;10px&quot;</span><span class="p">,</span> <span class="s2">&quot;zIndex&quot;</span><span class="p">:</span> <span class="mi">1060</span><span class="p">}</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">position</span> <span class="o">==</span> <span class="s2">&quot;start&quot;</span><span class="p">:</span>
+                <span class="n">position_style</span><span class="p">[</span><span class="s2">&quot;left&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;10px&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">position_style</span><span class="p">[</span><span class="s2">&quot;right&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;10px&quot;</span>
+
+            <span class="c1"># Button icon will be updated by callback based on sidebar state</span>
+            <span class="c1"># Initial state: burger (☰) when closed, will become X (✕) when open</span>
+            <span class="n">initial_icon</span> <span class="o">=</span> <span class="s2">&quot;✕&quot;</span> <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">default_collapsed</span> <span class="k">else</span> <span class="s2">&quot;☰&quot;</span>
+            <span class="n">toggle_btn</span> <span class="o">=</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span>
+                <span class="n">initial_icon</span><span class="p">,</span>
+                <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;sidebar-toggle-btn&quot;</span><span class="p">,</span>
+                <span class="n">size</span><span class="o">=</span><span class="s2">&quot;sm&quot;</span><span class="p">,</span>
+                <span class="n">color</span><span class="o">=</span><span class="s2">&quot;secondary&quot;</span><span class="p">,</span>
+                <span class="n">className</span><span class="o">=</span><span class="s2">&quot;position-fixed&quot;</span><span class="p">,</span>
+                <span class="n">style</span><span class="o">=</span><span class="p">{</span>
+                    <span class="o">**</span><span class="n">position_style</span><span class="p">,</span>
+                    <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="s2">&quot;2.5rem&quot;</span><span class="p">,</span>  <span class="c1"># Square button</span>
+                    <span class="s2">&quot;height&quot;</span><span class="p">:</span> <span class="s2">&quot;2.5rem&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;display&quot;</span><span class="p">:</span> <span class="s2">&quot;flex&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;alignItems&quot;</span><span class="p">:</span> <span class="s2">&quot;center&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;justifyContent&quot;</span><span class="p">:</span> <span class="s2">&quot;center&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;padding&quot;</span><span class="p">:</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;[Core|Sidebar|BuildLayout] Toggle button created&quot;</span><span class="p">)</span>
+        <span class="c1"># &lt;/semantic_block: toggle_button&gt;</span>
+
+        <span class="c1"># &lt;semantic_block: main_content&gt;</span>
+        <span class="c1"># Build main content WITHOUT duplicate sidebar</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;[Core|Sidebar|BuildLayout] Building navigation content (content area only)&quot;</span>
+            <span class="p">)</span>
+            <span class="c1"># Build ONLY content area (no sidebar!)</span>
+            <span class="n">main_content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_navigation_content_only</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;[Core|Sidebar|BuildLayout] Building standard grid content&quot;</span>
+            <span class="p">)</span>
+            <span class="n">rows</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Component</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">row_idx</span><span class="p">,</span> <span class="n">row_spec</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layout_structure</span><span class="p">):</span>
+                <span class="n">normalized_cells</span><span class="p">,</span> <span class="n">row_options</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_row</span><span class="p">(</span><span class="n">row_spec</span><span class="p">)</span>
+                <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_render_row</span><span class="p">(</span><span class="n">normalized_cells</span><span class="p">,</span> <span class="n">row_options</span><span class="p">))</span>
+            <span class="n">main_content</span> <span class="o">=</span> <span class="p">[</span><span class="n">html</span><span class="o">.</span><span class="n">H1</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="n">className</span><span class="o">=</span><span class="s2">&quot;my-4&quot;</span><span class="p">),</span> <span class="o">*</span><span class="n">rows</span><span class="p">]</span>
+
+        <span class="n">main_container</span> <span class="o">=</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Container</span><span class="p">(</span><span class="n">main_content</span><span class="p">,</span> <span class="n">fluid</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">className</span><span class="o">=</span><span class="s2">&quot;p-3&quot;</span><span class="p">)</span>
+        <span class="c1"># &lt;/semantic_block: main_content&gt;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;[Core|Sidebar|BuildLayout] UNIFIED sidebar layout complete | &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;toggle=</span><span class="si">{</span><span class="n">toggle_btn</span><span class="w"> </span><span class="ow">is</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="kc">None</span><span class="si">}</span><span class="s2"> | &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;nav_in_sidebar=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="w"> </span><span class="ow">is</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="kc">None</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">Div</span><span class="p">([</span><span class="n">toggle_btn</span><span class="p">,</span> <span class="n">offcanvas</span><span class="p">,</span> <span class="n">main_container</span><span class="p">])</span>
+
+<div class="viewcode-block" id="DashboardPage.build_layout">
+<a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.page.DashboardPage.build_layout">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">build_layout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Assembles the layouts from all blocks into a grid-based page layout.</span>
+
+<span class="sd">        Supports three layout modes:</span>
+<span class="sd">        1. Sidebar + Navigation: dbc.Offcanvas + multi-section navigation</span>
+<span class="sd">        2. Sidebar + Standard: dbc.Offcanvas + grid layout</span>
+<span class="sd">        3. Standard/Navigation: existing behavior (no sidebar)</span>
+
+<span class="sd">        CRITICAL: For navigation mode, preload all sections BEFORE building layout</span>
+<span class="sd">        to prevent duplicate block creation when combined with sidebar.</span>
+
+<span class="sd">        :hierarchy: [Core | Page | BuildLayout]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Dash callback lifecycle requires all blocks before app.run()&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;build_layout&#39; with navigation preload&quot;</span>
+<span class="sd">         - uses: [&quot;method: &#39;_preload_all_section_blocks&#39;&quot;]</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;Page configured with blocks or navigation&quot;</span>
+<span class="sd">         - post: &quot;Layout built with all blocks created exactly once&quot;</span>
+<span class="sd">         - invariant: &quot;Navigation sections preloaded before HTML rendering&quot;</span>
+<span class="sd">         - spec_compliance: &quot;Dash callback registration lifecycle&quot;</span>
+
+<span class="sd">        :complexity: 5</span>
+<span class="sd">        :decision_cache: &quot;Preload navigation before layout to prevent duplicate block creation&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A Dash component representing the entire page.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Building page layout&quot;</span><span class="p">)</span>
+
+        <span class="c1"># &lt;semantic_block: navigation_preload&gt;</span>
+        <span class="c1"># CRITICAL: Preload navigation sections before layout build</span>
+        <span class="c1"># Prevents duplicate block creation in sidebar+navigation mode</span>
+        <span class="c1"># Ensures all blocks exist before register_callbacks() is called</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">navigation</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_sections_preloaded&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Preloading </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="o">.</span><span class="n">sections</span><span class="p">)</span><span class="si">}</span><span class="s2"> navigation sections &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;before layout build (prevents duplicate block creation)&quot;</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_preload_all_section_blocks</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sections_preloaded</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Navigation sections preloaded successfully&quot;</span><span class="p">)</span>
+        <span class="c1"># &lt;/semantic_block: navigation_preload&gt;</span>
+
+        <span class="c1"># Sidebar mode: use Offcanvas + main content</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Building sidebar layout | position=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">position</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_sidebar_layout</span><span class="p">()</span>
+
+        <span class="c1"># Navigation mode: use navigation layout</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Building navigation-based layout&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_navigation_layout</span><span class="p">()</span>
+
+        <span class="c1"># Standard mode: use grid layout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Building layout: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layout_structure</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="p">)</span><span class="si">}</span><span class="s2"> blocks&quot;</span>
+        <span class="p">)</span>
+        <span class="n">rows</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Component</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">row_idx</span><span class="p">,</span> <span class="n">row_spec</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layout_structure</span><span class="p">):</span>
+                <span class="c1"># Validate and normalize the row and its cells</span>
+                <span class="n">normalized_cells</span><span class="p">,</span> <span class="n">row_options</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_row</span><span class="p">(</span><span class="n">row_spec</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Rendering row </span><span class="si">{</span><span class="n">row_idx</span><span class="si">}</span><span class="s2"> with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">normalized_cells</span><span class="p">)</span><span class="si">}</span><span class="s2"> cells and options </span><span class="si">{</span><span class="n">row_options</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_render_row</span><span class="p">(</span><span class="n">normalized_cells</span><span class="p">,</span> <span class="n">row_options</span><span class="p">))</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Layout built successfully: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows rendered&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Container</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">html</span><span class="o">.</span><span class="n">H1</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="n">className</span><span class="o">=</span><span class="s2">&quot;my-4&quot;</span><span class="p">),</span> <span class="o">*</span><span class="n">rows</span><span class="p">],</span> <span class="n">fluid</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error building layout: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">raise</span></div>
+
+
+<div class="viewcode-block" id="DashboardPage.export_to_figure">
+<a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.page.DashboardPage.export_to_figure">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">export_to_figure</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Export entire dashboard layout to single Plotly figure.</span>
+
+<span class="sd">        Combines all chart blocks into a single figure using subplots.</span>
+<span class="sd">        Non-chart blocks (metrics, text, controls) are skipped.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            params: Optional parameters for filtering data in all blocks</span>
+<span class="sd">            title: Optional title for the combined figure</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Single Plotly Figure with all charts in grid layout</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; page = DashboardPage(title=&quot;Sales Dashboard&quot;, blocks=layout)</span>
+<span class="sd">            &gt;&gt;&gt; fig = page.export_to_figure(title=&quot;Q4 Sales Report&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; fig.write_html(&quot;dashboard_export.html&quot;)</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            Requires dashboard to be built without navigation (single layout).</span>
+<span class="sd">            For navigation dashboards, export sections individually.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">navigation</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Cannot export navigation dashboard. &quot;</span>
+                <span class="s2">&quot;Export individual sections using section factories.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.layout_export</span><span class="w"> </span><span class="kn">import</span> <span class="n">export_layout_to_figure</span>
+
+        <span class="k">return</span> <span class="n">export_layout_to_figure</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layout_structure</span><span class="p">,</span>
+            <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">title</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+        <span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Dashboard Lego Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

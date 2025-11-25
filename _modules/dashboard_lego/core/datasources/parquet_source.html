@@ -99,7 +99,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.data_builder</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataBuilder</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.datasource</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataSource</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoadError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoadError</span>
 
 
 <div class="viewcode-block" id="ParquetDataBuilder">
@@ -121,14 +121,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">file_path</span> <span class="o">=</span> <span class="n">file_path</span></div>
 
 
-<div class="viewcode-block" id="ParquetDataBuilder.build">
-<a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.datasources.parquet_source.ParquetDataBuilder.build">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Load Parquet file.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[ParquetDataBuilder] Loading </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># Support column selection for performance</span>
-            <span class="n">columns</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;columns&quot;</span><span class="p">)</span>
+            <span class="n">columns</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;columns&quot;</span><span class="p">)</span>
             <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[ParquetDataBuilder] Loaded </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">df</span>
@@ -138,7 +136,6 @@
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error loading Parquet: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">DataLoadError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load Parquet: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span></div>
-</div>
 
 
 

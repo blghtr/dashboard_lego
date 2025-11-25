@@ -507,8 +507,12 @@
             <span class="s2">&quot;card&quot;</span><span class="p">,</span> <span class="s2">&quot;background&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_style</span>
         <span class="p">)</span>
         <span class="c1"># h-100 ensures equal height when multiple blocks in same row</span>
+        <span class="c1"># BUT: Don&#39;t apply h-100 for sidebar blocks (they should fit content naturally)</span>
         <span class="c1"># Note: mb-4 removed, handled by Row.mb-4</span>
-        <span class="n">base_classes</span> <span class="o">=</span> <span class="s2">&quot;h-100&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_sidebar_block</span><span class="p">:</span>
+            <span class="n">base_classes</span> <span class="o">=</span> <span class="s2">&quot;h-auto&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">base_classes</span> <span class="o">=</span> <span class="s2">&quot;h-100&quot;</span>
         <span class="n">card_props</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base_classes</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">card_className</span><span class="si">}</span><span class="s2">&quot;</span>

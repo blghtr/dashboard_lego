@@ -139,13 +139,14 @@
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_metric_row</span><span class="p">,</span> <span class="n">TypedChartBlock</span><span class="p">,</span> <span class="n">ControlPanelBlock</span><span class="p">,</span> <span class="n">Control</span>
 
 <span class="c1"># Publisher: Control Panel</span>
+<span class="c1"># Use transform__ prefix for automatic routing to transform stage</span>
 <span class="n">control_panel</span> <span class="o">=</span> <span class="n">ControlPanelBlock</span><span class="p">(</span>
     <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;filters&quot;</span><span class="p">,</span>
     <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
     <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Filters&quot;</span><span class="p">,</span>
-    <span class="n">controls</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span><span class="o">...</span><span class="p">)}</span>
+    <span class="n">controls</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;transform__category&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span><span class="o">...</span><span class="p">)}</span>
 <span class="p">)</span>
-<span class="c1"># Publishes: &quot;filters-category&quot;</span>
+<span class="c1"># Publishes: &quot;filters-transform__category&quot;</span>
 
 <span class="c1"># Subscribers: Charts and Metrics</span>
 <span class="n">chart</span> <span class="o">=</span> <span class="n">TypedChartBlock</span><span class="p">(</span>
@@ -153,7 +154,7 @@
     <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
     <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span>
     <span class="n">plot_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;Product&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="s1">&#39;Sales&#39;</span><span class="p">},</span>
-    <span class="n">subscribes_to</span><span class="o">=</span><span class="s2">&quot;filters-category&quot;</span>
+    <span class="n">subscribes_to</span><span class="o">=</span><span class="s2">&quot;filters-transform__category&quot;</span>
 <span class="p">)</span>
 
 <span class="n">metrics</span><span class="p">,</span> <span class="n">row_opts</span> <span class="o">=</span> <span class="n">get_metric_row</span><span class="p">(</span>
@@ -166,7 +167,7 @@
         <span class="p">}</span>
     <span class="p">},</span>
     <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
-    <span class="n">subscribes_to</span><span class="o">=</span><span class="s2">&quot;filters-category&quot;</span>
+    <span class="n">subscribes_to</span><span class="o">=</span><span class="s2">&quot;filters-transform__category&quot;</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -332,24 +333,45 @@
 
 <span class="c1"># Step 2: Define DataTransformer</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">SalesTransformer</span><span class="p">(</span><span class="n">DataTransformer</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="k">if</span> <span class="s1">&#39;filters-category&#39;</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
-            <span class="n">cat</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;filters-category&#39;</span><span class="p">]</span>
+        <span class="c1"># Use transform__ prefix in control names for automatic routing</span>
+        <span class="k">if</span> <span class="s1">&#39;transform__category&#39;</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+            <span class="n">cat</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;transform__category&#39;</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">cat</span> <span class="o">!=</span> <span class="s1">&#39;All&#39;</span><span class="p">:</span>
                 <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Category&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">cat</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">df</span>
 
-<span class="c1"># Step 3: Define param classifier</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">classify_params</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
-    <span class="k">return</span> <span class="s1">&#39;transform&#39;</span> <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;filters-&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;build&#39;</span>
-
-<span class="c1"># Step 4: Create datasource</span>
+<span class="c1"># Step 3: Create datasource (uses default classifier)</span>
+<span class="c1"># Default classifier automatically routes:</span>
+<span class="c1">#   - transform__* params → transform stage</span>
+<span class="c1">#   - build__* params → build stage</span>
+<span class="c1">#   - other params → build stage (default)</span>
 <span class="n">datasource</span> <span class="o">=</span> <span class="n">DataSource</span><span class="p">(</span>
     <span class="n">data_builder</span><span class="o">=</span><span class="n">SalesDataBuilder</span><span class="p">(</span><span class="s2">&quot;sales.csv&quot;</span><span class="p">),</span>
     <span class="n">data_transformer</span><span class="o">=</span><span class="n">SalesTransformer</span><span class="p">(),</span>
-    <span class="n">param_classifier</span><span class="o">=</span><span class="n">classify_params</span><span class="p">,</span>
     <span class="n">cache_ttl</span><span class="o">=</span><span class="mi">600</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Parameter Naming Convention (v0.15+):</strong></p>
+<p>Control names should use explicit prefixes to route parameters to the correct pipeline stage:</p>
+<ul class="simple">
+<li><p><strong>``transform__&lt;name&gt;``</strong>: Routes to transform stage (filtering/aggregation)</p></li>
+<li><p><strong>``build__&lt;name&gt;``</strong>: Routes to build stage (data loading/preprocessing)</p></li>
+<li><p><strong>No prefix</strong>: Defaults to build stage</p></li>
+</ul>
+<p>The default classifier automatically parses these prefixes. No custom classifier needed.</p>
+<p><strong>Example Control Panel:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">control_panel</span> <span class="o">=</span> <span class="n">ControlPanelBlock</span><span class="p">(</span>
+    <span class="n">block_id</span><span class="o">=</span><span class="s2">&quot;filters&quot;</span><span class="p">,</span>
+    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Filters&quot;</span><span class="p">,</span>
+    <span class="n">controls</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;transform__category&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span><span class="o">...</span><span class="p">),</span>  <span class="c1"># → transform stage</span>
+        <span class="s2">&quot;transform__min_price&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span><span class="o">...</span><span class="p">),</span>  <span class="c1"># → transform stage</span>
+        <span class="s2">&quot;build__window_size&quot;</span><span class="p">:</span> <span class="n">Control</span><span class="p">(</span><span class="o">...</span><span class="p">),</span>  <span class="c1"># → build stage</span>
+    <span class="p">}</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -359,6 +381,7 @@
 <li><p><strong>Clarity</strong>: Each component has one responsibility</p></li>
 <li><p><strong>Testability</strong>: Test builder and transformer independently</p></li>
 <li><p><strong>Reusability</strong>: Same components can be used in multiple dashboards</p></li>
+<li><p><strong>Simplicity</strong>: No custom classifier needed - use naming convention</p></li>
 </ol>
 <p><strong>Cache Sharing (v0.15.2):</strong></p>
 <p>Cache objects are automatically shared across datasource instances to prevent duplicate builds:</p>

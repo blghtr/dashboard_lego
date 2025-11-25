@@ -101,7 +101,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.data_builder</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataBuilder</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.datasource</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataSource</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoadError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoadError</span>
 
 
 <div class="viewcode-block" id="CsvDataBuilder">
@@ -129,9 +129,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">read_csv_options</span> <span class="o">=</span> <span class="n">read_csv_options</span> <span class="ow">or</span> <span class="p">{}</span></div>
 
 
-<div class="viewcode-block" id="CsvDataBuilder.build">
-<a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.datasources.csv_source.CsvDataBuilder.build">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Load CSV file.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[CsvDataBuilder] Loading </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
@@ -147,7 +145,6 @@
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error loading CSV: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">DataLoadError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load CSV: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span></div>
-</div>
 
 
 

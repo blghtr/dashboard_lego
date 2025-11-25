@@ -97,8 +97,8 @@
 
 <span class="c1"># Use forward references for type hints to avoid circular imports</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.datasource</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataSource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockError</span><span class="p">,</span> <span class="n">ConfigurationError</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.state</span><span class="w"> </span><span class="kn">import</span> <span class="n">StateManager</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockError</span><span class="p">,</span> <span class="n">ConfigurationError</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>

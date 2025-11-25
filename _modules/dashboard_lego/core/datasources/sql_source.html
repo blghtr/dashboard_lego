@@ -96,10 +96,12 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sqlparse</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.data_builder</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataBuilder</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.datasource</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataSource</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoadError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoadError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_engine</span><span class="p">,</span> <span class="n">text</span>
@@ -109,6 +111,102 @@
         <span class="s2">&quot;SQLAlchemy is required for SqlDataSource. &quot;</span>
         <span class="s2">&quot;Please install it with `pip install dashboard-lego[sql]`.&quot;</span>
     <span class="p">)</span>
+
+
+<div class="viewcode-block" id="validate_sql_query">
+<a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.datasources.sql_source.validate_sql_query">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_sql_query</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">allowed_statements</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Validate SQL query to prevent dangerous operations.</span>
+
+<span class="sd">    :hierarchy: [Core | DataSources | Security | ValidateSQL]</span>
+<span class="sd">    :relates-to:</span>
+<span class="sd">     - motivated_by: &quot;Security: Prevent SQL injection and dangerous operations&quot;</span>
+<span class="sd">     - implements: &quot;function: &#39;validate_sql_query&#39;&quot;</span>
+<span class="sd">     - uses: [&quot;library: &#39;sqlparse&#39;&quot;]</span>
+
+<span class="sd">    :rationale: &quot;Only allow SELECT statements by default to prevent data modification.&quot;</span>
+<span class="sd">    :contract:</span>
+<span class="sd">     - pre: &quot;query is a non-empty string&quot;</span>
+<span class="sd">     - post: &quot;Raises DataLoadError if query contains dangerous operations&quot;</span>
+<span class="sd">     - invariant: &quot;Only SELECT statements are allowed by default&quot;</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        query: SQL query string to validate</span>
+<span class="sd">        allowed_statements: List of allowed statement types (default: [&#39;SELECT&#39;])</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        DataLoadError: If query contains dangerous operations or invalid SQL</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[Security|SQL] Validating SQL query: </span><span class="si">{</span><span class="n">query</span><span class="p">[:</span><span class="mi">100</span><span class="p">]</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">allowed_statements</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">allowed_statements</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;SELECT&quot;</span><span class="p">]</span>
+
+    <span class="c1"># Dangerous operations that should never be allowed</span>
+    <span class="n">dangerous_operations</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;DROP&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;DELETE&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;UPDATE&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;ALTER&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;CREATE&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;TRUNCATE&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;INSERT&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;GRANT&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;REVOKE&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;EXEC&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;EXECUTE&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Parse SQL query</span>
+        <span class="n">parsed_statements</span> <span class="o">=</span> <span class="n">sqlparse</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">parsed_statements</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">DataLoadError</span><span class="p">(</span><span class="s2">&quot;Empty SQL query provided&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Validate each statement</span>
+        <span class="k">for</span> <span class="n">stmt</span> <span class="ow">in</span> <span class="n">parsed_statements</span><span class="p">:</span>
+            <span class="n">statement_type</span> <span class="o">=</span> <span class="n">stmt</span><span class="o">.</span><span class="n">get_type</span><span class="p">()</span>
+
+            <span class="c1"># Check if statement type is dangerous</span>
+            <span class="k">if</span> <span class="n">statement_type</span> <span class="ow">in</span> <span class="n">dangerous_operations</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;[Security|SQL] Blocked dangerous operation: </span><span class="si">{</span><span class="n">statement_type</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="k">raise</span> <span class="n">DataLoadError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Dangerous SQL operation &#39;</span><span class="si">{</span><span class="n">statement_type</span><span class="si">}</span><span class="s2">&#39; is not allowed. &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Only SELECT queries are permitted.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="c1"># Check if statement type is in allowed list</span>
+            <span class="k">if</span> <span class="n">statement_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">allowed_statements</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">statement_type</span> <span class="o">==</span> <span class="s2">&quot;UNKNOWN&quot;</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="s2">&quot;[Security|SQL] Unknown statement type - blocking for safety&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">DataLoadError</span><span class="p">(</span>
+                        <span class="s2">&quot;Unknown SQL statement type detected. &quot;</span>
+                        <span class="s2">&quot;Only SELECT queries are permitted.&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;[Security|SQL] Blocked non-allowed statement: </span><span class="si">{</span><span class="n">statement_type</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">DataLoadError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;SQL statement type &#39;</span><span class="si">{</span><span class="n">statement_type</span><span class="si">}</span><span class="s2">&#39; is not allowed. &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;Allowed types: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">allowed_statements</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;[Security|SQL] SQL query validation passed&quot;</span><span class="p">)</span>
+
+    <span class="k">except</span> <span class="n">DataLoadError</span><span class="p">:</span>
+        <span class="c1"># Re-raise DataLoadError as-is</span>
+        <span class="k">raise</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[Security|SQL] SQL validation error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">DataLoadError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid SQL query provided: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span></div>
+
 
 
 <div class="viewcode-block" id="SqlDataBuilder">
@@ -131,16 +229,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">query</span> <span class="o">=</span> <span class="n">query</span></div>
 
 
-<div class="viewcode-block" id="SqlDataBuilder.build">
-<a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.datasources.sql_source.SqlDataBuilder.build">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute SQL query.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[SqlDataBuilder] Executing query&quot;</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">connection_uri</span><span class="p">)</span>
 
             <span class="k">with</span> <span class="n">engine</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
-                <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">text</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">),</span> <span class="n">connection</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+                <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">text</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">),</span> <span class="n">connection</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">kwargs</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[SqlDataBuilder] Loaded </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows&quot;</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">df</span>
 
@@ -150,7 +246,6 @@
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error executing SQL query: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">DataLoadError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to execute SQL query: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span></div>
-</div>
 
 
 
@@ -166,14 +261,28 @@
 
 <div class="viewcode-block" id="SqlDataSource.__init__">
 <a class="viewcode-back" href="../../../../api/core.html#dashboard_lego.core.datasources.sql_source.SqlDataSource.__init__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection_uri</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">connection_uri</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">allowed_statements</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize SQL datasource.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            connection_uri: SQLAlchemy connection URI</span>
 <span class="sd">            query: SQL query to execute</span>
+<span class="sd">            allowed_statements: List of allowed statement types (default: [&#39;SELECT&#39;])</span>
+<span class="sd">            **kwargs: Additional arguments passed to DataSource</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            DataLoadError: If query contains dangerous operations or invalid SQL</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Validate query for security</span>
+        <span class="n">validate_sql_query</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">allowed_statements</span><span class="o">=</span><span class="n">allowed_statements</span><span class="p">)</span>
+
         <span class="c1"># Create builder</span>
         <span class="n">builder</span> <span class="o">=</span> <span class="n">SqlDataBuilder</span><span class="p">(</span><span class="n">connection_uri</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
 

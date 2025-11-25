@@ -72,16 +72,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#dashboard_lego.utils.logger.update_log_level"><code class="docutils literal notranslate"><span class="pre">update_log_level()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#module-dashboard_lego.utils.exceptions">Data Utilities</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#dashboard_lego.utils.exceptions.DashboardLegoError"><code class="docutils literal notranslate"><span class="pre">DashboardLegoError</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#dashboard_lego.utils.exceptions.DataSourceError"><code class="docutils literal notranslate"><span class="pre">DataSourceError</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#dashboard_lego.utils.exceptions.DataLoadError"><code class="docutils literal notranslate"><span class="pre">DataLoadError</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#dashboard_lego.utils.exceptions.CacheError"><code class="docutils literal notranslate"><span class="pre">CacheError</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#dashboard_lego.utils.exceptions.BlockError"><code class="docutils literal notranslate"><span class="pre">BlockError</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#dashboard_lego.utils.exceptions.StateError"><code class="docutils literal notranslate"><span class="pre">StateError</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#dashboard_lego.utils.exceptions.ConfigurationError"><code class="docutils literal notranslate"><span class="pre">ConfigurationError</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l3"><a class="reference internal" href="#data-utilities">Data Utilities</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#validation-utilities">Validation Utilities</a></li>
 </ul>
 </li>
@@ -213,70 +204,79 @@ improves user experience across all dashboard components”</p></li>
 </section>
 <section id="module-dashboard_lego.utils.logger">
 <span id="logging-utilities"></span><h2>Logging Utilities<a class="headerlink" href="#module-dashboard_lego.utils.logger" title="Link to this heading"></a></h2>
-<p>Centralized logging configuration for dashboard_lego.</p>
-<p>This module provides a smart logging system with automatic hierarchy extraction
-from docstrings and dual output (console + rotating file).</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="dashboard_lego.utils.logger.HierarchyLoggerAdapter">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.utils.logger.</span></span><span class="sig-name descname"><span class="pre">HierarchyLoggerAdapter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.14)"><span class="pre">Logger</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">hierarchy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/utils/logger.html#HierarchyLoggerAdapter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.utils.logger.HierarchyLoggerAdapter" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.LoggerAdapter" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">LoggerAdapter</span></code></a></p>
-<p>A custom LoggerAdapter that prepends hierarchy to DEBUG logs.</p>
-<blockquote>
-<div><dl class="field-list simple">
+<p>Async-compatible logging configuration for dashboard_lego using Loguru.</p>
+<p>This module provides a modern, async-compatible logging system with automatic
+hierarchy extraction from docstrings and dual output (console + rotating file).</p>
+<dl class="field-list simple">
 <dt class="field-odd">hierarchy<span class="colon">:</span></dt>
-<dd class="field-odd"><p>[Core | Logging | HierarchyLoggerAdapter]</p>
-</dd>
-<dt class="field-even">relates-to<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p>motivated_by: “User requirement: Debug logs must display
-hierarchy from docstrings”</p></li>
-<li><p>implements: “class: ‘HierarchyLoggerAdapter’”</p></li>
-<li><p>uses: [“library: ‘logging’”]</p></li>
-</ul>
-</dd>
-<dt class="field-odd">rationale<span class="colon">:</span></dt>
-<dd class="field-odd"><p>“Chose LoggerAdapter to transparently inject
-hierarchy context without modifying call sites.”</p>
-</dd>
-<dt class="field-even">contract<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p>pre: “A standard logger and optional hierarchy string are
-provided.”</p></li>
-<li><p>post: “All DEBUG messages are automatically prefixed with
-[Hierarchy] if available.”</p></li>
-</ul>
+<dd class="field-odd"><p>[Core | Logging | Async Logger]</p>
 </dd>
 </dl>
-</div></blockquote>
+<dl class="py class">
+<dt class="sig sig-object py" id="dashboard_lego.utils.logger.HierarchyLoggerAdapter">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.utils.logger.</span></span><span class="sig-name descname"><span class="pre">HierarchyLoggerAdapter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">hierarchy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/utils/logger.html#HierarchyLoggerAdapter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.utils.logger.HierarchyLoggerAdapter" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Logger adapter that prepends hierarchy to DEBUG logs.</p>
+<p>Wraps loguru logger with hierarchy support from docstrings.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Hierarchy<span class="colon">:</span></dt>
+<dd class="field-odd"><p>[Core | Logging | HierarchyLoggerAdapter]</p>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="dashboard_lego.utils.logger.HierarchyLoggerAdapter.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.14)"><span class="pre">Logger</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">hierarchy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/utils/logger.html#HierarchyLoggerAdapter.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.utils.logger.HierarchyLoggerAdapter.__init__" title="Link to this definition"></a></dt>
-<dd><p>Initialize the adapter with hierarchy context.</p>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">hierarchy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/utils/logger.html#HierarchyLoggerAdapter.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.utils.logger.HierarchyLoggerAdapter.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize logger adapter with hierarchy context.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>logger</strong> – The base logger instance.</p></li>
-<li><p><strong>hierarchy</strong> – The hierarchy string extracted from docstrings.</p></li>
+<li><p><strong>name</strong> – Logger name (typically __name__)</p></li>
+<li><p><strong>hierarchy</strong> – Hierarchy string extracted from docstrings</p></li>
 </ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dashboard_lego.utils.logger.HierarchyLoggerAdapter.process">
-<span class="sig-name descname"><span class="pre">process</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/utils/logger.html#HierarchyLoggerAdapter.process"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.utils.logger.HierarchyLoggerAdapter.process" title="Link to this definition"></a></dt>
-<dd><p>Process the log message to inject hierarchy for DEBUG level.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>msg</strong> – The original log message.</p></li>
-<li><p><strong>kwargs</strong> – Additional keyword arguments.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A tuple of (modified_message, kwargs).</p>
-</dd>
-</dl>
+<dt class="sig sig-object py" id="dashboard_lego.utils.logger.HierarchyLoggerAdapter.debug">
+<span class="sig-name descname"><span class="pre">debug</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/utils/logger.html#HierarchyLoggerAdapter.debug"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.utils.logger.HierarchyLoggerAdapter.debug" title="Link to this definition"></a></dt>
+<dd><p>Log debug message with hierarchy prefix.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.utils.logger.HierarchyLoggerAdapter.info">
+<span class="sig-name descname"><span class="pre">info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/utils/logger.html#HierarchyLoggerAdapter.info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.utils.logger.HierarchyLoggerAdapter.info" title="Link to this definition"></a></dt>
+<dd><p>Log info message.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.utils.logger.HierarchyLoggerAdapter.warning">
+<span class="sig-name descname"><span class="pre">warning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/utils/logger.html#HierarchyLoggerAdapter.warning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.utils.logger.HierarchyLoggerAdapter.warning" title="Link to this definition"></a></dt>
+<dd><p>Log warning message.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.utils.logger.HierarchyLoggerAdapter.error">
+<span class="sig-name descname"><span class="pre">error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/utils/logger.html#HierarchyLoggerAdapter.error"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.utils.logger.HierarchyLoggerAdapter.error" title="Link to this definition"></a></dt>
+<dd><p>Log error message.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.utils.logger.HierarchyLoggerAdapter.critical">
+<span class="sig-name descname"><span class="pre">critical</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/utils/logger.html#HierarchyLoggerAdapter.critical"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.utils.logger.HierarchyLoggerAdapter.critical" title="Link to this definition"></a></dt>
+<dd><p>Log critical message.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.utils.logger.HierarchyLoggerAdapter.exception">
+<span class="sig-name descname"><span class="pre">exception</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">exc_info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dashboard_lego/utils/logger.html#HierarchyLoggerAdapter.exception"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.utils.logger.HierarchyLoggerAdapter.exception" title="Link to this definition"></a></dt>
+<dd><p>Log exception with traceback.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dashboard_lego.utils.logger.HierarchyLoggerAdapter.isEnabledFor">
+<span class="sig-name descname"><span class="pre">isEnabledFor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/utils/logger.html#HierarchyLoggerAdapter.isEnabledFor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.utils.logger.HierarchyLoggerAdapter.isEnabledFor" title="Link to this definition"></a></dt>
+<dd><p>Check if logger is enabled for given level.</p>
 </dd></dl>
 
 </dd></dl>
@@ -285,43 +285,18 @@ provided.”</p></li>
 <dt class="sig sig-object py" id="dashboard_lego.utils.logger.get_logger">
 <span class="sig-prename descclassname"><span class="pre">dashboard_lego.utils.logger.</span></span><span class="sig-name descname"><span class="pre">get_logger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#dashboard_lego.utils.logger.HierarchyLoggerAdapter" title="dashboard_lego.utils.logger.HierarchyLoggerAdapter"><span class="pre">HierarchyLoggerAdapter</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/utils/logger.html#get_logger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.utils.logger.get_logger" title="Link to this definition"></a></dt>
 <dd><p>Factory function to create a logger with automatic hierarchy extraction.</p>
-<blockquote>
-<div><dl class="field-list simple">
-<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dl class="field-list simple">
+<dt class="field-odd">Hierarchy<span class="colon">:</span></dt>
 <dd class="field-odd"><p>[Core | Logging | Logger Factory]</p>
 </dd>
-<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p>motivated_by: “User requirement: Centralized logger
-creation with hierarchy support”</p></li>
-<li><p>implements: “function: ‘get_logger’”</p></li>
-<li><p>uses: [“class: ‘HierarchyLoggerAdapter’”,
-“function: ‘_extract_hierarchy_from_docstring’”]</p></li>
-</ul>
-</dd>
-<dt class="field-odd">rationale<span class="colon">:</span></dt>
-<dd class="field-odd"><p>“Factory pattern allows centralized configuration
-and automatic docstring parsing.”</p>
-</dd>
-<dt class="field-even">contract<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p>pre: “A logger name is provided; optionally, an object for
-hierarchy extraction.”</p></li>
-<li><p>post: “Returns a configured HierarchyLoggerAdapter ready
-for use.”</p></li>
-</ul>
-</dd>
-</dl>
-</div></blockquote>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> – The name for the logger (typically __name__).</p></li>
 <li><p><strong>obj</strong> – Optional object (class, function) to extract hierarchy from.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A configured HierarchyLoggerAdapter instance.</p>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A configured HierarchyLoggerAdapter instance.</p>
 </dd>
 </dl>
 <p class="rubric">Example</p>
@@ -335,38 +310,15 @@ for use.”</p></li>
 <dl class="py function">
 <dt class="sig sig-object py" id="dashboard_lego.utils.logger.setup_logging">
 <span class="sig-prename descclassname"><span class="pre">dashboard_lego.utils.logger.</span></span><span class="sig-name descname"><span class="pre">setup_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/utils/logger.html#setup_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.utils.logger.setup_logging" title="Link to this definition"></a></dt>
-<dd><p>Configure global logging with dual output (console + rotating file).</p>
-<blockquote>
-<div><dl class="field-list simple">
-<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
+<dd><p>Configure async-compatible logging with Loguru.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Hierarchy<span class="colon">:</span></dt>
 <dd class="field-odd"><p>[Core | Logging | Setup]</p>
 </dd>
-<dt class="field-even">relates-to<span class="colon">:</span></dt>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p>motivated_by: “User requirement: Dual logging to console
-and file with rotation”</p></li>
-<li><p>implements: “function: ‘setup_logging’”</p></li>
-<li><p>uses: [“library: ‘logging’”, “class: ‘RotatingFileHandler’”]</p></li>
-</ul>
-</dd>
-<dt class="field-odd">rationale<span class="colon">:</span></dt>
-<dd class="field-odd"><p>“Centralized setup ensures consistent formatting
-and handlers across the application.”</p>
-</dd>
-<dt class="field-even">contract<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p>pre: “Function is called once at application startup.”</p></li>
-<li><p>post: “All loggers use configured handlers with appropriate
-formatters.”</p></li>
-</ul>
-</dd>
-</dl>
-</div></blockquote>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>level</strong> – Log level as string (DEBUG, INFO, WARNING, ERROR,
-CRITICAL). Defaults to environment variable or INFO.</p></li>
+<li><p><strong>level</strong> – Log level as string (DEBUG, INFO, WARNING, ERROR, CRITICAL).
+Defaults to environment variable or INFO.</p></li>
 <li><p><strong>log_dir</strong> – Directory for log files. Defaults to ./logs.</p></li>
 </ul>
 </dd>
@@ -376,7 +328,7 @@ CRITICAL). Defaults to environment variable or INFO.</p></li>
 <dl class="py function">
 <dt class="sig sig-object py" id="dashboard_lego.utils.logger.update_log_level">
 <span class="sig-prename descclassname"><span class="pre">dashboard_lego.utils.logger.</span></span><span class="sig-name descname"><span class="pre">update_log_level</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/dashboard_lego/utils/logger.html#update_log_level"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.utils.logger.update_log_level" title="Link to this definition"></a></dt>
-<dd><p>Update log level for existing loggers and handlers.</p>
+<dd><p>Update log level for existing loggers.</p>
 <p>Useful when environment variable is changed after module import.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -384,245 +336,11 @@ CRITICAL). Defaults to environment variable or INFO.</p></li>
 If None, reads from DASHBOARD_LEGO_LOG_LEVEL environment variable.</p>
 </dd>
 </dl>
-<p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;DASHBOARD_LEGO_LOG_LEVEL&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;DEBUG&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">update_log_level</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">update_log_level</span><span class="p">()</span>  <span class="c1"># Reads from env var</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Or explicitly:</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">update_log_level</span><span class="p">(</span><span class="s1">&#39;DEBUG&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
 </dd></dl>
 
 </section>
-<section id="module-dashboard_lego.utils.exceptions">
-<span id="data-utilities"></span><h2>Data Utilities<a class="headerlink" href="#module-dashboard_lego.utils.exceptions" title="Link to this heading"></a></h2>
-<p>Custom exceptions for dashboard_lego.</p>
-<p>This module defines domain-specific exceptions for better error handling
-and diagnostics throughout the application.</p>
-<dl class="py exception">
-<dt class="sig sig-object py" id="dashboard_lego.utils.exceptions.DashboardLegoError">
-<em class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.utils.exceptions.</span></span><span class="sig-name descname"><span class="pre">DashboardLegoError</span></span><a class="reference internal" href="../_modules/dashboard_lego/utils/exceptions.html#DashboardLegoError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.utils.exceptions.DashboardLegoError" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
-<p>Base exception for all dashboard_lego errors.</p>
-<blockquote>
-<div><dl class="field-list simple">
-<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
-<dd class="field-odd"><p>[Core | Exceptions | DashboardLegoError]</p>
-</dd>
-<dt class="field-even">relates-to<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p>motivated_by: “User requirement: Proper error handling with
-custom exceptions”</p></li>
-<li><p>implements: “exception: ‘DashboardLegoError’”</p></li>
-<li><p>uses: [“class: ‘Exception’”]</p></li>
-</ul>
-</dd>
-<dt class="field-odd">rationale<span class="colon">:</span></dt>
-<dd class="field-odd"><p>“Base exception class allows catching all
-library-specific errors.”</p>
-</dd>
-<dt class="field-even">contract<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p>pre: “An error condition specific to dashboard_lego occurs.”</p></li>
-<li><p>post: “Exception can be caught and handled appropriately.”</p></li>
-</ul>
-</dd>
-</dl>
-</div></blockquote>
-</dd></dl>
-
-<dl class="py exception">
-<dt class="sig sig-object py" id="dashboard_lego.utils.exceptions.DataSourceError">
-<em class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.utils.exceptions.</span></span><span class="sig-name descname"><span class="pre">DataSourceError</span></span><a class="reference internal" href="../_modules/dashboard_lego/utils/exceptions.html#DataSourceError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.utils.exceptions.DataSourceError" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#dashboard_lego.utils.exceptions.DashboardLegoError" title="dashboard_lego.utils.exceptions.DashboardLegoError"><code class="xref py py-class docutils literal notranslate"><span class="pre">DashboardLegoError</span></code></a></p>
-<p>Raised when data source operations fail.</p>
-<blockquote>
-<div><dl class="field-list simple">
-<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
-<dd class="field-odd"><p>[Core | Exceptions | DataSourceError]</p>
-</dd>
-<dt class="field-even">relates-to<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p>motivated_by: “User requirement: Specific exception for data
-loading failures”</p></li>
-<li><p>implements: “exception: ‘DataSourceError’”</p></li>
-<li><p>uses: [“class: ‘DashboardLegoError’”]</p></li>
-</ul>
-</dd>
-<dt class="field-odd">rationale<span class="colon">:</span></dt>
-<dd class="field-odd"><p>“Specific exception for data-related errors aids
-in debugging.”</p>
-</dd>
-<dt class="field-even">contract<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p>pre: “Data loading, processing, or caching fails.”</p></li>
-<li><p>post: “Error is raised with descriptive message.”</p></li>
-</ul>
-</dd>
-</dl>
-</div></blockquote>
-</dd></dl>
-
-<dl class="py exception">
-<dt class="sig sig-object py" id="dashboard_lego.utils.exceptions.DataLoadError">
-<em class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.utils.exceptions.</span></span><span class="sig-name descname"><span class="pre">DataLoadError</span></span><a class="reference internal" href="../_modules/dashboard_lego/utils/exceptions.html#DataLoadError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.utils.exceptions.DataLoadError" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#dashboard_lego.utils.exceptions.DataSourceError" title="dashboard_lego.utils.exceptions.DataSourceError"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataSourceError</span></code></a></p>
-<p>Raised when data loading specifically fails.</p>
-<blockquote>
-<div><dl class="field-list simple">
-<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
-<dd class="field-odd"><p>[Core | Exceptions | DataLoadError]</p>
-</dd>
-<dt class="field-even">relates-to<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p>motivated_by: “User requirement: Distinguish between load and
-other data errors”</p></li>
-<li><p>implements: “exception: ‘DataLoadError’”</p></li>
-<li><p>uses: [“class: ‘DataSourceError’”]</p></li>
-</ul>
-</dd>
-<dt class="field-odd">rationale<span class="colon">:</span></dt>
-<dd class="field-odd"><p>“Separates load failures from processing failures.”</p>
-</dd>
-<dt class="field-even">contract<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p>pre: “Data cannot be loaded from source (file, DB, etc.).”</p></li>
-<li><p>post: “Error is raised with source-specific details.”</p></li>
-</ul>
-</dd>
-</dl>
-</div></blockquote>
-</dd></dl>
-
-<dl class="py exception">
-<dt class="sig sig-object py" id="dashboard_lego.utils.exceptions.CacheError">
-<em class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.utils.exceptions.</span></span><span class="sig-name descname"><span class="pre">CacheError</span></span><a class="reference internal" href="../_modules/dashboard_lego/utils/exceptions.html#CacheError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.utils.exceptions.CacheError" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#dashboard_lego.utils.exceptions.DataSourceError" title="dashboard_lego.utils.exceptions.DataSourceError"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataSourceError</span></code></a></p>
-<p>Raised when cache operations fail.</p>
-<blockquote>
-<div><dl class="field-list simple">
-<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
-<dd class="field-odd"><p>[Core | Exceptions | CacheError]</p>
-</dd>
-<dt class="field-even">relates-to<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p>motivated_by: “User requirement: Identify caching issues”</p></li>
-<li><p>implements: “exception: ‘CacheError’”</p></li>
-<li><p>uses: [“class: ‘DataSourceError’”]</p></li>
-</ul>
-</dd>
-<dt class="field-odd">rationale<span class="colon">:</span></dt>
-<dd class="field-odd"><p>“Cache failures should not crash the app but
-should be logged.”</p>
-</dd>
-<dt class="field-even">contract<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p>pre: “Cache read/write operation fails.”</p></li>
-<li><p>post: “Error is raised and can be handled gracefully.”</p></li>
-</ul>
-</dd>
-</dl>
-</div></blockquote>
-</dd></dl>
-
-<dl class="py exception">
-<dt class="sig sig-object py" id="dashboard_lego.utils.exceptions.BlockError">
-<em class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.utils.exceptions.</span></span><span class="sig-name descname"><span class="pre">BlockError</span></span><a class="reference internal" href="../_modules/dashboard_lego/utils/exceptions.html#BlockError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.utils.exceptions.BlockError" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#dashboard_lego.utils.exceptions.DashboardLegoError" title="dashboard_lego.utils.exceptions.DashboardLegoError"><code class="xref py py-class docutils literal notranslate"><span class="pre">DashboardLegoError</span></code></a></p>
-<p>Raised when block operations fail.</p>
-<blockquote>
-<div><dl class="field-list simple">
-<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
-<dd class="field-odd"><p>[Core | Exceptions | BlockError]</p>
-</dd>
-<dt class="field-even">relates-to<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p>motivated_by: “User requirement: Specific exception for
-block-related errors”</p></li>
-<li><p>implements: “exception: ‘BlockError’”</p></li>
-<li><p>uses: [“class: ‘DashboardLegoError’”]</p></li>
-</ul>
-</dd>
-<dt class="field-odd">rationale<span class="colon">:</span></dt>
-<dd class="field-odd"><p>“Blocks are the main UI components; specific
-errors help debugging.”</p>
-</dd>
-<dt class="field-even">contract<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p>pre: “Block initialization, layout, or update fails.”</p></li>
-<li><p>post: “Error is raised with block_id for context.”</p></li>
-</ul>
-</dd>
-</dl>
-</div></blockquote>
-</dd></dl>
-
-<dl class="py exception">
-<dt class="sig sig-object py" id="dashboard_lego.utils.exceptions.StateError">
-<em class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.utils.exceptions.</span></span><span class="sig-name descname"><span class="pre">StateError</span></span><a class="reference internal" href="../_modules/dashboard_lego/utils/exceptions.html#StateError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.utils.exceptions.StateError" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#dashboard_lego.utils.exceptions.DashboardLegoError" title="dashboard_lego.utils.exceptions.DashboardLegoError"><code class="xref py py-class docutils literal notranslate"><span class="pre">DashboardLegoError</span></code></a></p>
-<p>Raised when state management operations fail.</p>
-<blockquote>
-<div><dl class="field-list simple">
-<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
-<dd class="field-odd"><p>[Core | Exceptions | StateError]</p>
-</dd>
-<dt class="field-even">relates-to<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p>motivated_by: “User requirement: Identify state management
-issues”</p></li>
-<li><p>implements: “exception: ‘StateError’”</p></li>
-<li><p>uses: [“class: ‘DashboardLegoError’”]</p></li>
-</ul>
-</dd>
-<dt class="field-odd">rationale<span class="colon">:</span></dt>
-<dd class="field-odd"><p>“State management is critical for interactivity;
-specific errors help.”</p>
-</dd>
-<dt class="field-even">contract<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p>pre: “State registration or callback generation fails.”</p></li>
-<li><p>post: “Error is raised with state_id for context.”</p></li>
-</ul>
-</dd>
-</dl>
-</div></blockquote>
-</dd></dl>
-
-<dl class="py exception">
-<dt class="sig sig-object py" id="dashboard_lego.utils.exceptions.ConfigurationError">
-<em class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dashboard_lego.utils.exceptions.</span></span><span class="sig-name descname"><span class="pre">ConfigurationError</span></span><a class="reference internal" href="../_modules/dashboard_lego/utils/exceptions.html#ConfigurationError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashboard_lego.utils.exceptions.ConfigurationError" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#dashboard_lego.utils.exceptions.DashboardLegoError" title="dashboard_lego.utils.exceptions.DashboardLegoError"><code class="xref py py-class docutils literal notranslate"><span class="pre">DashboardLegoError</span></code></a></p>
-<p>Raised when configuration is invalid.</p>
-<blockquote>
-<div><dl class="field-list simple">
-<dt class="field-odd">hierarchy<span class="colon">:</span></dt>
-<dd class="field-odd"><p>[Core | Exceptions | ConfigurationError]</p>
-</dd>
-<dt class="field-even">relates-to<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p>motivated_by: “User requirement: Validate configuration at
-startup”</p></li>
-<li><p>implements: “exception: ‘ConfigurationError’”</p></li>
-<li><p>uses: [“class: ‘DashboardLegoError’”]</p></li>
-</ul>
-</dd>
-<dt class="field-odd">rationale<span class="colon">:</span></dt>
-<dd class="field-odd"><p>“Fail fast on invalid configuration to prevent
-runtime issues.”</p>
-</dd>
-<dt class="field-even">contract<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p>pre: “Invalid parameters or configuration are detected.”</p></li>
-<li><p>post: “Error is raised with details about what’s invalid.”</p></li>
-</ul>
-</dd>
-</dl>
-</div></blockquote>
-</dd></dl>
-
+<section id="data-utilities">
+<h2>Data Utilities<a class="headerlink" href="#data-utilities" title="Link to this heading"></a></h2>
 </section>
 <section id="validation-utilities">
 <h2>Validation Utilities<a class="headerlink" href="#validation-utilities" title="Link to this heading"></a></h2>
