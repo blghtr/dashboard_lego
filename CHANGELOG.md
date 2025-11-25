@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+## [0.17.0] - 2025-11-25
+
+### 🚀 Major New Features
 
 #### Server Management - ManagedDashServer
 
@@ -61,17 +63,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Simplifies in-memory DataFrame usage without custom builder implementation
   - File: `src/dashboard_lego/core/datasource.py`
 
-- **🔧 Refactored DataFilter**: Shared filtering logic extraction
-  - Extracted `_apply_column_filters` function for code reuse
-  - Both `DataFilter` and `DfHandler` now use same filtering logic
-  - Eliminates code duplication and maintains single source of truth
-  - File: `src/dashboard_lego/core/data_transformer.py`
-
 - **⚡ Quick Dashboard Enhancement**: Simplified in-memory DataFrame handling
   - Updated `quick_dashboard` utility to leverage `DfHandler`
   - Streamlined DataFrame wrapping for zero-disk-I/O workflows
   - Improved integration with in-memory data sources
   - File: `src/dashboard_lego/utils/quick_dashboard.py`
+
+### 🔧 Major Refactoring
+
+#### Core Architecture Decomposition
+
+- **📦 Cache System Refactoring**: Extracted cache backend abstraction into dedicated module
+  - Created `core/cache/backend.py` with `CacheBackend` protocol
+  - Implemented pluggable cache backends: `DiskCacheBackend`, `InMemoryCacheBackend`, `RedisCacheBackend`
+  - Separated cache concerns from DataSource implementation
+  - Protocol-based design enables easy backend swapping
+  - Improved testability and flexibility for cache implementations
+  - File: `src/dashboard_lego/core/cache/backend.py`
+
+- **🔄 DataSource Refactoring**: Enhanced stateless 2-stage pipeline architecture
+  - Improved lambda function support for simple use cases
+  - Better integration with new cache backend abstraction
+  - Enhanced parameter classification and routing
+  - Improved async support and error handling
+  - Files: `src/dashboard_lego/core/datasource.py`, `src/dashboard_lego/core/async_datasource.py`
+
+- **🏗️ DashboardPage Decomposition**: Split monolithic class into focused mixins
+  - **`page/callbacks.py`** - `CallbacksMixin`: Extracted callback registration logic
+  - **`page/layout_builder.py`** - `LayoutBuilderMixin`: Extracted layout building and normalization
+  - **`page/navigation.py`** - `NavigationMixin`: Extracted navigation building and management
+  - **`page/sidebar_builder.py`** - `SidebarBuilderMixin`: Extracted sidebar rendering logic
+  - **`page/theme_manager.py`** - `ThemeManagerMixin`: Extracted theme management and HTML generation
+  - **`page/core.py`** - Core `DashboardPage` class: Now uses mixin composition pattern
+  - Benefits: Smaller, focused modules; easier to test; single responsibility principle
+  - Files: `src/dashboard_lego/core/page/*.py`
+
+#### Module Structure Improvements
+
+- **📁 New Package Structure**: Created dedicated packages for better organization
+  - `core/cache/` package with `__init__.py` exports
+  - `core/page/` package with proper `__init__.py` exports
+  - Updated `core/__init__.py` to export from new module structure
+  - Improved import paths and module organization
 
 ### Changed
 
@@ -92,11 +125,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enables more flexible dashboard composition
 
 - **DataFilter Implementation**: Now uses shared `_apply_column_filters` function
+  - Extracted `_apply_column_filters` function for code reuse
+  - Both `DataFilter` and `DfHandler` now use same filtering logic
   - Improved code reuse and maintainability
   - Consistent filtering behavior across DataFilter and DfHandler
   - Reduced code duplication
+  - File: `src/dashboard_lego/core/data_transformer.py`
 
-### Documentation
+### 📚 Documentation Updates
+
+- **📖 Patterns Guide Enhancement**: Updated `docs/source/guide/patterns.rst`
+  - Promoted default parameter classifier with naming convention
+  - Updated examples to use `transform__` prefix convention
+  - Removed custom classifier examples (simplified API)
+  - Added comprehensive parameter naming convention documentation
+  - Clarified automatic routing: `transform__*` → transform stage, `build__*` → build stage
+
+- **📝 Example Updates**: Updated `examples/00_showcase_dashboard.py`
+  - Updated terminology from "global filters" to "global transforms"
+  - Added clarifying comments about parameter routing
+  - Aligned with new API patterns
 
 - **Enhanced Examples**: Updated to reflect new capabilities
   - Examples demonstrating mixed content rows (numeric + text)
@@ -112,15 +160,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Verifies filter application during build stage
   - File: `tests/utils/test_quick_dashboard.py`
 
-### Benefits
+- **Test Fix**: `test_sql_source_invalid_query` expectation mismatch
+  - Root cause: Test expected execution error, but validation error occurs first
+  - Solution: Updated test to expect validation error message
+  - Added new test `test_sql_source_execution_error` for execution errors
+  - Maintains security-first approach (invalid SQL blocked before execution)
+  - File: `tests/core/datasources/test_sql_source.py`
 
-- **Flexibility**: Direct DataFrame usage in pipeline without custom builder
-- **Consistency**: Shared filtering logic ensures identical behavior
-- **Performance**: Zero-disk-I/O for in-memory DataFrames
-- **Simplicity**: Automatic DfHandler creation from DataFrame parameter
-- **Code Quality**: Reduced duplication through shared filter function
+### 🐛 Fixed
 
-### Technical Details
+- **Test Fix**: `test_sql_source_invalid_query` expectation mismatch
+  - Root cause: Test expected execution error, but validation error occurs first
+  - Solution: Updated test to expect validation error message
+  - Added new test `test_sql_source_execution_error` for execution errors
+  - Maintains security-first approach (invalid SQL blocked before execution)
+  - File: `tests/core/datasources/test_sql_source.py`
+
+### ✅ Benefits
+
+- **Server Management**: Enhanced lifecycle control with foreground/background modes
+- **Metrics Factory**: Unified factory enables flexible mixed content layouts
+- **Conditional Display**: Data-driven visual feedback improves user experience
+- **DfHandler**: Zero-disk-I/O for in-memory DataFrames improves performance
+- **Code Quality**: Shared filtering logic reduces duplication and ensures consistency
+
+- **Maintainability**: Smaller, focused modules are easier to understand and modify
+- **Testability**: Isolated components can be tested independently
+- **Flexibility**: Mixin pattern allows selective feature composition
+- **Clarity**: Single responsibility principle makes code intent clear
+- **Scalability**: Easier to add new features without bloating core classes
+- **Cache Flexibility**: Protocol-based cache backends enable easy swapping
+- **Better Organization**: Logical module structure improves navigation
+
+### 🔄 Migration Notes
+
+- **No Breaking Changes**: Public API remains unchanged
+- **Internal Structure**: `DashboardPage` internal structure changed (public API unchanged)
+- **Cache Access**: Cache backend access now through `core.cache` module
+- **Import Paths**: Updated for page submodules (internal only)
+
+### 📊 Technical Details
+
+**Mixin Composition Pattern:**
+```python
+class DashboardPage(
+    LayoutBuilderMixin,
+    NavigationMixin,
+    SidebarBuilderMixin,
+    CallbacksMixin,
+    ThemeManagerMixin,
+):
+    # Core orchestration logic only
+    # Each mixin handles specific concern
+```
+
+**Cache Backend Protocol:**
+```python
+class CacheBackend(Protocol):
+    def __contains__(self, key: str) -> bool: ...
+    def __getitem__(self, key: str) -> Any: ...
+    def __setitem__(self, key: str, value: Any) -> None: ...
+```
 
 **DfHandler Usage:**
 ```python
@@ -141,10 +241,6 @@ ds = DataSource(
     data_transformer=DataFilter()
 )
 ```
-
-**Decision Cache:**
-- `dfhandler_architecture`: DfHandler reuses `_apply_column_filters` for consistency with DataFilter, avoids code duplication, provides default builder for DataFrame wrapping
-- `filter_extraction`: Extracted filter logic to standalone function for reuse, maintains single source of truth
 
 **ManagedDashServer Usage:**
 ```python
@@ -208,117 +304,15 @@ TextBlock(
 )
 ```
 
-**Additional Decision Cache:**
-- `server_refactoring`: Renamed ManagedDashboardServer to ManagedDashServer for clarity, added explicit run_blocking/run_background methods for better API design
-- `unified_metrics_factory`: Content-based type detection in get_metric_row eliminates need for separate factories, enables mixed content rows
-- `conditional_display`: Threshold-based coloring/labeling for metrics and keyword-based coloring for text provides data-driven visual feedback
-
-## [0.17.0] - 2025-11-25
-
-### 🔧 Major Refactoring
-
-#### Core Architecture Decomposition
-
-- **📦 Cache System Refactoring**: Extracted cache backend abstraction into dedicated module
-  - Created `core/cache/backend.py` with `CacheBackend` protocol
-  - Implemented pluggable cache backends: `DiskCacheBackend`, `InMemoryCacheBackend`, `RedisCacheBackend`
-  - Separated cache concerns from DataSource implementation
-  - Protocol-based design enables easy backend swapping
-  - Improved testability and flexibility for cache implementations
-  - File: `src/dashboard_lego/core/cache/backend.py`
-
-- **🔄 DataSource Refactoring**: Enhanced stateless 2-stage pipeline architecture
-  - Improved lambda function support for simple use cases
-  - Better integration with new cache backend abstraction
-  - Enhanced parameter classification and routing
-  - Improved async support and error handling
-  - Files: `src/dashboard_lego/core/datasource.py`, `src/dashboard_lego/core/async_datasource.py`
-
-- **🏗️ DashboardPage Decomposition**: Split monolithic class into focused mixins
-  - **`page/callbacks.py`** - `CallbacksMixin`: Extracted callback registration logic
-  - **`page/layout_builder.py`** - `LayoutBuilderMixin`: Extracted layout building and normalization
-  - **`page/navigation.py`** - `NavigationMixin`: Extracted navigation building and management
-  - **`page/sidebar_builder.py`** - `SidebarBuilderMixin`: Extracted sidebar rendering logic
-  - **`page/theme_manager.py`** - `ThemeManagerMixin`: Extracted theme management and HTML generation
-  - **`page/core.py`** - Core `DashboardPage` class: Now uses mixin composition pattern
-  - Benefits: Smaller, focused modules; easier to test; single responsibility principle
-  - Files: `src/dashboard_lego/core/page/*.py`
-
-#### Module Structure Improvements
-
-- **📁 New Package Structure**: Created dedicated packages for better organization
-  - `core/cache/` package with `__init__.py` exports
-  - `core/page/` package with proper `__init__.py` exports
-  - Updated `core/__init__.py` to export from new module structure
-  - Improved import paths and module organization
-
-### 📚 Documentation Updates
-
-- **📖 Patterns Guide Enhancement**: Updated `docs/source/guide/patterns.rst`
-  - Promoted default parameter classifier with naming convention
-  - Updated examples to use `transform__` prefix convention
-  - Removed custom classifier examples (simplified API)
-  - Added comprehensive parameter naming convention documentation
-  - Clarified automatic routing: `transform__*` → transform stage, `build__*` → build stage
-
-- **📝 Example Updates**: Updated `examples/00_showcase_dashboard.py`
-  - Updated terminology from "global filters" to "global transforms"
-  - Added clarifying comments about parameter routing
-  - Aligned with new API patterns
-
-### 🐛 Fixed
-
-- **Test Fix**: `test_sql_source_invalid_query` expectation mismatch
-  - Root cause: Test expected execution error, but validation error occurs first
-  - Solution: Updated test to expect validation error message
-  - Added new test `test_sql_source_execution_error` for execution errors
-  - Maintains security-first approach (invalid SQL blocked before execution)
-  - File: `tests/core/datasources/test_sql_source.py`
-
-### ✅ Benefits
-
-- **Maintainability**: Smaller, focused modules are easier to understand and modify
-- **Testability**: Isolated components can be tested independently
-- **Flexibility**: Mixin pattern allows selective feature composition
-- **Clarity**: Single responsibility principle makes code intent clear
-- **Scalability**: Easier to add new features without bloating core classes
-- **Cache Flexibility**: Protocol-based cache backends enable easy swapping
-- **Better Organization**: Logical module structure improves navigation
-
-### 🔄 Migration Notes
-
-- **No Breaking Changes**: Public API remains unchanged
-- **Internal Structure**: `DashboardPage` internal structure changed (public API unchanged)
-- **Cache Access**: Cache backend access now through `core.cache` module
-- **Import Paths**: Updated for page submodules (internal only)
-
-### 📊 Technical Details
-
-**Mixin Composition Pattern:**
-```python
-class DashboardPage(
-    LayoutBuilderMixin,
-    NavigationMixin,
-    SidebarBuilderMixin,
-    CallbacksMixin,
-    ThemeManagerMixin,
-):
-    # Core orchestration logic only
-    # Each mixin handles specific concern
-```
-
-**Cache Backend Protocol:**
-```python
-class CacheBackend(Protocol):
-    def __contains__(self, key: str) -> bool: ...
-    def __getitem__(self, key: str) -> Any: ...
-    def __setitem__(self, key: str, value: Any) -> None: ...
-```
-
 **Decision Cache:**
 - `cache_architecture`: Protocol-based design for flexibility and testability
 - `page_decomposition`: Mixin pattern over monolithic class for maintainability
 - `module_organization`: Dedicated packages over flat structure for clarity
+- `dfhandler_architecture`: DfHandler reuses `_apply_column_filters` for consistency with DataFilter, avoids code duplication, provides default builder for DataFrame wrapping
+- `filter_extraction`: Extracted filter logic to standalone function for reuse, maintains single source of truth
+- `server_refactoring`: Renamed ManagedDashboardServer to ManagedDashServer for clarity, added explicit run_blocking/run_background methods for better API design
+- `unified_metrics_factory`: Content-based type detection in get_metric_row eliminates need for separate factories, enables mixed content rows
+- `conditional_display`: Threshold-based coloring/labeling for metrics and keyword-based coloring for text provides data-driven visual feedback
 
 ## [0.16.0] - 2025-10-27
 
