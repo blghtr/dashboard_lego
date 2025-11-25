@@ -56,6 +56,8 @@ class TextBlock(BaseBlock):
         content_style: Optional[Dict[str, Any]] = None,
         content_className: Optional[str] = None,
         loading_type: str = "default",
+        # Color specification (supports conditional coloring)
+        color: Optional[Union[str, Dict[str, Any]]] = None,
     ):
         """
         Initializes the TextBlock with customizable styling.
@@ -78,6 +80,10 @@ class TextBlock(BaseBlock):
             content_className: Optional CSS class name for the content
                 container.
             loading_type: Type of loading indicator to display.
+            color: Optional color specification. Can be:
+                - str: Bootstrap theme color name ('primary', 'success', etc.)
+                - dict: Keyword-based coloring with {'keyword1': 'color1', 'keyword2': 'color2', ...}
+                  Searches for keywords in generated content (case-insensitive)
 
         """
         self.title = title
@@ -98,12 +104,54 @@ class TextBlock(BaseBlock):
         self.content_style = content_style
         self.content_className = content_className
         self.loading_type = loading_type
+        self.color = color
 
         # Normalize subscribes_to to list and build subscribes dict
         state_ids = self._normalize_subscribes_to(subscribes_to)
         subscribes_dict = {state_id: self._update_content for state_id in state_ids}
 
         super().__init__(block_id, datasource, subscribes=subscribes_dict)
+
+    def _determine_color(
+        self, content: str, color_spec: Union[str, Dict[str, str]]
+    ) -> str:
+        """
+        Determine Bootstrap theme color based on keyword matching in content.
+
+        :hierarchy: [Blocks | Text | TextBlock | ColorResolution]
+        :relates-to:
+         - motivated_by: "PRD: Conditional color assignment based on keywords in text content"
+         - implements: "method: '_determine_color'"
+
+        :contract:
+         - pre: "color_spec is str or dict with keyword:color mapping"
+         - post: "Returns Bootstrap theme color name"
+         - theme_compliance: "Returns only valid Bootstrap colors"
+
+        :complexity: 2
+        :decision_cache: "keyword_based_coloring: Simple keyword matching for text content"
+
+        Args:
+            content: Text content to search for keywords
+            color_spec: Either:
+                - str: Bootstrap color name ('primary', 'success', etc.)
+                - dict: {'keyword1': 'color1', 'keyword2': 'color2', ...}
+
+        Returns:
+            Bootstrap theme color name
+        """
+        if isinstance(color_spec, str):
+            return color_spec
+
+        if isinstance(color_spec, dict):
+            # Search for keywords in content (case-insensitive)
+            content_lower = content.lower()
+            for keyword, color in color_spec.items():
+                if keyword.lower() in content_lower:
+                    return color
+
+        # Fallback if no keyword matches
+        return "primary"
 
     def _update_content(self, *args) -> Component:
         """
@@ -113,20 +161,28 @@ class TextBlock(BaseBlock):
         :hierarchy: [Blocks | Text | TextBlock | Update Logic]
         :relates-to:
          - motivated_by: "PRD: Need to display dynamic text content with
-           customizable styling"
-         - implements: "method: '_update_content' with style overrides"
-         - uses: ["attribute: 'content_generator'", "attribute: 'title_style'"]
+           customizable styling and conditional coloring"
+         - implements: "method: '_update_content' with style overrides and color support"
+         - uses: ["attribute: 'content_generator'", "attribute: 'title_style'", "method: '_determine_color'"]
 
         :rationale: "Enhanced to apply style customization parameters to
          content and title components. Works for both subscribed and
-         non-subscribed blocks."
+         non-subscribed blocks. Supports conditional coloring via color parameter."
         :contract:
          - pre: "Datasource is available and content generator is set."
          - post: "Returns a styled CardBody with current content and title."
 
         """
         try:
-            df = self.datasource.get_processed_data()
+            # Build params dict from args for filtered data
+            params = {}
+            if args and hasattr(self, "subscribes"):
+                state_ids = list(self.subscribes.keys())
+                for idx, value in enumerate(args):
+                    if idx < len(state_ids):
+                        params[state_ids[idx]] = value
+
+            df = self.datasource.get_processed_data(params)
             generated_content = self.content_generator(df)
 
             # If the generator returns a string, wrap it in dcc.Markdown
@@ -156,9 +212,7 @@ class TextBlock(BaseBlock):
 
             return dbc.CardBody(children)
         except Exception as e:
-            return dbc.Alert(
-                f"Ошибка генерации текстового блока: {str(e)}", color="danger"
-            )
+            return dbc.Alert(f"Error generating text block: {str(e)}", color="danger")
 
     def layout(self) -> Component:
         """
@@ -179,20 +233,66 @@ class TextBlock(BaseBlock):
         # Initialize with current content instead of empty container
         initial_content = self._update_content()
 
+        # Determine color if specified (for conditional coloring based on keywords)
+        color_to_apply = None
+        if self.color:
+            if isinstance(self.color, dict):
+                # Keyword-based coloring: extract text content and search for keywords
+                try:
+                    df = self.datasource.get_processed_data()
+                    generated_content = self.content_generator(df)
+
+                    # Convert content to string for keyword search
+                    if isinstance(generated_content, str):
+                        content_text = generated_content
+                    else:
+                        # If it's a Component, try to extract text from it
+                        # For now, use a fallback - in practice, content_generator should return string
+                        content_text = str(generated_content)
+
+                    color_to_apply = self._determine_color(content_text, self.color)
+                except Exception as e:
+                    self.logger.warning(
+                        f"[Blocks|Text|TextBlock] Failed to determine color from content: {e}"
+                    )
+                    color_to_apply = "primary"
+            else:
+                # Direct color specification
+                color_to_apply = self.color
+
+        # Build card style with color if specified
+        card_style_with_color = self.card_style.copy() if self.card_style else {}
+        if color_to_apply and self.theme_config:
+            # Apply theme color to card background
+            color_map = {
+                "primary": self.theme_config.colors.primary,
+                "secondary": self.theme_config.colors.secondary,
+                "success": self.theme_config.colors.success,
+                "danger": self.theme_config.colors.danger,
+                "warning": self.theme_config.colors.warning,
+                "info": self.theme_config.colors.info,
+            }
+            bg_color = color_map.get(color_to_apply, self.theme_config.colors.primary)
+            card_style_with_color["backgroundColor"] = bg_color
+            card_style_with_color["color"] = self.theme_config.colors.white
+
         # Build card props with theme-aware style
         themed_card_style = self._get_themed_style(
-            "card", "background", self.card_style
+            "card",
+            "background",
+            card_style_with_color if card_style_with_color else None,
         )
         # h-100 ensures equal height when multiple blocks in same row
         # Note: mb-4 removed, handled by Row.mb-4
         base_classes = "h-100"
-        card_props = {
-            "className": (
-                f"{base_classes} {self.card_className}"
-                if self.card_className
-                else base_classes
-            )
-        }
+        card_class_name = base_classes
+        if color_to_apply and not self.theme_config:
+            # Fallback to Bootstrap classes if no theme
+            card_class_name += f" text-white bg-{color_to_apply}"
+        if self.card_className:
+            card_class_name += f" {self.card_className}"
+
+        card_props = {"className": card_class_name}
         if themed_card_style:
             card_props["style"] = themed_card_style
 

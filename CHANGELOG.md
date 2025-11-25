@@ -7,6 +7,212 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### Server Management - ManagedDashServer
+
+- **🖥️ ManagedDashServer Class**: Refactored from ManagedDashboardServer with enhanced lifecycle control
+  - Supports both foreground (`run_blocking()`) and background (`run_background()`) execution modes
+  - Accepts both `DashboardPage` instances and direct `Dash` app instances
+  - Automatic port finding and thread-safe server registry
+  - Improved lifecycle management with ready/shutdown events
+  - Enhanced error handling and logging for server operations
+  - File: `src/dashboard_lego/utils/server.py`
+
+- **🪄 DashboardMagics Integration**: Updated IPython magic commands to use ManagedDashServer
+  - Improved lifecycle control for dashboards launched from Jupyter notebooks
+  - Better integration with foreground and background execution modes
+  - Enhanced server management in IPython environment
+  - File: `src/dashboard_lego/ipython_magics.py`
+
+#### Enhanced Metrics Factory - Mixed Content Support
+
+- **📊 get_metric_row Enhancement**: Factory function now supports mixed content types
+  - Automatically detects block type: numeric metrics (SingleMetricBlock) or text content (TextBlock)
+  - Supports mixed rows with both numeric metrics and text blocks
+  - Content-based type detection: `column+agg` → numeric, `content_generator` → text
+  - Enables flexible dashboard layouts with diverse content types
+  - File: `src/dashboard_lego/blocks/metrics_factory.py`
+
+- **🎨 Conditional Labeling and Coloring**: Dynamic display based on content
+  - **SingleMetricBlock**: Conditional coloring and labeling based on metric value thresholds
+    - `color` parameter accepts dict with threshold rules: `{'thresholds': {...}, 'default': '...'}`
+    - `label` parameter accepts dict with threshold-based label mapping
+    - Dynamic color/label assignment based on metric value ranges
+  - **TextBlock**: Conditional coloring based on keyword matching
+    - `color` parameter accepts dict mapping keywords to colors: `{'keyword1': 'color1', ...}`
+    - Searches content for keywords and applies matching color
+  - Enables responsive, data-driven visual feedback
+  - Files: `src/dashboard_lego/blocks/single_metric.py`, `src/dashboard_lego/blocks/text.py`
+
+#### DfHandler - DataFrame Wrapper with Filtering Support
+
+- **📦 DfHandler Class**: New DataBuilder for wrapping DataFrames with filtering capability
+  - Wraps existing pandas DataFrame and applies column-based filtering during build stage
+  - Reuses `_apply_column_filters` function for consistency with DataFilter behavior
+  - Provides zero-disk-I/O data pipeline for in-memory DataFrames
+  - Automatically creates DataFrame copy to avoid external mutations
+  - File: `src/dashboard_lego/core/data_builder.py`
+
+- **🔄 Enhanced DataSource Initialization**: DataFrame parameter support
+  - `DataSource` now accepts optional `df` parameter (pandas DataFrame)
+  - Automatically creates `DfHandler` when `df` parameter is provided
+  - Priority order: `df` → `build_fn` → `data_builder` → default DataBuilder
+  - Simplifies in-memory DataFrame usage without custom builder implementation
+  - File: `src/dashboard_lego/core/datasource.py`
+
+- **🔧 Refactored DataFilter**: Shared filtering logic extraction
+  - Extracted `_apply_column_filters` function for code reuse
+  - Both `DataFilter` and `DfHandler` now use same filtering logic
+  - Eliminates code duplication and maintains single source of truth
+  - File: `src/dashboard_lego/core/data_transformer.py`
+
+- **⚡ Quick Dashboard Enhancement**: Simplified in-memory DataFrame handling
+  - Updated `quick_dashboard` utility to leverage `DfHandler`
+  - Streamlined DataFrame wrapping for zero-disk-I/O workflows
+  - Improved integration with in-memory data sources
+  - File: `src/dashboard_lego/utils/quick_dashboard.py`
+
+### Changed
+
+- **Server Management Refactoring**: ManagedDashboardServer → ManagedDashServer
+  - Renamed class for consistency and clarity
+  - Enhanced API with explicit `run_blocking()` and `run_background()` methods
+  - Improved support for both DashboardPage and Dash app instances
+  - Better thread safety and lifecycle management
+
+- **DashboardMagics Updates**: Now utilizes ManagedDashServer
+  - Improved server lifecycle control in IPython environment
+  - Better integration with foreground/background execution modes
+  - Enhanced error handling and server management
+
+- **Metrics Factory Enhancement**: get_metric_row now supports mixed content
+  - Unified factory for both numeric metrics and text blocks
+  - Automatic type detection eliminates need for separate factory functions
+  - Enables more flexible dashboard composition
+
+- **DataFilter Implementation**: Now uses shared `_apply_column_filters` function
+  - Improved code reuse and maintainability
+  - Consistent filtering behavior across DataFilter and DfHandler
+  - Reduced code duplication
+
+### Documentation
+
+- **Enhanced Examples**: Updated to reflect new capabilities
+  - Examples demonstrating mixed content rows (numeric + text)
+  - Conditional coloring and labeling examples
+  - Server management usage patterns (foreground/background modes)
+  - Improved usage documentation for new features
+
+### Testing
+
+- **Enhanced Test Coverage**: Added tests for DfHandler functionality
+  - Validates DataFrame wrapping and filtering behavior
+  - Ensures proper integration with DataSource
+  - Verifies filter application during build stage
+  - File: `tests/utils/test_quick_dashboard.py`
+
+### Benefits
+
+- **Flexibility**: Direct DataFrame usage in pipeline without custom builder
+- **Consistency**: Shared filtering logic ensures identical behavior
+- **Performance**: Zero-disk-I/O for in-memory DataFrames
+- **Simplicity**: Automatic DfHandler creation from DataFrame parameter
+- **Code Quality**: Reduced duplication through shared filter function
+
+### Technical Details
+
+**DfHandler Usage:**
+```python
+# Direct DataFrame wrapping
+df = pd.DataFrame({'Category': ['A', 'B', 'A'], 'Value': [1, 2, 3]})
+ds = DataSource(df=df)  # Automatically creates DfHandler
+
+# Or explicit usage
+builder = DfHandler(df)
+filtered = builder.build(Category='A')  # Returns filtered DataFrame
+```
+
+**DataSource DataFrame Parameter:**
+```python
+# Simplified in-memory DataFrame usage
+ds = DataSource(
+    df=my_dataframe,  # Automatically creates DfHandler
+    data_transformer=DataFilter()
+)
+```
+
+**Decision Cache:**
+- `dfhandler_architecture`: DfHandler reuses `_apply_column_filters` for consistency with DataFilter, avoids code duplication, provides default builder for DataFrame wrapping
+- `filter_extraction`: Extracted filter logic to standalone function for reuse, maintains single source of truth
+
+**ManagedDashServer Usage:**
+```python
+# Foreground execution (blocking)
+server = ManagedDashServer(dashboard_page=page, port=8050)
+server.run_blocking()  # Blocks until interrupted
+
+# Background execution (non-blocking)
+server = ManagedDashServer(dashboard_page=page)
+server.run_background()  # Runs in background thread
+print(f"Dashboard available at {server.url}")
+```
+
+**Mixed Content Metrics Row:**
+```python
+# Mixed row with numeric metrics and text blocks
+blocks, row_opts = get_metric_row(
+    metrics_spec={
+        'revenue': {
+            'column': 'Revenue',
+            'agg': 'sum',
+            'title': 'Total Revenue',
+            'color': {'thresholds': {1000: 'success', 500: 'warning'}, 'default': 'danger'}
+        },
+        'status': {
+            'content_generator': lambda df: f"Status: {df['status'].iloc[0]}",
+            'title': 'System Status',
+            'color': {'active': 'success', 'inactive': 'danger'}
+        }
+    },
+    datasource=datasource
+)
+```
+
+**Conditional Coloring Examples:**
+```python
+# SingleMetricBlock with threshold-based coloring
+SingleMetricBlock(
+    block_id="revenue",
+    datasource=ds,
+    metric_spec={
+        'column': 'Revenue',
+        'agg': 'sum',
+        'color': {
+            'thresholds': {1000: 'success', 500: 'warning'},
+            'default': 'danger'
+        },
+        'label': {
+            'thresholds': {1000: 'Excellent', 500: 'Good'},
+            'default': 'Needs Attention'
+        }
+    }
+)
+
+# TextBlock with keyword-based coloring
+TextBlock(
+    block_id="status",
+    datasource=ds,
+    content_generator=lambda df: df['status'].iloc[0],
+    color={'active': 'success', 'error': 'danger', 'warning': 'warning'}
+)
+```
+
+**Additional Decision Cache:**
+- `server_refactoring`: Renamed ManagedDashboardServer to ManagedDashServer for clarity, added explicit run_blocking/run_background methods for better API design
+- `unified_metrics_factory`: Content-based type detection in get_metric_row eliminates need for separate factories, enables mixed content rows
+- `conditional_display`: Threshold-based coloring/labeling for metrics and keyword-based coloring for text provides data-driven visual feedback
+
 ## [0.17.0] - 2025-11-25
 
 ### 🔧 Major Refactoring

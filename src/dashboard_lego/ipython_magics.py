@@ -23,17 +23,15 @@ Provides convenient magic commands for rapid dashboard creation and Plotly expor
 :complexity: 5
 """
 
-import threading
 import time
 import uuid
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 import yaml
 from IPython.core.magic import Magics, cell_magic, line_magic, magics_class
 from IPython.core.magic_arguments import argument, magic_arguments, parse_argstring
-from werkzeug.serving import BaseWSGIServer, make_server
 
 from dashboard_lego.blocks.control_panel import ControlPanelBlock
 from dashboard_lego.blocks.minimal_chart import MinimalChartBlock
@@ -43,230 +41,9 @@ from dashboard_lego.blocks.typed_chart import Control, TypedChartBlock
 from dashboard_lego.core.datasource import DataSource
 from dashboard_lego.utils.logger import get_logger
 from dashboard_lego.utils.quick_dashboard import quick_dashboard
+from dashboard_lego.utils.server import ManagedDashServer
 
 logger = get_logger(__name__)
-
-
-# LLM:METADATA
-# :hierarchy: [IPython | Magics | ServerLifecycle]
-# :relates-to:
-#  - motivated_by: "Dash dashboards launched via magics need deterministic lifecycle control so blocking and non-blocking contracts hold during notebook execution"
-#  - implements: "Wraps Dash/Werkzeug server management to provide explicit start, readiness, and shutdown primitives for magics"
-#  - uses: ["make_server: creates managed WSGI server", "threading.Thread: runs non-blocking mode", "Dash.enable_dev_tools: aligns debug configuration with legacy behaviour"]
-# :contract:
-#  - pre: "Dash application instance supplied, host/port available, caller chooses blocking or background execution"
-#  - post: "Server can be started in blocking or background mode and shut down deterministically without orphaned threads"
-#  - invariant: "Server reference access guarded by lock; hot reload disabled to prevent unmanaged threads"
-# :complexity: 5
-# :decision_cache: "Selected werkzeug.make_server for lifecycle control because Dash.run lacks shutdown hooks, enabling reliable stop semantics across notebook interrupts [decision-magics-server-001]"
-# LLM:END
-class ManagedDashboardServer:
-    """Manage Dash server lifecycle for foreground and background execution."""
-
-    def __init__(self, app: Any, host: str, port: int, title: str):
-        """Initialise lifecycle manager.
-
-        Args:
-            app: Dash application instance to expose.
-            host: Host interface to bind.
-            port: Port number to bind.
-            title: Human-readable dashboard title (for logging context).
-        """
-        self._app = app
-        self._host = host
-        self._port = port
-        self._title = title
-        self._server: Optional[BaseWSGIServer] = None
-        self._thread: Optional[threading.Thread] = None
-        self._ready_event = threading.Event()
-        self._shutdown_event = threading.Event()
-        self._lock = threading.Lock()
-
-    # LLM:METADATA
-    # :hierarchy: [IPython | Magics | ServerLifecycle | ManagedDashboardServer]
-    # :relates-to:
-    #  - motivated_by: "Need to create bounded server instance without Dash reloader threads"
-    #  - uses: ["Dash.enable_dev_tools: align debugging", "make_server: build WSGI server"]
-    # :contract:
-    #  - pre: "Server not yet initialised"
-    #  - post: "_server holds ready WSGI server with timeout set; ready event cleared prior to start"
-    #  - invariant: "_server is created exactly once per lifecycle"
-    # :complexity: 3
-    # LLM:END
-    def _setup_server(self) -> None:
-        """Construct underlying Werkzeug server when first needed."""
-        if self._server is not None:
-            raise RuntimeError("Server already initialised for this dashboard")
-
-        self._ready_event.clear()
-        self._shutdown_event.clear()
-        # Align with previous behaviour: debug tooling enabled without hot reload.
-        if hasattr(self._app, "enable_dev_tools"):
-            self._app.enable_dev_tools(debug=True, dev_tools_hot_reload=False)
-
-        server = make_server(self._host, self._port, self._app.server, threaded=True)
-        server.timeout = 1
-        server.shutdown_signal = False
-        self._server = server
-
-    # LLM:METADATA
-    # :hierarchy: [IPython | Magics | ServerLifecycle | ManagedDashboardServer]
-    # :relates-to:
-    #  - motivated_by: "Ensure sockets are closed and state reset exactly once after server stops"
-    #  - uses: ["BaseWSGIServer.server_close: release port", "threading.Lock: serialise cleanup"]
-    # :contract:
-    #  - pre: "Lock free; _server may be None if already closed"
-    #  - post: "Server socket closed, _server cleared, shutdown event set"
-    #  - invariant: "Shutdown event signalled after cleanup"
-    # :complexity: 2
-    # LLM:END
-    def _finalize_server(self) -> None:
-        """Tear down server resources and signal shutdown."""
-        with self._lock:
-            server = self._server
-            if server is None:
-                self._shutdown_event.set()
-                return
-
-            try:
-                server.server_close()
-            finally:
-                self._server = None
-                self._shutdown_event.set()
-
-    # LLM:METADATA
-    # :hierarchy: [IPython | Magics | ServerLifecycle | ManagedDashboardServer]
-    # :relates-to:
-    #  - motivated_by: "Provide blocking execution path mirroring legacy %dashboard behaviour"
-    #  - uses: ["BaseWSGIServer.serve_forever: request loop", "threading.Event.set: expose readiness"]
-    # :contract:
-    #  - pre: "Server not running; called from notebook foreground thread"
-    #  - post: "Serve_forever loop runs until shutdown signal or KeyboardInterrupt"
-    #  - invariant: "Ready event set before first request; final cleanup handled by shutdown() or external caller"
-    # :complexity: 3
-    # LLM:END
-    def run_blocking(self) -> None:
-        """Serve dashboard in the current thread until interrupted or shutdown."""
-        self._setup_server()
-        assert self._server is not None  # For type checkers
-
-        self._ready_event.set()
-        logger.debug(
-            "[ManagedDashboardServer] ENTER run_blocking | title=%s | port=%s",
-            self._title,
-            self._port,
-        )
-        try:
-            self._server.serve_forever()
-        finally:
-            logger.debug(
-                "[ManagedDashboardServer] EXIT run_blocking | title=%s | port=%s",
-                self._title,
-                self._port,
-            )
-
-    # LLM:METADATA
-    # :hierarchy: [IPython | Magics | ServerLifecycle | ManagedDashboardServer]
-    # :relates-to:
-    #  - motivated_by: "Expose non-blocking execution for %%dashboard_cell nonblocking:true contract"
-    #  - uses: ["threading.Thread: daemon execution", "BaseWSGIServer.serve_forever: lifecycle", "Callable: registry removal callback"]
-    # :contract:
-    #  - pre: "Server not already running"
-    #  - post: "Background thread servicing requests; ready event set before returning"
-    #  - invariant: "Any unhandled exception logged and triggers cleanup"
-    # :complexity: 4
-    # LLM:END
-    def run_background(self, on_exit: Optional[Callable[[], None]] = None) -> None:
-        """Run dashboard in background thread.
-
-        Args:
-            on_exit: Optional callback invoked once the server stops.
-        """
-        self._setup_server()
-        assert self._server is not None
-
-        def _target() -> None:
-            self._ready_event.set()
-            logger.debug(
-                "[ManagedDashboardServer] ENTER run_background | title=%s | port=%s",
-                self._title,
-                self._port,
-            )
-            try:
-                self._server.serve_forever()
-            except Exception as exc:  # pragma: no cover - defensive logging
-                logger.exception(
-                    "[ManagedDashboardServer] Background server error | title=%s | port=%s | error=%s",
-                    self._title,
-                    self._port,
-                    exc,
-                )
-            finally:
-                logger.debug(
-                    "[ManagedDashboardServer] EXIT run_background | title=%s | port=%s",
-                    self._title,
-                    self._port,
-                )
-                self._finalize_server()
-                if on_exit:
-                    on_exit()
-
-        self._thread = threading.Thread(target=_target, daemon=True)
-        self._thread.start()
-
-        if not self._ready_event.wait(timeout=2):
-            self.shutdown()
-            raise RuntimeError(
-                f"Dashboard '{self._title}' failed to start within readiness timeout"
-            )
-
-    # LLM:METADATA
-    # :hierarchy: [IPython | Magics | ServerLifecycle | ManagedDashboardServer]
-    # :relates-to:
-    #  - motivated_by: "Allow external kill commands to stop dashboard deterministically"
-    #  - uses: ["threading.Thread.join: await background", "BaseWSGIServer.shutdown_signal: stop loop"]
-    # :contract:
-    #  - pre: "Server may be running in foreground or background"
-    #  - post: "Server loop signalled to stop, sockets closed, thread joined when applicable"
-    #  - invariant: "Method safe to call multiple times"
-    # :complexity: 3
-    # LLM:END
-    def shutdown(self) -> None:
-        """Signal server to stop and release resources."""
-        with self._lock:
-            server = self._server
-        if server is None:
-            self._shutdown_event.set()
-            return
-
-        server.shutdown_signal = True
-
-        if self._thread and self._thread.is_alive():
-            self._thread.join(timeout=5)
-        self._finalize_server()
-        self._thread = None
-
-    # LLM:METADATA
-    # :hierarchy: [IPython | Magics | ServerLifecycle | ManagedDashboardServer]
-    # :relates-to:
-    #  - motivated_by: "Expose readiness checks for caller to confirm server availability"
-    #  - uses: ["threading.Event.wait: readiness gating"]
-    # :contract:
-    #  - pre: "Server startup initiated"
-    #  - post: "Returns True when ready event set within timeout"
-    #  - invariant: "Does not modify server state"
-    # :complexity: 1
-    # LLM:END
-    def wait_until_ready(self, timeout: Optional[float] = None) -> bool:
-        """Wait until the server reports readiness.
-
-        Args:
-            timeout: Optional duration in seconds before giving up.
-
-        Returns:
-            True if ready before timeout, False otherwise.
-        """
-        return self._ready_event.wait(timeout=timeout)
 
 
 # LLM:METADATA
@@ -457,7 +234,7 @@ class DashboardMagics(Magics):
                 print(f"💡 Use '%dashboard_kill {process_id}' to stop")
             else:
                 # Run in foreground (blocking)
-                server = ManagedDashboardServer(
+                server = ManagedDashServer(
                     app=app, host="127.0.0.1", port=args.port, title=title
                 )
                 print(f"✅ Dashboard ready at http://127.0.0.1:{args.port}/")
@@ -553,7 +330,7 @@ class DashboardMagics(Magics):
                 print(f"💡 Use '%dashboard_kill {process_id}' to stop")
             else:
                 # Run in foreground (blocking) - CELL STAYS IN RUNNING STATE [*]
-                server = ManagedDashboardServer(
+                server = ManagedDashServer(
                     app=app, host="127.0.0.1", port=port, title=title
                 )
                 print(f"\n📊 Dashboard ready at http://127.0.0.1:{port}/")
@@ -1078,7 +855,7 @@ class DashboardMagics(Magics):
     # :hierarchy: [IPython | Magics | DashboardMagics | Registry]
     # :relates-to:
     #  - motivated_by: "Dashboards started in background require tracking for kill commands and cleanup"
-    #  - uses: ["ManagedDashboardServer.shutdown: lifecycle control", "datetime.now: capture start time"]
+    #  - uses: ["ManagedDashServer.shutdown: lifecycle control", "datetime.now: capture start time"]
     # :contract:
     #  - pre: "process_id unique, server running"
     #  - post: "Registry entry accessible via _dashboard_processes"
@@ -1086,7 +863,7 @@ class DashboardMagics(Magics):
     # :complexity: 2
     # LLM:END
     def _register_process(
-        self, process_id: str, port: int, server: ManagedDashboardServer, title: str
+        self, process_id: str, port: int, server: ManagedDashServer, title: str
     ) -> None:
         """Register a dashboard process in the registry."""
         process_info = {
@@ -1102,9 +879,7 @@ class DashboardMagics(Magics):
     def _run_dashboard_in_background(self, app: Any, port: int, title: str) -> str:
         """Run dashboard in background thread and return process ID."""
         process_id = self._generate_process_id()
-        server = ManagedDashboardServer(
-            app=app, host="127.0.0.1", port=port, title=title
-        )
+        server = ManagedDashServer(app=app, host="127.0.0.1", port=port, title=title)
 
         def _on_exit() -> None:
             processes = self.shell.user_ns.get("_dashboard_processes", {})
@@ -1134,7 +909,7 @@ class DashboardMagics(Magics):
         process_info = processes[process_id]
 
         try:
-            server: Optional[ManagedDashboardServer] = process_info.get("server")
+            server: Optional[ManagedDashServer] = process_info.get("server")
             if server is not None:
                 server.shutdown()
             del processes[process_id]

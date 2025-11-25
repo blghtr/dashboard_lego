@@ -2,7 +2,7 @@
 
 import socket
 import threading
-from typing import Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 from werkzeug.serving import BaseWSGIServer, make_server
 
@@ -15,40 +15,57 @@ logger = get_logger(__name__)
 # LLM:METADATA
 # :hierarchy: [DashboardLego | Utils | Server]
 # :relates-to:
-#  - motivated_by: "Need generic background server management for embedding Dash apps in other frameworks (e.g. FastHTML)"
+#  - motivated_by: "Need generic server management for embedding Dash apps in other frameworks (e.g. FastHTML) and IPython magics, supporting both DashboardPage and direct Dash app instances"
 #  - implements: "ManagedDashServer, get_or_create_dash_server"
 #  - uses: ["werkzeug.serving", "threading"]
 # :contract:
-#  - pre: "DashboardPage instance provided"
-#  - post: "Server running in background thread, accessible via .url"
-#  - invariant: "Thread-safe server registry, automatic port finding"
-# :complexity: 3
-# :decision_cache: "Moved from sales_predictor to core utils for reusability [refactor-001]"
+#  - pre: "DashboardPage instance OR Dash app provided"
+#  - post: "Server running in background or foreground thread, accessible via .url"
+#  - invariant: "Thread-safe server registry, automatic port finding, supports both blocking and non-blocking execution"
+# :complexity: 4
+# :decision_cache: "Extended to accept DashboardPage or Dash app for reuse in IPython magics, added run_blocking() for foreground execution [refactor-002]"
 # LLM:END
 class ManagedDashServer:
-    """Manage Dash server lifecycle for background execution and iframe embedding.
+    """Manage Dash server lifecycle for foreground and background execution.
 
-    This class manages a Dash application server running in a background thread,
-    allowing it to be embedded in an iframe within FastHTML pages.
+    This class manages a Dash application server running in either a foreground
+    (blocking) or background (non-blocking) thread, supporting both DashboardPage
+    instances and direct Dash app instances.
     """
 
     def __init__(
         self,
-        dashboard_page: DashboardPage,
+        dashboard_page: Optional[DashboardPage] = None,
+        app: Optional[Any] = None,
         host: str = "127.0.0.1",
         port: Optional[int] = None,
+        title: Optional[str] = None,
     ):
         """Initialize Dash server manager.
 
         Args:
-            dashboard_page: DashboardPage instance to serve.
+            dashboard_page: DashboardPage instance to serve (mutually exclusive with app).
+            app: Dash application instance to serve (mutually exclusive with dashboard_page).
             host: Host interface to bind (default: 127.0.0.1).
             port: Port number to bind (default: None, auto-assign available port).
+            title: Human-readable dashboard title for logging (default: from dashboard_page or "Dashboard").
         """
+        if dashboard_page is None and app is None:
+            raise ValueError("Must provide either dashboard_page or app")
+        if dashboard_page is not None and app is not None:
+            raise ValueError("Cannot provide both dashboard_page and app")
+
         self._dashboard_page = dashboard_page
         self._host = host
         self._port = port or self._find_free_port()
-        self._app = dashboard_page.create_app(suppress_callback_exceptions=True)
+        self._title = title or (dashboard_page.title if dashboard_page else "Dashboard")
+
+        # Create or use provided app
+        if dashboard_page:
+            self._app = dashboard_page.create_app(suppress_callback_exceptions=True)
+        else:
+            self._app = app
+
         self._server: Optional[BaseWSGIServer] = None
         self._thread: Optional[threading.Thread] = None
         self._ready_event = threading.Event()
@@ -72,6 +89,10 @@ class ManagedDashServer:
         self._ready_event.clear()
         self._shutdown_event.clear()
 
+        # Align with previous behaviour: debug tooling enabled without hot reload
+        if hasattr(self._app, "enable_dev_tools"):
+            self._app.enable_dev_tools(debug=True, dev_tools_hot_reload=False)
+
         # Create WSGI server
         server = make_server(self._host, self._port, self._app.server, threaded=True)
         server.timeout = 1
@@ -92,8 +113,28 @@ class ManagedDashServer:
                 self._server = None
                 self._shutdown_event.set()
 
-    def start(self, on_exit: Optional[Callable[[], None]] = None) -> None:
-        """Start dashboard server in background thread.
+    def run_blocking(self) -> None:
+        """Serve dashboard in the current thread until interrupted or shutdown."""
+        self._setup_server()
+        assert self._server is not None
+
+        self._ready_event.set()
+        logger.debug(
+            "[ManagedDashServer] ENTER run_blocking | title=%s | port=%s",
+            self._title,
+            self._port,
+        )
+        try:
+            self._server.serve_forever()
+        finally:
+            logger.debug(
+                "[ManagedDashServer] EXIT run_blocking | title=%s | port=%s",
+                self._title,
+                self._port,
+            )
+
+    def run_background(self, on_exit: Optional[Callable[[], None]] = None) -> None:
+        """Run dashboard in background thread.
 
         Args:
             on_exit: Optional callback invoked when server stops.
@@ -104,22 +145,25 @@ class ManagedDashServer:
         def _target() -> None:
             self._ready_event.set()
             logger.debug(
-                "dash_server_started",
-                host=self._host,
-                port=self._port,
-                title=self._dashboard_page.title,
+                "[ManagedDashServer] ENTER run_background | title=%s | port=%s",
+                self._title,
+                self._port,
             )
             try:
                 self._server.serve_forever()
             except Exception as exc:
                 logger.exception(
-                    "dash_server_error",
-                    host=self._host,
-                    port=self._port,
-                    error=str(exc),
+                    "[ManagedDashServer] Background server error | title=%s | port=%s | error=%s",
+                    self._title,
+                    self._port,
+                    exc,
                 )
             finally:
-                logger.debug("dash_server_stopped", host=self._host, port=self._port)
+                logger.debug(
+                    "[ManagedDashServer] EXIT run_background | title=%s | port=%s",
+                    self._title,
+                    self._port,
+                )
                 self._finalize_server()
                 if on_exit:
                     on_exit()
@@ -131,8 +175,16 @@ class ManagedDashServer:
         if not self._ready_event.wait(timeout=2):
             self.shutdown()
             raise RuntimeError(
-                "Dashboard server failed to start within readiness timeout"
+                f"Dashboard '{self._title}' failed to start within readiness timeout"
             )
+
+    def start(self, on_exit: Optional[Callable[[], None]] = None) -> None:
+        """Start dashboard server in background thread (alias for run_background).
+
+        Args:
+            on_exit: Optional callback invoked when server stops.
+        """
+        self.run_background(on_exit=on_exit)
 
     def shutdown(self) -> None:
         """Signal server to stop and release resources."""
@@ -182,17 +234,34 @@ _registry_lock = threading.Lock()
 
 
 def get_or_create_dash_server(
-    server_id: str, dashboard_page: DashboardPage, host: str = "127.0.0.1"
+    server_id: str,
+    dashboard_page: Optional[DashboardPage] = None,
+    app: Optional[Any] = None,
+    host: str = "127.0.0.1",
+    title: Optional[str] = None,
 ) -> ManagedDashServer:
     """Get existing or create new Dash server for given ID.
 
+    Supports both old API (positional dashboard_page) and new API (named parameters).
+
     Args:
         server_id: Unique identifier for the server (e.g., user_id or session_id).
-        dashboard_page: DashboardPage instance to serve.
+        dashboard_page: DashboardPage instance to serve (mutually exclusive with app).
+            Can be passed as positional argument for backward compatibility:
+            get_or_create_dash_server(server_id, dashboard_page)
+        app: Dash application instance to serve (mutually exclusive with dashboard_page).
         host: Host interface to bind.
+        title: Human-readable dashboard title for logging.
 
     Returns:
         ManagedDashServer instance.
+
+    Examples:
+        >>> # Old API (backward compatible)
+        >>> server = get_or_create_dash_server("user_123", dashboard_page)
+        >>> # New API
+        >>> server = get_or_create_dash_server("user_123", dashboard_page=dashboard_page, title="My Dashboard")
+        >>> server = get_or_create_dash_server("user_123", app=app, title="My Dashboard")
     """
     with _registry_lock:
         if server_id in _server_registry:
@@ -203,7 +272,9 @@ def get_or_create_dash_server(
             del _server_registry[server_id]
 
         # Create new server
-        server = ManagedDashServer(dashboard_page, host=host)
+        server = ManagedDashServer(
+            dashboard_page=dashboard_page, app=app, host=host, title=title
+        )
         server.start()
         _server_registry[server_id] = server
         return server

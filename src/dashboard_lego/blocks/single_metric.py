@@ -20,7 +20,7 @@ Each instance calculates and renders ONE metric value in a compact card.
 :decision_cache: "atomic_metrics: Independent blocks for flexibility"
 """
 
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import dash_bootstrap_components as dbc
 import pandas as pd
@@ -87,9 +87,10 @@ class SingleMetricBlock(BaseBlock):
                 - column (str): Column name to aggregate
                 - agg (str|Callable): Aggregation func
                 - title (str): Display title
-                - color (str): Bootstrap color (optional)
+                - color (str|dict): Bootstrap color (optional, supports conditional)
+                - label (str|dict): Display label (optional, supports conditional)
                 - dtype (str): Type conversion (optional)
-                - color_rules (dict): Conditional coloring (optional)
+                - color_rules (dict): Conditional coloring (optional, deprecated)
             subscribes_to: State IDs to subscribe to
         """
         self.metric_spec = metric_spec
@@ -237,7 +238,53 @@ class SingleMetricBlock(BaseBlock):
         # Fallback
         return "primary"
 
-    def _render_card(self, value: float, color: str) -> Component:
+    def _determine_label(
+        self, value: float, label_spec: Union[str, Dict[str, Any]]
+    ) -> str:
+        """
+        Determine display label for metric value.
+
+        :hierarchy: [Blocks | Metrics | SingleMetricBlock | LabelResolution]
+        :relates-to:
+         - motivated_by: "PRD: Conditional label mapping based on metric value thresholds"
+         - implements: "method: '_determine_label'"
+
+        :contract:
+         - pre: "label_spec is str or dict with thresholds"
+         - post: "Returns display label string"
+
+        :complexity: 2
+        :decision_cache: "conditional_labeling: Threshold rules mirror color logic"
+
+        Args:
+            value: Calculated metric value
+            label_spec: Either:
+                - str: Direct label string
+                - dict: {'thresholds': [...], 'labels': [...]}
+
+        Returns:
+            Display label string
+        """
+        if isinstance(label_spec, str):
+            return label_spec
+
+        if isinstance(label_spec, dict) and "thresholds" in label_spec:
+            thresholds = label_spec["thresholds"]
+            labels = label_spec["labels"]
+
+            for i, threshold in enumerate(thresholds):
+                if value < threshold:
+                    return labels[i]
+
+            # Value exceeds all thresholds
+            return labels[-1]
+
+        # Fallback to title if label_spec is invalid
+        return self.metric_spec.get("title", "Metric")
+
+    def _render_card(
+        self, value: float, color: str, label: Optional[str] = None
+    ) -> Component:
         """
         Render metric card with theme-aware styling.
 
@@ -257,11 +304,12 @@ class SingleMetricBlock(BaseBlock):
         Args:
             value: Metric value
             color: Bootstrap theme color name
+            label: Display label (optional, defaults to title)
 
         Returns:
             dbc.Card component
         """
-        title = self.metric_spec["title"]
+        title = label if label is not None else self.metric_spec["title"]
 
         # Get theme-aware styles
         if self.theme_config:
@@ -362,8 +410,17 @@ class SingleMetricBlock(BaseBlock):
         else:
             color = color_spec
 
+        # Determine label (support conditional labeling)
+        label = None
+        if "label" in self.metric_spec:
+            label_spec = self.metric_spec["label"]
+            if isinstance(label_spec, dict):
+                label = self._determine_label(value, label_spec)
+            else:
+                label = label_spec
+
         # Render card
-        return self._render_card(value, color)
+        return self._render_card(value, color, label)
 
     def layout(self) -> Component:
         """
