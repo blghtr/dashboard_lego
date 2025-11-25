@@ -182,7 +182,7 @@ class TextBlock(BaseBlock):
                     if idx < len(state_ids):
                         params[state_ids[idx]] = value
 
-            df = self.datasource.get_processed_data(params)
+            df = self._get_data_sync(params)
             generated_content = self.content_generator(df)
 
             # If the generator returns a string, wrap it in dcc.Markdown

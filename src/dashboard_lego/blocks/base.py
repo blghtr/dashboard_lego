@@ -3,11 +3,15 @@ This module defines the abstract base class for all dashboard blocks.
 
 """
 
+import asyncio
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
 
+import pandas as pd
 import plotly.graph_objects as go
 from dash.development.base_component import Component
+
+from dashboard_lego.core.async_api import AsyncDataSource
 
 # Use forward references for type hints to avoid circular imports
 from dashboard_lego.core.datasource import DataSource
@@ -499,3 +503,58 @@ class BaseBlock(ABC):
 
         """
         pass
+
+    def _get_data_sync(self, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
+        """
+        Get data from datasource, handling both sync and async datasources.
+
+        For AsyncDataSource, runs async method in sync context using asyncio.run().
+        For DataSource, calls sync method directly.
+
+        :hierarchy: [Blocks | Base | DataAccess]
+        :relates-to:
+         - motivated_by: "Support both sync and async datasources in blocks"
+         - implements: "method: '_get_data_sync'"
+
+        :contract:
+         - pre: "datasource is DataSource or AsyncDataSource instance"
+         - post: "Returns DataFrame synchronously (async datasource wrapped)"
+
+        Args:
+            params: Parameters for data retrieval
+
+        Returns:
+            DataFrame from datasource
+        """
+        if isinstance(self.datasource, AsyncDataSource):
+            # Async datasource - run in sync context
+            self.logger.debug(
+                "[BaseBlock|_GetDataSync] Using AsyncDataSource, running async method"
+            )
+            try:
+                # Check if there's already an event loop running
+                asyncio.get_running_loop()
+                # If we're in an async context (event loop running), we can't use asyncio.run()
+                # This shouldn't happen in Dash callbacks (they're sync), but handle gracefully
+                self.logger.warning(
+                    "[BaseBlock|_GetDataSync] Event loop already running, "
+                    "this should not happen in Dash callbacks. Using executor."
+                )
+                import concurrent.futures
+
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(
+                        asyncio.run,
+                        self.datasource.get_processed_data_async(params or {}),
+                    )
+                    return future.result()
+            except RuntimeError:
+                # No event loop running, safe to use asyncio.run()
+                # This is the normal case for Dash callbacks (sync context)
+                return asyncio.run(
+                    self.datasource.get_processed_data_async(params or {})
+                )
+        else:
+            # Sync datasource - call directly
+            self.logger.debug("[BaseBlock|_GetDataSync] Using sync DataSource")
+            return self.datasource.get_processed_data(params)

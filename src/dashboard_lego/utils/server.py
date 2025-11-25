@@ -40,6 +40,8 @@ class ManagedDashServer:
         host: str = "127.0.0.1",
         port: Optional[int] = None,
         title: Optional[str] = None,
+        cors_origins: Optional[list[str]] = None,
+        allow_iframe: bool = True,
     ):
         """Initialize Dash server manager.
 
@@ -49,6 +51,8 @@ class ManagedDashServer:
             host: Host interface to bind (default: 127.0.0.1).
             port: Port number to bind (default: None, auto-assign available port).
             title: Human-readable dashboard title for logging (default: from dashboard_page or "Dashboard").
+            cors_origins: List of allowed CORS origins (default: None, allows all with "*").
+            allow_iframe: Whether to allow iframe embedding (default: True).
         """
         if dashboard_page is None and app is None:
             raise ValueError("Must provide either dashboard_page or app")
@@ -59,6 +63,8 @@ class ManagedDashServer:
         self._host = host
         self._port = port or self._find_free_port()
         self._title = title or (dashboard_page.title if dashboard_page else "Dashboard")
+        self._cors_origins = cors_origins or ["*"]
+        self._allow_iframe = allow_iframe
 
         # Create or use provided app
         if dashboard_page:
@@ -66,11 +72,87 @@ class ManagedDashServer:
         else:
             self._app = app
 
+        # Setup CORS and iframe headers
+        self._setup_cors_and_iframe()
+
         self._server: Optional[BaseWSGIServer] = None
         self._thread: Optional[threading.Thread] = None
         self._ready_event = threading.Event()
         self._shutdown_event = threading.Event()
         self._lock = threading.Lock()
+
+    def _setup_cors_and_iframe(self) -> None:
+        """Setup CORS headers and iframe embedding support."""
+
+        @self._app.server.after_request
+        def add_headers(response):
+            """Add CORS and iframe headers to all responses."""
+            # CORS headers
+            if "*" in self._cors_origins:
+                response.headers["Access-Control-Allow-Origin"] = "*"
+            else:
+                # In production, you'd check the Origin header and set accordingly
+                # For simplicity, allow first origin or use * for development
+                response.headers["Access-Control-Allow-Origin"] = (
+                    self._cors_origins[0] if self._cors_origins else "*"
+                )
+
+            response.headers["Access-Control-Allow-Methods"] = (
+                "GET, POST, OPTIONS, PUT, DELETE"
+            )
+            response.headers["Access-Control-Allow-Headers"] = (
+                "Content-Type, Authorization"
+            )
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+
+            # Iframe embedding headers
+            if self._allow_iframe:
+                # Allow iframe embedding (remove X-Frame-Options or set to SAMEORIGIN)
+                # Use Content-Security-Policy for modern browsers
+                response.headers["X-Frame-Options"] = "SAMEORIGIN"
+                # CSP frame-ancestors allows embedding
+                csp = response.headers.get("Content-Security-Policy", "")
+                if "frame-ancestors" not in csp:
+                    if csp:
+                        csp += "; frame-ancestors *"
+                    else:
+                        csp = "frame-ancestors *"
+                    response.headers["Content-Security-Policy"] = csp
+            else:
+                # Block iframe embedding
+                response.headers["X-Frame-Options"] = "DENY"
+                response.headers["Content-Security-Policy"] = "frame-ancestors 'none'"
+
+            return response
+
+        # Handle OPTIONS preflight requests
+        @self._app.server.before_request
+        def handle_options():
+            """Handle CORS preflight OPTIONS requests."""
+            from flask import request
+
+            if request.method == "OPTIONS":
+                from flask import Response
+
+                response = Response()
+                response.headers["Access-Control-Allow-Origin"] = (
+                    "*"
+                    if "*" in self._cors_origins
+                    else (self._cors_origins[0] if self._cors_origins else "*")
+                )
+                response.headers["Access-Control-Allow-Methods"] = (
+                    "GET, POST, OPTIONS, PUT, DELETE"
+                )
+                response.headers["Access-Control-Allow-Headers"] = (
+                    "Content-Type, Authorization"
+                )
+                response.headers["Access-Control-Allow-Credentials"] = "true"
+                return response
+
+        logger.debug(
+            f"[ManagedDashServer] CORS and iframe headers configured | "
+            f"cors_origins={self._cors_origins} | allow_iframe={self._allow_iframe}"
+        )
 
     @staticmethod
     def _find_free_port() -> int:
@@ -239,6 +321,8 @@ def get_or_create_dash_server(
     app: Optional[Any] = None,
     host: str = "127.0.0.1",
     title: Optional[str] = None,
+    cors_origins: Optional[list[str]] = None,
+    allow_iframe: bool = True,
 ) -> ManagedDashServer:
     """Get existing or create new Dash server for given ID.
 
@@ -273,7 +357,12 @@ def get_or_create_dash_server(
 
         # Create new server
         server = ManagedDashServer(
-            dashboard_page=dashboard_page, app=app, host=host, title=title
+            dashboard_page=dashboard_page,
+            app=app,
+            host=host,
+            title=title,
+            cors_origins=cors_origins,
+            allow_iframe=allow_iframe,
         )
         server.start()
         _server_registry[server_id] = server

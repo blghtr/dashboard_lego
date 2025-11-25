@@ -712,7 +712,7 @@ class TypedChartBlock(BaseBlock):
             )
 
             # Get filtered data (pipeline runs through cache)
-            df = self.datasource.get_processed_data(datasource_params)
+            df = self._get_data_sync(datasource_params)
             self.logger.debug(
                 f"[TypedChartBlock|Update] Received {len(df)} rows from datasource"
             )

@@ -200,7 +200,7 @@ class ControlPanelBlock(BaseBlock):
 
         try:
             # Get data without filtering
-            df = self.datasource.get_processed_data({})
+            df = self._get_data_sync({})
             if df.empty:
                 self.logger.warning(f"Empty data for control panel {self.block_id}")
                 return {}

@@ -398,7 +398,7 @@ class SingleMetricBlock(BaseBlock):
         )
 
         # Get filtered data
-        df = self.datasource.get_processed_data(params)
+        df = self._get_data_sync(params)
 
         # Calculate metric
         value = self._calculate_metric(df)

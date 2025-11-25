@@ -9,7 +9,7 @@ import asyncio
 import pandas as pd
 import pytest
 
-from dashboard_lego.core.async_datasource import AsyncDataSource
+from dashboard_lego.core.async_api import AsyncDataSource
 from dashboard_lego.core.exceptions import DataLoadError
 
 
