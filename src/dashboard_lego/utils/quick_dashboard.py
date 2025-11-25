@@ -27,7 +27,6 @@ advanced (pre-built blocks).
                   for notebook-friendly vertical scrolling"
 """
 
-from functools import reduce
 from typing import Any, Dict, List, Optional, Union
 
 import dash
@@ -41,8 +40,8 @@ from dashboard_lego.blocks.minimal_chart import MinimalChartBlock
 from dashboard_lego.blocks.single_metric import SingleMetricBlock
 from dashboard_lego.blocks.text import TextBlock
 from dashboard_lego.blocks.typed_chart import TypedChartBlock
-from dashboard_lego.core.data_builder import DataBuilder
-from dashboard_lego.core.data_transformer import DataTransformer
+from dashboard_lego.core.data_builder import DfHandler
+from dashboard_lego.core.data_transformer import DataFilter
 from dashboard_lego.core.datasource import DataSource
 from dashboard_lego.core.page import DashboardPage
 from dashboard_lego.core.theme import ThemeConfig
@@ -50,99 +49,6 @@ from dashboard_lego.presets.layouts import one_column, two_column_6_6
 from dashboard_lego.utils.logger import get_logger
 
 logger = get_logger(__name__)
-
-
-# LLM:METADATA
-# :hierarchy: [Utils | QuickDashboard | InMemoryDataBuilder]
-# :relates-to:
-#  - motivated_by: "In-memory DataFrame wrapper for no-disk-I/O requirement:
-#                   users pass DataFrame directly, no file loading,
-#                   satisfies invariant of zero disk writes"
-#  - implements: "DataBuilder subclass wrapping DataFrame in memory"
-#  - uses: ["DataBuilder: base class for build protocol"]
-# :contract:
-#  - pre: "df is valid non-empty pandas DataFrame at initialization"
-#  - post: "build() returns same DataFrame every call (cached in memory)"
-#  - invariant: "no disk I/O, deterministic"
-# :complexity: 2
-# :decision_cache: "DataFrame stored at init over build-time loading:
-#                   avoids repeated reads, guarantees no disk I/O"
-# LLM:END
-
-
-class InMemoryDataBuilder(DataBuilder):
-    """
-    In-memory DataFrame wrapper for Jupyter quick dashboards.
-
-    Wraps a DataFrame directly without any file I/O or disk caching.
-    Satisfies the invariant: no disk writes during runtime.
-
-    Args:
-        df: pandas DataFrame to wrap
-
-    Example:
-        >>> df = pd.read_csv("data.csv")
-        >>> builder = InMemoryDataBuilder(df)
-        >>> datasource = DataSource(data_builder=builder, cache_ttl=0)
-    """
-
-    def __init__(self, df: pd.DataFrame, **kwargs: Any):
-        """
-        Initialize with DataFrame.
-
-        Args:
-            df: DataFrame to wrap
-        """
-        super().__init__(**kwargs)
-        if df is None or not isinstance(df, pd.DataFrame):
-            raise ValueError("df must be a valid pandas DataFrame")
-        if df.empty:
-            logger.warning("[InMemoryDataBuilder] Empty DataFrame provided")
-
-        self._df = df.copy()  # Copy to avoid external mutations
-        logger.debug(
-            f"[Utils|JupyterFactory|InMemoryDataBuilder] Initialized | "
-            f"rows={len(df)} | cols={len(df.columns)}"
-        )
-
-    def _build(self, **kwargs: Any) -> pd.DataFrame:
-        """
-        Return the wrapped DataFrame.
-
-        Args:
-            **kwargs: Ignored (parameters passed as kwargs are also ignored)
-
-        Returns:
-            The wrapped DataFrame
-        """
-        # Accept kwargs for compatibility with datasource calling pattern
-        # InMemoryDataBuilder ignores all parameters since data is already in memory
-        logger.debug("[Utils|JupyterFactory|InMemoryDataBuilder] Returning DataFrame")
-        return self._df
-
-
-class DataFilter(DataTransformer):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def _transform(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        filtered = data.copy()
-        filters = []
-        for key, value in kwargs.items():
-            if key in data.columns:
-                if value is None:
-                    self.logger.debug(
-                        f"DataFilter: skipping {key} because value is None"
-                    )
-                else:
-                    filters.append(data[key] == value)
-        if not filters:
-            return data
-        cond_union = reduce(lambda x, y: x & y, filters)
-        filtered = filtered[cond_union]
-        if filtered.empty:
-            self.logger.warning(f"DataFilter returned empty dataset, kwargs={kwargs}")
-        return filtered
 
 
 # LLM:METADATA
@@ -520,7 +426,7 @@ def _smart_layout(card_specs: List[Dict[str, Any]], datasource: DataSource) -> L
 #  - motivated_by: "Jupyter users need rapid dashboard prototyping without boilerplate: instant visualization in 3-5 lines of code, eliminates need for DataBuilder/DashboardPage boilerplate for 90% of use cases [Feature: JupyterQuickStart, jupyter-quick-001]"
 #  - implements: "Factory function accepting DataFrame + card specs OR pre-built blocks, returns ready-to-run app with optional JupyterDash inline display support [quick_dashboard]"
 #  - uses: [
-#      "InMemoryDataBuilder: wraps DataFrame for zero-disk-I/O data pipeline",
+#      "DfHandler: wraps DataFrame for zero-disk-I/O data pipeline with filtering",
 #      "DataSource: in-memory data pipeline (cache_ttl=0 for no disk writes)",
 #      "DashboardPage: layout assembly and theme integration",
 #      "SingleMetricBlock, TypedChartBlock, TextBlock: card rendering from specs",
@@ -669,7 +575,7 @@ def quick_dashboard(
 
         # Create in-memory datasource (cache_ttl=0 for no disk writes)
         datasource = DataSource(
-            data_builder=InMemoryDataBuilder(df),
+            data_builder=DfHandler(df),
             data_transformer=DataFilter(),
             cache_ttl=0,  # No disk caching
         )

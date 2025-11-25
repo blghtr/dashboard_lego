@@ -111,6 +111,7 @@ class DataSource:
         build_fn: Optional[Callable[[Dict[str, Any]], pd.DataFrame]] = None,
         transform_fn: Optional[Callable[[pd.DataFrame], pd.DataFrame]] = None,
         cache_prewarm_params: Optional[List[Dict[str, Any]]] = None,
+        df: Optional[pd.DataFrame] = None,
         **kwargs,
     ):
         """
@@ -122,12 +123,13 @@ class DataSource:
          - implements: "method: '__init__'"
 
         :contract:
-         - pre: "data_builder, data_transformer, build_fn, transform_fn are optional"
-         - post: "2-stage pipeline ready with handlers created from functions if provided"
+         - pre: "df, build_fn, and data_builder are optional (if none provided, uses default DataBuilder)"
+         - post: "2-stage pipeline ready with handlers created from df/build_fn/builder if provided, or default DataBuilder"
          - stages: "Build → Transform"
+         - priority: "df → build_fn → data_builder → default DataBuilder (first provided wins)"
 
         Args:
-            data_builder: DataBuilder for stage 1 (load + process). If None and build_fn provided, creates LambdaBuilder.
+            data_builder: DataBuilder for stage 1 (load + process). If None and build_fn or df provided, creates appropriate builder.
             data_transformer: DataTransformer for stage 2 (filtering/aggregation). If None and transform_fn provided, creates LambdaTransformer.
             param_classifier: Routes params: 'build' or 'transform'. Default: 'build__' → 'build', 'transform__' → 'transform'.
             cache_dir: Directory for disk cache. If None, uses in-memory cache. Ignored if cache_backend is provided.
@@ -143,6 +145,8 @@ class DataSource:
                          If provided, creates LambdaTransformer automatically. Signature: lambda df: df
             cache_prewarm_params: Optional list of parameter dictionaries to prewarm cache during initialization.
                                  Each dict will be processed through the 2-stage pipeline to populate cache.
+            df: Optional pandas DataFrame. If provided, automatically creates DfHandler as builder.
+                If none of df/build_fn/data_builder provided, uses default DataBuilder (returns empty DataFrame).
         """
 
         def _default_param_classifier(k: str) -> str:
@@ -239,25 +243,42 @@ class DataSource:
         self.cache_ttl = cache_ttl
 
         # Import here to avoid circular imports
-        from dashboard_lego.core.data_builder import DataBuilder
+        from dashboard_lego.core.data_builder import DataBuilder, DfHandler
         from dashboard_lego.core.data_transformer import DataFilter
 
         # LLM:METADATA
         # :hierarchy: [Core | DataSources | DataSource | HandlerCreation]
         # :relates-to:
-        #  - motivated_by: "Create handlers from lambda functions if provided in constructor"
-        #  - implements: "Lambda handler creation logic in __init__"
+        #  - motivated_by: "Create handlers from DataFrame, lambda functions, or use provided builder"
+        #  - implements: "Handler creation logic in __init__ with priority: df → build_fn → data_builder → default"
         # :contract:
-        #  - pre: "build_fn and transform_fn are optional callables"
-        #  - post: "data_builder and data_transformer are set (either provided or created from functions)"
+        #  - pre: "df, build_fn, and data_builder are optional (if none provided, uses default DataBuilder)"
+        #  - post: "data_builder and data_transformer are set (either provided or created or default)"
         # :complexity: 3
         # LLM:END
-        # Create handlers from lambda functions if provided
+        # Create handlers with priority: df → build_fn → data_builder → default DataBuilder
         final_data_builder = data_builder
         final_data_transformer = data_transformer
 
-        if build_fn is not None:
-            # Create LambdaBuilder from build_fn (imported from lambda_handlers)
+        if df is not None:
+            # Create DfHandler from DataFrame (highest priority)
+            if data_builder is not None:
+                self.logger.warning(
+                    "[DataSource|Init] Both 'df' and 'data_builder' provided, using 'df' (DfHandler)"
+                )
+            if build_fn is not None:
+                self.logger.warning(
+                    "[DataSource|Init] Both 'df' and 'build_fn' provided, using 'df' (DfHandler)"
+                )
+            final_data_builder = DfHandler(df, logger=self.logger)
+            self.logger.debug("[DataSource|Init] Created DfHandler from df")
+
+        elif build_fn is not None:
+            # Create LambdaBuilder from build_fn (second priority)
+            if data_builder is not None:
+                self.logger.warning(
+                    "[DataSource|Init] Both 'build_fn' and 'data_builder' provided, using 'build_fn' (LambdaBuilder)"
+                )
             final_data_builder = LambdaBuilder(build_fn, logger=self.logger)
             self.logger.debug("[DataSource|Init] Created LambdaBuilder from build_fn")
 

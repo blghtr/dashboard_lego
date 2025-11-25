@@ -1,10 +1,10 @@
 """
 Tests for quick dashboard factory.
 
-Tests quick_dashboard() factory function with simple and advanced modes.
+Tests quick_dashboard() function with simple and advanced modes.
 
 :hierarchy: [Tests | Utils | QuickDashboard]
-:covers: "quick_dashboard function and InMemoryDataBuilder class"
+:covers: "quick_dashboard function and DfHandler class"
 """
 
 from unittest.mock import Mock, patch
@@ -15,8 +15,8 @@ import pytest
 
 from dashboard_lego.blocks import SingleMetricBlock, TextBlock, TypedChartBlock
 from dashboard_lego.core import DataSource
+from dashboard_lego.core.data_builder import DfHandler
 from dashboard_lego.utils.quick_dashboard import (
-    InMemoryDataBuilder,
     _create_block_from_spec,
     _get_theme_url_and_config,
     _smart_layout,
@@ -24,13 +24,13 @@ from dashboard_lego.utils.quick_dashboard import (
 )
 
 
-class TestInMemoryDataBuilder:
-    """Test InMemoryDataBuilder class."""
+class TestDfHandler:
+    """Test DfHandler class."""
 
     def test_build_returns_dataframe(self):
         """Test that build() returns the wrapped DataFrame."""
         df = pd.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
-        builder = InMemoryDataBuilder(df)
+        builder = DfHandler(df)
 
         result = builder.build()
 
@@ -41,7 +41,7 @@ class TestInMemoryDataBuilder:
     def test_build_returns_copy(self):
         """Test that build() returns copy (no external mutations)."""
         df = pd.DataFrame({"A": [1, 2, 3]})
-        builder = InMemoryDataBuilder(df)
+        builder = DfHandler(df)
 
         # Modify original
         df["A"] = [10, 20, 30]
@@ -53,17 +53,29 @@ class TestInMemoryDataBuilder:
     def test_invalid_dataframe_raises(self):
         """Test that invalid DataFrame raises ValueError."""
         with pytest.raises(ValueError, match="must be a valid pandas DataFrame"):
-            InMemoryDataBuilder(None)
+            DfHandler(None)  # type: ignore
 
         with pytest.raises(ValueError, match="must be a valid pandas DataFrame"):
-            InMemoryDataBuilder("not a dataframe")  # type: ignore
+            DfHandler("not a dataframe")  # type: ignore
 
     def test_empty_dataframe_warns(self):
         """Test that empty DataFrame logs warning."""
         df = pd.DataFrame()
-        builder = InMemoryDataBuilder(df)
+        builder = DfHandler(df)
         result = builder.build()
         assert result.empty
+
+    def test_build_with_filters(self):
+        """Test that build() applies filters from kwargs."""
+        df = pd.DataFrame({"A": [1, 2, 3], "B": ["x", "y", "z"]})
+        builder = DfHandler(df)
+
+        # Filter by column A
+        result = builder.build(A=2)
+
+        assert len(result) == 1
+        assert result.iloc[0]["A"] == 2
+        assert result.iloc[0]["B"] == "y"
 
 
 class TestGetThemeUrlAndConfig:
@@ -94,7 +106,7 @@ class TestCreateBlockFromSpec:
     def datasource(self):
         """Create test datasource."""
         df = pd.DataFrame({"Sales": [100, 200], "Product": ["A", "B"]})
-        return DataSource(data_builder=InMemoryDataBuilder(df), cache_ttl=0)
+        return DataSource(data_builder=DfHandler(df), cache_ttl=0)
 
     def test_create_metric_block(self, datasource):
         """Test creating metric block from spec."""
@@ -181,7 +193,7 @@ class TestSmartLayout:
     def datasource(self):
         """Create test datasource."""
         df = pd.DataFrame({"Sales": [100, 200], "Revenue": [1000, 2000]})
-        return DataSource(data_builder=InMemoryDataBuilder(df), cache_ttl=0)
+        return DataSource(data_builder=DfHandler(df), cache_ttl=0)
 
     def test_pure_metrics(self, datasource):
         """Test layout with only metrics (all in one row)."""
@@ -536,7 +548,7 @@ class TestQuickDashboardAdvancedMode:
     def sample_blocks(self):
         """Create sample blocks."""
         df = pd.DataFrame({"Sales": [100, 200], "Product": ["A", "B"]})
-        datasource = DataSource(data_builder=InMemoryDataBuilder(df), cache_ttl=0)
+        datasource = DataSource(data_builder=DfHandler(df), cache_ttl=0)
 
         return [
             SingleMetricBlock(
@@ -557,7 +569,7 @@ class TestQuickDashboardAdvancedMode:
         """Test advanced mode with pre-built blocks."""
         # Create datasource for advanced mode
         df = pd.DataFrame({"Product": ["A", "B"], "Sales": [100, 200]})
-        datasource = DataSource(data_builder=InMemoryDataBuilder(df))
+        datasource = DataSource(data_builder=DfHandler(df))
         app = quick_dashboard(datasource=datasource, blocks=sample_blocks)
 
         assert isinstance(app, dash.Dash)
@@ -581,7 +593,7 @@ class TestQuickDashboardAdvancedMode:
             )
         # Create datasource for advanced mode
         df = pd.DataFrame({"Product": ["A", "B"], "Sales": [100, 200]})
-        datasource = DataSource(data_builder=InMemoryDataBuilder(df))
+        datasource = DataSource(data_builder=DfHandler(df))
 
         with pytest.raises(ValueError, match="Too many blocks"):
             quick_dashboard(datasource=datasource, blocks=blocks)

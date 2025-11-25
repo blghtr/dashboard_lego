@@ -182,6 +182,88 @@ class DataTransformer:
         return data
 
 
+def _apply_column_filters(
+    df: pd.DataFrame, logger: logging.Logger, **kwargs
+) -> pd.DataFrame:
+    """
+    Apply column-based filters to DataFrame.
+
+    Filters DataFrame by matching kwargs to column names. Builds combined
+    boolean mask for all filters and applies once. Handles numeric type
+    conversion and skips None/'all' values.
+
+    :hierarchy: [Core | DataSources | DataTransformer | FilterUtility]
+    :relates-to:
+     - motivated_by: "Extracted filter logic for reuse in DataFilter and DfHandler to avoid code duplication [decision-filter-extract-001]"
+     - implements: "function: '_apply_column_filters'"
+     - uses: ["pandas.Series: boolean mask construction", "pandas.api.types: dtype checking"]
+     - enables: ["DataFilter._transform: uses this for filtering", "DfHandler._build: uses this for filtering"]
+
+    :contract:
+     - pre: "df is valid DataFrame, logger is valid Logger instance, kwargs contains filter parameters"
+     - post: "Returns filtered DataFrame with rows matching all filter conditions (AND logic)"
+     - invariant: "Does not modify input DataFrame (works on copy), skips params not in columns, skips None/'all' values, handles numeric conversion gracefully"
+
+    :complexity: 5
+    :decision_cache: "Extracted to standalone function for reuse: avoids duplication between DataFilter and DfHandler, maintains single source of truth for filter logic [decision-filter-extract-001]"
+
+    Args:
+        df: Input DataFrame to filter
+        logger: Logger instance for warnings
+        **kwargs: Filter parameters (key=column_name, value=filter_value)
+
+    Returns:
+        Filtered DataFrame with rows matching all filter conditions
+
+    Example:
+        >>> df = pd.DataFrame({'A': [1, 2, 3], 'B': ['x', 'y', 'z']})
+        >>> logger = logging.getLogger(__name__)
+        >>> filtered = _apply_column_filters(df, logger, A=2, B='y')
+        >>> len(filtered)
+        1
+    """
+    df_copy = df.copy()
+
+    # Build combined boolean mask for all filters
+    mask = pd.Series(True, index=df_copy.index)
+
+    for key, value in kwargs.items():
+        # Skip special params or those not in columns
+        if key not in df_copy.columns:
+            # Log warning if it looks like a filter param (no double underscore)
+            if "__" not in key:
+                logger.warning(f"[DataFilter] Param '{key}' not in columns, ignoring")
+            continue
+
+        # Skip None or 'all'
+        if value is None or value == "all":
+            continue
+
+        # Build filter condition for this param
+        try:
+            # Handle numeric type conversion if needed
+            col_type = df_copy[key].dtype
+            filter_value = value
+
+            if pd.api.types.is_numeric_dtype(col_type) and isinstance(value, str):
+                try:
+                    if "." in value:
+                        filter_value = float(value)
+                    else:
+                        filter_value = int(value)
+                except ValueError:
+                    # Keep as string if conversion fails
+                    pass
+
+            # Combine with existing mask using AND
+            mask = mask & (df_copy[key] == filter_value)
+        except Exception as e:
+            logger.warning(f"[DataFilter] Failed to filter by {key}={value}: {e}")
+
+    # Apply combined mask once
+    return df_copy[mask]
+
+
 class DataFilter(DataTransformer):
     """
     Transformer that filters DataFrame based on parameters matching column names.
@@ -203,6 +285,8 @@ class DataFilter(DataTransformer):
         """
         Filter data by matching params to columns.
 
+        Uses extracted _apply_column_filters() function for filtering logic.
+
         Args:
             data: Input DataFrame
             **kwargs: Filter parameters
@@ -210,44 +294,7 @@ class DataFilter(DataTransformer):
         Returns:
             Filtered DataFrame
         """
-        df = data.copy()
-        for key, value in kwargs.items():
-            # Skip special params or those not in columns
-            if key not in df.columns:
-                # Log warning if it looks like a filter param (no double underscore)
-                if "__" not in key:
-                    self.logger.warning(
-                        f"[DataFilter] Param '{key}' not in columns, ignoring"
-                    )
-                continue
-
-            # Skip None or 'all'
-            if value is None or value == "all":
-                continue
-
-            # Apply filter
-            try:
-                # Handle numeric type conversion if needed
-                col_type = df[key].dtype
-                filter_value = value
-
-                if pd.api.types.is_numeric_dtype(col_type) and isinstance(value, str):
-                    try:
-                        if "." in value:
-                            filter_value = float(value)
-                        else:
-                            filter_value = int(value)
-                    except ValueError:
-                        # Keep as string if conversion fails
-                        pass
-
-                df = df[df[key] == filter_value]
-            except Exception as e:
-                self.logger.warning(
-                    f"[DataFilter] Failed to filter by {key}={value}: {e}"
-                )
-
-        return df
+        return _apply_column_filters(data, self.logger, **kwargs)
 
 
 class ChainedTransformer(DataTransformer):
