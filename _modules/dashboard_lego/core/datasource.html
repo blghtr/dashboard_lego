@@ -128,7 +128,6 @@
 <span class="sd">    &gt;&gt;&gt; # Cache is now prewarmed for these parameter combinations</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
@@ -151,7 +150,7 @@
 <a class="viewcode-back" href="../../../api/core.html#dashboard_lego.core.datasource.DataSource">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DataSource</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Base data source with stateless 2-stage pipeline.</span>
+<span class="sd">    Base data source with stateless 2-stage pipeline (synchronous only).</span>
 
 <span class="sd">    Pipeline stages (all via cache):</span>
 <span class="sd">    1. Build (DataBuilder.build) - Load + Process</span>
@@ -159,21 +158,22 @@
 
 <span class="sd">    NO STORED STATE - data computed fresh each call via cache.</span>
 <span class="sd">    NO ABSTRACT METHODS - fully concrete base class.</span>
+<span class="sd">    SYNC ONLY - for async support, use AsyncDataSource instead.</span>
 
 <span class="sd">    :hierarchy: [Core | DataSources | DataSource]</span>
 <span class="sd">    :relates-to:</span>
 <span class="sd">     - motivated_by: &quot;v0.15.0: 2-stage pipeline for semantic clarity&quot;</span>
-<span class="sd">     - implements: &quot;class: &#39;DataSource&#39; stateless&quot;</span>
+<span class="sd">     - implements: &quot;class: &#39;DataSource&#39; stateless (sync only)&quot;</span>
 <span class="sd">     - uses: [&quot;library: &#39;diskcache&#39;&quot;, &quot;class: &#39;DataBuilder&#39;&quot;, &quot;class: &#39;DataFilter&#39;&quot;]</span>
 
 <span class="sd">    :rationale: &quot;2-stage pipeline (Build → Filter) simpler than 3-stage&quot;</span>
 <span class="sd">    :contract:</span>
-<span class="sd">     - pre: &quot;data_builder and data_filter provided&quot;</span>
-<span class="sd">     - post: &quot;get_processed_data(params) returns filtered data via cache&quot;</span>
-<span class="sd">     - invariant: &quot;No stored data attributes, no abstract methods&quot;</span>
+<span class="sd">     - pre: &quot;data_builder and data_filter provided (sync only)&quot;</span>
+<span class="sd">     - post: &quot;get_processed_data(params) returns filtered data via cache (sync)&quot;</span>
+<span class="sd">     - invariant: &quot;No stored data attributes, no abstract methods, sync only&quot;</span>
 
 <span class="sd">    :complexity: 7</span>
-<span class="sd">    :decision_cache: &quot;Chose 2-stage over 3-stage for semantic clarity&quot;</span>
+<span class="sd">    :decision_cache: &quot;Chose 2-stage over 3-stage for semantic clarity. Async methods removed - use AsyncDataSource for async support.&quot;</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># LLM:METADATA</span>
@@ -942,189 +942,7 @@
                 <span class="sa">f</span><span class="s2">&quot;[get_processed_data] Unexpected error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span>
             <span class="p">)</span>
             <span class="k">raise</span> <span class="n">DataLoadError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Data processing failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span></div>
-
-
-<div class="viewcode-block" id="DataSource.get_processed_data_async">
-<a class="viewcode-back" href="../../../api/core.html#dashboard_lego.core.datasource.DataSource.get_processed_data_async">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_processed_data_async</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Async version of get_processed_data for use with async frameworks.</span>
-
-<span class="sd">        Supports both async and sync build_fn:</span>
-<span class="sd">        - If build_fn is async (coroutine), awaits it directly</span>
-<span class="sd">        - If build_fn is sync, runs it in executor to avoid blocking event loop</span>
-
-<span class="sd">        :contract:</span>
-<span class="sd">         - pre: &quot;params is dict or None&quot;</span>
-<span class="sd">         - post: &quot;Returns filtered DataFrame (async)&quot;</span>
-<span class="sd">         - stages: &quot;Build (async-aware) → Filter (sync for now)&quot;</span>
-<span class="sd">         - invariant: &quot;Stateless (no stored data)&quot;</span>
-
-<span class="sd">        :complexity: 7</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            params: Parameters for build + filter</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            Filtered DataFrame from 2-stage pipeline</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            DataLoadError: If data loading/building fails</span>
-<span class="sd">            CacheError: If cache operations fail (warning only, retries without cache)</span>
-
-<span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; async def fetch_api_data(params):</span>
-<span class="sd">            ...     async with httpx.AsyncClient() as client:</span>
-<span class="sd">            ...         response = await client.get(&#39;/api/data&#39;)</span>
-<span class="sd">            ...     return pd.DataFrame(response.json())</span>
-<span class="sd">            &gt;&gt;&gt;</span>
-<span class="sd">            &gt;&gt;&gt; ds = DataSource(build_fn=fetch_api_data)</span>
-<span class="sd">            &gt;&gt;&gt; df = await ds.get_processed_data_async({&#39;limit&#39;: 100})</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">params</span> <span class="o">=</span> <span class="n">params</span> <span class="ow">or</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_current_params</span> <span class="o">=</span> <span class="n">params</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;[get_processed_data_async] Called | params=</span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="p">)</span>
-
-        <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># Classify params</span>
-            <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.processing_context</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataProcessingContext</span>
-
-            <span class="n">context</span> <span class="o">=</span> <span class="n">DataProcessingContext</span><span class="o">.</span><span class="n">from_params</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_param_classifier</span><span class="p">)</span>
-
-            <span class="c1"># Stage 1: Build (async-aware)</span>
-            <span class="n">built_data</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_or_build_async</span><span class="p">(</span><span class="n">context</span><span class="o">.</span><span class="n">preprocessing_params</span><span class="p">)</span>
-
-            <span class="c1"># Stage 2: Filter (sync for now, per implementation plan)</span>
-            <span class="n">filtered_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_or_transform</span><span class="p">(</span><span class="n">built_data</span><span class="p">,</span> <span class="n">context</span><span class="o">.</span><span class="n">filtering_params</span><span class="p">)</span>
-
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;[get_processed_data_async] Pipeline complete | rows=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">filtered_data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="p">)</span>
-            <span class="k">return</span> <span class="n">filtered_data</span>
-
-        <span class="k">except</span> <span class="n">CacheError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[get_processed_data_async] Cache error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="c1"># Retry without cache</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[get_processed_data_async] Retrying without cache&quot;</span><span class="p">)</span>
-
-            <span class="c1"># Detect if build function is async</span>
-            <span class="n">is_async_build</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="p">,</span> <span class="s2">&quot;func&quot;</span><span class="p">):</span>
-                <span class="n">is_async_build</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">iscoroutinefunction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="o">.</span><span class="n">func</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">is_async_build</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">iscoroutinefunction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="o">.</span><span class="n">build</span><span class="p">)</span>
-
-            <span class="c1"># Check if build is async</span>
-            <span class="k">if</span> <span class="n">is_async_build</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="p">,</span> <span class="s2">&quot;func&quot;</span><span class="p">):</span>
-                    <span class="c1"># LambdaBuilder: call func directly</span>
-                    <span class="n">built_data</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="o">.</span><span class="n">func</span><span class="p">(</span>
-                        <span class="n">context</span><span class="o">.</span><span class="n">preprocessing_params</span>
-                    <span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="c1"># Regular async DataBuilder</span>
-                    <span class="n">built_data</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="o">.</span><span class="n">build</span><span class="p">(</span>
-                        <span class="o">**</span><span class="n">context</span><span class="o">.</span><span class="n">preprocessing_params</span>
-                    <span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># Run sync build in executor</span>
-                <span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
-
-                <span class="k">def</span><span class="w"> </span><span class="nf">_sync_build_wrapper</span><span class="p">():</span>
-                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="o">**</span><span class="n">context</span><span class="o">.</span><span class="n">preprocessing_params</span><span class="p">)</span>
-
-                <span class="n">built_data</span> <span class="o">=</span> <span class="k">await</span> <span class="n">loop</span><span class="o">.</span><span class="n">run_in_executor</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">_sync_build_wrapper</span><span class="p">)</span>
-
-            <span class="n">filtered_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_transformer</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span>
-                <span class="n">built_data</span><span class="p">,</span> <span class="o">**</span><span class="n">context</span><span class="o">.</span><span class="n">filtering_params</span>
-            <span class="p">)</span>
-            <span class="k">return</span> <span class="n">filtered_data</span>
-
-        <span class="k">except</span> <span class="n">DataLoadError</span><span class="p">:</span>
-            <span class="c1"># Re-raise with context</span>
-            <span class="k">raise</span>
-
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="c1"># Wrap unexpected errors</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;[get_processed_data_async] Unexpected error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span>
-            <span class="p">)</span>
-            <span class="k">raise</span> <span class="n">DataLoadError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Async data processing failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span></div>
-
-
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_get_or_build_async</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Async version of _get_or_build.</span>
-
-<span class="sd">        Checks cache first, then builds data using async-aware logic:</span>
-<span class="sd">        - If build_fn is async coroutine, awaits it</span>
-<span class="sd">        - If build_fn is sync, runs in executor to avoid blocking</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            params: Build parameters</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            Built DataFrame (from cache or fresh build)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">params</span> <span class="o">=</span> <span class="n">params</span> <span class="ow">or</span> <span class="p">{}</span>
-        <span class="n">cache_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cache_key</span><span class="p">(</span><span class="s2">&quot;build&quot;</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="p">)</span>
-
-        <span class="c1"># Try cache first</span>
-        <span class="k">if</span> <span class="n">cache_key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[_get_or_build_async] Cache HIT | key=</span><span class="si">{</span><span class="n">cache_key</span><span class="p">[:</span><span class="mi">50</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">cache_key</span><span class="p">]</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[_get_or_build_async] Cache MISS | key=</span><span class="si">{</span><span class="n">cache_key</span><span class="p">[:</span><span class="mi">50</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-        <span class="c1"># Detect if build function is async</span>
-        <span class="c1"># For LambdaBuilder, check the underlying func attribute</span>
-        <span class="n">is_async_build</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="p">,</span> <span class="s2">&quot;func&quot;</span><span class="p">):</span>
-            <span class="c1"># LambdaBuilder case - check the wrapped function</span>
-            <span class="n">is_async_build</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">iscoroutinefunction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="o">.</span><span class="n">func</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># Regular DataBuilder case - check the build method</span>
-            <span class="n">is_async_build</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">iscoroutinefunction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="o">.</span><span class="n">build</span><span class="p">)</span>
-
-        <span class="c1"># Build data (async-aware)</span>
-        <span class="k">if</span> <span class="n">is_async_build</span><span class="p">:</span>
-            <span class="c1"># Async build_fn - call directly and await</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;[_get_or_build_async] Using async build_fn&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="p">,</span> <span class="s2">&quot;func&quot;</span><span class="p">):</span>
-                <span class="c1"># LambdaBuilder: call func directly</span>
-                <span class="n">data</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># Regular async DataBuilder</span>
-                <span class="n">data</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># Sync build_fn - run in executor</span>
-            <span class="c1"># Need to wrap the call to unpack params as kwargs</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;[_get_or_build_async] Using sync build_fn in executor&quot;</span><span class="p">)</span>
-            <span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
-
-            <span class="k">def</span><span class="w"> </span><span class="nf">_sync_build_wrapper</span><span class="p">():</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_builder</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
-
-            <span class="n">data</span> <span class="o">=</span> <span class="k">await</span> <span class="n">loop</span><span class="o">.</span><span class="n">run_in_executor</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">_sync_build_wrapper</span><span class="p">)</span>
-
-        <span class="c1"># Cache result</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">cache_key</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">expire</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_ttl</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;[_get_or_build_async] Cached | key=</span><span class="si">{</span><span class="n">cache_key</span><span class="p">[:</span><span class="mi">50</span><span class="p">]</span><span class="si">}</span><span class="s2"> | rows=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="p">)</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[_get_or_build_async] Cache write failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="c1"># Continue without caching</span>
-
-        <span class="k">return</span> <span class="n">data</span></div>
+</div>
 
 </pre></div>
 

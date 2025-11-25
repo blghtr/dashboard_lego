@@ -89,11 +89,15 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">plotly.graph_objects</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">go</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dash.development.base_component</span><span class="w"> </span><span class="kn">import</span> <span class="n">Component</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.async_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncDataSource</span>
 
 <span class="c1"># Use forward references for type hints to avoid circular imports</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.datasource</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataSource</span>
@@ -131,13 +135,15 @@
 
 <div class="viewcode-block" id="BaseBlock.__init__">
 <a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.base.BaseBlock.__init__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">datasource</span><span class="p">:</span> <span class="n">DataSource</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">block_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">datasource</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">DataSource</span><span class="p">,</span> <span class="n">AsyncDataSource</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initializes the BaseBlock.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            block_id: A unique identifier for this block instance.</span>
-<span class="sd">            datasource: An instance of a class that implements the</span>
+<span class="sd">            datasource: An instance of DataSource or AsyncDataSource that implements the</span>
 <span class="sd">                       DataSource interface.</span>
 <span class="sd">            allow_duplicate_output: If True, allows this block to share output targets</span>
 <span class="sd">                                  with other blocks (useful for overlay scenarios).</span>
@@ -153,8 +159,11 @@
             <span class="n">error_msg</span> <span class="o">=</span> <span class="s2">&quot;block_id must be a non-empty string.&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">ConfigurationError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">datasource</span><span class="p">,</span> <span class="n">DataSource</span><span class="p">):</span>
-            <span class="n">error_msg</span> <span class="o">=</span> <span class="s2">&quot;datasource must be an instance of DataSource.&quot;</span>
+        <span class="c1"># Accept both DataSource and AsyncDataSource</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">datasource</span><span class="p">,</span> <span class="p">(</span><span class="n">DataSource</span><span class="p">,</span> <span class="n">AsyncDataSource</span><span class="p">)):</span>
+            <span class="n">error_msg</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s2">&quot;datasource must be an instance of DataSource or AsyncDataSource.&quot;</span>
+            <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">ConfigurationError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
 
@@ -610,7 +619,62 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
-</div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_data_sync</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get data from datasource, handling both sync and async datasources.</span>
+
+<span class="sd">        For AsyncDataSource, runs async method in sync context using asyncio.run().</span>
+<span class="sd">        For DataSource, calls sync method directly.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Base | DataAccess]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;Support both sync and async datasources in blocks&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_get_data_sync&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;datasource is DataSource or AsyncDataSource instance&quot;</span>
+<span class="sd">         - post: &quot;Returns DataFrame synchronously (async datasource wrapped)&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            params: Parameters for data retrieval</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            DataFrame from datasource</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datasource</span><span class="p">,</span> <span class="n">AsyncDataSource</span><span class="p">):</span>
+            <span class="c1"># Async datasource - run in sync context</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;[BaseBlock|_GetDataSync] Using AsyncDataSource, running async method&quot;</span>
+            <span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Check if there&#39;s already an event loop running</span>
+                <span class="n">asyncio</span><span class="o">.</span><span class="n">get_running_loop</span><span class="p">()</span>
+                <span class="c1"># If we&#39;re in an async context (event loop running), we can&#39;t use asyncio.run()</span>
+                <span class="c1"># This shouldn&#39;t happen in Dash callbacks (they&#39;re sync), but handle gracefully</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;[BaseBlock|_GetDataSync] Event loop already running, &quot;</span>
+                    <span class="s2">&quot;this should not happen in Dash callbacks. Using executor.&quot;</span>
+                <span class="p">)</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">concurrent.futures</span>
+
+                <span class="k">with</span> <span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">ThreadPoolExecutor</span><span class="p">()</span> <span class="k">as</span> <span class="n">executor</span><span class="p">:</span>
+                    <span class="n">future</span> <span class="o">=</span> <span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span>
+                        <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data_async</span><span class="p">(</span><span class="n">params</span> <span class="ow">or</span> <span class="p">{}),</span>
+                    <span class="p">)</span>
+                    <span class="k">return</span> <span class="n">future</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+                <span class="c1"># No event loop running, safe to use asyncio.run()</span>
+                <span class="c1"># This is the normal case for Dash callbacks (sync context)</span>
+                <span class="k">return</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data_async</span><span class="p">(</span><span class="n">params</span> <span class="ow">or</span> <span class="p">{})</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Sync datasource - call directly</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;[BaseBlock|_GetDataSync] Using sync DataSource&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">(</span><span class="n">params</span><span class="p">)</span></div>
 
 </pre></div>
 
