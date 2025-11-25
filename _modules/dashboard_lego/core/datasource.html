@@ -201,6 +201,7 @@
         <span class="n">build_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">transform_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">cache_prewarm_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">df</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -212,12 +213,13 @@
 <span class="sd">         - implements: &quot;method: &#39;__init__&#39;&quot;</span>
 
 <span class="sd">        :contract:</span>
-<span class="sd">         - pre: &quot;data_builder, data_transformer, build_fn, transform_fn are optional&quot;</span>
-<span class="sd">         - post: &quot;2-stage pipeline ready with handlers created from functions if provided&quot;</span>
+<span class="sd">         - pre: &quot;df, build_fn, and data_builder are optional (if none provided, uses default DataBuilder)&quot;</span>
+<span class="sd">         - post: &quot;2-stage pipeline ready with handlers created from df/build_fn/builder if provided, or default DataBuilder&quot;</span>
 <span class="sd">         - stages: &quot;Build → Transform&quot;</span>
+<span class="sd">         - priority: &quot;df → build_fn → data_builder → default DataBuilder (first provided wins)&quot;</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            data_builder: DataBuilder for stage 1 (load + process). If None and build_fn provided, creates LambdaBuilder.</span>
+<span class="sd">            data_builder: DataBuilder for stage 1 (load + process). If None and build_fn or df provided, creates appropriate builder.</span>
 <span class="sd">            data_transformer: DataTransformer for stage 2 (filtering/aggregation). If None and transform_fn provided, creates LambdaTransformer.</span>
 <span class="sd">            param_classifier: Routes params: &#39;build&#39; or &#39;transform&#39;. Default: &#39;build__&#39; → &#39;build&#39;, &#39;transform__&#39; → &#39;transform&#39;.</span>
 <span class="sd">            cache_dir: Directory for disk cache. If None, uses in-memory cache. Ignored if cache_backend is provided.</span>
@@ -233,6 +235,8 @@
 <span class="sd">                         If provided, creates LambdaTransformer automatically. Signature: lambda df: df</span>
 <span class="sd">            cache_prewarm_params: Optional list of parameter dictionaries to prewarm cache during initialization.</span>
 <span class="sd">                                 Each dict will be processed through the 2-stage pipeline to populate cache.</span>
+<span class="sd">            df: Optional pandas DataFrame. If provided, automatically creates DfHandler as builder.</span>
+<span class="sd">                If none of df/build_fn/data_builder provided, uses default DataBuilder (returns empty DataFrame).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">_default_param_classifier</span><span class="p">(</span><span class="n">k</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -329,25 +333,42 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">cache_ttl</span> <span class="o">=</span> <span class="n">cache_ttl</span>
 
         <span class="c1"># Import here to avoid circular imports</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.data_builder</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataBuilder</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.data_builder</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataBuilder</span><span class="p">,</span> <span class="n">DfHandler</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.data_transformer</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataFilter</span>
 
         <span class="c1"># LLM:METADATA</span>
         <span class="c1"># :hierarchy: [Core | DataSources | DataSource | HandlerCreation]</span>
         <span class="c1"># :relates-to:</span>
-        <span class="c1">#  - motivated_by: &quot;Create handlers from lambda functions if provided in constructor&quot;</span>
-        <span class="c1">#  - implements: &quot;Lambda handler creation logic in __init__&quot;</span>
+        <span class="c1">#  - motivated_by: &quot;Create handlers from DataFrame, lambda functions, or use provided builder&quot;</span>
+        <span class="c1">#  - implements: &quot;Handler creation logic in __init__ with priority: df → build_fn → data_builder → default&quot;</span>
         <span class="c1"># :contract:</span>
-        <span class="c1">#  - pre: &quot;build_fn and transform_fn are optional callables&quot;</span>
-        <span class="c1">#  - post: &quot;data_builder and data_transformer are set (either provided or created from functions)&quot;</span>
+        <span class="c1">#  - pre: &quot;df, build_fn, and data_builder are optional (if none provided, uses default DataBuilder)&quot;</span>
+        <span class="c1">#  - post: &quot;data_builder and data_transformer are set (either provided or created or default)&quot;</span>
         <span class="c1"># :complexity: 3</span>
         <span class="c1"># LLM:END</span>
-        <span class="c1"># Create handlers from lambda functions if provided</span>
+        <span class="c1"># Create handlers with priority: df → build_fn → data_builder → default DataBuilder</span>
         <span class="n">final_data_builder</span> <span class="o">=</span> <span class="n">data_builder</span>
         <span class="n">final_data_transformer</span> <span class="o">=</span> <span class="n">data_transformer</span>
 
-        <span class="k">if</span> <span class="n">build_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="c1"># Create LambdaBuilder from build_fn (imported from lambda_handlers)</span>
+        <span class="k">if</span> <span class="n">df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Create DfHandler from DataFrame (highest priority)</span>
+            <span class="k">if</span> <span class="n">data_builder</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;[DataSource|Init] Both &#39;df&#39; and &#39;data_builder&#39; provided, using &#39;df&#39; (DfHandler)&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">build_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;[DataSource|Init] Both &#39;df&#39; and &#39;build_fn&#39; provided, using &#39;df&#39; (DfHandler)&quot;</span>
+                <span class="p">)</span>
+            <span class="n">final_data_builder</span> <span class="o">=</span> <span class="n">DfHandler</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;[DataSource|Init] Created DfHandler from df&quot;</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">build_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Create LambdaBuilder from build_fn (second priority)</span>
+            <span class="k">if</span> <span class="n">data_builder</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;[DataSource|Init] Both &#39;build_fn&#39; and &#39;data_builder&#39; provided, using &#39;build_fn&#39; (LambdaBuilder)&quot;</span>
+                <span class="p">)</span>
             <span class="n">final_data_builder</span> <span class="o">=</span> <span class="n">LambdaBuilder</span><span class="p">(</span><span class="n">build_fn</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;[DataSource|Init] Created LambdaBuilder from build_fn&quot;</span><span class="p">)</span>
 

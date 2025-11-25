@@ -85,31 +85,33 @@
              
   <h1>Source code for dashboard_lego.blocks.metrics_factory</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Metrics Factory - Factory function for creating metric block rows.</span>
+<span class="sd">Metrics Factory - Factory function for creating dashboard block rows.</span>
 
 <span class="sd">This module provides the get_metric_row() factory function that creates</span>
-<span class="sd">individual SingleMetricBlock instances and returns them with row options</span>
-<span class="sd">for proper DashboardPage integration.</span>
+<span class="sd">individual SingleMetricBlock (numeric) or TextBlock (text) instances and</span>
+<span class="sd">returns them with row options for proper DashboardPage integration.</span>
 
 <span class="sd">:hierarchy: [Blocks | Metrics | Factory]</span>
 <span class="sd">:relates-to:</span>
-<span class="sd"> - motivated_by: &quot;SPEC: Separate metric calculation from layout management&quot;</span>
+<span class="sd"> - motivated_by: &quot;PRD: Unified factory for dashboard lamps (numeric metrics and text blocks)&quot;</span>
 <span class="sd"> - implements: &quot;function: &#39;get_metric_row&#39;&quot;</span>
-<span class="sd"> - uses: [&quot;class: &#39;SingleMetricBlock&#39;&quot;]</span>
+<span class="sd"> - uses: [&quot;class: &#39;SingleMetricBlock&#39;&quot;, &quot;class: &#39;TextBlock&#39;&quot;]</span>
 
 <span class="sd">:contract:</span>
-<span class="sd"> - pre: &quot;metrics_spec dict with valid metric definitions&quot;</span>
-<span class="sd"> - post: &quot;Returns (List[SingleMetricBlock], row_options_dict)&quot;</span>
-<span class="sd"> - invariant: &quot;Each metric is independent block&quot;</span>
+<span class="sd"> - pre: &quot;metrics_spec dict with valid block definitions (numeric or text)&quot;</span>
+<span class="sd"> - post: &quot;Returns (List[BaseBlock], row_options_dict)&quot;</span>
+<span class="sd"> - invariant: &quot;Each block is independent, all have h-100 for equal height&quot;</span>
 <span class="sd"> - layout_compliance: &quot;Compatible with DashboardPage row format&quot;</span>
 
-<span class="sd">:complexity: 3</span>
-<span class="sd">:decision_cache: &quot;factory_pattern: Separates metric creation from layout logic&quot;</span>
+<span class="sd">:complexity: 4</span>
+<span class="sd">:decision_cache: &quot;unified_factory: Content-based type detection for numeric vs text blocks&quot;</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseBlock</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.single_metric</span><span class="w"> </span><span class="kn">import</span> <span class="n">SingleMetricBlock</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.blocks.text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TextBlock</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.core.datasource</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataSource</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dashboard_lego.utils.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
 
@@ -124,49 +126,55 @@
     <span class="n">subscribes_to</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">row_options</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">block_id_prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;metric&quot;</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">SingleMetricBlock</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">BaseBlock</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Factory function to create a row of individual metric blocks.</span>
+<span class="sd">    Factory function to create a row of dashboard blocks (numeric metrics or text).</span>
 
 <span class="sd">    :hierarchy: [Blocks | Metrics | Factory | GetMetricRow]</span>
 <span class="sd">    :relates-to:</span>
-<span class="sd">     - motivated_by: &quot;SPEC: Factory pattern for flexible metric layout&quot;</span>
-<span class="sd">     - implements: &quot;function: &#39;get_metric_row&#39;&quot;</span>
-<span class="sd">     - uses: [&quot;class: &#39;SingleMetricBlock&#39;&quot;]</span>
+<span class="sd">     - motivated_by: &quot;PRD: Unified factory for dashboard lamps supporting both numeric and text content&quot;</span>
+<span class="sd">     - implements: &quot;function: &#39;get_metric_row&#39; with content-based type detection&quot;</span>
+<span class="sd">     - uses: [&quot;class: &#39;SingleMetricBlock&#39;&quot;, &quot;class: &#39;TextBlock&#39;&quot;]</span>
 
 <span class="sd">    :contract:</span>
-<span class="sd">     - pre: &quot;metrics_spec contains valid metric definitions&quot;</span>
+<span class="sd">     - pre: &quot;metrics_spec contains valid block definitions (numeric or text)&quot;</span>
 <span class="sd">     - post: &quot;Returns (list_of_blocks, row_options_dict)&quot;</span>
-<span class="sd">     - invariant: &quot;Each metric is independent SingleMetricBlock&quot;</span>
+<span class="sd">     - invariant: &quot;Each block is independent, all have h-100 for equal height&quot;</span>
 <span class="sd">     - layout_compliance: &quot;Compatible with DashboardPage&quot;</span>
 
-<span class="sd">    :complexity: 3</span>
-<span class="sd">    :decision_cache: &quot;metric_factory: Atomic blocks for flexibility&quot;</span>
+<span class="sd">    :complexity: 4</span>
+<span class="sd">    :decision_cache: &quot;unified_factory: Content-based detection (column+agg = numeric, content_generator = text)&quot;</span>
 
-<span class="sd">    This function separates metric calculation logic from layout management,</span>
-<span class="sd">    allowing metrics to be composed naturally with other blocks in rows.</span>
+<span class="sd">    This function creates a row of equal-height containers (&quot;dashboard lamps&quot;) that can</span>
+<span class="sd">    display either numeric metrics (SingleMetricBlock) or text content (TextBlock).</span>
+<span class="sd">    Block type is automatically detected from spec keys.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        metrics_spec: Dictionary of metric definitions, where each key is</span>
-<span class="sd">            a metric_id and value is a dict with:</span>
+<span class="sd">        metrics_spec: Dictionary of block definitions, where each key is a block_id</span>
+<span class="sd">            and value is a dict. For numeric metrics:</span>
 <span class="sd">            - column (str): Column name to aggregate</span>
 <span class="sd">            - agg (str|Callable): Aggregation function</span>
 <span class="sd">            - title (str): Display title</span>
-<span class="sd">            - color (str): Bootstrap theme color (optional, default: &#39;primary&#39;)</span>
+<span class="sd">            - color (str|dict): Bootstrap theme color (optional, supports conditional)</span>
+<span class="sd">            - label (str|dict): Display label (optional, supports conditional)</span>
 <span class="sd">            - dtype (str): Type conversion (optional)</span>
-<span class="sd">            - color_rules (dict): Conditional coloring (optional)</span>
-<span class="sd">        datasource: DataSource instance for metric calculation</span>
-<span class="sd">        subscribes_to: Optional state IDs to subscribe all metrics to</span>
+<span class="sd">            For text blocks:</span>
+<span class="sd">            - content_generator (callable|str): Function that takes DataFrame and returns content</span>
+<span class="sd">            - title (str): Display title (optional)</span>
+<span class="sd">            - color (str|dict): Bootstrap theme color (optional, supports keyword-based conditional coloring)</span>
+<span class="sd">              If dict: {&#39;keyword1&#39;: &#39;color1&#39;, &#39;keyword2&#39;: &#39;color2&#39;, ...} - searches for keywords in content</span>
+<span class="sd">        datasource: DataSource instance for block data</span>
+<span class="sd">        subscribes_to: Optional state IDs to subscribe all blocks to</span>
 <span class="sd">        row_options: Optional Bootstrap row styling options</span>
 <span class="sd">        block_id_prefix: Prefix for generating block IDs (default: &quot;metric&quot;)</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Tuple of (list of SingleMetricBlock instances, row options dict)</span>
+<span class="sd">        Tuple of (list of BaseBlock instances, row options dict)</span>
 <span class="sd">        Ready for use with DashboardPage:</span>
-<span class="sd">            page = DashboardPage(..., blocks=[(metrics, opts), ...])</span>
+<span class="sd">            page = DashboardPage(..., blocks=[(blocks, opts), ...])</span>
 
 <span class="sd">    Example:</span>
-<span class="sd">        metrics, row_opts = get_metric_row(</span>
+<span class="sd">        blocks, row_opts = get_metric_row(</span>
 <span class="sd">            metrics_spec={</span>
 <span class="sd">                &#39;revenue&#39;: {</span>
 <span class="sd">                    &#39;column&#39;: &#39;Revenue&#39;,</span>
@@ -174,10 +182,9 @@
 <span class="sd">                    &#39;title&#39;: &#39;Total Revenue&#39;,</span>
 <span class="sd">                    &#39;color&#39;: &#39;success&#39;</span>
 <span class="sd">                },</span>
-<span class="sd">                &#39;avg_price&#39;: {</span>
-<span class="sd">                    &#39;column&#39;: &#39;Price&#39;,</span>
-<span class="sd">                    &#39;agg&#39;: &#39;mean&#39;,</span>
-<span class="sd">                    &#39;title&#39;: &#39;Average Price&#39;,</span>
+<span class="sd">                &#39;status&#39;: {</span>
+<span class="sd">                    &#39;content_generator&#39;: lambda df: f&quot;Status: {df[&#39;status&#39;].iloc[0]}&quot;,</span>
+<span class="sd">                    &#39;title&#39;: &#39;System Status&#39;,</span>
 <span class="sd">                    &#39;color&#39;: &#39;info&#39;</span>
 <span class="sd">                }</span>
 <span class="sd">            },</span>
@@ -186,41 +193,93 @@
 <span class="sd">        )</span>
 
 <span class="sd">        page = DashboardPage(..., blocks=[</span>
-<span class="sd">            (metrics, row_opts),  # Metrics row</span>
+<span class="sd">            (blocks, row_opts),  # Mixed blocks row</span>
 <span class="sd">            [chart1, chart2]  # Charts row</span>
 <span class="sd">        ])</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;[Blocks|Metrics|Factory] Creating metric row | &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;metrics_count=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">metrics_spec</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;[Blocks|Metrics|Factory] Creating dashboard row | &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;blocks_count=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">metrics_spec</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
     <span class="p">)</span>
 
     <span class="c1"># &lt;semantic_block: block_creation&gt;</span>
-    <span class="n">metric_blocks</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">blocks</span> <span class="o">=</span> <span class="p">[]</span>
 
-    <span class="k">for</span> <span class="n">metric_id</span><span class="p">,</span> <span class="n">metric_spec</span> <span class="ow">in</span> <span class="n">metrics_spec</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">block_id_key</span><span class="p">,</span> <span class="n">block_spec</span> <span class="ow">in</span> <span class="n">metrics_spec</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="c1"># Generate unique block ID</span>
-        <span class="n">block_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">block_id_prefix</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">metric_id</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">block_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">block_id_prefix</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">block_id_key</span><span class="si">}</span><span class="s2">&quot;</span>
 
-        <span class="c1"># Create SingleMetricBlock</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">metric_block</span> <span class="o">=</span> <span class="n">SingleMetricBlock</span><span class="p">(</span>
-                <span class="n">block_id</span><span class="o">=</span><span class="n">block_id</span><span class="p">,</span>
-                <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
-                <span class="n">metric_spec</span><span class="o">=</span><span class="n">metric_spec</span><span class="p">,</span>
-                <span class="n">subscribes_to</span><span class="o">=</span><span class="n">subscribes_to</span><span class="p">,</span>
+        <span class="c1"># Detect block type based on spec keys</span>
+        <span class="n">has_numeric_keys</span> <span class="o">=</span> <span class="s2">&quot;column&quot;</span> <span class="ow">in</span> <span class="n">block_spec</span> <span class="ow">and</span> <span class="s2">&quot;agg&quot;</span> <span class="ow">in</span> <span class="n">block_spec</span>
+        <span class="n">has_text_keys</span> <span class="o">=</span> <span class="s2">&quot;content_generator&quot;</span> <span class="ow">in</span> <span class="n">block_spec</span>
+
+        <span class="c1"># Validate: exactly one type must be specified</span>
+        <span class="k">if</span> <span class="n">has_numeric_keys</span> <span class="ow">and</span> <span class="n">has_text_keys</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Block &#39;</span><span class="si">{</span><span class="n">block_id_key</span><span class="si">}</span><span class="s2">&#39; cannot have both numeric (column+agg) &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;and text (content_generator) keys. Specify exactly one type.&quot;</span>
             <span class="p">)</span>
-            <span class="n">metric_blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">metric_block</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">has_numeric_keys</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">has_text_keys</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Block &#39;</span><span class="si">{</span><span class="n">block_id_key</span><span class="si">}</span><span class="s2">&#39; must have either numeric keys (column+agg) &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;or text key (content_generator).&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Create appropriate block type</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">has_numeric_keys</span><span class="p">:</span>
+                <span class="c1"># Create SingleMetricBlock for numeric metrics</span>
+                <span class="n">block</span> <span class="o">=</span> <span class="n">SingleMetricBlock</span><span class="p">(</span>
+                    <span class="n">block_id</span><span class="o">=</span><span class="n">block_id</span><span class="p">,</span>
+                    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+                    <span class="n">metric_spec</span><span class="o">=</span><span class="n">block_spec</span><span class="p">,</span>
+                    <span class="n">subscribes_to</span><span class="o">=</span><span class="n">subscribes_to</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">block_type</span> <span class="o">=</span> <span class="s2">&quot;SingleMetricBlock&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Create TextBlock for text content</span>
+                <span class="c1"># Extract TextBlock-specific parameters</span>
+                <span class="n">content_generator</span> <span class="o">=</span> <span class="n">block_spec</span><span class="p">[</span><span class="s2">&quot;content_generator&quot;</span><span class="p">]</span>
+                <span class="n">title</span> <span class="o">=</span> <span class="n">block_spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">)</span>
+                <span class="n">color</span> <span class="o">=</span> <span class="n">block_spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;color&quot;</span><span class="p">)</span>
+
+                <span class="c1"># Extract style parameters if provided</span>
+                <span class="n">card_style</span> <span class="o">=</span> <span class="n">block_spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;card_style&quot;</span><span class="p">)</span>
+                <span class="n">card_className</span> <span class="o">=</span> <span class="n">block_spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;card_className&quot;</span><span class="p">)</span>
+                <span class="n">title_style</span> <span class="o">=</span> <span class="n">block_spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;title_style&quot;</span><span class="p">)</span>
+                <span class="n">title_className</span> <span class="o">=</span> <span class="n">block_spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;title_className&quot;</span><span class="p">)</span>
+                <span class="n">content_style</span> <span class="o">=</span> <span class="n">block_spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;content_style&quot;</span><span class="p">)</span>
+                <span class="n">content_className</span> <span class="o">=</span> <span class="n">block_spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;content_className&quot;</span><span class="p">)</span>
+                <span class="n">loading_type</span> <span class="o">=</span> <span class="n">block_spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;loading_type&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">)</span>
+
+                <span class="n">block</span> <span class="o">=</span> <span class="n">TextBlock</span><span class="p">(</span>
+                    <span class="n">block_id</span><span class="o">=</span><span class="n">block_id</span><span class="p">,</span>
+                    <span class="n">datasource</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
+                    <span class="n">content_generator</span><span class="o">=</span><span class="n">content_generator</span><span class="p">,</span>
+                    <span class="n">subscribes_to</span><span class="o">=</span><span class="n">subscribes_to</span><span class="p">,</span>
+                    <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+                    <span class="n">card_style</span><span class="o">=</span><span class="n">card_style</span><span class="p">,</span>
+                    <span class="n">card_className</span><span class="o">=</span><span class="n">card_className</span><span class="p">,</span>
+                    <span class="n">title_style</span><span class="o">=</span><span class="n">title_style</span><span class="p">,</span>
+                    <span class="n">title_className</span><span class="o">=</span><span class="n">title_className</span><span class="p">,</span>
+                    <span class="n">content_style</span><span class="o">=</span><span class="n">content_style</span><span class="p">,</span>
+                    <span class="n">content_className</span><span class="o">=</span><span class="n">content_className</span><span class="p">,</span>
+                    <span class="n">loading_type</span><span class="o">=</span><span class="n">loading_type</span><span class="p">,</span>
+                    <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">block_type</span> <span class="o">=</span> <span class="s2">&quot;TextBlock&quot;</span>
+
+            <span class="n">blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
 
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;[Blocks|Metrics|Factory] Created block | &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;block_id=</span><span class="si">{</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> | title=</span><span class="si">{</span><span class="n">metric_spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;[Blocks|Metrics|Factory] Created </span><span class="si">{</span><span class="n">block_type</span><span class="si">}</span><span class="s2"> | &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;block_id=</span><span class="si">{</span><span class="n">block_id</span><span class="si">}</span><span class="s2"> | title=</span><span class="si">{</span><span class="n">block_spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;N/A&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;[Blocks|Metrics|Factory] Failed to create block | &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;metric_id=</span><span class="si">{</span><span class="n">metric_id</span><span class="si">}</span><span class="s2"> | error=</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;block_id=</span><span class="si">{</span><span class="n">block_id_key</span><span class="si">}</span><span class="s2"> | error=</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
             <span class="k">raise</span>
 
@@ -234,12 +293,12 @@
     <span class="n">final_row_options</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">default_row_options</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">row_options</span> <span class="ow">or</span> <span class="p">{})}</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;[Blocks|Metrics|Factory] Metric row created | &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;blocks=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">metric_blocks</span><span class="p">)</span><span class="si">}</span><span class="s2"> | row_opts=</span><span class="si">{</span><span class="n">final_row_options</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;[Blocks|Metrics|Factory] Dashboard row created | &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;blocks=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">blocks</span><span class="p">)</span><span class="si">}</span><span class="s2"> | row_opts=</span><span class="si">{</span><span class="n">final_row_options</span><span class="si">}</span><span class="s2">&quot;</span>
     <span class="p">)</span>
     <span class="c1"># &lt;/semantic_block: row_options&gt;</span>
 
-    <span class="k">return</span> <span class="n">metric_blocks</span><span class="p">,</span> <span class="n">final_row_options</span></div>
+    <span class="k">return</span> <span class="n">blocks</span><span class="p">,</span> <span class="n">final_row_options</span></div>
 
 </pre></div>
 

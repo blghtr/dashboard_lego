@@ -146,6 +146,8 @@
         <span class="n">content_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">content_className</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">loading_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+        <span class="c1"># Color specification (supports conditional coloring)</span>
+        <span class="n">color</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initializes the TextBlock with customizable styling.</span>
@@ -168,6 +170,10 @@
 <span class="sd">            content_className: Optional CSS class name for the content</span>
 <span class="sd">                container.</span>
 <span class="sd">            loading_type: Type of loading indicator to display.</span>
+<span class="sd">            color: Optional color specification. Can be:</span>
+<span class="sd">                - str: Bootstrap theme color name (&#39;primary&#39;, &#39;success&#39;, etc.)</span>
+<span class="sd">                - dict: Keyword-based coloring with {&#39;keyword1&#39;: &#39;color1&#39;, &#39;keyword2&#39;: &#39;color2&#39;, ...}</span>
+<span class="sd">                  Searches for keywords in generated content (case-insensitive)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">title</span>
@@ -188,6 +194,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">content_style</span> <span class="o">=</span> <span class="n">content_style</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">content_className</span> <span class="o">=</span> <span class="n">content_className</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">loading_type</span> <span class="o">=</span> <span class="n">loading_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">color</span>
 
         <span class="c1"># Normalize subscribes_to to list and build subscribes dict</span>
         <span class="n">state_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_subscribes_to</span><span class="p">(</span><span class="n">subscribes_to</span><span class="p">)</span>
@@ -195,6 +202,47 @@
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">block_id</span><span class="p">,</span> <span class="n">datasource</span><span class="p">,</span> <span class="n">subscribes</span><span class="o">=</span><span class="n">subscribes_dict</span><span class="p">)</span></div>
 
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_determine_color</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">color_spec</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Determine Bootstrap theme color based on keyword matching in content.</span>
+
+<span class="sd">        :hierarchy: [Blocks | Text | TextBlock | ColorResolution]</span>
+<span class="sd">        :relates-to:</span>
+<span class="sd">         - motivated_by: &quot;PRD: Conditional color assignment based on keywords in text content&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_determine_color&#39;&quot;</span>
+
+<span class="sd">        :contract:</span>
+<span class="sd">         - pre: &quot;color_spec is str or dict with keyword:color mapping&quot;</span>
+<span class="sd">         - post: &quot;Returns Bootstrap theme color name&quot;</span>
+<span class="sd">         - theme_compliance: &quot;Returns only valid Bootstrap colors&quot;</span>
+
+<span class="sd">        :complexity: 2</span>
+<span class="sd">        :decision_cache: &quot;keyword_based_coloring: Simple keyword matching for text content&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            content: Text content to search for keywords</span>
+<span class="sd">            color_spec: Either:</span>
+<span class="sd">                - str: Bootstrap color name (&#39;primary&#39;, &#39;success&#39;, etc.)</span>
+<span class="sd">                - dict: {&#39;keyword1&#39;: &#39;color1&#39;, &#39;keyword2&#39;: &#39;color2&#39;, ...}</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Bootstrap theme color name</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">color_spec</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">color_spec</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">color_spec</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="c1"># Search for keywords in content (case-insensitive)</span>
+            <span class="n">content_lower</span> <span class="o">=</span> <span class="n">content</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">keyword</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="n">color_spec</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">keyword</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">content_lower</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">color</span>
+
+        <span class="c1"># Fallback if no keyword matches</span>
+        <span class="k">return</span> <span class="s2">&quot;primary&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_update_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -204,20 +252,28 @@
 <span class="sd">        :hierarchy: [Blocks | Text | TextBlock | Update Logic]</span>
 <span class="sd">        :relates-to:</span>
 <span class="sd">         - motivated_by: &quot;PRD: Need to display dynamic text content with</span>
-<span class="sd">           customizable styling&quot;</span>
-<span class="sd">         - implements: &quot;method: &#39;_update_content&#39; with style overrides&quot;</span>
-<span class="sd">         - uses: [&quot;attribute: &#39;content_generator&#39;&quot;, &quot;attribute: &#39;title_style&#39;&quot;]</span>
+<span class="sd">           customizable styling and conditional coloring&quot;</span>
+<span class="sd">         - implements: &quot;method: &#39;_update_content&#39; with style overrides and color support&quot;</span>
+<span class="sd">         - uses: [&quot;attribute: &#39;content_generator&#39;&quot;, &quot;attribute: &#39;title_style&#39;&quot;, &quot;method: &#39;_determine_color&#39;&quot;]</span>
 
 <span class="sd">        :rationale: &quot;Enhanced to apply style customization parameters to</span>
 <span class="sd">         content and title components. Works for both subscribed and</span>
-<span class="sd">         non-subscribed blocks.&quot;</span>
+<span class="sd">         non-subscribed blocks. Supports conditional coloring via color parameter.&quot;</span>
 <span class="sd">        :contract:</span>
 <span class="sd">         - pre: &quot;Datasource is available and content generator is set.&quot;</span>
 <span class="sd">         - post: &quot;Returns a styled CardBody with current content and title.&quot;</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
+            <span class="c1"># Build params dict from args for filtered data</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">if</span> <span class="n">args</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;subscribes&quot;</span><span class="p">):</span>
+                <span class="n">state_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subscribes</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">state_ids</span><span class="p">):</span>
+                        <span class="n">params</span><span class="p">[</span><span class="n">state_ids</span><span class="p">[</span><span class="n">idx</span><span class="p">]]</span> <span class="o">=</span> <span class="n">value</span>
+
+            <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
             <span class="n">generated_content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">content_generator</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
 
             <span class="c1"># If the generator returns a string, wrap it in dcc.Markdown</span>
@@ -247,9 +303,7 @@
 
             <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">CardBody</span><span class="p">(</span><span class="n">children</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Alert</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Ошибка генерации текстового блока: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;danger&quot;</span>
-            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">dbc</span><span class="o">.</span><span class="n">Alert</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error generating text block: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;danger&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="TextBlock.layout">
 <a class="viewcode-back" href="../../../api/blocks.html#dashboard_lego.blocks.text.TextBlock.layout">[docs]</a>
@@ -272,20 +326,66 @@
         <span class="c1"># Initialize with current content instead of empty container</span>
         <span class="n">initial_content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_content</span><span class="p">()</span>
 
+        <span class="c1"># Determine color if specified (for conditional coloring based on keywords)</span>
+        <span class="n">color_to_apply</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">color</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">color</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="c1"># Keyword-based coloring: extract text content and search for keywords</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">datasource</span><span class="o">.</span><span class="n">get_processed_data</span><span class="p">()</span>
+                    <span class="n">generated_content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">content_generator</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+                    <span class="c1"># Convert content to string for keyword search</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">generated_content</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                        <span class="n">content_text</span> <span class="o">=</span> <span class="n">generated_content</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># If it&#39;s a Component, try to extract text from it</span>
+                        <span class="c1"># For now, use a fallback - in practice, content_generator should return string</span>
+                        <span class="n">content_text</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">generated_content</span><span class="p">)</span>
+
+                    <span class="n">color_to_apply</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_determine_color</span><span class="p">(</span><span class="n">content_text</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">color</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;[Blocks|Text|TextBlock] Failed to determine color from content: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                    <span class="n">color_to_apply</span> <span class="o">=</span> <span class="s2">&quot;primary&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Direct color specification</span>
+                <span class="n">color_to_apply</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">color</span>
+
+        <span class="c1"># Build card style with color if specified</span>
+        <span class="n">card_style_with_color</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_style</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_style</span> <span class="k">else</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">color_to_apply</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="p">:</span>
+            <span class="c1"># Apply theme color to card background</span>
+            <span class="n">color_map</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;primary&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">primary</span><span class="p">,</span>
+                <span class="s2">&quot;secondary&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">secondary</span><span class="p">,</span>
+                <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">success</span><span class="p">,</span>
+                <span class="s2">&quot;danger&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">danger</span><span class="p">,</span>
+                <span class="s2">&quot;warning&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">warning</span><span class="p">,</span>
+                <span class="s2">&quot;info&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">info</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="n">bg_color</span> <span class="o">=</span> <span class="n">color_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">color_to_apply</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">primary</span><span class="p">)</span>
+            <span class="n">card_style_with_color</span><span class="p">[</span><span class="s2">&quot;backgroundColor&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bg_color</span>
+            <span class="n">card_style_with_color</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">white</span>
+
         <span class="c1"># Build card props with theme-aware style</span>
         <span class="n">themed_card_style</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_themed_style</span><span class="p">(</span>
-            <span class="s2">&quot;card&quot;</span><span class="p">,</span> <span class="s2">&quot;background&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_style</span>
+            <span class="s2">&quot;card&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;background&quot;</span><span class="p">,</span>
+            <span class="n">card_style_with_color</span> <span class="k">if</span> <span class="n">card_style_with_color</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="c1"># h-100 ensures equal height when multiple blocks in same row</span>
         <span class="c1"># Note: mb-4 removed, handled by Row.mb-4</span>
         <span class="n">base_classes</span> <span class="o">=</span> <span class="s2">&quot;h-100&quot;</span>
-        <span class="n">card_props</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base_classes</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">card_className</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_className</span>
-                <span class="k">else</span> <span class="n">base_classes</span>
-            <span class="p">)</span>
-        <span class="p">}</span>
+        <span class="n">card_class_name</span> <span class="o">=</span> <span class="n">base_classes</span>
+        <span class="k">if</span> <span class="n">color_to_apply</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_config</span><span class="p">:</span>
+            <span class="c1"># Fallback to Bootstrap classes if no theme</span>
+            <span class="n">card_class_name</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; text-white bg-</span><span class="si">{</span><span class="n">color_to_apply</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_className</span><span class="p">:</span>
+            <span class="n">card_class_name</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">card_className</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="n">card_props</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;className&quot;</span><span class="p">:</span> <span class="n">card_class_name</span><span class="p">}</span>
         <span class="k">if</span> <span class="n">themed_card_style</span><span class="p">:</span>
             <span class="n">card_props</span><span class="p">[</span><span class="s2">&quot;style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">themed_card_style</span>
 
